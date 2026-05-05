@@ -123,6 +123,16 @@ class PeerService {
     this.connections.set(conn.peer, conn);
     this.notifyConnectionChange();
 
+    const onOpen = () => {
+      console.log(`[PeerService] Connexion ouverte avec ${conn.peer}`);
+      // On prévient le récepteur (et nous-même via le callback) que le P2P est prêt
+      conn.send({ type: 'CONN_READY' });
+      this.dataCallbacks.forEach(cb => cb({ type: 'CONN_READY', payload: { peerId: conn.peer } }, conn.peer));
+    };
+
+    if (conn.open) onOpen();
+    else conn.on('open', onOpen);
+
     conn.on('data', (data: any) => {
       if (this.isDestroying) return;
       if (data && data.type === 'HEARTBEAT') return;

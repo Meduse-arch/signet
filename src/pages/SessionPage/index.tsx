@@ -71,74 +71,29 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
     }
   }, []);
 
-  // LOGIQUE DE CONNEXION P2P
-  useEffect(() => {
-    let mounted = true;
-
-    const setupPeer = async () => {
-      try {
-        const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
-        const hostPeerId = isMJRef.current 
-          ? sessionData?.hostPeerId 
-          : (sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId);
-
-        if (!hostPeerId) throw new Error("Impossible de déterminer l'identifiant de session");
-
-        if (isMJRef.current) {
-          if (mounted) setStatus('initializing');
-          const myId = await initRef.current(true, hostPeerId);
-          if (!mounted) return;
-
-          await clearSessionPlayers(sessionIdRef.current);
-          await addSessionPlayer(sessionIdRef.current, myId, currentUser?.pseudo || 'MJ');
-          await refreshPlayers();
-          
-          if (mounted) setStatus('connected');
-        } else {
-          if (mounted) setStatus('initializing');
-          
-          // On prépare le message de join avant même l'init
-          pendingJoinRef.current = {
-            peerId: '', // Sera rempli par l'init
-            pseudo: currentUser?.pseudo || 'Joueur',
-          };
-
-          const myId = await initRef.current(false, hostPeerId);
-          if (!mounted) return;
-          
-          pendingJoinRef.current.peerId = myId;
-          // Le message PLAYER_JOIN sera envoyé dès que CONN_READY sera reçu via onData
-        }
-      } catch (e: any) {
-        if (mounted) {
-          setStatus('error');
-          setErrorMessage(e.message || 'Une erreur inconnue est survenue');
-        }
-      }
-    };
-
-    setupPeer();
-    return () => { mounted = false; };
-  }, [sessionId, isMJ, currentUser?.pseudo, refreshPlayers]);
-
-  // ÉCOUTEUR DE MESSAGES
+  // ÉCOUTEUR DE MESSAGES (Doit être actif AVANT la connexion)
   useEffect(() => {
     const handleMessage = async (data: { type: string, payload: any }, fromPeerId: string) => {
+      console.log(`[SessionPage] Message reçu: ${data.type} de ${fromPeerId}`);
+      
       // Pour le joueur : Confirme que la connexion P2P avec l'hôte est ouverte
       if (data.type === 'CONN_READY' && !isMJRef.current) {
-        if (pendingJoinRef.current) {
-          broadcastRef.current({
-            type: 'PLAYER_JOIN',
-            payload: pendingJoinRef.current,
-          });
-          pendingJoinRef.current = null;
-          setStatus('connected');
-        }
+        const joinMsg = {
+          type: 'PLAYER_JOIN',
+          payload: {
+            peerId: usePeersStore.getState().peerId,
+            pseudo: useAuthStore.getState().user?.pseudo || 'Joueur'
+          }
+        };
+        console.log('[SessionPage] Envoi PLAYER_JOIN suite à CONN_READY');
+        broadcastRef.current(joinMsg);
+        setStatus('connected');
         return;
       }
 
       // Pour le MJ : Gère les nouvelles arrivées
       if (data.type === 'PLAYER_JOIN' && isMJRef.current) {
+        console.log(`[SessionPage] Joueur rejoint: ${data.payload.pseudo} (${data.payload.peerId})`);
         const existingPlayer = players.find(p => p.pseudo === data.payload.pseudo);
         if (existingPlayer && existingPlayer.peer_id !== data.payload.peerId) {
           await removeSessionPlayer(sessionIdRef.current, existingPlayer.peer_id);
@@ -172,6 +127,47 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
     const unsubData = onData(handleMessage);
     return () => { unsubData(); };
   }, [onData, refreshPlayers, players]);
+
+  // LOGIQUE DE CONNEXION P2P
+  useEffect(() => {
+    let mounted = true;
+
+    const setupPeer = async () => {
+      try {
+        const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
+        const hostPeerId = isMJRef.current 
+          ? sessionData?.hostPeerId 
+          : (sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId);
+
+        if (!hostPeerId) throw new Error("Impossible de déterminer l'identifiant de session");
+
+        if (isMJRef.current) {
+          if (mounted) setStatus('initializing');
+          const myId = await initRef.current(true, hostPeerId);
+          if (!mounted) return;
+
+          await clearSessionPlayers(sessionIdRef.current);
+          await addSessionPlayer(sessionIdRef.current, myId, currentUser?.pseudo || 'MJ');
+          await refreshPlayers();
+          
+          if (mounted) setStatus('connected');
+        } else {
+          if (mounted) setStatus('initializing');
+          await initRef.current(false, hostPeerId);
+          if (!mounted) return;
+          // Le reste de la logique (Join) est déclenché par CONN_READY dans l'écouteur de messages
+        }
+      } catch (e: any) {
+        if (mounted) {
+          setStatus('error');
+          setErrorMessage(e.message || 'Une erreur inconnue est survenue');
+        }
+      }
+    };
+
+    setupPeer();
+    return () => { mounted = false; };
+  }, [sessionId, isMJ, currentUser?.pseudo, refreshPlayers]);
 
   // Nettoyage à la sortie
   useEffect(() => {
