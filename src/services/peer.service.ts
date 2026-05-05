@@ -120,18 +120,40 @@ class PeerService {
   }
 
   private setupConnection(conn: DataConnection) {
+    // ✅ Protection contre les doublons de connexion
+    if (this.connections.has(conn.peer)) {
+      const oldConn = this.connections.get(conn.peer);
+      if (oldConn && oldConn.open) {
+        console.log(`[PeerService] Connexion déjà active pour ${conn.peer}, on ignore la nouvelle.`);
+        conn.close();
+        return;
+      }
+      this.connections.delete(conn.peer);
+    }
+
     this.connections.set(conn.peer, conn);
     this.notifyConnectionChange();
 
+    // ✅ Utiliser une fonction nommée pour éviter les doubles enregistrements
     const onOpen = () => {
-      console.log(`[PeerService] Connexion ouverte avec ${conn.peer}`);
-      // On prévient le récepteur (et nous-même via le callback) que le P2P est prêt
+      if (this.isDestroying) return;
+      console.log(`[PeerService] P2P Ouvert avec ${conn.peer}`);
+      
+      // On prévient l'autre côté qu'on est prêt
       conn.send({ type: 'CONN_READY' });
+      
+      // On se prévient nous-même
       this.dataCallbacks.forEach(cb => cb({ type: 'CONN_READY', payload: { peerId: conn.peer } }, conn.peer));
     };
 
+    // Nettoyer les anciens écouteurs au cas où
+    conn.off('open');
+    conn.off('data');
+    conn.off('close');
+    conn.off('error');
+
     if (conn.open) onOpen();
-    else conn.on('open', onOpen);
+    else conn.once('open', onOpen);
 
     conn.on('data', (data: any) => {
       if (this.isDestroying) return;

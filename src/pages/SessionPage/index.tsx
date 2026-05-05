@@ -78,14 +78,15 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
       
       // Pour le joueur : Confirme que la connexion P2P avec l'hôte est ouverte
       if (data.type === 'CONN_READY' && !isMJRef.current) {
+        const myActualId = usePeersStore.getState().peerId;
         const joinMsg = {
           type: 'PLAYER_JOIN',
           payload: {
-            peerId: usePeersStore.getState().peerId,
+            peerId: myActualId,
             pseudo: useAuthStore.getState().user?.pseudo || 'Joueur'
           }
         };
-        console.log('[SessionPage] Envoi PLAYER_JOIN suite à CONN_READY');
+        console.log(`[SessionPage] Envoi PLAYER_JOIN suite à CONN_READY (ID: ${myActualId})`);
         broadcastRef.current(joinMsg);
         setStatus('connected');
         return;
