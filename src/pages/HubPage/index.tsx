@@ -9,6 +9,7 @@ import { useUIStore } from '../../store/ui';
 import { useSession } from '../../hooks/useSession';
 import { useAuthStore } from '../../store/auth';
 import { generateSessionKey } from '../../services/peer.service';
+import { Session } from '../../services/session.service';
 import { Plus } from 'lucide-react';
 
 interface HubPageProps {
@@ -17,16 +18,19 @@ interface HubPageProps {
 
 export function HubPage({ onEnterSession }: HubPageProps) {
   const { searchQuery, setSearchQuery, showModal, setShowModal, showCreateModal, setShowCreateModal } = useUIStore();
-  const { sessions, addSession, isLoading } = useSession();
+  const { sessions, addSession, removeSession, isLoading } = useSession();
   const { user } = useAuthStore();
   const [showSearch, setShowSearch] = useState(false);
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
 
   const filteredSessions = sessions.filter(s =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (s.system && s.system.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleCreateSession = (name: string, system: string) => {
+  const canEdit = user?.role === 'mj' || user?.role === 'admin';
+
+  const handleCreateSession = (name: string, system: string, imageUrl?: string) => {
     const id = crypto.randomUUID();
     const key = generateSessionKey();
     addSession({
@@ -34,10 +38,29 @@ export function HubPage({ onEnterSession }: HubPageProps) {
       name,
       lastPlayed: Date.now(),
       hostPeerId: key,
-      system
+      system,
+      imageUrl
     });
     setShowCreateModal(false);
     onEnterSession(id);
+  };
+
+  const handleUpdateSession = (name: string, system: string, imageUrl?: string) => {
+    if (!editingSession) return;
+    addSession({
+      ...editingSession,
+      name,
+      system,
+      imageUrl,
+      lastPlayed: Date.now()
+    });
+    setEditingSession(null);
+  };
+
+  const handleDeleteSession = (session: Session) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la session "${session.name}" ? Cette action est irréversible.`)) {
+      removeSession(session.id);
+    }
   };
 
   return (
@@ -81,7 +104,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
             ) : (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6 content-start">
 
-                {(user?.role === 'mj' || user?.role === 'admin') && (
+                {canEdit && (
                   <div
                     onClick={() => setShowCreateModal(true)}
                     className="h-[156px] rounded-2xl border-2 border-dashed border-border-dark flex flex-col items-center justify-center text-gold-dim hover:text-gold-DEFAULT hover:border-gold-border hover:bg-surface-glass cursor-pointer transition-all hover:scale-[1.02]"
@@ -96,6 +119,9 @@ export function HubPage({ onEnterSession }: HubPageProps) {
                     key={session.id}
                     session={session}
                     isActive={false}
+                    canEdit={canEdit}
+                    onEdit={() => setEditingSession(session)}
+                    onDelete={() => handleDeleteSession(session)}
                     onClick={() => onEnterSession(session.id)}
                   />
                 ))}
@@ -106,9 +132,15 @@ export function HubPage({ onEnterSession }: HubPageProps) {
 
         <div className="pointer-events-auto">
           <CreateSessionModal
-            isOpen={showCreateModal}
-            onClose={() => setShowCreateModal(false)}
-            onCreate={handleCreateSession}
+            isOpen={showCreateModal || !!editingSession}
+            onClose={() => {
+              setShowCreateModal(false);
+              setEditingSession(null);
+            }}
+            onSubmit={editingSession ? handleUpdateSession : handleCreateSession}
+            initialData={editingSession || undefined}
+            title={editingSession ? "Modifier la Session" : "Nouvelle Session"}
+            submitLabel={editingSession ? "Enregistrer" : "Créer"}
           />
           <KeyModal
             isOpen={showModal}

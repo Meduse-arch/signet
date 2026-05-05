@@ -123,6 +123,12 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
         }
       } 
       
+      // Pour tout le monde : Fermeture de session par l'hôte
+      else if (data.type === 'SESSION_CLOSED') {
+        console.log('[SessionPage] Session fermée par l\'hôte');
+        onLeave();
+      }
+      
       // Pour tout le monde : Déconnexions
       else if (data.type === 'PLAYER_LEAVE') {
         if (isMJRef.current) {
@@ -131,7 +137,11 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
         } else {
           const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
           const hostId = sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId;
-          if (data.payload.peerId === hostId) setStatus('disconnected');
+          
+          if (data.payload.peerId === hostId) {
+            console.log('[SessionPage] L\'hôte a quitté, fermeture de la session');
+            onLeave();
+          }
         }
       }
     };
@@ -186,10 +196,16 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
     return () => { 
       const currentPeerId = usePeersStore.getState().peerId;
       if (currentPeerId) {
-        broadcastRef.current({ 
-          type: 'PLAYER_LEAVE', 
-          payload: { peerId: currentPeerId } 
-        });
+        // Si c'est l'hôte qui quitte, on prévient tout le monde de fermer la session
+        if (isMJRef.current) {
+          console.log('[SessionPage] Hôte quitte : envoi SESSION_CLOSED');
+          broadcastRef.current({ type: 'SESSION_CLOSED', payload: {} });
+        } else {
+          broadcastRef.current({ 
+            type: 'PLAYER_LEAVE', 
+            payload: { peerId: currentPeerId } 
+          });
+        }
       }
       destroy(); 
     };

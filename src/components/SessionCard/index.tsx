@@ -1,12 +1,16 @@
 import { Session, formatRelativeDate } from '../../services/session.service';
+import { Pencil, Trash2 } from 'lucide-react';
 
 interface SessionCardProps {
   session: Session;
   isActive: boolean;
   onClick: () => void;
+  onEdit?: (e: React.MouseEvent) => void;
+  onDelete?: (e: React.MouseEvent) => void;
+  canEdit?: boolean;
 }
 
-export function SessionCard({ session, isActive, onClick }: SessionCardProps) {
+export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canEdit }: SessionCardProps) {
   return (
     <div
       onClick={onClick}
@@ -28,6 +32,32 @@ export function SessionCard({ session, isActive, onClick }: SessionCardProps) {
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#1a1a24] to-[#0D0D0F] flex items-center justify-center opacity-50">
             <span className="text-3xl">🎲</span>
+          </div>
+        )}
+
+        {/* Boutons d'action */}
+        {canEdit && (
+          <div className="absolute top-2 right-2 flex gap-1.5 z-10">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(e);
+              }}
+              className="p-1.5 rounded-lg bg-black/60 border border-gold-DEFAULT/20 text-gold-dim hover:text-gold-bright hover:border-gold-DEFAULT/50 backdrop-blur-md transition-all"
+              title="Modifier la session"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(e);
+              }}
+              className="p-1.5 rounded-lg bg-black/60 border border-red-500/20 text-red-400/70 hover:text-red-400 hover:border-red-500/50 backdrop-blur-md transition-all"
+              title="Supprimer la session"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
       </div>
