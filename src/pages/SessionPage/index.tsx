@@ -31,7 +31,7 @@ interface SessionPageProps {
 type ConnectionStatus = 'initializing' | 'connecting' | 'connected' | 'relay' | 'error' | 'disconnected';
 
 export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
-  const { init, connect, broadcast, onData, destroy, connections, peerId, broadcastHybrid } = usePeer();
+  const { init, broadcast, onData, destroy, connections, peerId } = usePeer();
   const [status, setStatus] = useState<ConnectionStatus>('initializing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string }[]>([]);
@@ -44,90 +44,70 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
   const sessionData = currentSessions.find(s => s.id === sessionId);
   const sessionImage = sessionData?.imageUrl;
 
-  // ✅ Stabiliser les refs
+  // ✅ Stabiliser les refs pour les callbacks asynchrones
   const currentUser = useAuthStore(state => state.user);
   const isMJ = (currentUser?.role === 'mj' || currentUser?.role === 'admin') && !sessionId.startsWith('SIGIL-');
   const isMJRef = useRef(isMJ);
   const sessionIdRef = useRef(sessionId);
   const broadcastRef = useRef(broadcast);
-  const broadcastHybridRef = useRef(broadcastHybrid);
   const initRef = useRef(init);
-  const connectRef = useRef(connect);
   const statusRef = useRef(status);
 
   useEffect(() => { isMJRef.current = isMJ; }, [isMJ]);
   useEffect(() => { broadcastRef.current = broadcast; }, [broadcast]);
-  useEffect(() => { broadcastHybridRef.current = broadcastHybrid; }, [broadcastHybrid]);
   useEffect(() => { initRef.current = init; }, [init]);
-  useEffect(() => { connectRef.current = connect; }, [connect]);
   useEffect(() => { statusRef.current = status; }, [status]);
 
   // ✅ refreshPlayers stable
-  const refreshPlayers = useCallback(async (relayId: string) => {
+  const refreshPlayers = useCallback(async () => {
     try {
       const list = await getSessionPlayers(sessionIdRef.current);
       setPlayers(list);
       if (isMJRef.current) {
-        const msg = { type: 'PLAYER_LIST', payload: list };
-        broadcastHybridRef.current(relayId, msg);
+        broadcastRef.current({ type: 'PLAYER_LIST', payload: list });
       }
     } catch (e) {
       console.error('Failed to refresh players:', e);
     }
   }, []);
 
-  // LOGIQUE DE CONNEXION P2P + RELAY
+  // LOGIQUE DE CONNEXION P2P
   useEffect(() => {
     let mounted = true;
 
     const setupPeer = async () => {
       try {
         const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
-        
-        const relayId = isMJRef.current 
+        const hostPeerId = isMJRef.current 
           ? sessionData?.hostPeerId 
           : (sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId);
 
-        if (!relayId) throw new Error("Impossible de déterminer l'identifiant de session");
+        if (!hostPeerId) throw new Error("Impossible de déterminer l'identifiant de session");
 
         if (isMJRef.current) {
           if (mounted) setStatus('initializing');
-          const myId = await initRef.current(true, relayId);
+          const myId = await initRef.current(true, hostPeerId);
           if (!mounted) return;
-
-          relayService.subscribe(relayId, myId);
 
           await clearSessionPlayers(sessionIdRef.current);
           await addSessionPlayer(sessionIdRef.current, myId, currentUser?.pseudo || 'MJ');
-          await refreshPlayers(relayId);
+          await refreshPlayers();
           
           if (mounted) setStatus('connected');
         } else {
           if (mounted) setStatus('initializing');
-          const myId = await initRef.current(false);
-          if (!mounted) return;
-
-          relayService.subscribe(relayId, myId);
-
-          if (mounted) setStatus('connecting');
           
-          try {
-            await connectRef.current(relayId);
-            if (!mounted) return;
-          } catch (e) {
-            console.warn('[SessionPage] P2P Échoué, basculement en mode RELAY...');
-            if (mounted) setStatus('relay');
-            relayService.send(relayId, myId, 'PLAYER_JOIN', {
-              peerId: myId,
-              pseudo: currentUser?.pseudo || 'Joueur'
-            });
-            return;
-          }
-
+          // On prépare le message de join avant même l'init
           pendingJoinRef.current = {
-            peerId: myId,
+            peerId: '', // Sera rempli par l'init
             pseudo: currentUser?.pseudo || 'Joueur',
           };
+
+          const myId = await initRef.current(false, hostPeerId);
+          if (!mounted) return;
+          
+          pendingJoinRef.current.peerId = myId;
+          // Le message PLAYER_JOIN sera envoyé dès que CONN_READY sera reçu via onData
         }
       } catch (e: any) {
         if (mounted) {
@@ -138,17 +118,15 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
     };
 
     setupPeer();
-    return () => { 
-      mounted = false; 
-      relayService.unsubscribe();
-    };
+    return () => { mounted = false; };
   }, [sessionId, isMJ, currentUser?.pseudo, refreshPlayers]);
 
-  // ÉCOUTEUR DE MESSAGES (P2P + RELAY)
+  // ÉCOUTEUR DE MESSAGES
   useEffect(() => {
-    const handleMessage = async (data: { type: string, payload: any }) => {
-      if (data.type === 'CONN_READY') {
-        if (!isMJRef.current && pendingJoinRef.current) {
+    const handleMessage = async (data: { type: string, payload: any }, fromPeerId: string) => {
+      // Pour le joueur : Confirme que la connexion P2P avec l'hôte est ouverte
+      if (data.type === 'CONN_READY' && !isMJRef.current) {
+        if (pendingJoinRef.current) {
           broadcastRef.current({
             type: 'PLAYER_JOIN',
             payload: pendingJoinRef.current,
@@ -159,6 +137,7 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
         return;
       }
 
+      // Pour le MJ : Gère les nouvelles arrivées
       if (data.type === 'PLAYER_JOIN' && isMJRef.current) {
         const existingPlayer = players.find(p => p.pseudo === data.payload.pseudo);
         if (existingPlayer && existingPlayer.peer_id !== data.payload.peerId) {
@@ -166,23 +145,22 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
         }
 
         await addSessionPlayer(sessionIdRef.current, data.payload.peerId, data.payload.pseudo);
-        
-        const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
-        if (sessionData?.hostPeerId) {
-          await refreshPlayers(sessionData.hostPeerId);
-        }
-      } else if (data.type === 'PLAYER_LIST') {
+        await refreshPlayers();
+      } 
+      
+      // Pour tout le monde : Liste des joueurs
+      else if (data.type === 'PLAYER_LIST') {
         setPlayers(data.payload);
-        if (statusRef.current === 'connecting' || statusRef.current === 'initializing' || statusRef.current === 'relay') {
-          setStatus(connections.length > 0 ? 'connected' : 'relay');
+        if (statusRef.current !== 'connected' && statusRef.current !== 'error') {
+          setStatus('connected');
         }
-      } else if (data.type === 'PLAYER_LEAVE') {
+      } 
+      
+      // Pour tout le monde : Déconnexions
+      else if (data.type === 'PLAYER_LEAVE') {
         if (isMJRef.current) {
           await removeSessionPlayer(sessionIdRef.current, data.payload.peerId);
-          const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
-          if (sessionData?.hostPeerId) {
-            await refreshPlayers(sessionData.hostPeerId);
-          }
+          await refreshPlayers();
         } else {
           const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
           const hostId = sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId;
@@ -193,25 +171,18 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
 
     const unsubData = onData(handleMessage);
     return () => { unsubData(); };
-  }, [onData, connections.length, refreshPlayers, players]);
+  }, [onData, refreshPlayers, players]);
 
   // Nettoyage à la sortie
   useEffect(() => {
     return () => { 
-      // ✅ Signal de départ pour le MJ avant de détruire le service
       const currentPeerId = usePeersStore.getState().peerId;
-      const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
-      const relayId = isMJRef.current 
-        ? sessionData?.hostPeerId 
-        : (sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId);
-
-      if (currentPeerId && relayId) {
-        broadcastHybridRef.current(relayId, { 
+      if (currentPeerId) {
+        broadcastRef.current({ 
           type: 'PLAYER_LEAVE', 
           payload: { peerId: currentPeerId } 
         });
       }
-      
       destroy(); 
     };
   }, [destroy]);

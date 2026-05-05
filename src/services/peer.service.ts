@@ -5,240 +5,177 @@ export type PeerMessage = {
   payload: any;
 };
 
-export type PeerConnection = DataConnection;
-
 class PeerService {
-  private peer: Peer | null = null;
-  private connections: Map<string, DataConnection> = new Map();
-  private dataCallbacks: Set<(data: PeerMessage) => void> = new Set();
+  public peer: Peer | null = null;
+  public isHost: boolean = false;
+  public connections: Map<string, DataConnection> = new Map();
+  private dataCallbacks: Set<(data: PeerMessage, fromPeerId: string) => void> = new Set();
   private connectionCallbacks: Set<(conns: string[]) => void> = new Set();
   
-  private currentRole: 'host' | 'client' | null = null;
+  private hostConnection: DataConnection | null = null;
   private isDestroying = false;
-  private destroyTimeout: ReturnType<typeof setTimeout> | null = null;
-  private initPromise: Promise<string> | null = null;
 
-  public async init(isHost: boolean, forceId?: string): Promise<string> {
-    const requestedRole = isHost ? 'host' : 'client';
+  async init(isHost: boolean, hostPeerId: string, myPeerId?: string): Promise<string> {
+    this.performDestroy(); // Nettoyage propre
+    this.isHost = isHost;
+    this.isDestroying = false;
 
-    // 1. Protection Re-mount : On annule toute destruction programmée
-    if (this.destroyTimeout) {
-      console.log(`[PeerService] Restauration session ${this.currentRole} (re-mount)`);
-      clearTimeout(this.destroyTimeout);
-      this.destroyTimeout = null;
-      this.isDestroying = false;
-    }
-
-    // 2. Réutilisation de l'instance existante
-    if (this.peer && !this.peer.destroyed) {
-      if (this.currentRole === requestedRole) {
-        const idMatches = !isHost || (forceId && this.peer.id === forceId);
-        if (idMatches) {
-          // Si on est déconnecté du serveur de signalement, on tente une reconnexion
-          if (this.peer.disconnected) {
-            console.warn('[PeerService] Peer déconnecté, tentative de reconnexion...');
-            try { this.peer.reconnect(); } catch (e) { console.error('[PeerService] Erreur reconnexion:', e); }
-          }
-          
-          if (this.initPromise) return this.initPromise;
-          // On retourne l'ID si le peer est déjà là (même s'il attend d'être 'open')
-          return this.peer.id;
-        }
-      }
-      
-      // Si changement de rôle ou d'ID, on détruit l'ancien
-      console.log('[PeerService] Contexte obsolète ou ID différent, destruction...');
-      this.performDestroy();
-    }
-
-    // 3. Verrouillage d'initialisation (Atomicité)
-    if (this.initPromise) return this.initPromise;
-
-    this.currentRole = requestedRole;
-    this.initPromise = this.performInit(isHost, forceId);
-    
-    try {
-      const id = await this.initPromise;
-      return id;
-    } finally {
-      this.initPromise = null;
+    if (isHost) {
+      return this.initAsHost(hostPeerId);
+    } else {
+      return this.initAsPlayer(hostPeerId, myPeerId || `player-${Math.random().toString(36).substr(2, 9)}`);
     }
   }
 
-  private performInit(isHost: boolean, forceId?: string): Promise<string> {
+  private initAsHost(hostId: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      try {
-        this.isDestroying = false;
-        
-        const peerOptions: any = {
-          debug: 1,
-          secure: true,
-          config: {
-            // ✅ On simplifie à l'extrême : un seul STUN robuste. 
-            // PeerJS ajoutera ses propres serveurs si nécessaire.
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' }
-            ],
-            iceCandidatePoolSize: 0, // Désactive le pooling pour éviter les latences de découverte
-            iceTransportPolicy: 'all'
-          }
-        };
+      this.peer = new Peer(hostId, this.getPeerOptions());
+      
+      this.peer.on('open', (id) => {
+        console.log(`[PeerService] ONLINE (HOST): ${id}`);
+        resolve(id);
+      });
 
-
-        const peerInstance = (isHost && forceId && forceId.trim() !== '')
-          ? new Peer(forceId, peerOptions)
-          : new Peer(peerOptions);
-
-        this.peer = peerInstance;
-
-        const initTimeout = setTimeout(() => {
-          if (peerInstance && !peerInstance.open) {
-            console.error('[PeerService] Timeout initialisation PeerJS');
-            peerInstance.destroy();
-            reject(new Error('Signalement : Timeout (Serveur injoignable)'));
-          }
-        }, 15000);
-
-        peerInstance.on('open', (id) => {
-          clearTimeout(initTimeout);
-          if (this.isDestroying) {
-            peerInstance.destroy();
-            return;
-          }
-          console.log(`[PeerService] ONLINE : ${this.currentRole?.toUpperCase()} (ID: ${id})`);
-          resolve(id);
-        });
-
-        peerInstance.on('connection', (conn) => {
-          if (this.currentRole !== 'host') {
-            console.warn('[PeerService] Connexion entrante bloquée (Rôle Client)');
-            conn.close();
-            return;
-          }
-          this.setupConnection(conn);
-        });
-
-        peerInstance.on('error', (err) => {
-          if (this.isDestroying) return;
-          console.error(`[PeerService] Erreur ${err.type}:`, err.message);
-          
-          if (err.type === 'unavailable-id' && isHost) {
-            console.error('[PeerService] ID Hôte déjà occupé.');
-          }
-          
-          // On ne rejette que si on n'est pas déjà "open"
-          if (!peerInstance.open) {
-            clearTimeout(initTimeout);
-            reject(err);
-          }
-        });
-
-        peerInstance.on('disconnected', () => {
-          if (!this.isDestroying && this.peer && !this.peer.destroyed) {
-            console.warn('[PeerService] Signalement déconnecté. Tentative de reconnexion...');
-            try { this.peer.reconnect(); } catch (e) { console.error('[PeerService] Reconnexion impossible:', e); }
-          }
-        });
-
-      } catch (err) {
+      this.peer.on('error', (err) => {
+        if (this.isDestroying) return;
+        console.error('[PeerService] Host Peer Error:', err);
         reject(err);
-      }
+      });
+
+      this.peer.on('connection', (conn) => {
+        console.log(`[PeerService] Connexion entrante: ${conn.peer}`);
+        this.setupConnection(conn);
+      });
+
+      this.peer.on('disconnected', () => {
+        if (!this.isDestroying) {
+          console.warn('[PeerService] Host déconnecté du serveur de signalement, reconnexion...');
+          this.peer?.reconnect();
+        }
+      });
     });
   }
 
-  public connect(hostId: string, retries = 5): Promise<DataConnection> {
-    const tryConnect = (attempt: number): Promise<DataConnection> => {
-      return new Promise((resolve, reject) => {
-        if (!this.peer || this.peer.destroyed) {
-          return reject(new Error('Nœud non prêt'));
-        }
+  private initAsPlayer(hostId: string, playerId: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.peer = new Peer(playerId, this.getPeerOptions());
+      
+      this.peer.on('open', (id) => {
+        console.log(`[PeerService] ONLINE (PLAYER): ${id}`);
+        this.connectToHost(hostId, resolve, reject);
+      });
 
-        if (this.peer.disconnected) {
-          try { this.peer.reconnect(); } catch (e) { console.error('[PeerService] Reconnexion auto avant P2P:', e); }
-        }
+      this.peer.on('error', (err) => {
+        if (this.isDestroying) return;
+        console.error('[PeerService] Player Peer Error:', err);
+        reject(err);
+      });
 
-        console.log(`[PeerService] [Essai ${attempt + 1}] Connexion vers ${hostId}...`);
-        const conn = this.peer.connect(hostId, { 
-          reliable: true
-        });
-        
-        const timeout = setTimeout(() => {
-          if (!conn.open) {
-            conn.close();
-            reject(new Error('Négociation P2P (ICE) échouée (Timeout)'));
+      this.peer.on('disconnected', () => {
+        if (!this.isDestroying) {
+          console.warn('[PeerService] Player déconnecté du serveur de signalement, reconnexion...');
+          this.peer?.reconnect();
+        }
+      });
+    });
+  }
+
+  private connectToHost(hostId: string, resolve: (id: string) => void, reject: (err: any) => void) {
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const tryConnect = () => {
+      if (this.isDestroying || !this.peer) return;
+      attempts++;
+      console.log(`[PeerService] Tentative de connexion au MJ (${attempts}/${maxAttempts})...`);
+      
+      const conn = this.peer.connect(hostId, { reliable: true });
+      this.hostConnection = conn;
+      
+      const timeout = setTimeout(() => {
+        if (!conn.open) {
+          conn.close();
+          if (attempts < maxAttempts) {
+            setTimeout(tryConnect, 1500);
+          } else {
+            reject(new Error("L'hôte est injoignable après plusieurs tentatives."));
           }
-        }, 20000);
+        }
+      }, 5000);
 
-        conn.on('open', () => {
-          clearTimeout(timeout);
-          console.log(`[PeerService] P2P Établi avec ${hostId}`);
-          this.setupConnection(conn);
-          resolve(conn);
-        });
+      conn.on('open', () => {
+        clearTimeout(timeout);
+        console.log(`[PeerService] Connecté au MJ avec succès (P2P Établi)`);
+        this.setupConnection(conn);
+        resolve(this.peer!.id);
+      });
 
-        conn.on('error', (err) => {
-          clearTimeout(timeout);
-          reject(err);
-        });
+      conn.on('error', (err) => {
+        console.warn('[PeerService] Erreur de connexion individuelle:', err);
+        // Le timeout gérera le retry
       });
     };
 
-    const attemptWithBackoff = async (): Promise<DataConnection> => {
-      for (let i = 0; i < retries; i++) {
-        try {
-          return await tryConnect(i);
-        } catch (e) {
-          if (i < retries - 1 && !this.isDestroying) {
-            const delay = 1000 * (i + 1);
-            console.warn(`[PeerService] Échec, nouvelle tentative dans ${delay}ms...`);
-            await new Promise(r => setTimeout(r, delay));
-          } else {
-            throw e;
-          }
-        }
-      }
-      throw new Error('Hôte injoignable (Problème de NAT ou Hôte déconnecté)');
-    };
-
-    return attemptWithBackoff();
+    tryConnect();
   }
 
   private setupConnection(conn: DataConnection) {
-    if (this.isDestroying) {
-      conn.close();
-      return;
-    }
-
     this.connections.set(conn.peer, conn);
     this.notifyConnectionChange();
-
-    const onOpen = () => {
-      if (this.isDestroying) return;
-      conn.send({ type: 'HEARTBEAT' });
-      this.dataCallbacks.forEach(cb => cb({ type: 'CONN_READY', payload: { peerId: conn.peer } }));
-    };
-
-    if (conn.open) onOpen();
-    else conn.on('open', onOpen);
 
     conn.on('data', (data: any) => {
       if (this.isDestroying) return;
       if (data && data.type === 'HEARTBEAT') return;
-      this.dataCallbacks.forEach(cb => cb(data as PeerMessage));
+      this.dataCallbacks.forEach(cb => cb(data as PeerMessage, conn.peer));
     });
 
     conn.on('close', () => {
+      console.log(`[PeerService] Connexion fermée avec ${conn.peer}`);
       this.connections.delete(conn.peer);
       this.notifyConnectionChange();
-      if (!this.isDestroying) {
-        this.dataCallbacks.forEach(cb => cb({ type: 'PLAYER_LEAVE', payload: { peerId: conn.peer } }));
-      }
+      this.dataCallbacks.forEach(cb => cb({ type: 'PLAYER_LEAVE', payload: { peerId: conn.peer } }, conn.peer));
+    });
+
+    conn.on('error', (err) => {
+      console.error(`[PeerService] Erreur sur connexion ${conn.peer}:`, err);
+      conn.close();
     });
   }
 
-  private notifyConnectionChange() {
-    const ids = Array.from(this.connections.keys());
-    this.connectionCallbacks.forEach(cb => cb(ids));
+  private getPeerOptions() {
+    return {
+      host: '0.peerjs.com',
+      port: 443,
+      path: '/',
+      secure: true,
+      debug: 1,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' },
+          { urls: 'stun:stun.services.mozilla.com' }
+        ],
+        iceCandidatePoolSize: 10
+      }
+    };
+  }
+
+  public broadcast(data: PeerMessage) {
+    if (this.isHost) {
+      this.connections.forEach(conn => {
+        if (conn.open) conn.send(data);
+      });
+    } else if (this.hostConnection?.open) {
+      this.hostConnection.send(data);
+    }
+  }
+
+  public onData(cb: (data: PeerMessage, fromPeerId: string) => void) {
+    this.dataCallbacks.add(cb);
+    return () => this.dataCallbacks.delete(cb);
   }
 
   public onConnectionChange(cb: (conns: string[]) => void) {
@@ -246,51 +183,28 @@ class PeerService {
     return () => this.connectionCallbacks.delete(cb);
   }
 
-  public broadcast(data: PeerMessage) {
-    if (this.isDestroying) return;
-    this.connections.forEach(conn => {
-      if (conn.open) conn.send(data);
-    });
-  }
-
-  public onData(cb: (data: PeerMessage) => void) {
-    this.dataCallbacks.add(cb);
-    return () => this.dataCallbacks.delete(cb);
+  private notifyConnectionChange() {
+    const ids = Array.from(this.connections.keys());
+    this.connectionCallbacks.forEach(cb => cb(ids));
   }
 
   public destroy() {
-    if (this.destroyTimeout) return;
-
-    this.destroyTimeout = setTimeout(() => {
-      this.performDestroy();
-      this.destroyTimeout = null;
-    }, 800);
+    this.performDestroy();
   }
 
   private performDestroy() {
     this.isDestroying = true;
-    const role = this.currentRole;
-    console.log(`[PeerService] Destruction du service (${role})`);
-    
-    this.connections.forEach(conn => {
-      try { conn.close(); } catch (e) { console.error('[PeerService] Erreur fermeture connexion:', e); }
-    });
+    this.connections.forEach(conn => conn.close());
     this.connections.clear();
-    this.notifyConnectionChange();
-
+    this.hostConnection = null;
+    
     if (this.peer) {
-      try { 
-        this.peer.off('disconnected');
-        this.peer.off('error');
-        this.peer.destroy(); 
-      } catch (e) { console.error('[PeerService] Erreur destruction peer:', e); }
+      this.peer.destroy();
       this.peer = null;
     }
-
-    this.dataCallbacks.clear();
-    this.connectionCallbacks.clear();
-    this.currentRole = null;
-    this.isDestroying = false;
+    
+    this.notifyConnectionChange();
+    this.isHost = false;
   }
 }
 
