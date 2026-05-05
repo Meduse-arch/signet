@@ -139,9 +139,6 @@ class PeerService {
       if (this.isDestroying) return;
       console.log(`[PeerService] P2P Ouvert avec ${conn.peer}`);
       
-      // On prévient l'autre côté qu'on est prêt
-      conn.send({ type: 'CONN_READY' });
-      
       // On se prévient nous-même
       this.dataCallbacks.forEach(cb => cb({ type: 'CONN_READY', payload: { peerId: conn.peer } }, conn.peer));
     };

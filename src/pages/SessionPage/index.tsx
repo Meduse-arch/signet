@@ -78,6 +78,9 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
       
       // Pour le joueur : Confirme que la connexion P2P avec l'hôte est ouverte
       if (data.type === 'CONN_READY' && !isMJRef.current) {
+        // ✅ Protection contre les signaux multiples
+        if (statusRef.current === 'connected') return;
+
         const myActualId = usePeersStore.getState().peerId;
         const joinMsg = {
           type: 'PLAYER_JOIN',
@@ -95,9 +98,17 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
       // Pour le MJ : Gère les nouvelles arrivées
       if (data.type === 'PLAYER_JOIN' && isMJRef.current) {
         console.log(`[SessionPage] Joueur rejoint: ${data.payload.pseudo} (${data.payload.peerId})`);
-        const existingPlayer = players.find(p => p.pseudo === data.payload.pseudo);
-        if (existingPlayer && existingPlayer.peer_id !== data.payload.peerId) {
-          await removeSessionPlayer(sessionIdRef.current, existingPlayer.peer_id);
+        
+        // ✅ Nettoyage robuste : On supprime TOUTE instance précédente du même pseudo (cas de reconnexion)
+        // même si l'ID est différent, pour éviter les doublons visuels.
+        // On le fait directement via service pour ne pas dépendre d'un état potentiellement obsolète.
+        const currentList = await getSessionPlayers(sessionIdRef.current);
+        const existingWithSamePseudo = currentList.filter(p => p.pseudo === data.payload.pseudo);
+        
+        for (const p of existingWithSamePseudo) {
+          if (p.peer_id !== data.payload.peerId) {
+            await removeSessionPlayer(sessionIdRef.current, p.peer_id);
+          }
         }
 
         await addSessionPlayer(sessionIdRef.current, data.payload.peerId, data.payload.pseudo);
