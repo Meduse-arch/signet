@@ -85,7 +85,7 @@ export class TokenSprite extends Container {
   }
 
   private onDragMove(event: FederatedPointerEvent) {
-    if (this.dragging) {
+    if (this.dragging && this.parent) {
       const newPosition = event.getLocalPosition(this.parent);
       this.moveTo(newPosition.x, newPosition.y);
       if (this.onMoveCallback) {

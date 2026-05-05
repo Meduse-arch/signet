@@ -69,7 +69,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       }
     }
 
-    const cleanupPromise = init();
+    init();
 
     return () => {
       isDestroyed = true;
@@ -79,7 +79,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       }
       boardRef.current = null;
     };
-  }, [containerRef]);
+  }, [containerRef, sessionId, broadcastHybrid]);
 
   // Networking logic for tokens
   useEffect(() => {

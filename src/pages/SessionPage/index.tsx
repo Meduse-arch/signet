@@ -3,6 +3,7 @@ import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { relayService } from '../../services/relay.service';
+import { usePeersStore } from '../../store/peers';
 import { PlayerHUD } from '../../components/PlayerHUD';
 import { RuneCanvas } from '../../components/RuneCanvas';
 import {
@@ -14,7 +15,6 @@ import {
 import { 
   Users, 
   Shield, 
-  Wifi, 
   WifiOff, 
   LogOut, 
   Loader2,
@@ -31,7 +31,7 @@ interface SessionPageProps {
 type ConnectionStatus = 'initializing' | 'connecting' | 'connected' | 'relay' | 'error' | 'disconnected';
 
 export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
-  const { init, connect, broadcast, onData, destroy, connections, peerId } = usePeer();
+  const { init, connect, broadcast, onData, destroy, connections, peerId, broadcastHybrid } = usePeer();
   const [status, setStatus] = useState<ConnectionStatus>('initializing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string }[]>([]);
@@ -39,18 +39,25 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
   
   const pendingJoinRef = useRef<{ peerId: string; pseudo: string } | null>(null);
 
+  // ✅ Récupérer les infos de la session pour l'image de fond
+  const currentSessions = useSessionStore(state => state.sessions);
+  const sessionData = currentSessions.find(s => s.id === sessionId);
+  const sessionImage = sessionData?.imageUrl;
+
   // ✅ Stabiliser les refs
   const currentUser = useAuthStore(state => state.user);
   const isMJ = (currentUser?.role === 'mj' || currentUser?.role === 'admin') && !sessionId.startsWith('SIGIL-');
   const isMJRef = useRef(isMJ);
   const sessionIdRef = useRef(sessionId);
   const broadcastRef = useRef(broadcast);
+  const broadcastHybridRef = useRef(broadcastHybrid);
   const initRef = useRef(init);
   const connectRef = useRef(connect);
   const statusRef = useRef(status);
 
   useEffect(() => { isMJRef.current = isMJ; }, [isMJ]);
   useEffect(() => { broadcastRef.current = broadcast; }, [broadcast]);
+  useEffect(() => { broadcastHybridRef.current = broadcastHybrid; }, [broadcastHybrid]);
   useEffect(() => { initRef.current = init; }, [init]);
   useEffect(() => { connectRef.current = connect; }, [connect]);
   useEffect(() => { statusRef.current = status; }, [status]);
@@ -62,14 +69,12 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
       setPlayers(list);
       if (isMJRef.current) {
         const msg = { type: 'PLAYER_LIST', payload: list };
-        broadcastRef.current(msg);
-        // ✅ On envoie la liste sur le canal Relay correct (SIGIL-...)
-        relayService.send(relayId, peerId || 'MJ', msg.type, msg.payload);
+        broadcastHybridRef.current(relayId, msg);
       }
     } catch (e) {
       console.error('Failed to refresh players:', e);
     }
-  }, [peerId]);
+  }, []);
 
   // LOGIQUE DE CONNEXION P2P + RELAY
   useEffect(() => {
@@ -77,10 +82,8 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
 
     const setupPeer = async () => {
       try {
-        const currentSessions = useSessionStore.getState().sessions;
-        const sessionData = currentSessions.find(s => s.id === sessionIdRef.current);
+        const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
         
-        // On détermine l'ID de secours (Relay) : Toujours le SIGIL-XXX-YYYY
         const relayId = isMJRef.current 
           ? sessionData?.hostPeerId 
           : (sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId);
@@ -157,26 +160,26 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
       }
 
       if (data.type === 'PLAYER_JOIN' && isMJRef.current) {
+        const existingPlayer = players.find(p => p.pseudo === data.payload.pseudo);
+        if (existingPlayer && existingPlayer.peer_id !== data.payload.peerId) {
+          await removeSessionPlayer(sessionIdRef.current, existingPlayer.peer_id);
+        }
+
         await addSessionPlayer(sessionIdRef.current, data.payload.peerId, data.payload.pseudo);
         
-        // Récupérer le relayId pour refreshPlayers
-        const currentSessions = useSessionStore.getState().sessions;
-        const sessionData = currentSessions.find(s => s.id === sessionIdRef.current);
+        const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
         if (sessionData?.hostPeerId) {
           await refreshPlayers(sessionData.hostPeerId);
         }
       } else if (data.type === 'PLAYER_LIST') {
         setPlayers(data.payload);
-        // ✅ Si on reçoit la liste, c'est qu'on est au moins en mode RELAY
         if (statusRef.current === 'connecting' || statusRef.current === 'initializing' || statusRef.current === 'relay') {
           setStatus(connections.length > 0 ? 'connected' : 'relay');
         }
       } else if (data.type === 'PLAYER_LEAVE') {
         if (isMJRef.current) {
           await removeSessionPlayer(sessionIdRef.current, data.payload.peerId);
-          
-          const currentSessions = useSessionStore.getState().sessions;
-          const sessionData = currentSessions.find(s => s.id === sessionIdRef.current);
+          const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
           if (sessionData?.hostPeerId) {
             await refreshPlayers(sessionData.hostPeerId);
           }
@@ -189,23 +192,34 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
     };
 
     const unsubData = onData(handleMessage);
-
-    return () => { 
-      unsubData(); 
-    };
-  }, [onData, connections.length, refreshPlayers]);
+    return () => { unsubData(); };
+  }, [onData, connections.length, refreshPlayers, players]);
 
   // Nettoyage à la sortie
   useEffect(() => {
     return () => { 
+      // ✅ Signal de départ pour le MJ avant de détruire le service
+      const currentPeerId = usePeersStore.getState().peerId;
+      const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
+      const relayId = isMJRef.current 
+        ? sessionData?.hostPeerId 
+        : (sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId);
+
+      if (currentPeerId && relayId) {
+        broadcastHybridRef.current(relayId, { 
+          type: 'PLAYER_LEAVE', 
+          payload: { peerId: currentPeerId } 
+        });
+      }
+      
       destroy(); 
     };
   }, [destroy]);
 
-  const myPeerId = usePeer().peerId;
+  const currentPeerId = usePeer().peerId;
 
   const copyId = () => {
-    const idToCopy = isMJ ? myPeerId : players.find(p => p.pseudo === 'MJ')?.peer_id;
+    const idToCopy = isMJ ? currentPeerId : players.find(p => p.pseudo === 'MJ')?.peer_id;
     if (idToCopy) {
       navigator.clipboard.writeText(idToCopy);
       setCopied(true);
@@ -214,15 +228,34 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0D0D0F] text-white font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-[#0D0D0F] text-white font-sans overflow-hidden relative">
+      {/* BACKGROUND IMAGE / WAITING ROOM STYLE */}
+      <div className="absolute inset-0 z-0">
+        {sessionImage ? (
+          <>
+            <img 
+              src={sessionImage} 
+              alt="Session Background" 
+              className="w-full h-full object-cover opacity-20 blur-sm"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#0D0D0F]/80 via-[#0D0D0F]/40 to-[#0D0D0F]" />
+          </>
+        ) : (
+          <div className="w-full h-full bg-[radial-gradient(circle_at_center,_#1a1a1f_0%,_#0D0D0F_100%)]" />
+        )}
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-[0.03] pointer-events-none" />
+      </div>
+
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/2 shrink-0">
+      <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-black/40 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-4">
           <div className="p-2 rounded-lg bg-gold-DEFAULT/10">
             <Shield className="w-5 h-5 text-gold-DEFAULT" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gold-dim tracking-tight">Session Active</h1>
+            <h1 className="text-lg font-bold text-gold-dim tracking-tight">
+              {sessionData?.name || 'Salle d\'attente'}
+            </h1>
             <div className="flex items-center gap-2 text-xs">
               <span className={`w-2 h-2 rounded-full ${
                 status === 'connected' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 
@@ -232,12 +265,8 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
               <span className="text-white/40 uppercase tracking-widest font-medium flex items-center gap-1.5">
                 {status === 'initializing' ? 'Initialisation...' :
                  status === 'connecting' ? 'Connexion...' :
-                 status === 'connected' ? 'En ligne' :
-                 status === 'relay' ? (
-                   <>
-                     Mode Relay <Zap className="w-3 h-3 text-blue-400 fill-blue-400/20" />
-                   </>
-                 ) :
+                 status === 'connected' ? 'En ligne (P2P)' :
+                 status === 'relay' ? 'En ligne (Relay)' :
                  status === 'error' ? 'Erreur' : 'Déconnecté'}
               </span>
             </div>
@@ -265,112 +294,113 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex overflow-hidden relative">
-        {/* Sidebar - Player List */}
-        <aside className="w-72 border-r border-white/5 bg-black/20 flex flex-col z-10">
-          <div className="p-4 border-b border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-bold text-white/60">
-              <Users className="w-4 h-4" />
-              JOUEURS
-            </div>
-            <span className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] font-bold text-white/40">
-              {players.length}
-            </span>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {players.map((player) => (
-              <div 
-                key={player.peer_id}
-                className="flex items-center justify-between p-3 rounded-xl bg-white/2 border border-white/5 hover:bg-white/5 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gold-DEFAULT/20 to-gold-dark/20 flex items-center justify-center border border-gold-DEFAULT/20">
-                    <span className="text-xs font-bold text-gold-DEFAULT">
-                      {player.pseudo.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
-                      {player.pseudo}
-                    </span>
-                    <span className="text-[10px] text-white/30 font-mono tracking-tighter">
-                      {player.peer_id.slice(0, 8)}...
-                    </span>
-                  </div>
-                </div>
-                {player.pseudo === 'MJ' && (
-                  <Shield className="w-3.5 h-3.5 text-gold-DEFAULT/50" />
-                )}
-              </div>
-            ))}
-          </div>
-        </aside>
-
-        {/* Viewport / Game Area */}
-        <section className="flex-1 relative overflow-hidden bg-[radial-gradient(circle_at_center,_#1a1a1f_0%,_#0D0D0F_100%)]">
+      <main className="relative z-10 flex-1 flex overflow-hidden">
+        {/* Waiting Room Body */}
+        <section className="flex-1 flex flex-col items-center justify-center p-8">
           {status === 'error' ? (
-            <div className="absolute inset-0 flex items-center justify-center p-12 z-20 bg-[#0D0D0F]/80 backdrop-blur-sm">
-              <div className="max-w-md w-full p-8 rounded-2xl bg-red-500/5 border border-red-500/20 text-center">
-                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6">
-                  <WifiOff className="w-8 h-8 text-red-500" />
-                </div>
-                <h2 className="text-xl font-bold text-white mb-2">Échec de connexion</h2>
-                <p className="text-white/60 text-sm mb-6 leading-relaxed">
-                  {errorMessage || "Nous n'avons pas pu établir de connexion avec le serveur de signalement."}
-                </p>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold transition-all border border-white/10"
-                >
-                  Réessayer
-                </button>
+            <div className="max-w-md w-full p-8 rounded-2xl bg-red-500/5 border border-red-500/20 text-center backdrop-blur-md">
+              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6">
+                <WifiOff className="w-8 h-8 text-red-500" />
               </div>
+              <h2 className="text-xl font-bold text-white mb-2">Échec de connexion</h2>
+              <p className="text-white/60 text-sm mb-6 leading-relaxed">{errorMessage}</p>
+              <button onClick={() => window.location.reload()} className="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold transition-all border border-white/10">Réessayer</button>
             </div>
           ) : (status !== 'connected' && status !== 'relay') ? (
-            <div className="absolute inset-0 flex items-center justify-center z-20 bg-[#0D0D0F]">
-              <div className="text-center">
-                <Loader2 className="w-12 h-12 text-gold-DEFAULT animate-spin mx-auto mb-6 opacity-50" />
-                <h2 className="text-xl font-bold text-gold-dim mb-2 uppercase tracking-widest">
-                  Établissement du Sigil
-                </h2>
-                <p className="text-white/40 text-sm italic font-serif">
-                  {status === 'initializing' ? "Invocation des protocoles de signalement..." : "Recherche de la porte de l'hôte..."}
-                </p>
-              </div>
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 text-gold-DEFAULT animate-spin mx-auto mb-6 opacity-50" />
+              <h2 className="text-xl font-bold text-gold-dim mb-2 uppercase tracking-widest">Établissement du Sigil</h2>
+              <p className="text-white/40 text-sm italic font-serif">
+                {status === 'initializing' ? "Invocation des protocoles de signalement..." : "Recherche de la porte de l'hôte..."}
+              </p>
             </div>
           ) : (
-            <>
-              {/* Le Canvas Pixi.js (Fond d'ambiance) */}
-              <RuneCanvas />
-              
-              {/* HUD des Joueurs */}
-              <PlayerHUD players={players} />
+            <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              {/* Left Side: Session Info */}
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <span className="text-gold-DEFAULT text-xs font-bold tracking-[0.2em] uppercase">Session Active</span>
+                  <h2 className="text-4xl font-bold text-white">{sessionData?.name}</h2>
+                  <p className="text-white/40 text-sm font-serif italic">Préparez-vous à l'aventure...</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+                    <span className="block text-[10px] text-white/30 uppercase font-bold mb-1">Système</span>
+                    <span className="text-sm text-gold-dim font-medium">{sessionData?.system || 'Classique'}</span>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+                    <span className="block text-[10px] text-white/30 uppercase font-bold mb-1">Membres</span>
+                    <span className="text-sm text-gold-dim font-medium">{players.length} connectés</span>
+                  </div>
+                </div>
 
-              {/* Overlay d'ambiance */}
-              <div className="absolute inset-0 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-[0.03]" />
-              <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]" />
-            </>
+                <div className="p-6 rounded-2xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/10 flex items-center gap-4">
+                  <Zap className="w-6 h-6 text-gold-DEFAULT" />
+                  <div>
+                    <span className="block text-sm font-bold text-white">Le MJ attend les joueurs</span>
+                    <span className="text-xs text-white/40">Le lancement de la partie est imminent.</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side: Player List */}
+              <div className="bg-black/40 backdrop-blur-xl rounded-3xl border border-white/5 p-6 shadow-2xl">
+                <div className="flex items-center justify-between mb-6 px-2">
+                  <h3 className="flex items-center gap-2 text-sm font-bold text-white/60">
+                    <Users className="w-4 h-4" />
+                    GROUPE
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] font-bold text-white/40">
+                    {players.length} / 6
+                  </span>
+                </div>
+                
+                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  {players.map((player) => (
+                    <div 
+                      key={player.peer_id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-white/2 border border-white/5 hover:bg-white/5 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold-DEFAULT/20 to-gold-dark/20 flex items-center justify-center border border-gold-DEFAULT/20">
+                          <span className="text-sm font-bold text-gold-DEFAULT">
+                            {player.pseudo.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
+                            {player.pseudo}
+                          </span>
+                          <span className="text-[10px] text-white/30 font-mono">
+                            {player.peer_id === currentPeerId ? 'C\'est vous' : 'Connecté'}
+                          </span>
+                        </div>
+                      </div>
+                      {player.pseudo === 'MJ' && (
+                        <Shield className="w-4 h-4 text-gold-DEFAULT/50" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
-          
-          {/* Debug Info Overlay */}
-          <div className="absolute bottom-6 right-6 p-4 rounded-xl bg-black/40 border border-white/5 backdrop-blur-md text-[10px] font-mono text-white/30 space-y-1 z-10">
-            <div className="flex justify-between gap-8">
-              <span>CONNEXIONS ACTIVES:</span>
-              <span className="text-gold-DEFAULT">{connections.length}</span>
-            </div>
-            <div className="flex justify-between gap-8">
-              <span>PROTOCOLE:</span>
-              <span className={status === 'relay' ? 'text-blue-400' : 'text-green-500'}>
-                {status === 'relay' ? 'SUPABASE RELAY' : 'WEBRTC P2P'}
-              </span>
-            </div>
-            <div className="flex justify-between gap-8">
-              <span>ROLE:</span>
-              <span className={isMJ ? 'text-gold-DEFAULT' : 'text-blue-400'}>{isMJ ? 'HOST/MJ' : 'PLAYER'}</span>
-            </div>
-          </div>
         </section>
+
+        {/* Debug Info Overlay */}
+        <div className="absolute bottom-6 right-6 p-4 rounded-xl bg-black/40 border border-white/5 backdrop-blur-md text-[10px] font-mono text-white/30 space-y-1 z-10">
+          <div className="flex justify-between gap-8">
+            <span>CONNEXIONS:</span>
+            <span className="text-gold-DEFAULT">{connections.length}</span>
+          </div>
+          <div className="flex justify-between gap-8">
+            <span>PROTOCOLE:</span>
+            <span className={status === 'relay' ? 'text-blue-400' : 'text-green-500'}>
+              {status === 'relay' ? 'SUPABASE RELAY' : 'WEBRTC P2P'}
+            </span>
+          </div>
+        </div>
       </main>
     </div>
   );

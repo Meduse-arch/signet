@@ -159,8 +159,7 @@ class PeerService {
 
         console.log(`[PeerService] [Essai ${attempt + 1}] Connexion vers ${hostId}...`);
         const conn = this.peer.connect(hostId, { 
-          reliable: true,
-          connectionPriority: 'high'
+          reliable: true
         });
         
         const timeout = setTimeout(() => {
