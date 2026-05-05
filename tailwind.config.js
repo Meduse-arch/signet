@@ -7,6 +7,19 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        cinzel: ['Cinzel', 'serif'],
+        serif: ['EB Garamond', 'serif'],
+        sans: ['Inter', 'sans-serif'],
+      },
+      backgroundImage: {
+        'grimoire-texture': "url('https://www.transparenttextures.com/patterns/dark-leather.png')",
+        'rune-glow': 'radial-gradient(circle, rgba(212,160,23,0.15) 0%, transparent 70%)',
+      },
+      boxShadow: {
+        'rune-gold': '0 0 15px rgba(212,160,23,0.3)',
+        'rune-gold-bright': '0 0 25px rgba(212,160,23,0.5)',
+      },
       colors: {
         surface: {
           DEFAULT: '#0D0D0F',

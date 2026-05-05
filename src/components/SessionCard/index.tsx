@@ -15,36 +15,37 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
     <div
       onClick={onClick}
       className={`
-        relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300
-        bg-[rgba(255,255,255,0.04)] backdrop-blur-[12px] saturate-[1.4]
-        border border-[rgba(212,160,23,0.18)]
-        shadow-[inset_0_1px_0_rgba(212,160,23,0.15),inset_0_-1px_0_rgba(0,0,0,0.3),0_8px_32px_rgba(0,0,0,0.5),0_2px_8px_rgba(212,160,23,0.06)]
-        hover:-translate-y-1 hover:scale-[1.02] hover:border-[rgba(212,160,23,0.45)]
-        ${isActive ? '!border-[rgba(212,160,23,0.6)] shadow-[0_0_20px_rgba(212,160,23,0.3)]' : ''}
+        group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500
+        bg-surface-card border border-gold-border
+        hover:-translate-y-2 hover:shadow-rune-gold-bright hover:border-gold-DEFAULT/50
+        ${isActive ? 'border-gold-DEFAULT shadow-rune-gold' : ''}
       `}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-DEFAULT/20 to-transparent pointer-events-none" />
+      {/* Texture de fond interne */}
+      <div className="absolute inset-0 bg-grimoire-texture opacity-[0.05] pointer-events-none" />
       
-      <div className="h-24 w-full bg-surface-card relative">
+      {/* Overlay de lueur au hover */}
+      <div className="absolute inset-0 bg-rune-glow opacity-0 group-hover:opacity-40 transition-opacity pointer-events-none" />
+
+      <div className="h-28 w-full bg-surface relative overflow-hidden">
         {session.imageUrl ? (
-          <img src={session.imageUrl} alt={session.name} className="w-full h-full object-cover" />
+          <img src={session.imageUrl} alt={session.name} className="w-full h-full object-cover grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#1a1a24] to-[#0D0D0F] flex items-center justify-center opacity-50">
-            <span className="text-3xl">🎲</span>
+          <div className="w-full h-full bg-gradient-to-br from-[#1a1a24] to-[#0D0D0F] flex items-center justify-center opacity-40">
+            <span className="text-4xl filter sepia opacity-50">📜</span>
           </div>
         )}
 
         {/* Boutons d'action */}
         {canEdit && (
-          <div className="absolute top-2 right-2 flex gap-1.5 z-10">
+          <div className="absolute top-3 right-3 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-[-10px] group-hover:translate-y-0 duration-300">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.(e);
               }}
-              className="p-1.5 rounded-lg bg-black/60 border border-gold-DEFAULT/20 text-gold-dim hover:text-gold-bright hover:border-gold-DEFAULT/50 backdrop-blur-md transition-all"
-              title="Modifier la session"
+              className="p-2 rounded-lg bg-black/80 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all"
+              title="Modifier"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
@@ -53,8 +54,8 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
                 e.stopPropagation();
                 onDelete?.(e);
               }}
-              className="p-1.5 rounded-lg bg-black/60 border border-red-500/20 text-red-400/70 hover:text-red-400 hover:border-red-500/50 backdrop-blur-md transition-all"
-              title="Supprimer la session"
+              className="p-2 rounded-lg bg-black/80 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-all"
+              title="Supprimer"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -62,15 +63,21 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
         )}
       </div>
 
-      <div className="p-[10px_12px_12px] bg-[rgba(255,255,255,0.02)] border-t border-[rgba(212,160,23,0.08)]">
-        <h3 className="text-[12px] text-[#d4c5a0] font-medium truncate mb-1">
+      <div className="p-4 bg-surface-card/80 backdrop-blur-sm border-t border-gold-border relative z-10">
+        <h3 className="text-xs font-cinzel text-gold-bright tracking-widest truncate mb-2 group-hover:text-white transition-colors">
           {session.name}
         </h3>
-        <div className="flex justify-between items-center text-[11px] text-gold-dim">
-          <span>{session.system || 'Système inconnu'}</span>
-          <span>{formatRelativeDate(session.lastPlayed)}</span>
+        <div className="flex justify-between items-center text-[10px] font-medium tracking-wider">
+          <span className="text-gold-dim uppercase">{session.system || 'Arcane Inconnue'}</span>
+          <span className="text-gold-muted italic font-serif opacity-70">
+            {formatRelativeDate(session.lastPlayed)}
+          </span>
         </div>
       </div>
+
+      {/* Coins décoratifs (Style Alchemy) */}
+      <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-gold-DEFAULT/20 pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-gold-DEFAULT/20 pointer-events-none" />
     </div>
   );
 }

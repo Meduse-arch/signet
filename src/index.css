@@ -18,9 +18,48 @@
   }
 }
 
-body {
-  margin: 0;
-  overflow: hidden;
-  background-color: #0D0D0F;
-  color: #e8d5a0;
+@layer base {
+  body {
+    @apply font-sans bg-surface text-[#e8d5a0] antialiased;
+    position: relative;
+  }
+
+  /* Effet de grain global */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.15;
+    background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png'); /* Une texture plus fine */
+    mix-blend-mode: overlay;
+  }
+
+  h1, h2, h3, h4, .font-runic {
+    @apply font-cinzel tracking-widest uppercase;
+  }
+
+  p, .font-manuscript {
+    @apply font-serif leading-relaxed;
+  }
+}
+
+@layer utilities {
+  .text-glow-gold {
+    text-shadow: 0 0 10px rgba(212, 160, 23, 0.5), 0 0 20px rgba(212, 160, 23, 0.3);
+  }
+  
+  .bg-vignette {
+    background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+  }
+}
+
+@keyframes rune-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); filter: blur(2px); }
+  50% { opacity: 0.8; transform: scale(1.05); filter: blur(0px); }
+}
+
+.animate-rune-pulse {
+  animation: rune-pulse 4s infinite ease-in-out;
 }
