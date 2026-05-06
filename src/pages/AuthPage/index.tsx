@@ -107,14 +107,12 @@ export function AuthPage() {
                     {isLogin ? 'RÉVEILLEZ VOTRE SIGIL' : 'FORGEZ VOTRE DESTIN'}
                   </p>
                 </div>
-                <div className="p-4 rounded-2xl bg-gold-DEFAULT text-black shadow-[0_0_20px_rgba(212,175,55,0.3)]">
-                  {isLogin ? <Lock className="w-6 h-6" /> : <User className="w-6 h-6" />}
-                </div>
+
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-3">
-                  <label className="text-[11px] font-black text-gold-bright uppercase tracking-[0.2em] ml-1">Pseudo de l'âme</label>
+                  <label className="text-[11px] font-black text-gold-bright uppercase tracking-[0.2em] ml-1">Pseudo</label>
                   <div className="relative group">
                     <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50 group-focus-within:text-gold-bright transition-colors" />
                     <input
@@ -129,7 +127,7 @@ export function AuthPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[11px] font-black text-gold-bright uppercase tracking-[0.2em] ml-1">Sceau Secret</label>
+                  <label className="text-[11px] font-black text-gold-bright uppercase tracking-[0.2em] ml-1">Mot de passe</label>
                   <div className="relative group">
                     <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50 group-focus-within:text-gold-bright transition-colors" />
                     <input
