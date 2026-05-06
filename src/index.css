@@ -53,6 +53,18 @@
   .bg-vignette {
     background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
   }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mask-fade-edge {
+    mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+  }
 }
 
 @keyframes rune-pulse {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { HubPage } from './pages/HubPage';
-import { SessionPage } from './pages/SessionPage';
+import { LobbyPage } from './pages/LobbyPage';
 import { AuthPage } from './pages/AuthPage';
 import { useAuthStore } from './store/auth';
 
@@ -15,7 +15,7 @@ export function App() {
   return (
     <>
       {activeSessionId ? (
-        <SessionPage 
+        <LobbyPage 
           sessionId={activeSessionId} 
           onLeave={() => setActiveSessionId(null)} 
         />

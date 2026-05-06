@@ -23,14 +23,14 @@ import {
   Zap
 } from 'lucide-react';
 
-interface SessionPageProps {
+interface LobbyPageProps {
   sessionId: string;
   onLeave: () => void;
 }
 
 type ConnectionStatus = 'initializing' | 'connecting' | 'connected' | 'relay' | 'error' | 'disconnected';
 
-export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
+export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const { init, broadcast, onData, destroy, connections, peerId } = usePeer();
   const [status, setStatus] = useState<ConnectionStatus>('initializing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
   // ÉCOUTEUR DE MESSAGES (Doit être actif AVANT la connexion)
   useEffect(() => {
     const handleMessage = async (data: { type: string, payload: any }, fromPeerId: string) => {
-      console.log(`[SessionPage] Message reçu: ${data.type} de ${fromPeerId}`);
+      console.log(`[LobbyPage] Message reçu: ${data.type} de ${fromPeerId}`);
       
       // Pour le joueur : Confirme que la connexion P2P avec l'hôte est ouverte
       if (data.type === 'CONN_READY' && !isMJRef.current) {
@@ -89,7 +89,7 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
             pseudo: useAuthStore.getState().user?.pseudo || 'Joueur'
           }
         };
-        console.log(`[SessionPage] Envoi PLAYER_JOIN suite à CONN_READY (ID: ${myActualId})`);
+        console.log(`[LobbyPage] Envoi PLAYER_JOIN suite à CONN_READY (ID: ${myActualId})`);
         broadcastRef.current(joinMsg);
         setStatus('connected');
         return;
@@ -97,11 +97,10 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
 
       // Pour le MJ : Gère les nouvelles arrivées
       if (data.type === 'PLAYER_JOIN' && isMJRef.current) {
-        console.log(`[SessionPage] Joueur rejoint: ${data.payload.pseudo} (${data.payload.peerId})`);
+        console.log(`[LobbyPage] Joueur rejoint: ${data.payload.pseudo} (${data.payload.peerId})`);
         
         // ✅ Nettoyage robuste : On supprime TOUTE instance précédente du même pseudo (cas de reconnexion)
         // même si l'ID est différent, pour éviter les doublons visuels.
-        // On le fait directement via service pour ne pas dépendre d'un état potentiellement obsolète.
         const currentList = await getSessionPlayers(sessionIdRef.current);
         const existingWithSamePseudo = currentList.filter(p => p.pseudo === data.payload.pseudo);
         
@@ -125,7 +124,7 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
       
       // Pour tout le monde : Fermeture de session par l'hôte
       else if (data.type === 'SESSION_CLOSED') {
-        console.log('[SessionPage] Session fermée par l\'hôte');
+        console.log('[LobbyPage] Session fermée par l\'hôte');
         onLeave();
       }
       
@@ -139,7 +138,7 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
           const hostId = sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId;
           
           if (data.payload.peerId === hostId) {
-            console.log('[SessionPage] L\'hôte a quitté, fermeture de la session');
+            console.log('[LobbyPage] L\'hôte a quitté, fermeture de la session');
             onLeave();
           }
         }
@@ -177,7 +176,6 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
           if (mounted) setStatus('initializing');
           await initRef.current(false, hostPeerId);
           if (!mounted) return;
-          // Le reste de la logique (Join) est déclenché par CONN_READY dans l'écouteur de messages
         }
       } catch (e: any) {
         if (mounted) {
@@ -196,9 +194,8 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
     return () => { 
       const currentPeerId = usePeersStore.getState().peerId;
       if (currentPeerId) {
-        // Si c'est l'hôte qui quitte, on prévient tout le monde de fermer la session
         if (isMJRef.current) {
-          console.log('[SessionPage] Hôte quitte : envoi SESSION_CLOSED');
+          console.log('[LobbyPage] Hôte quitte : envoi SESSION_CLOSED');
           broadcastRef.current({ type: 'SESSION_CLOSED', payload: {} });
         } else {
           broadcastRef.current({ 
@@ -224,7 +221,7 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
 
   return (
     <div className="flex flex-col h-screen bg-[#0D0D0F] text-white font-sans overflow-hidden relative">
-      {/* BACKGROUND IMAGE / WAITING ROOM STYLE */}
+      {/* BACKGROUND IMAGE */}
       <div className="absolute inset-0 z-0">
         {sessionImage ? (
           <>
@@ -294,7 +291,6 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex overflow-hidden">
-        {/* Waiting Room Body */}
         <section className="flex-1 flex flex-col items-center justify-center p-8">
           {status === 'error' ? (
             <div className="max-w-md w-full p-10 rounded-3xl bg-black/60 border border-red-500/20 text-center backdrop-blur-xl relative overflow-hidden group">
@@ -353,8 +349,8 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
                   </div>
                   <div className="p-5 rounded-2xl bg-black/40 border border-gold-border hover:border-gold-DEFAULT/30 transition-colors group">
                     <span className="block text-[10px] text-gold-muted uppercase font-black tracking-widest mb-2">Assemblage</span>
-                    <span className="text-md text-gold-bright font-cinzel group-hover:text-white transition-colors">
-                      {players.length} Initié{players.length > 1 ? 's' : ''}
+                    <span className="text-md text-gold-bright font-cinzel group-hover:text-white transition-colors italic">
+                      {players.length} {players.length > 1 ? 'Inities' : 'Initie'}
                     </span>
                   </div>
                 </div>
@@ -371,54 +367,61 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
 
               {/* Right Side: Player List */}
               <div className="relative group">
-                {/* Décorations de coins */}
                 <div className="absolute -top-4 -left-4 w-12 h-12 border-t-2 border-l-2 border-gold-DEFAULT/30 rounded-tl-3xl group-hover:scale-110 transition-transform" />
                 <div className="absolute -bottom-4 -right-4 w-12 h-12 border-b-2 border-r-2 border-gold-DEFAULT/30 rounded-br-3xl group-hover:scale-110 transition-transform" />
                 
-                <div className="bg-black/60 backdrop-blur-2xl rounded-[2.5rem] border border-gold-border p-8 shadow-2xl relative overflow-hidden">
-                  <div className="absolute inset-0 bg-grimoire-texture opacity-[0.03] pointer-events-none" />
+                <div className="bg-black/40 backdrop-blur-2xl rounded-[2.5rem] border border-gold-border/20 p-6 shadow-2xl relative overflow-hidden h-[220px] flex flex-col">
+                  <div className="absolute inset-0 bg-grimoire-texture opacity-[0.02] pointer-events-none" />
                   
-                  <div className="flex items-center justify-between mb-8 px-2 relative z-10">
-                    <h3 className="flex items-center gap-3 text-xs font-black text-gold-bright tracking-[0.2em] uppercase">
-                      <Users className="w-4 h-4 text-gold-muted" />
+                  <div className="flex items-center justify-between mb-4 px-2 relative z-10">
+                    <h3 className="flex items-center gap-2 text-[9px] font-black text-gold-muted tracking-[0.3em] uppercase">
+                      <Users className="w-3 h-3" />
                       Cercle d'Initiés
                     </h3>
-                    <div className="px-3 py-1 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-[10px] font-black text-gold-bright">
-                      {players.length} / 6
+                    <div className="text-[9px] font-black text-gold-bright tracking-widest">
+                      {players.length} CONNECTÉ{players.length > 1 ? 'S' : ''}
                     </div>
                   </div>
                   
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-3 custom-scrollbar relative z-10">
-                    {players.map((player) => (
-                      <div 
-                        key={player.peer_id}
-                        className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-gold-DEFAULT/[0.08] hover:border-gold-DEFAULT/20 transition-all group"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
-                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-gold-dim/40 to-black flex items-center justify-center border border-gold-DEFAULT/30 relative z-10">
-                              <span className="text-md font-black text-gold-bright font-cinzel">
-                                {player.pseudo.charAt(0).toUpperCase()}
+                  <div className="flex-1 overflow-y-auto pr-1 snap-y snap-mandatory scrollbar-none relative z-10 mask-fade-edge">
+                    <div className="space-y-2">
+                      {players.map((player) => (
+                        <div 
+                          key={player.peer_id}
+                          className="snap-start flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-gold-DEFAULT/[0.05] hover:border-gold-DEFAULT/10 transition-all group h-[50px]"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gold-dim/20 to-black flex items-center justify-center border border-white/10 relative z-10">
+                                <span className="text-sm font-black text-gold-muted group-hover:text-gold-bright font-cinzel transition-colors">
+                                  {player.pseudo.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-white/80 group-hover:text-white transition-colors font-cinzel tracking-wider">
+                                {player.pseudo}
+                              </span>
+                              <span className="text-[7px] text-gold-muted/40 font-mono tracking-tighter uppercase">
+                                {player.peer_id === currentPeerId ? 'VOTRE SIGIL' : 'ÂME LIÉE'}
                               </span>
                             </div>
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold text-white group-hover:text-gold-bright transition-colors font-cinzel tracking-wider">
-                              {player.pseudo}
-                            </span>
-                            <span className="text-[9px] text-gold-muted/60 font-mono tracking-tighter">
-                              {player.peer_id === currentPeerId ? 'VOTRE SIGIL' : 'LIÉ AU CERCLE'}
-                            </span>
-                          </div>
+                          {player.pseudo === 'MJ' && (
+                            <div className="p-1.5 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/10">
+                              <Shield className="w-3 h-3 text-gold-dim group-hover:text-gold-bright transition-colors" />
+                            </div>
+                          )}
                         </div>
-                        {player.pseudo === 'MJ' && (
-                          <div className="p-1.5 rounded-lg bg-gold-DEFAULT/10 border border-gold-DEFAULT/20">
-                            <Shield className="w-3.5 h-3.5 text-gold-bright" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                      {/* Placeholder pour garder l'aspect 2 slots si un seul joueur */}
+                      {players.length === 1 && (
+                        <div className="flex items-center justify-center p-3 rounded-xl border border-dashed border-white/5 h-[50px] opacity-20">
+                          <span className="text-[8px] font-cinzel tracking-[0.2em] text-gold-muted">En attente d'initié...</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -427,7 +430,7 @@ export function SessionPage({ sessionId, onLeave }: SessionPageProps) {
         </section>
 
         {/* Debug Info Overlay */}
-        <div className="absolute bottom-6 right-8 p-5 rounded-2xl bg-black/60 border border-gold-border backdrop-blur-xl text-[9px] font-cinzel font-bold text-gold-dim space-y-2 z-10 group hover:border-gold-DEFAULT/40 transition-colors shadow-2xl">
+        <div className="absolute bottom-6 right-8 p-5 rounded-2xl bg-black/60 border border-gold-border backdrop-blur-xl text-[9px] font-cinzel font-bold text-gold-dim space-y-2 z-10 group hover:border-gold-DEFAULT/40 transition-colors shadow-2xl opacity-40 hover:opacity-100">
           <div className="flex justify-between gap-12 border-b border-gold-DEFAULT/5 pb-2">
             <span className="tracking-widest">LIAISONS ACTIVES</span>
             <span className="text-gold-bright">{connections.length}</span>
