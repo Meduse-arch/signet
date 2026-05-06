@@ -58,6 +58,8 @@ export class BoardScene extends Container {
       const after = this.toLocal(worldPos);
       this.x += (after.x - before.x) * this.scale.x;
       this.y += (after.y - before.y) * this.scale.y;
+
+      this.constrainPan();
     });
 
     // Pan
@@ -77,24 +79,63 @@ export class BoardScene extends Container {
       const dy = e.global.y - this.dragStart.y;
       this.x = this.initialScenePos.x + dx;
       this.y = this.initialScenePos.y + dy;
+      
+      this.constrainPan();
     });
 
     this.app.stage.on('pointerup', () => this.dragging = false);
     this.app.stage.on('pointerupoutside', () => this.dragging = false);
   }
 
+  private constrainPan() {
+    const bounds = this.mapLayer.getMapBounds();
+    if (bounds.width === 0 || bounds.height === 0) return;
+
+    const scaledWidth = bounds.width * this.scale.x;
+    const scaledHeight = bounds.height * this.scale.y;
+
+    const screenW = this.app.screen.width;
+    const screenH = this.app.screen.height;
+
+    // Contrainte Horizontale
+    if (scaledWidth > screenW) {
+      const minX = screenW - scaledWidth / 2;
+      const maxX = scaledWidth / 2;
+      this.x = Math.max(minX, Math.min(maxX, this.x));
+    } else {
+      const minX = scaledWidth / 2;
+      const maxX = screenW - scaledWidth / 2;
+      this.x = Math.max(minX, Math.min(maxX, this.x));
+    }
+
+    // Contrainte Verticale
+    if (scaledHeight > screenH) {
+      const minY = screenH - scaledHeight / 2;
+      const maxY = scaledHeight / 2;
+      this.y = Math.max(minY, Math.min(maxY, this.y));
+    } else {
+      const minY = scaledHeight / 2;
+      const maxY = screenH - scaledHeight / 2;
+      this.y = Math.max(minY, Math.min(maxY, this.y));
+    }
+  }
+
   async loadMap(url: string) {
     await this.mapLayer.loadMap(url);
     
     // Auto-fit or center
-    const bounds = this.mapLayer.getLocalBounds();
-    if (bounds.width > 0 && bounds.height > 0) {
-      const scaleX = this.app.screen.width / bounds.width;
-      const scaleY = this.app.screen.height / bounds.height;
-      const scale = Math.min(scaleX, scaleY) * 0.9; // 90% pour avoir un peu de marge
+    const imgBounds = this.mapLayer.getImageBounds();
+    if (imgBounds.width > 0 && imgBounds.height > 0) {
+      const scaleX = this.app.screen.width / imgBounds.width;
+      const scaleY = this.app.screen.height / imgBounds.height;
+      // On calcule l'échelle pour que l'image occupe 85% de l'écran (sans la déformer)
+      const scale = Math.min(scaleX, scaleY) * 0.85;
       this.scale.set(scale);
       this.x = this.app.screen.width / 2;
       this.y = this.app.screen.height / 2;
+      
+      // On s'assure d'appliquer les contraintes dès le départ
+      this.constrainPan();
     }
   }
 

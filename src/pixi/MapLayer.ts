@@ -6,23 +6,44 @@ export class MapLayer extends Container {
 
   constructor() {
     super();
+    // Conteneur pour la grille (au-dessus de la map)
     this.gridGraphics = new Graphics();
     this.addChild(this.gridGraphics);
-    this.drawGrid();
   }
 
-  private drawGrid() {
+  private drawDynamicGrid() {
     this.gridGraphics.clear();
-    const size = 2000; // Grand assez pour le zoom/pan
-    const step = 50;
     
-    this.gridGraphics.setStrokeStyle({ color: 0xFFFFFF, alpha: 0.05, width: 1 });
+    if (!this.mapSprite) return;
 
-    for (let i = -size; i <= size; i += step) {
-      this.gridGraphics.moveTo(i, -size);
-      this.gridGraphics.lineTo(i, size);
-      this.gridGraphics.moveTo(-size, i);
-      this.gridGraphics.lineTo(size, i);
+    const imgWidth = this.mapSprite.width;
+    const imgHeight = this.mapSprite.height;
+    const step = 50; // Taille d'une case
+
+    // --- GRILLE (5% plus grand que l'image) ---
+    const gridPaddingX = imgWidth * 0.05;
+    const gridPaddingY = imgHeight * 0.05;
+    const gridTotalWidth = imgWidth + gridPaddingX;
+    const gridTotalHeight = imgHeight + gridPaddingY;
+
+    // Pour que la grille soit centrée avec l'image, on calcule les limites
+    // On s'arrange pour que le point 0,0 (centre de l'image) soit une intersection de la grille
+    const minX = Math.floor((-gridTotalWidth / 2) / step) * step;
+    const maxX = Math.ceil((gridTotalWidth / 2) / step) * step;
+    const minY = Math.floor((-gridTotalHeight / 2) / step) * step;
+    const maxY = Math.ceil((gridTotalHeight / 2) / step) * step;
+
+    this.gridGraphics.setStrokeStyle({ color: 0xFFFFFF, alpha: 0.15, width: 1 });
+
+    // Lignes verticales
+    for (let x = minX; x <= maxX; x += step) {
+      this.gridGraphics.moveTo(x, minY);
+      this.gridGraphics.lineTo(x, maxY);
+    }
+    // Lignes horizontales
+    for (let y = minY; y <= maxY; y += step) {
+      this.gridGraphics.moveTo(minX, y);
+      this.gridGraphics.lineTo(maxX, y);
     }
     this.gridGraphics.stroke();
   }
@@ -33,7 +54,10 @@ export class MapLayer extends Container {
       this.clear();
       this.mapSprite = new Sprite(texture);
       this.mapSprite.anchor.set(0.5);
-      this.addChildAt(this.mapSprite, 0); // Sous la grille
+      
+      this.addChildAt(this.mapSprite, 0); 
+      
+      this.drawDynamicGrid();
     } catch (e) {
       console.error('Failed to load map texture:', e);
     }
@@ -44,6 +68,27 @@ export class MapLayer extends Container {
       this.removeChild(this.mapSprite);
       this.mapSprite.destroy();
       this.mapSprite = null;
+      this.gridGraphics.clear();
     }
+  }
+
+  getMapBounds() {
+    if (this.mapSprite) {
+      // Les limites de navigation (pan) avec 10% de marge invisible
+      const paddingX = this.mapSprite.width * 0.10;
+      const paddingY = this.mapSprite.height * 0.10;
+      return { 
+        width: this.mapSprite.width + paddingX, 
+        height: this.mapSprite.height + paddingY 
+      };
+    }
+    return { width: 0, height: 0 };
+  }
+
+  getImageBounds() {
+    if (this.mapSprite) {
+      return { width: this.mapSprite.width, height: this.mapSprite.height };
+    }
+    return { width: 0, height: 0 };
   }
 }

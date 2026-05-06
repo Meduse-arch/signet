@@ -8,6 +8,7 @@ export class FogOfWar extends Container {
     this.overlay = new Graphics();
     this.reset();
     this.addChild(this.overlay);
+    this.visible = false; // Désactivé par défaut
   }
 
   reveal(_x: number, _y: number, _radius: number) {
