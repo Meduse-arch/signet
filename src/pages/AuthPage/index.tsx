@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../../store/auth';
 import { loginUser, signupUser } from '../../services/auth.service';
 import { RuneCanvas } from '../../components/RuneCanvas';
-import { Loader2, Lock, User, ChevronRight } from 'lucide-react';
+import { Loader2, Lock, User, ChevronRight, Check } from 'lucide-react';
 import logo from '../../assets/logo.png';
 
 export function AuthPage() {
@@ -11,15 +11,18 @@ export function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [pseudo, setPseudo] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRune, setShowRune] = useState(false);
 
   const { setUser } = useAuthStore();
 
   const handleStart = useCallback(() => {
     if (!isStarted) {
       setIsStarted(true);
-      setTimeout(() => setShowAuthModal(true), 600);
+      setTimeout(() => setShowRune(true), 600);
+      setTimeout(() => setShowAuthModal(true), 1200);
     }
   }, [isStarted]);
 
@@ -50,7 +53,7 @@ export function AuthPage() {
         ? await loginUser(pseudo, password)
         : await signupUser(pseudo, password);
       
-      setUser(user);
+      setUser(user, rememberMe);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -92,6 +95,20 @@ export function AuthPage() {
         </div>
       </div>
 
+      {/* TRANSITION OVERLAY (SIGIL) */}
+      {showRune && !showAuthModal && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gold-DEFAULT/40 blur-[60px] animate-pulse rounded-full" />
+            <img 
+              src={logo} 
+              alt="Signet Logo" 
+              className="w-32 h-32 object-contain animate-rune-invocation relative z-10" 
+            />
+          </div>
+        </div>
+      )}
+
       {/* AUTH MODAL */}
       {showAuthModal && (
         <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-700">
@@ -108,9 +125,12 @@ export function AuthPage() {
                     {isLogin ? 'RÉVEILLEZ VOTRE SIGNET' : 'FORGEZ VOTRE DESTIN'}
                   </p>
                 </div>
+                <div className="p-3 rounded-2xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 shadow-[0_0_20px_rgba(212,175,55,0.1)]">
+                  <img src={logo} alt="Logo" className="w-8 h-8 object-contain" />
+                </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-3">
                   <label className="text-[11px] font-black text-gold-bright uppercase tracking-[0.2em] ml-1">Pseudo</label>
                   <div className="relative group">
@@ -139,6 +159,16 @@ export function AuthPage() {
                       required
                     />
                   </div>
+                </div>
+
+                {/* REMEMBER ME CHECKBOX */}
+                <div className="flex items-center gap-3 ml-2 group cursor-pointer" onClick={() => setRememberMe(!rememberMe)}>
+                  <div className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${rememberMe ? 'bg-gold-DEFAULT border-gold-DEFAULT shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-gold-border bg-black/40'}`}>
+                    {rememberMe && <Check className="w-3.5 h-3.5 text-black stroke-[4px]" />}
+                  </div>
+                  <span className="text-[10px] font-cinzel font-bold text-gold-dim group-hover:text-gold-bright transition-colors tracking-widest uppercase">
+                    Rester connecté
+                  </span>
                 </div>
 
                 {error && (
