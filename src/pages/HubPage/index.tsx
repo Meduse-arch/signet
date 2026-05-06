@@ -130,9 +130,9 @@ export function HubPage({ onEnterSession }: HubPageProps) {
                     key={session.id}
                     session={session}
                     isActive={false}
-                    canEdit={canEdit}
-                    onEdit={() => setEditingSession(session)}
-                    onDelete={() => handleDeleteSession(session)}
+                    canEdit={canEdit && !session.isSummoned}
+                    onEdit={canEdit && !session.isSummoned ? () => setEditingSession(session) : undefined}
+                    onDelete={(canEdit && !session.isSummoned) || session.isSummoned ? () => handleDeleteSession(session) : undefined}
                     onClick={() => onEnterSession(session.id)}
                   />
                 ))}

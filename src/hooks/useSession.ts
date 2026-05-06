@@ -51,9 +51,19 @@ export function useSession() {
   };
 
   const remove = async (id: string) => {
+    const sessionToRemove = sessions.find(s => s.id === id);
     storeRemove(id); // Optimistic update
+    
     try {
-      await dbRemoveSession(id);
+      if (sessionToRemove?.isSummoned) {
+        // Supprimer du localStorage
+        const summonedSessions = JSON.parse(localStorage.getItem('summoned_sessions') || '[]');
+        const updated = summonedSessions.filter((s: Session) => s.id !== id);
+        localStorage.setItem('summoned_sessions', JSON.stringify(updated));
+      } else {
+        // Supprimer de SQLite
+        await dbRemoveSession(id);
+      }
     } catch (e) {
       console.error(e);
     }

@@ -37,8 +37,8 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
         )}
 
         {/* Boutons d'action */}
-        {canEdit && (
-          <div className="absolute top-3 right-3 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-[-10px] group-hover:translate-y-0 duration-300">
+        <div className="absolute top-3 right-3 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-[-10px] group-hover:translate-y-0 duration-300">
+          {onEdit && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -49,6 +49,8 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
+          )}
+          {onDelete && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -59,8 +61,8 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="p-4 bg-surface-card/80 backdrop-blur-sm border-t border-gold-border relative z-10">
