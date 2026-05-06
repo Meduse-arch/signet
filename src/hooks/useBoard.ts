@@ -157,5 +157,5 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
   };
 
-  return { addToken };
+  return { addToken, loadMap: (url: string, format?: string) => boardRef.current?.loadMap(url, format) };
 }
