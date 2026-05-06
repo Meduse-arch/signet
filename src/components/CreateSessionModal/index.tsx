@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, ChevronDown, Search, Check } from 'lucide-react';
+import { X, ChevronDown, Search, Check, Settings2 } from 'lucide-react';
+import { SealSettingsModal } from './SealSettingsModal';
 
 interface SessionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (name: string, system: string, imageUrl?: string) => void;
-  initialData?: { name: string; system: string; imageUrl?: string };
+  onSubmit: (name: string, system: string, imageUrl?: string, settings?: Record<string, any>) => void;
+  initialData?: { name: string; system?: string; imageUrl?: string; settings?: Record<string, any> };
   title?: string;
   submitLabel?: string;
 }
@@ -23,7 +24,9 @@ export function CreateSessionModal({
   const [name, setName] = useState('');
   const [system, setSystem] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [settings, setSettings] = useState<Record<string, any>>({});
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +36,7 @@ export function CreateSessionModal({
       setSystem(initialData?.system || '');
       setSearchQuery(initialData?.system || '');
       setImageUrl(initialData?.imageUrl || '');
+      setSettings(initialData?.settings || {});
     }
   }, [isOpen, initialData]);
 
@@ -57,6 +61,17 @@ export function CreateSessionModal({
     setSystem(sys);
     setSearchQuery(sys);
     setIsDropdownOpen(false);
+    
+    // Appliquer les paramètres par défaut pour Seal s'ils n'existent pas encore
+    if (sys.toLowerCase() === 'seal' && Object.keys(settings).length === 0) {
+      setSettings({
+        sheetMode: 'roll',
+        manualPoints: 60,
+        rollFormula: { diceCount: 4, diceSides: 5, rerolls: 6 },
+      });
+    } else if (sys.toLowerCase() !== system.toLowerCase()) {
+      setSettings({});
+    }
   };
 
   return (
@@ -146,6 +161,18 @@ export function CreateSessionModal({
               )}
             </div>
 
+            {system.toLowerCase() === 'seal' && (
+              <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+                <button
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gold-DEFAULT/5 border border-gold-DEFAULT/20 rounded-xl text-[10px] font-cinzel font-black text-gold-bright hover:bg-gold-DEFAULT/10 transition-all tracking-widest uppercase"
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                  Paramètres de l'Arcane
+                </button>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label className="block text-[10px] font-cinzel font-black text-gold-muted tracking-widest uppercase ml-1">Vision / URL Image</label>
               <input
@@ -166,7 +193,7 @@ export function CreateSessionModal({
               ANNULER
             </button>
             <button
-              onClick={() => onSubmit(name || 'Chronique sans nom', system || 'Arcane Inconnue', imageUrl)}
+              onClick={() => onSubmit(name || 'Chronique sans nom', system || 'Arcane Inconnue', imageUrl, settings)}
               disabled={!name.trim() || !system.trim()}
               className="flex-1 py-3 text-[10px] font-cinzel font-black tracking-widest bg-gold-DEFAULT/10 hover:bg-gold-DEFAULT/20 text-gold-bright rounded-xl border border-gold-DEFAULT/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-rune-gold"
             >
@@ -175,6 +202,15 @@ export function CreateSessionModal({
           </div>
         </div>
       </div>
+
+      {system.toLowerCase() === 'seal' && (
+        <SealSettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          settings={settings}
+          onSave={setSettings}
+        />
+      )}
     </div>
   );
 }

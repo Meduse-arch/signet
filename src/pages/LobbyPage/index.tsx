@@ -19,9 +19,11 @@ import {
   Loader2,
   Copy,
   CheckCircle2,
-  Zap
+  Zap,
+  Play
 } from 'lucide-react';
 import logo from '../../assets/logo.png';
+import { SystemRouter } from '../../systems/core/SystemRouter';
 
 interface LobbyPageProps {
   sessionId: string;
@@ -36,6 +38,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string }[]>([]);
   const [copied, setCopied] = useState(false);
+  const [isGameStarted, setIsGameStarted] = useState(false);
   
   // ✅ État local pour les métadonnées (au cas où le joueur n'ait pas la session en DB)
   const [localMetadata, setLocalMetadata] = useState<{name?: string, imageUrl?: string, system?: string} | null>(null);
@@ -51,7 +54,6 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const sessionDataFromStore = currentSessions.find(s => s.id === sessionId);
   
   // Priorité aux métadonnées reçues par P2P pour le joueur (données fraîches du MJ)
-  // Pour le MJ, on garde les données du store (source de vérité locale)
   const sessionData = isMJ 
     ? sessionDataFromStore 
     : (localMetadata || sessionDataFromStore);
@@ -87,9 +89,15 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
     const handleMessage = async (data: { type: string, payload: any }, fromPeerId: string) => {
       console.log(`[LobbyPage] Message reçu: ${data.type} de ${fromPeerId}`);
       
+      // LOGIQUE DE SESSION (START / PAUSE)
+      if (data.type === 'SESSION_START') {
+        setIsGameStarted(true);
+      } else if (data.type === 'SESSION_PAUSE') {
+        setIsGameStarted(false);
+      }
+      
       // Pour le joueur : Confirme que la connexion P2P avec l'hôte est ouverte
       if (data.type === 'CONN_READY' && !isMJRef.current) {
-        // ✅ Protection contre les signaux multiples
         if (statusRef.current === 'connected') return;
 
         const myActualId = usePeersStore.getState().peerId;
@@ -128,7 +136,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         setPlayers(updatedList);
         broadcastRef.current({ type: 'PLAYER_LIST', payload: updatedList });
 
-        // 4. Envoyer les métadonnées de session au nouveau joueur immédiatement
+        // 4. Envoyer les infos de la session au nouveau joueur immédiatement
         broadcastRef.current({
           type: 'SESSION_METADATA',
           payload: {
@@ -143,9 +151,6 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       // Pour le JOUEUR : Reçoit les métadonnées et les stocke
       else if (data.type === 'SESSION_METADATA' && !isMJRef.current) {
         console.log(`[LobbyPage] Métadonnées reçues:`, data.payload);
-        
-        // ✅ MISE À JOUR VISUELLE IMMÉDIATE
-        // On écrase l'état local pour que le titre et l'image changent SOUS LES YEUX du joueur
         setLocalMetadata(data.payload);
         
         const savedSessions = JSON.parse(localStorage.getItem('summoned_sessions') || '[]');
@@ -201,7 +206,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
     const unsubData = onData(handleMessage);
     return () => { unsubData(); };
-  }, [onData, refreshPlayers, players]);
+  }, [onData, refreshPlayers, players, sessionData]);
 
   // LOGIQUE DE CONNEXION P2P
   useEffect(() => {
@@ -262,16 +267,36 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
     };
   }, [destroy]);
 
-  const currentPeerId = usePeer().peerId;
+  const handleLaunchSession = () => {
+    setIsGameStarted(true);
+    broadcast({ type: 'SESSION_START', payload: {} });
+  };
+
+  const handlePauseSession = () => {
+    setIsGameStarted(false);
+    broadcast({ type: 'SESSION_PAUSE', payload: {} });
+  };
 
   const copyId = () => {
-    const idToCopy = isMJ ? currentPeerId : players.find(p => p.pseudo === 'MJ')?.peer_id;
+    const idToCopy = isMJ ? peerId : players.find(p => p.pseudo === 'MJ')?.peer_id;
     if (idToCopy) {
       navigator.clipboard.writeText(idToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  if (isGameStarted) {
+    return (
+      <div className="flex-1 w-full h-full animate-page-enter">
+        <SystemRouter 
+          system={sessionData?.system || 'Seal'} 
+          isMJ={isMJ} 
+          onPause={handlePauseSession}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-[#0D0D0F] text-white font-sans overflow-hidden relative">
@@ -364,7 +389,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
           ) : (status !== 'connected' && status !== 'relay') ? (
             <div className="text-center space-y-8">
               <div className="relative">
-                <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-3xl animate-pulse" />
+                <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-3xl animate-pulse rounded-full" />
                 <Loader2 className="w-16 h-16 text-gold-bright animate-spin mx-auto relative z-10 opacity-60" />
               </div>
               <div>
@@ -398,7 +423,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                   <div className="p-5 rounded-2xl bg-black/40 border border-gold-border hover:border-gold-DEFAULT/30 transition-colors group">
                     <span className="block text-[10px] text-gold-muted uppercase font-black tracking-widest mb-2">Système</span>
                     <span className="text-md text-gold-bright font-cinzel group-hover:text-white transition-colors">
-                      {sessionData?.system || 'Arcane Classique'}
+                      {sessionData?.system || 'Seal'}
                     </span>
                   </div>
                   <div className="p-5 rounded-2xl bg-black/40 border border-gold-border hover:border-gold-DEFAULT/30 transition-colors group">
@@ -409,14 +434,28 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                   </div>
                 </div>
 
-                <div className="p-6 rounded-3xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/20 flex items-center gap-5 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-rune-glow opacity-30 group-hover:opacity-60 transition-opacity" />
-                  <Zap className="w-8 h-8 text-gold-bright animate-rune-pulse relative z-10" />
-                  <div className="relative z-10">
-                    <span className="block text-sm font-black text-white uppercase tracking-widest">Le MJ prépare le Rituel</span>
-                    <span className="text-xs text-gold-dim italic font-serif">L'aventure commencera dès que l'hôte l'ordonnera.</span>
+                {isMJ ? (
+                  <button 
+                    onClick={handleLaunchSession}
+                    className="w-full p-6 rounded-3xl bg-gold-DEFAULT text-black flex items-center justify-center gap-5 relative overflow-hidden group shadow-[0_0_30px_rgba(212,175,55,0.2)] hover:shadow-[0_0_50px_rgba(212,175,55,0.4)] transition-all active:scale-95"
+                  >
+                    <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                    <Play className="w-8 h-8 fill-black relative z-10" />
+                    <div className="relative z-10 text-left">
+                      <span className="block text-sm font-black uppercase tracking-widest leading-none">Lancer Session</span>
+                      <span className="text-[10px] font-serif italic opacity-70">Ouvrir les portes de l'Archive</span>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="p-6 rounded-3xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/20 flex items-center gap-5 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-rune-glow opacity-30 group-hover:opacity-60 transition-opacity" />
+                    <Zap className="w-8 h-8 text-gold-bright animate-rune-pulse relative z-10" />
+                    <div className="relative z-10">
+                      <span className="block text-sm font-black text-white uppercase tracking-widest">Le MJ prépare le Rituel</span>
+                      <span className="text-xs text-gold-dim italic font-serif">L'aventure commencera dès que l'hôte l'ordonnera.</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Right Side: Player List */}
@@ -458,7 +497,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                                 {player.pseudo}
                               </span>
                               <span className="text-[7px] text-gold-muted/40 font-mono tracking-tighter uppercase">
-                                {player.peer_id === currentPeerId ? 'VOTRE SIGNET' : 'ÂME LIÉE'}
+                                {player.peer_id === peerId ? 'VOTRE SIGNET' : 'ÂME LIÉE'}
                               </span>
                             </div>
                           </div>

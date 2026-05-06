@@ -14,6 +14,7 @@ export function registerIpcHandlers() {
       id TEXT PRIMARY KEY,
       name TEXT,
       imageUrl TEXT,
+      settings TEXT,
       lastPlayed INTEGER,
       hostPeerId TEXT,
       system TEXT
@@ -27,8 +28,16 @@ export function registerIpcHandlers() {
     );
   `);
 
+  // Migration: Ajouter la colonne settings si elle n'existe pas
+  const tableInfo = db.prepare("PRAGMA table_info(sessions)").all() as any[];
+  const hasSettings = tableInfo.some(col => col.name === 'settings');
+  if (!hasSettings) {
+    console.log('Migration: Adding settings column to sessions table');
+    db.exec('ALTER TABLE sessions ADD COLUMN settings TEXT');
+  }
+
   const getAllStmt = db.prepare('SELECT * FROM sessions ORDER BY lastPlayed DESC');
-  const addStmt = db.prepare('INSERT OR REPLACE INTO sessions (id, name, imageUrl, lastPlayed, hostPeerId, system) VALUES (?, ?, ?, ?, ?, ?)');
+  const addStmt = db.prepare('INSERT OR REPLACE INTO sessions (id, name, imageUrl, settings, lastPlayed, hostPeerId, system) VALUES (?, ?, ?, ?, ?, ?, ?)');
   const removeStmt = db.prepare('DELETE FROM sessions WHERE id = ?');
   const updateLastPlayedStmt = db.prepare('UPDATE sessions SET lastPlayed = ? WHERE id = ?');
 
@@ -38,16 +47,20 @@ export function registerIpcHandlers() {
   const clearPlayersStmt = db.prepare('DELETE FROM session_players WHERE session_id = ?');
 
   ipcMain.handle('sessions:getAll', () => {
-    return getAllStmt.all();
+    const sessions = getAllStmt.all() as any[];
+    return sessions.map(s => ({
+      ...s,
+      settings: s.settings ? JSON.parse(s.settings) : undefined
+    }));
   });
 
   ipcMain.handle('sessions:add', (_, s) => {
     console.log('IPC: Adding session', s.name);
-    // On passe les paramètres dans l'ordre du point d'interrogation pour éviter toute erreur de clé nommée
     addStmt.run(
       s.id, 
       s.name, 
       s.imageUrl || null, 
+      s.settings ? JSON.stringify(s.settings) : null,
       s.lastPlayed, 
       s.hostPeerId, 
       s.system || 'Système inconnu'

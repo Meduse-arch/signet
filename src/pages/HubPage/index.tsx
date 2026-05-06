@@ -79,17 +79,17 @@ export function HubPage({ onEnterSession }: HubPageProps) {
     }
   };
 
-  const handleCreateSession = (name: string, system: string, imageUrl?: string) => {
+  const handleCreateSession = (name: string, system: string, imageUrl?: string, settings?: Record<string, any>) => {
     const id = crypto.randomUUID();
     const key = generateSessionKey();
-    addSession({ id, name, lastPlayed: Date.now(), hostPeerId: key, system, imageUrl });
+    addSession({ id, name, lastPlayed: Date.now(), hostPeerId: key, system, imageUrl, settings });
     setShowCreateModal(false);
     onEnterSession(id);
   };
 
-  const handleUpdateSession = (name: string, system: string, imageUrl?: string) => {
+  const handleUpdateSession = (name: string, system: string, imageUrl?: string, settings?: Record<string, any>) => {
     if (!editingSession) return;
-    addSession({ ...editingSession, name, system, imageUrl, lastPlayed: Date.now() });
+    addSession({ ...editingSession, name, system, imageUrl, settings, lastPlayed: Date.now() });
     setEditingSession(null);
   };
 

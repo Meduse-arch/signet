@@ -4,6 +4,7 @@ export interface Session {
   id: string;
   name: string;
   imageUrl?: string;
+  settings?: Record<string, any>;
   lastPlayed: number;
   hostPeerId: string;
   system?: string;
