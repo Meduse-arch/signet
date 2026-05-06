@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, ChevronDown, Search, Check } from 'lucide-react';
 
 interface SessionModalProps {
   isOpen: boolean;
@@ -9,6 +9,8 @@ interface SessionModalProps {
   title?: string;
   submitLabel?: string;
 }
+
+const AVAILABLE_SYSTEMS = ['Seal'];
 
 export function CreateSessionModal({ 
   isOpen, 
@@ -21,16 +23,41 @@ export function CreateSessionModal({
   const [name, setName] = useState('');
   const [system, setSystem] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setName(initialData?.name || '');
       setSystem(initialData?.system || '');
+      setSearchQuery(initialData?.system || '');
       setImageUrl(initialData?.imageUrl || '');
     }
   }, [isOpen, initialData]);
 
+  // Fermer le dropdown si on clique en dehors
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   if (!isOpen) return null;
+
+  const filteredSystems = AVAILABLE_SYSTEMS.filter(s => 
+    s.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSelectSystem = (sys: string) => {
+    setSystem(sys);
+    setSearchQuery(sys);
+    setIsDropdownOpen(false);
+  };
 
   return (
     <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center backdrop-blur-md p-4">
@@ -69,16 +96,56 @@ export function CreateSessionModal({
                 className="w-full bg-black/40 border border-gold-DEFAULT/10 rounded-xl py-3 px-4 text-sm text-gold-bright focus:outline-none focus:border-gold-DEFAULT/50 focus:ring-1 focus:ring-gold-DEFAULT/30 transition-all placeholder:text-gold-dim/30 font-serif italic"
               />
             </div>
-            <div className="space-y-1.5">
+
+            {/* SYSTÈME DROPDOWN */}
+            <div className="space-y-1.5 relative" ref={dropdownRef}>
               <label className="block text-[10px] font-cinzel font-black text-gold-muted tracking-widest uppercase ml-1">Arcane / Système</label>
-              <input
-                type="text"
-                value={system}
-                onChange={(e) => setSystem(e.target.value)}
-                placeholder="Ex: D&D 5e, Chroniques Oubliées"
-                className="w-full bg-black/40 border border-gold-DEFAULT/10 rounded-xl py-3 px-4 text-sm text-gold-bright focus:outline-none focus:border-gold-DEFAULT/50 focus:ring-1 focus:ring-gold-DEFAULT/30 transition-all placeholder:text-gold-dim/30 font-serif italic"
-              />
+              <div className="relative group">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onFocus={() => setIsDropdownOpen(true)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setSystem(e.target.value); // Permet aussi la saisie libre
+                    setIsDropdownOpen(true);
+                  }}
+                  placeholder="Choisissez ou cherchez..."
+                  className="w-full bg-black/40 border border-gold-DEFAULT/10 rounded-xl py-3 pl-4 pr-10 text-sm text-gold-bright focus:outline-none focus:border-gold-DEFAULT/50 focus:ring-1 focus:ring-gold-DEFAULT/30 transition-all placeholder:text-gold-dim/30 font-serif italic"
+                />
+                <div 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gold-muted hover:text-gold-bright transition-colors"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </div>
+
+              {/* Menu Déroulant */}
+              {isDropdownOpen && (
+                <div className="absolute top-full left-0 w-full mt-2 bg-[#16161C] border border-gold-DEFAULT/20 rounded-xl shadow-2xl z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="max-h-40 overflow-y-auto custom-scrollbar">
+                    {filteredSystems.length > 0 ? (
+                      filteredSystems.map((sys) => (
+                        <div
+                          key={sys}
+                          onClick={() => handleSelectSystem(sys)}
+                          className="flex items-center justify-between px-4 py-3 text-xs font-cinzel text-gold-dim hover:text-gold-bright hover:bg-gold-DEFAULT/5 cursor-pointer transition-all border-b border-white/5 last:border-0"
+                        >
+                          <span className="tracking-widest uppercase font-bold">{sys}</span>
+                          {system === sys && <Check className="w-3.5 h-3.5 text-gold-bright" />}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-4 text-[10px] italic font-serif text-gold-muted/50 text-center">
+                        Aucun rituel ne porte ce nom...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
+
             <div className="space-y-1.5">
               <label className="block text-[10px] font-cinzel font-black text-gold-muted tracking-widest uppercase ml-1">Vision / URL Image</label>
               <input
@@ -100,7 +167,7 @@ export function CreateSessionModal({
             </button>
             <button
               onClick={() => onSubmit(name || 'Chronique sans nom', system || 'Arcane Inconnue', imageUrl)}
-              disabled={!name.trim()}
+              disabled={!name.trim() || !system.trim()}
               className="flex-1 py-3 text-[10px] font-cinzel font-black tracking-widest bg-gold-DEFAULT/10 hover:bg-gold-DEFAULT/20 text-gold-bright rounded-xl border border-gold-DEFAULT/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-rune-gold"
             >
               {submitLabel}

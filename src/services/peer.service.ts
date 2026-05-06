@@ -246,5 +246,5 @@ export function generateSessionKey(): string {
     word += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   const digits = Math.floor(1000 + Math.random() * 9000);
-  return `SIGIL-${digits}-${word}`;
+  return `SIGNET-${digits}-${word}`;
 }

@@ -81,7 +81,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
           <header className="flex flex-col items-center justify-center px-8 py-12 pointer-events-auto">
             <div className="text-center space-y-2">
               <h1 className="text-4xl font-black text-glow-gold text-gold-bright tracking-[0.3em] mb-2">
-                Sigil VTT
+                Signet
               </h1>
               <div className="flex items-center justify-center gap-4">
                 <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />

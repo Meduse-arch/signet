@@ -29,7 +29,7 @@ export function KeyModal({ isOpen, onClose, onJoin }: KeyModalProps) {
           type="text"
           value={keyInput}
           onChange={(e) => setKeyInput(e.target.value.toUpperCase())}
-          placeholder="SIGIL-XXXX-YYYY"
+          placeholder="SIGNET-XXXX-YYYY"
           className="w-full bg-surface-sidebar border border-border-dark rounded-lg py-2 px-3 text-sm text-[#e8d5a0] mb-4 focus:outline-none focus:ring-1 focus:ring-gold-DEFAULT focus:border-gold-DEFAULT placeholder:text-gold-dim/50 uppercase tracking-widest text-center"
         />
 

@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../../store/auth';
 import { loginUser, signupUser } from '../../services/auth.service';
 import { RuneCanvas } from '../../components/RuneCanvas';
-import { Shield, Loader2, Lock, User, ChevronRight } from 'lucide-react';
+import { Loader2, Lock, User, ChevronRight } from 'lucide-react';
+import logo from '../../assets/logo.png';
 
 export function AuthPage() {
   const [isStarted, setIsStarted] = useState(false);
@@ -72,16 +73,16 @@ export function AuthPage() {
         <div className="mb-12 relative group">
           <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-3xl animate-pulse rounded-full" />
           <div className="relative p-8 rounded-full border-2 border-gold-DEFAULT/20 bg-black/40 backdrop-blur-md">
-            <Shield className="w-24 h-24 text-gold-bright animate-rune-pulse" />
+            <img src={logo} alt="Signet Logo" className="w-24 h-24 object-contain animate-rune-pulse" />
           </div>
         </div>
 
         <h1 className="text-7xl font-black text-gold-bright tracking-[0.5em] uppercase text-glow-gold mb-4 ml-[0.5em]">
-          Sigil
+          Signet
         </h1>
         <div className="flex items-center gap-6 mb-24">
           <div className="h-px w-24 bg-gradient-to-r from-transparent to-gold-muted/50" />
-          <span className="text-sm font-cinzel text-gold-dim tracking-[0.4em] uppercase font-bold">Table de Jeu Virtuelle</span>
+          <span className="text-sm font-cinzel text-gold-dim tracking-[0.4em] uppercase font-bold">Virtual Tabletop</span>
           <div className="h-px w-24 bg-gradient-to-l from-transparent to-gold-muted/50" />
         </div>
 
@@ -104,10 +105,9 @@ export function AuthPage() {
                     {isLogin ? 'Identification' : 'Nouvel Initié'}
                   </h2>
                   <p className="text-gold-bright text-[10px] font-cinzel tracking-[0.2em] mt-1 font-bold">
-                    {isLogin ? 'RÉVEILLEZ VOTRE SIGIL' : 'FORGEZ VOTRE DESTIN'}
+                    {isLogin ? 'RÉVEILLEZ VOTRE SIGNET' : 'FORGEZ VOTRE DESTIN'}
                   </p>
                 </div>
-
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-8">
@@ -169,7 +169,7 @@ export function AuthPage() {
                   onClick={() => { setIsLogin(!isLogin); setError(null); }}
                   className="px-6 py-2 rounded-full border border-gold-muted/20 text-[10px] font-cinzel text-gold-dim hover:text-gold-bright hover:border-gold-bright tracking-widest uppercase transition-all"
                 >
-                  {isLogin ? "Pas encore de Sigil ? Forgez-en un" : "Déjà membre ? Identifiez-vous"}
+                  {isLogin ? "Pas encore de Signet ? Forgez-en un" : "Déjà membre ? Identifiez-vous"}
                 </button>
               </div>
             </div>
@@ -179,7 +179,7 @@ export function AuthPage() {
 
       {/* FOOTER INFO */}
       <div className="absolute bottom-8 text-[10px] font-cinzel text-white/20 tracking-[0.3em] uppercase pointer-events-none">
-        Sigil Engine v1.0.4 — Build Stable
+        Signet Engine v1.0.4 — Build Stable
       </div>
     </div>
   );

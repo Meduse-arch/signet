@@ -14,7 +14,6 @@ import {
 } from '../../services/session.service';
 import { 
   Users, 
-  Shield, 
   WifiOff, 
   LogOut, 
   Loader2,
@@ -22,6 +21,7 @@ import {
   CheckCircle2,
   Zap
 } from 'lucide-react';
+import logo from '../../assets/logo.png';
 
 interface LobbyPageProps {
   sessionId: string;
@@ -52,7 +52,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
   // ✅ Stabiliser les refs pour les callbacks asynchrones
   const currentUser = useAuthStore(state => state.user);
-  const isMJ = (currentUser?.role === 'mj' || currentUser?.role === 'admin') && !sessionId.startsWith('SIGIL-');
+  const isMJ = (currentUser?.role === 'mj' || currentUser?.role === 'admin') && !sessionId.startsWith('SIGNET-');
   const isMJRef = useRef(isMJ);
   const sessionIdRef = useRef(sessionId);
   const broadcastRef = useRef(broadcast);
@@ -173,7 +173,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
           await refreshPlayers();
         } else {
           const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
-          const hostId = sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId;
+          const hostId = sessionIdRef.current.startsWith('SIGNET-') ? sessionIdRef.current : sessionData?.hostPeerId;
           
           if (data.payload.peerId === hostId) {
             console.log('[LobbyPage] L\'hôte a quitté, fermeture de la session');
@@ -196,7 +196,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
         const hostPeerId = isMJRef.current 
           ? sessionData?.hostPeerId 
-          : (sessionIdRef.current.startsWith('SIGIL-') ? sessionIdRef.current : sessionData?.hostPeerId);
+          : (sessionIdRef.current.startsWith('SIGNET-') ? sessionIdRef.current : sessionData?.hostPeerId);
 
         if (!hostPeerId) throw new Error("Impossible de déterminer l'identifiant de session");
 
@@ -282,8 +282,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         <div className="flex items-center gap-6">
           <div className="relative group">
             <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-xl group-hover:bg-gold-DEFAULT/40 transition-all rounded-full" />
-            <div className="relative p-2.5 rounded-full border border-gold-DEFAULT/30 bg-black/40">
-              <Shield className="w-5 h-5 text-gold-bright animate-rune-pulse" />
+            <div className="relative p-2 rounded-full border border-gold-DEFAULT/30 bg-black/40">
+              <img src={logo} alt="Logo" className="w-6 h-6 object-contain animate-rune-pulse" />
             </div>
           </div>
           <div>
@@ -299,7 +299,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
               <span className="text-gold-dim uppercase tracking-[0.15em] font-bold">
                 {status === 'initializing' ? 'Invocation...' :
                  status === 'connecting' ? 'Liaison...' :
-                 status === 'connected' ? 'Sigil Actif (P2P)' :
+                 status === 'connected' ? 'Signet Actif (P2P)' :
                  status === 'relay' ? 'Relais Supabase' :
                  status === 'error' ? 'Échec' : 'Lien Rompu'}
               </span>
@@ -314,7 +314,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
               className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/5 hover:bg-gold-DEFAULT/10 text-[10px] font-cinzel font-bold text-gold-bright transition-all border border-gold-DEFAULT/20 hover:border-gold-DEFAULT/50"
             >
               {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? 'CLEF COPIÉE' : 'PARTAGER LE SIGIL'}
+              {copied ? 'CLEF COPIÉE' : 'PARTAGER LE SIGNET'}
             </button>
           )}
           <button 
@@ -353,7 +353,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
               </div>
               <div>
                 <h2 className="text-2xl font-black text-gold-bright mb-3 uppercase tracking-[0.4em] text-glow-gold">
-                  Établissement du Sigil
+                  Établissement du Signet
                 </h2>
                 <p className="text-white/40 text-sm italic font-serif tracking-widest animate-pulse">
                   {status === 'initializing' ? "Éveil des protocoles de signalement..." : "Recherche de la porte de l'hôte..."}
@@ -442,13 +442,13 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                                 {player.pseudo}
                               </span>
                               <span className="text-[7px] text-gold-muted/40 font-mono tracking-tighter uppercase">
-                                {player.peer_id === currentPeerId ? 'VOTRE SIGIL' : 'ÂME LIÉE'}
+                                {player.peer_id === currentPeerId ? 'VOTRE SIGNET' : 'ÂME LIÉE'}
                               </span>
                             </div>
                           </div>
                           {player.pseudo === 'MJ' && (
-                            <div className="p-1.5 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/10">
-                              <Shield className="w-3 h-3 text-gold-dim group-hover:text-gold-bright transition-colors" />
+                            <div className="p-1 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/10">
+                              <img src={logo} alt="MJ" className="w-4 h-4 object-contain opacity-60 group-hover:opacity-100 transition-opacity" />
                             </div>
                           )}
                         </div>

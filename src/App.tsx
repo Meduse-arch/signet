@@ -3,7 +3,7 @@ import { HubPage } from './pages/HubPage';
 import { LobbyPage } from './pages/LobbyPage';
 import { AuthPage } from './pages/AuthPage';
 import { useAuthStore } from './store/auth';
-import { Shield } from 'lucide-react';
+import logo from './assets/logo.png';
 
 export function App() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -59,12 +59,16 @@ export function App() {
         </div>
       )}
 
-      {/* TRANSITION OVERLAY (SIGIL) */}
+      {/* TRANSITION OVERLAY (SIGNET) */}
       {showRune && (
         <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
           <div className="relative">
             <div className="absolute inset-0 bg-gold-DEFAULT/40 blur-[60px] animate-pulse rounded-full" />
-            <Shield className="w-24 h-24 text-gold-bright animate-rune-invocation relative z-10" />
+            <img 
+              src={logo} 
+              alt="Signet Logo" 
+              className="w-32 h-32 object-contain animate-rune-invocation relative z-10" 
+            />
           </div>
         </div>
       )}

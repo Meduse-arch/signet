@@ -1,6 +1,7 @@
 import { Library, Search, Key, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
 import { useAuthStore } from '../../store/auth';
+import logo from '../../assets/logo.png';
 
 interface SidebarProps {
   onSearchToggle: () => void;
@@ -26,7 +27,18 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
       {/* Texture Grimoire */}
       <div className="absolute inset-0 bg-grimoire-texture opacity-[0.03] pointer-events-none" />
 
-      <div className="flex-1 py-8 px-2 space-y-4 relative z-10">
+      {/* Logo Section */}
+      <div className="pt-8 pb-4 flex justify-center relative z-10">
+        <div className={`transition-all duration-300 ${sidebarOpen ? 'w-24 h-24' : 'w-10 h-10'}`}>
+          <img 
+            src={logo} 
+            alt="Signet" 
+            className="w-full h-full object-contain filter drop-shadow-[0_0_10px_rgba(212,175,55,0.2)]" 
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 py-4 px-2 space-y-4 relative z-10">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
