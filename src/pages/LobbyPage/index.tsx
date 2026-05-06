@@ -42,17 +42,22 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
   const pendingJoinRef = useRef<{ peerId: string; pseudo: string } | null>(null);
 
+  // ✅ Stabiliser les refs pour les callbacks asynchrones
+  const currentUser = useAuthStore(state => state.user);
+  const isMJ = (currentUser?.role === 'mj' || currentUser?.role === 'admin') && !sessionId.startsWith('SIGNET-');
+
   // ✅ Récupérer les infos de la session
   const currentSessions = useSessionStore(state => state.sessions);
   const sessionDataFromStore = currentSessions.find(s => s.id === sessionId);
   
-  // Priorité aux métadonnées reçues par P2P pour le joueur
-  const sessionData = sessionDataFromStore || localMetadata;
+  // Priorité aux métadonnées reçues par P2P pour le joueur (données fraîches du MJ)
+  // Pour le MJ, on garde les données du store (source de vérité locale)
+  const sessionData = isMJ 
+    ? sessionDataFromStore 
+    : (localMetadata || sessionDataFromStore);
+    
   const sessionImage = sessionData?.imageUrl;
 
-  // ✅ Stabiliser les refs pour les callbacks asynchrones
-  const currentUser = useAuthStore(state => state.user);
-  const isMJ = (currentUser?.role === 'mj' || currentUser?.role === 'admin') && !sessionId.startsWith('SIGNET-');
   const isMJRef = useRef(isMJ);
   const sessionIdRef = useRef(sessionId);
   const broadcastRef = useRef(broadcast);
@@ -138,15 +143,26 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       // Pour le JOUEUR : Reçoit les métadonnées et les stocke
       else if (data.type === 'SESSION_METADATA' && !isMJRef.current) {
         console.log(`[LobbyPage] Métadonnées reçues:`, data.payload);
+        
+        // ✅ MISE À JOUR VISUELLE IMMÉDIATE
+        // On écrase l'état local pour que le titre et l'image changent SOUS LES YEUX du joueur
         setLocalMetadata(data.payload);
+        
         const savedSessions = JSON.parse(localStorage.getItem('summoned_sessions') || '[]');
-        if (!savedSessions.find((s: any) => s.hostPeerId === data.payload.hostPeerId)) {
-          localStorage.setItem('summoned_sessions', JSON.stringify([...savedSessions, {
-            id: `summoned-${data.payload.hostPeerId}`,
-            ...data.payload,
-            lastPlayed: Date.now(),
-            isSummoned: true
-          }]));
+        const existingIndex = savedSessions.findIndex((s: any) => s.hostPeerId === data.payload.hostPeerId);
+
+        const updatedSession = {
+          id: existingIndex >= 0 ? savedSessions[existingIndex].id : `summoned-${data.payload.hostPeerId}`,
+          ...data.payload,
+          lastPlayed: Date.now(),
+          isSummoned: true
+        };
+
+        if (existingIndex >= 0) {
+          savedSessions[existingIndex] = updatedSession;
+          localStorage.setItem('summoned_sessions', JSON.stringify(savedSessions));
+        } else {
+          localStorage.setItem('summoned_sessions', JSON.stringify([...savedSessions, updatedSession]));
         }
       }
 
