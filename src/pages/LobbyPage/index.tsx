@@ -41,7 +41,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const [isGameStarted, setIsGameStarted] = useState(false);
   
   // ✅ État local pour les métadonnées (au cas où le joueur n'ait pas la session en DB)
-  const [localMetadata, setLocalMetadata] = useState<{name?: string, imageUrl?: string, system?: string} | null>(null);
+  const [localMetadata, setLocalMetadata] = useState<{name?: string, imageUrl?: string, system?: string, hostPeerId?: string} | null>(null);
 
   const pendingJoinRef = useRef<{ peerId: string; pseudo: string } | null>(null);
 
@@ -293,6 +293,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
           system={sessionData?.system || 'Seal'} 
           isMJ={isMJ} 
           onPause={handlePauseSession}
+          sessionId={sessionId}
+          imageUrl={sessionImage}
         />
       </div>
     );

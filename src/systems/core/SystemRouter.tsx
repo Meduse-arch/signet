@@ -7,9 +7,11 @@ interface SystemRouterProps {
   system: string;
   isMJ: boolean;
   onPause: () => void;
+  sessionId: string;
+  imageUrl?: string;
 }
 
-export function SystemRouter({ system, isMJ, onPause }: SystemRouterProps) {
+export function SystemRouter({ system, isMJ, onPause, sessionId, imageUrl }: SystemRouterProps) {
   // Composant MJ Overlay (Bouton Pause)
   const MJOverlay = () => (
     <div className="absolute top-6 left-6 z-[100] flex items-center gap-4 animate-in fade-in duration-1000">
@@ -25,7 +27,7 @@ export function SystemRouter({ system, isMJ, onPause }: SystemRouterProps) {
   const renderSystem = () => {
     switch (system.toLowerCase()) {
       case 'seal':
-        return <SealEngine />;
+        return <SealEngine sessionId={sessionId} imageUrl={imageUrl} />;
       default:
         return (
           <div className="flex-1 flex flex-col items-center justify-center bg-black text-gold-dim font-cinzel">

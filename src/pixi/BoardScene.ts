@@ -5,10 +5,14 @@ import { TokenSprite, TokenData } from './TokenSprite';
 
 export class BoardScene extends Container {
   private app: Application;
-  private mapLayer: MapLayer;
+  public mapLayer: MapLayer;
   private fow: FogOfWar;
   private tokens: Map<string, TokenSprite> = new Map();
   public onTokenMove?: (id: string, x: number, y: number) => void;
+
+  private dragging = false;
+  private dragStart = { x: 0, y: 0 };
+  private initialScenePos = { x: 0, y: 0 };
 
   constructor(app: Application) {
     super();
@@ -20,9 +24,78 @@ export class BoardScene extends Container {
     this.fow = new FogOfWar();
     this.addChild(this.fow);
 
-    // Center the board
+    // Center the board by default
     this.x = app.screen.width / 2;
     this.y = app.screen.height / 2;
+
+    this.setupInteractivity();
+  }
+
+  private setupInteractivity() {
+    this.app.stage.eventMode = 'static';
+    // We use a large hitArea so the stage catches events everywhere
+    this.app.stage.hitArea = { contains: () => true } as any;
+
+    // Zoom
+    this.app.canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const scaleFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      
+      const rect = this.app.canvas.getBoundingClientRect();
+      const worldPos = { 
+        x: e.clientX - rect.left, 
+        y: e.clientY - rect.top 
+      };
+      
+      const before = this.toLocal(worldPos);
+      this.scale.x *= scaleFactor;
+      this.scale.y *= scaleFactor;
+      
+      // Limit scale (min: 0.1, max: 5)
+      if (this.scale.x < 0.1) this.scale.set(0.1);
+      if (this.scale.x > 5) this.scale.set(5);
+      
+      const after = this.toLocal(worldPos);
+      this.x += (after.x - before.x) * this.scale.x;
+      this.y += (after.y - before.y) * this.scale.y;
+    });
+
+    // Pan
+    this.app.stage.on('pointerdown', (e) => {
+      if (e.target !== this.app.stage && e.target !== this.mapLayer) {
+        // If clicking on a token or something else, don't pan
+        return;
+      }
+      this.dragging = true;
+      this.dragStart = { x: e.global.x, y: e.global.y };
+      this.initialScenePos = { x: this.x, y: this.y };
+    });
+
+    this.app.stage.on('pointermove', (e) => {
+      if (!this.dragging) return;
+      const dx = e.global.x - this.dragStart.x;
+      const dy = e.global.y - this.dragStart.y;
+      this.x = this.initialScenePos.x + dx;
+      this.y = this.initialScenePos.y + dy;
+    });
+
+    this.app.stage.on('pointerup', () => this.dragging = false);
+    this.app.stage.on('pointerupoutside', () => this.dragging = false);
+  }
+
+  async loadMap(url: string) {
+    await this.mapLayer.loadMap(url);
+    
+    // Auto-fit or center
+    const bounds = this.mapLayer.getLocalBounds();
+    if (bounds.width > 0 && bounds.height > 0) {
+      const scaleX = this.app.screen.width / bounds.width;
+      const scaleY = this.app.screen.height / bounds.height;
+      const scale = Math.min(scaleX, scaleY) * 0.9; // 90% pour avoir un peu de marge
+      this.scale.set(scale);
+      this.x = this.app.screen.width / 2;
+      this.y = this.app.screen.height / 2;
+    }
   }
 
   init() {

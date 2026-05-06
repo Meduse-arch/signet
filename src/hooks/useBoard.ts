@@ -4,9 +4,9 @@ import { BoardScene } from '../pixi/BoardScene';
 import { usePeer } from './usePeer';
 import { TokenData } from '../pixi/TokenSprite';
 
-export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: string) {
+export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: string, imageUrl?: string) {
   const boardRef = useRef<BoardScene | null>(null);
-  const { onData, broadcastHybrid } = usePeer();
+  const { onData, broadcast } = usePeer();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -14,6 +14,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
 
     let app: PIXI.Application | null = null;
     let isDestroyed = false;
+    let isInitialized = false;
 
     async function init() {
       app = new PIXI.Application();
@@ -28,8 +29,10 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
           autoDensity: true,
         });
 
+        isInitialized = true;
+
         if (isDestroyed) {
-          app.destroy({ removeView: true });
+          app.destroy(true);
           return;
         }
 
@@ -41,12 +44,16 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         boardRef.current = scene;
         app.stage.addChild(scene);
 
+        if (imageUrl) {
+          await scene.loadMap(imageUrl);
+        }
+
         // ✅ Gestion des mouvements (Network Broadcast)
         let lastBroadcast = 0;
         scene.onTokenMove = (id, x, y) => {
           const now = Date.now();
           if (now - lastBroadcast > 50) { // Throttle 20fps
-            broadcastHybrid(sessionId, { type: 'TOKEN_MOVE', payload: { id, x, y } });
+            broadcast({ type: 'TOKEN_MOVE', payload: { id, x, y } });
             lastBroadcast = now;
           }
         };
@@ -73,13 +80,13 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
 
     return () => {
       isDestroyed = true;
-      if (app) {
-        app.destroy({ removeView: true });
+      if (app && isInitialized) {
+        app.destroy(true);
         app = null;
       }
       boardRef.current = null;
     };
-  }, [containerRef, sessionId, broadcastHybrid]);
+  }, [containerRef, sessionId, broadcast, imageUrl]);
 
   // Networking logic for tokens
   useEffect(() => {
@@ -100,7 +107,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   const addToken = (token: TokenData) => {
     if (boardRef.current) {
       boardRef.current.addToken(token);
-      broadcastHybrid(sessionId, { type: 'TOKEN_ADD', payload: token });
+      broadcast({ type: 'TOKEN_ADD', payload: token });
     }
   };
 

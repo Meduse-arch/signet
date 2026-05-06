@@ -5,11 +5,12 @@ import { useAuthStore } from '../../store/auth';
 
 interface BoardCanvasProps {
   sessionId: string;
+  imageUrl?: string;
 }
 
-export function BoardCanvas({ sessionId }: BoardCanvasProps) {
+export function BoardCanvas({ sessionId, imageUrl }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { addToken } = useBoard(containerRef, sessionId);
+  const { addToken } = useBoard(containerRef, sessionId, imageUrl);
   const { isHost } = usePeersStore();
   const { user } = useAuthStore();
 
