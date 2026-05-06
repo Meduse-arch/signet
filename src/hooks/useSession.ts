@@ -12,9 +12,22 @@ export function useSession() {
     async function fetchSessions() {
       setLoading(true);
       try {
-        const data = await getAllSessions();
+        // Sessions SQLite (pour l'hôte/Electron)
+        const dbSessions = await getAllSessions();
+        
+        // Sessions invoquées (pour le joueur/Web)
+        const summonedSessions = JSON.parse(localStorage.getItem('summoned_sessions') || '[]');
+        
         if (mounted) {
-          setSessions(data.sort((a, b) => b.lastPlayed - a.lastPlayed));
+          // Fusionner les deux listes en évitant les doublons
+          const allSessions = [...dbSessions];
+          summonedSessions.forEach((s: Session) => {
+            if (!allSessions.find(exist => exist.id === s.id || exist.hostPeerId === s.hostPeerId)) {
+              allSessions.push(s);
+            }
+          });
+          
+          setSessions(allSessions.sort((a, b) => b.lastPlayed - a.lastPlayed));
         }
       } catch (e) {
         console.error(e);

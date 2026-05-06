@@ -37,11 +37,17 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string }[]>([]);
   const [copied, setCopied] = useState(false);
   
+  // ✅ État local pour les métadonnées (au cas où le joueur n'ait pas la session en DB)
+  const [localMetadata, setLocalMetadata] = useState<{name?: string, imageUrl?: string, system?: string} | null>(null);
+
   const pendingJoinRef = useRef<{ peerId: string; pseudo: string } | null>(null);
 
-  // ✅ Récupérer les infos de la session pour l'image de fond
+  // ✅ Récupérer les infos de la session
   const currentSessions = useSessionStore(state => state.sessions);
-  const sessionData = currentSessions.find(s => s.id === sessionId);
+  const sessionDataFromStore = currentSessions.find(s => s.id === sessionId);
+  
+  // Priorité aux métadonnées reçues par P2P pour le joueur
+  const sessionData = sessionDataFromStore || localMetadata;
   const sessionImage = sessionData?.imageUrl;
 
   // ✅ Stabiliser les refs pour les callbacks asynchrones
@@ -97,23 +103,53 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
       // Pour le MJ : Gère les nouvelles arrivées
       if (data.type === 'PLAYER_JOIN' && isMJRef.current) {
-        console.log(`[LobbyPage] Joueur rejoint: ${data.payload.pseudo} (${data.payload.peerId})`);
-        
-        // ✅ Nettoyage robuste : On supprime TOUTE instance précédente du même pseudo (cas de reconnexion)
-        // même si l'ID est différent, pour éviter les doublons visuels.
+        console.log(`[LobbyPage] Joueur rejoint: ${data.payload.pseudo} (${data.payload.peer_id})`);
+
+        // Envoyer les infos de la session au nouveau joueur immédiatement
+        broadcastRef.current({
+          type: 'SESSION_METADATA',
+          payload: {
+            name: sessionData?.name,
+            system: sessionData?.system,
+            imageUrl: sessionData?.imageUrl,
+            hostPeerId: sessionData?.hostPeerId
+          }
+        });
+
         const currentList = await getSessionPlayers(sessionIdRef.current);
         const existingWithSamePseudo = currentList.filter(p => p.pseudo === data.payload.pseudo);
-        
+
         for (const p of existingWithSamePseudo) {
-          if (p.peer_id !== data.payload.peerId) {
+          if (p.peer_id !== data.payload.peer_id) {
             await removeSessionPlayer(sessionIdRef.current, p.peer_id);
           }
         }
 
-        await addSessionPlayer(sessionIdRef.current, data.payload.peerId, data.payload.pseudo);
+        await addSessionPlayer(sessionIdRef.current, data.payload.peer_id, data.payload.pseudo);
         await refreshPlayers();
       } 
-      
+
+      // Pour le JOUEUR : Reçoit les métadonnées et les stocke
+      else if (data.type === 'SESSION_METADATA' && !isMJRef.current) {
+        const metadata = data.payload;
+        
+        // Mise à jour de l'affichage immédiat
+        setLocalMetadata(metadata);
+
+        // Sauvegarde locale pour le joueur (persistance)
+        const savedSessions = JSON.parse(localStorage.getItem('summoned_sessions') || '[]');
+        const exists = savedSessions.find((s: any) => s.hostPeerId === metadata.hostPeerId);
+
+        if (!exists) {
+          const newSession = {
+            id: `summoned-${metadata.hostPeerId}`,
+            ...metadata,
+            lastPlayed: Date.now(),
+            isSummoned: true
+          };
+          localStorage.setItem('summoned_sessions', JSON.stringify([...savedSessions, newSession]));
+        }
+      }
       // Pour tout le monde : Liste des joueurs
       else if (data.type === 'PLAYER_LIST') {
         setPlayers(data.payload);
