@@ -156,7 +156,7 @@ export function AuthPage() {
                   <span className="relative z-10 flex items-center justify-center gap-3">
                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                       <>
-                        {isLogin ? 'Ouvrir le Grimoire' : 'Entrer dans le Cercle'}
+                        {isLogin ? 'Connexion' : 'Crée compte'}
                         <ChevronRight className="w-5 h-5" />
                       </>
                     )}
