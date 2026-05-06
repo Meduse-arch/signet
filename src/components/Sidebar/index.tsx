@@ -1,4 +1,4 @@
-import { Library, Search, Key, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
+import { Library, Search, Key, ChevronLeft, ChevronRight, LogOut, Plus } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
 import { useAuthStore } from '../../store/auth';
 import logo from '../../assets/logo.png';
@@ -9,8 +9,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
-  const { sidebarOpen, setSidebarOpen, activeTab, setActiveTab } = useUIStore();
+  const { sidebarOpen, setSidebarOpen, activeTab, setActiveTab, setShowCreateModal } = useUIStore();
   const { logout, user } = useAuthStore();
+  const isMJ = user?.role === 'mj' || user?.role === 'admin';
 
   const navItems = [
     { id: 'library', icon: Library, label: 'Bibliothèque', action: () => setActiveTab('library') },
@@ -86,6 +87,26 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
             Rejoindre (Clé)
           </span>
         </button>
+
+        {/* BOUTON CRÉER SESSION */}
+        {isMJ && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="w-full flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all group overflow-hidden border border-transparent hover:bg-gold-DEFAULT/5 text-gold-DEFAULT hover:text-gold-bright hover:border-gold-DEFAULT/30"
+            title={!sidebarOpen ? "Créer Session" : undefined}
+          >
+            <div className="relative">
+              <Plus className="flex-shrink-0 w-5 h-5 transition-transform group-hover:scale-110" />
+            </div>
+            <span 
+              className={`text-[10px] font-cinzel font-black tracking-[0.2em] uppercase whitespace-nowrap transition-all duration-300 ${
+                sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
+              }`}
+            >
+              Créer Session
+            </span>
+          </button>
+        )}
       </div>
       
       <div className="p-3 border-t border-gold-DEFAULT/10 space-y-3 relative z-10 bg-black/20">

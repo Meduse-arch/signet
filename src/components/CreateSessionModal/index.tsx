@@ -75,8 +75,14 @@ export function CreateSessionModal({
   };
 
   return (
-    <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center backdrop-blur-md p-4">
-      <div className="bg-[#111115] border border-gold-DEFAULT/20 rounded-[2rem] p-8 w-full max-w-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden group">
+    <div 
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center backdrop-blur-md p-4 pointer-events-auto"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[#111115] border border-gold-DEFAULT/20 rounded-[2rem] p-8 w-full max-w-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden group pointer-events-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Texture Grimoire */}
         <div className="absolute inset-0 bg-grimoire-texture opacity-[0.05] pointer-events-none" />
         

@@ -203,18 +203,6 @@ export function HubPage({ onEnterSession }: HubPageProps) {
                 </div>
               )}
             </div>
-
-            {isMJ && (
-              <div className="p-6 border-t border-gold-DEFAULT/10 bg-black/20">
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-gold-DEFAULT text-black font-black text-[10px] tracking-[0.2em] uppercase hover:bg-gold-bright hover:scale-[1.02] active:scale-95 transition-all shadow-[0_10px_30px_rgba(212,175,55,0.15)]"
-                >
-                  <Plus className="w-4 h-4 stroke-[3px]" />
-                  Invoquer Archive
-                </button>
-              </div>
-            )}
           </div>
         </aside>
 
