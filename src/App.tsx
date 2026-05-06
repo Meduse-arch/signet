@@ -9,6 +9,7 @@ export function App() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showRune, setShowRune] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const { user } = useAuthStore();
 
   // Gérer la transition fluide entre Hub et Lobby
@@ -36,8 +37,9 @@ export function App() {
     }, 600);
   };
 
-  if (!user) {
-    return <AuthPage />;
+  // On affiche AuthPage tant qu'on n'a pas d'utilisateur OU que le "Start" n'est pas fait
+  if (!user || !isAuthorized) {
+    return <AuthPage onEnterApp={() => setIsAuthorized(true)} />;
   }
 
   return (

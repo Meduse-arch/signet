@@ -5,7 +5,11 @@ import { RuneCanvas } from '../../components/RuneCanvas';
 import { Loader2, Lock, User, ChevronRight, Check } from 'lucide-react';
 import logo from '../../assets/logo.png';
 
-export function AuthPage() {
+interface AuthPageProps {
+  onEnterApp: () => void;
+}
+
+export function AuthPage({ onEnterApp }: AuthPageProps) {
   const [isStarted, setIsStarted] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
@@ -14,17 +18,24 @@ export function AuthPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showRune, setShowRune] = useState(false);
 
-  const { setUser } = useAuthStore();
+  const { setUser, user: savedUser } = useAuthStore();
 
   const handleStart = useCallback(() => {
     if (!isStarted) {
       setIsStarted(true);
-      setTimeout(() => setShowRune(true), 600);
-      setTimeout(() => setShowAuthModal(true), 1200);
+      
+      // Si on a déjà un compte sauvegardé, on entre direct dans l'app après l'anime de start
+      if (savedUser) {
+        setTimeout(() => {
+          onEnterApp();
+        }, 800);
+      } else {
+        // Sinon, on ouvre la modale après l'effet de zoom
+        setTimeout(() => setShowAuthModal(true), 600);
+      }
     }
-  }, [isStarted]);
+  }, [isStarted, savedUser, onEnterApp]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -54,6 +65,8 @@ export function AuthPage() {
         : await signupUser(pseudo, password);
       
       setUser(user, rememberMe);
+      // Une fois connecté, on déverrouille l'app
+      onEnterApp();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -94,20 +107,6 @@ export function AuthPage() {
           <div className="w-[1px] h-16 bg-gradient-to-b from-gold-bright via-gold-muted/50 to-transparent" />
         </div>
       </div>
-
-      {/* TRANSITION OVERLAY (SIGIL) */}
-      {showRune && !showAuthModal && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gold-DEFAULT/40 blur-[60px] animate-pulse rounded-full" />
-            <img 
-              src={logo} 
-              alt="Signet Logo" 
-              className="w-32 h-32 object-contain animate-rune-invocation relative z-10" 
-            />
-          </div>
-        </div>
-      )}
 
       {/* AUTH MODAL */}
       {showAuthModal && (
