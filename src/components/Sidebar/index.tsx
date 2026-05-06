@@ -15,7 +15,6 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
   const navItems = [
     { id: 'library', icon: Library, label: 'Bibliothèque', action: () => setActiveTab('library') },
     { id: 'search', icon: Search, label: 'Rechercher', action: () => { setActiveTab('search'); onSearchToggle(); } },
-    { id: 'key', icon: Key, label: 'Rejoindre (Clé)', action: () => { setActiveTab('key'); onKeyOpen(); } },
   ] as const;
 
   return (
@@ -69,6 +68,24 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
             </button>
           );
         })}
+
+        {/* BOUTON ACTION CLÉ */}
+        <button
+          onClick={onKeyOpen}
+          className="w-full flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all group overflow-hidden border border-transparent hover:bg-gold-DEFAULT/5 text-gold-dim hover:text-gold-bright hover:border-gold-DEFAULT/10"
+          title={!sidebarOpen ? "Rejoindre (Clé)" : undefined}
+        >
+          <div className="relative">
+            <Key className="flex-shrink-0 w-5 h-5 transition-transform group-hover:scale-110" />
+          </div>
+          <span 
+            className={`text-[10px] font-cinzel font-black tracking-[0.2em] uppercase whitespace-nowrap transition-all duration-300 ${
+              sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
+            }`}
+          >
+            Rejoindre (Clé)
+          </span>
+        </button>
       </div>
       
       <div className="p-3 border-t border-gold-DEFAULT/10 space-y-3 relative z-10 bg-black/20">

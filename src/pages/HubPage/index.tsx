@@ -10,7 +10,7 @@ import { useSession } from '../../hooks/useSession';
 import { useAuthStore } from '../../store/auth';
 import { generateSessionKey } from '../../services/peer.service';
 import { Session } from '../../services/session.service';
-import { Plus, Search, Filter, ChevronDown, Check, LayoutGrid, List } from 'lucide-react';
+import { Plus, Search, Filter, ChevronDown, Check } from 'lucide-react';
 
 interface HubPageProps {
   onEnterSession: (sessionId: string) => void;
@@ -31,7 +31,6 @@ export function HubPage({ onEnterSession }: HubPageProps) {
   const [isSysDropdownOpen, setIsSysDropdownOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   
-  const resultsContainerRef = useRef<HTMLDivElement>(null);
   const sysDropdownRef = useRef<HTMLDivElement>(null);
   const sessionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -80,8 +79,6 @@ export function HubPage({ onEnterSession }: HubPageProps) {
     }
   };
 
-  const canEdit = isMJ;
-
   const handleCreateSession = (name: string, system: string, imageUrl?: string) => {
     const id = crypto.randomUUID();
     const key = generateSessionKey();
@@ -110,6 +107,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
         <div className="absolute inset-0 bg-grimoire-texture opacity-[0.03] pointer-events-none z-0" />
         <div className="absolute inset-0 bg-vignette pointer-events-none z-0" />
 
+        {/* PANNEAU D'EXPLORATION (GAUCHE) */}
         <aside className={`border-r border-gold-DEFAULT/10 bg-black/40 backdrop-blur-xl flex flex-col z-10 relative overflow-hidden transition-all duration-500 ease-in-out ${
           isSearchOpen ? 'w-[350px] opacity-100' : 'w-0 opacity-0 pointer-events-none border-none'
         }`}>
@@ -154,7 +152,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
 
                   {isMJ && (
                     <div>
-                      <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Archives</h3>
+                      <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Filtres de Rôle</h3>
                       <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 gap-1">
                         <button
                           onClick={() => setActiveCategory(activeCategory === 'mine' ? 'all' : 'mine')}
@@ -206,7 +204,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
               )}
             </div>
 
-            {canEdit && (
+            {isMJ && (
               <div className="p-6 border-t border-gold-DEFAULT/10 bg-black/20">
                 <button
                   onClick={() => setShowCreateModal(true)}
@@ -220,23 +218,20 @@ export function HubPage({ onEnterSession }: HubPageProps) {
           </div>
         </aside>
 
-        <main className="flex-1 flex flex-col relative z-[5] overflow-hidden" ref={resultsContainerRef}>
+        <main className="flex-1 flex flex-col relative z-[5] overflow-hidden">
           <RuneCanvas />
-          <header className="px-12 py-10 flex items-end justify-between relative z-10 shrink-0">
-            <div>
-              <h1 className="text-4xl font-black text-white tracking-tight leading-none mb-2">
-                Archives <span className="text-gold-bright italic">Signet</span>
+          
+          <header className="flex flex-col items-center justify-center px-8 py-12 relative z-10 shrink-0">
+            <div className="text-center space-y-2">
+              <h1 className="text-4xl font-black text-glow-gold text-gold-bright tracking-[0.3em] mb-2 uppercase">
+                Signet
               </h1>
-              <div className="flex items-center gap-4 text-gold-dim/40 text-[10px] font-cinzel tracking-widest uppercase font-bold">
-                <span>{filteredSessions.length} Chronique{filteredSessions.length > 1 ? 's' : ''}</span>
-                <div className="w-1 h-1 rounded-full bg-gold-muted/30" />
-                <span>Vue: {activeCategory === 'all' ? 'Toutes' : activeCategory === 'mine' ? 'Mes Campagnes' : 'Participations'}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="p-1 rounded-lg bg-white/[0.03] border border-white/5 flex gap-1">
-                <button className="p-1.5 rounded-md bg-gold-DEFAULT/10 text-gold-bright border border-gold-DEFAULT/20"><LayoutGrid className="w-3.5 h-3.5" /></button>
-                <button className="p-1.5 rounded-md text-white/20 hover:text-white/40 transition-colors"><List className="w-3.5 h-3.5" /></button>
+              <div className="flex items-center justify-center gap-4">
+                <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
+                <span className="text-xs font-cinzel text-gold-dim tracking-[0.2em] uppercase italic">
+                  {filteredSessions.length} Archive{filteredSessions.length > 1 ? 's' : ''} Révélée{filteredSessions.length > 1 ? 's' : ''}
+                </span>
+                <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
               </div>
             </div>
           </header>
@@ -260,9 +255,9 @@ export function HubPage({ onEnterSession }: HubPageProps) {
                     <SessionCard
                       session={session}
                       isActive={false}
-                      canEdit={canEdit && !session.isSummoned}
-                      onEdit={canEdit && !session.isSummoned ? () => setEditingSession(session) : undefined}
-                      onDelete={(canEdit && !session.isSummoned) || session.isSummoned ? () => handleDeleteSession(session) : undefined}
+                      canEdit={isMJ && !session.isSummoned}
+                      onEdit={isMJ && !session.isSummoned ? () => setEditingSession(session) : undefined}
+                      onDelete={(isMJ && !session.isSummoned) || session.isSummoned ? () => handleDeleteSession(session) : undefined}
                       onClick={() => onEnterSession(session.id)}
                     />
                   </div>
