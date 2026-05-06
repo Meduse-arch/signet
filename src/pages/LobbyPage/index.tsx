@@ -103,9 +103,27 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
       // Pour le MJ : Gère les nouvelles arrivées
       if (data.type === 'PLAYER_JOIN' && isMJRef.current) {
-        console.log(`[LobbyPage] Joueur rejoint: ${data.payload.pseudo} (${data.payload.peer_id})`);
+        const newPeerId = data.payload.peer_id || fromPeerId;
+        const pseudo = data.payload.pseudo;
+        console.log(`[LobbyPage] Joueur rejoint: ${pseudo} (${newPeerId})`);
 
-        // Envoyer les infos de la session au nouveau joueur immédiatement
+        // 1. Nettoyage préventif des doublons (ID ou Pseudo)
+        const currentList = await getSessionPlayers(sessionIdRef.current);
+        for (const p of currentList) {
+          if (p.pseudo === pseudo || p.peer_id === newPeerId) {
+            await removeSessionPlayer(sessionIdRef.current, p.peer_id);
+          }
+        }
+
+        // 2. Ajout du nouveau joueur
+        await addSessionPlayer(sessionIdRef.current, newPeerId, pseudo);
+        
+        // 3. Récupération et diffusion de la liste propre
+        const updatedList = await getSessionPlayers(sessionIdRef.current);
+        setPlayers(updatedList);
+        broadcastRef.current({ type: 'PLAYER_LIST', payload: updatedList });
+
+        // 4. Envoyer les métadonnées de session au nouveau joueur immédiatement
         broadcastRef.current({
           type: 'SESSION_METADATA',
           payload: {
@@ -115,49 +133,32 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
             hostPeerId: sessionData?.hostPeerId
           }
         });
-
-        const currentList = await getSessionPlayers(sessionIdRef.current);
-        const existingWithSamePseudo = currentList.filter(p => p.pseudo === data.payload.pseudo);
-
-        for (const p of existingWithSamePseudo) {
-          if (p.peer_id !== data.payload.peer_id) {
-            await removeSessionPlayer(sessionIdRef.current, p.peer_id);
-          }
-        }
-
-        await addSessionPlayer(sessionIdRef.current, data.payload.peer_id, data.payload.pseudo);
-        await refreshPlayers();
       } 
-
+      
       // Pour le JOUEUR : Reçoit les métadonnées et les stocke
       else if (data.type === 'SESSION_METADATA' && !isMJRef.current) {
-        const metadata = data.payload;
-        
-        // Mise à jour de l'affichage immédiat
-        setLocalMetadata(metadata);
-
-        // Sauvegarde locale pour le joueur (persistance)
+        console.log(`[LobbyPage] Métadonnées reçues:`, data.payload);
+        setLocalMetadata(data.payload);
         const savedSessions = JSON.parse(localStorage.getItem('summoned_sessions') || '[]');
-        const exists = savedSessions.find((s: any) => s.hostPeerId === metadata.hostPeerId);
-
-        if (!exists) {
-          const newSession = {
-            id: `summoned-${metadata.hostPeerId}`,
-            ...metadata,
+        if (!savedSessions.find((s: any) => s.hostPeerId === data.payload.hostPeerId)) {
+          localStorage.setItem('summoned_sessions', JSON.stringify([...savedSessions, {
+            id: `summoned-${data.payload.hostPeerId}`,
+            ...data.payload,
             lastPlayed: Date.now(),
             isSummoned: true
-          };
-          localStorage.setItem('summoned_sessions', JSON.stringify([...savedSessions, newSession]));
+          }]));
         }
       }
+
       // Pour tout le monde : Liste des joueurs
       else if (data.type === 'PLAYER_LIST') {
+        console.log(`[LobbyPage] Mise à jour liste joueurs:`, data.payload);
         setPlayers(data.payload);
         if (statusRef.current !== 'connected' && statusRef.current !== 'error') {
           setStatus('connected');
         }
       } 
-      
+
       // Pour tout le monde : Fermeture de session par l'hôte
       else if (data.type === 'SESSION_CLOSED') {
         console.log('[LobbyPage] Session fermée par l\'hôte');
@@ -167,6 +168,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       // Pour tout le monde : Déconnexions
       else if (data.type === 'PLAYER_LEAVE') {
         if (isMJRef.current) {
+          console.log(`[LobbyPage] Nettoyage départ joueur: ${data.payload.peerId}`);
           await removeSessionPlayer(sessionIdRef.current, data.payload.peerId);
           await refreshPlayers();
         } else {

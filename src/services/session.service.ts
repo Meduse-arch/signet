@@ -5,6 +5,7 @@ export interface Session {
   lastPlayed: number;
   hostPeerId: string;
   system?: string;
+  isSummoned?: boolean;
 }
 
 export function formatRelativeDate(ts: number): string {
