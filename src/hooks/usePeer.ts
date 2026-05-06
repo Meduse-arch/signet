@@ -23,6 +23,10 @@ export function usePeer() {
     peerService.broadcast(data);
   }, []);
 
+  const sendTo = useCallback((peerId: string, data: PeerMessage) => {
+    peerService.sendTo(peerId, data);
+  }, []);
+
   const onData = useCallback((cb: (data: PeerMessage, fromPeerId: string) => void) => {
     const unsub = peerService.onData(cb);
     return () => { unsub(); };
@@ -35,5 +39,5 @@ export function usePeer() {
     setConnections([]);
   }, [setPeerId, setIsHost, setConnections]);
 
-  return { peerId, isHost, connections, init, broadcast, onData, destroy };
+  return { peerId, isHost, connections, init, broadcast, sendTo, onData, destroy };
 }

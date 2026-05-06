@@ -120,8 +120,8 @@ export class BoardScene extends Container {
     }
   }
 
-  async loadMap(url: string) {
-    await this.mapLayer.loadMap(url);
+  async loadMap(url: string, format?: string) {
+    await this.mapLayer.loadMap(url, format);
     
     // Auto-fit or center
     const imgBounds = this.mapLayer.getImageBounds();

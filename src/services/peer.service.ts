@@ -202,6 +202,13 @@ class PeerService {
     }
   }
 
+  public sendTo(peerId: string, data: PeerMessage) {
+    const conn = this.connections.get(peerId);
+    if (conn && conn.open) {
+      conn.send(data);
+    }
+  }
+
   public onData(cb: (data: PeerMessage, fromPeerId: string) => void) {
     this.dataCallbacks.add(cb);
     return () => this.dataCallbacks.delete(cb);

@@ -48,9 +48,14 @@ export class MapLayer extends Container {
     this.gridGraphics.stroke();
   }
 
-  async loadMap(url: string): Promise<void> {
+  async loadMap(url: string, format?: string): Promise<void> {
     try {
-      const texture = await Assets.load(url);
+      // Pour les Blob URLs (P2P), PixiJS v8 a besoin d'un indice sur le format car l'URL n'a pas d'extension
+      const loadOptions = (url.startsWith('blob:') || format) 
+        ? { src: url, format: format || 'png', parser: 'loadTextures' } 
+        : url;
+
+      const texture = await Assets.load(loadOptions);
       this.clear();
       this.mapSprite = new Sprite(texture);
       this.mapSprite.anchor.set(0.5);
