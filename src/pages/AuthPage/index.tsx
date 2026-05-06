@@ -124,9 +124,6 @@ export function AuthPage({ onEnterApp }: AuthPageProps) {
                     {isLogin ? 'RÉVEILLEZ VOTRE SIGNET' : 'FORGEZ VOTRE DESTIN'}
                   </p>
                 </div>
-                <div className="p-3 rounded-2xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 shadow-[0_0_20px_rgba(212,175,55,0.1)]">
-                  <img src={logo} alt="Logo" className="w-8 h-8 object-contain" />
-                </div>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">

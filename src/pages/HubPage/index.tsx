@@ -1,168 +1,287 @@
-import { useState } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Sidebar } from '../../components/Sidebar';
 import { RuneCanvas } from '../../components/RuneCanvas';
-import { SearchBar } from '../../components/SearchBar';
 import { SessionCard } from '../../components/SessionCard';
 import { KeyModal } from '../../components/KeyModal';
 import { CreateSessionModal } from '../../components/CreateSessionModal';
+import { SearchBar } from '../../components/SearchBar';
 import { useUIStore } from '../../store/ui';
 import { useSession } from '../../hooks/useSession';
 import { useAuthStore } from '../../store/auth';
 import { generateSessionKey } from '../../services/peer.service';
 import { Session } from '../../services/session.service';
-import { Plus } from 'lucide-react';
+import { Plus, Search, Filter, ChevronDown, Check, LayoutGrid, List } from 'lucide-react';
 
 interface HubPageProps {
   onEnterSession: (sessionId: string) => void;
 }
 
+type FilterCategory = 'all' | 'public' | 'mine';
+type SortOption = 'name' | 'date';
+
 export function HubPage({ onEnterSession }: HubPageProps) {
-  const { searchQuery, setSearchQuery, showModal, setShowModal, showCreateModal, setShowCreateModal } = useUIStore();
+  const { searchQuery, setSearchQuery, showModal, setShowModal, showCreateModal, setShowCreateModal, activeTab } = useUIStore();
   const { sessions, addSession, removeSession, isLoading } = useSession();
   const { user } = useAuthStore();
-  const [showSearch, setShowSearch] = useState(false);
+  
+  const [activeCategory, setActiveCategory] = useState<FilterCategory>('all');
+  const [activeSystem, setActiveSystem] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('date');
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [isSysDropdownOpen, setIsSysDropdownOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
+  
+  const resultsContainerRef = useRef<HTMLDivElement>(null);
+  const sysDropdownRef = useRef<HTMLDivElement>(null);
+  const sessionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const filteredSessions = sessions.filter(s =>
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (s.system && s.system.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const isSearchOpen = activeTab === 'search';
+  const isMJ = user?.role === 'mj' || user?.role === 'admin';
 
-  const canEdit = user?.role === 'mj' || user?.role === 'admin';
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (sysDropdownRef.current && !sysDropdownRef.current.contains(event.target as Node)) {
+        setIsSysDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredSessions = useMemo(() => {
+    let result = sessions.filter(s => {
+      const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSystem = !activeSystem || s.system === activeSystem;
+      const matchesCategory = 
+        activeCategory === 'all' ? true :
+        activeCategory === 'mine' ? !s.isSummoned :
+        activeCategory === 'public' ? s.isSummoned : true;
+
+      return matchesSearch && matchesSystem && matchesCategory;
+    });
+
+    return result.sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      return b.lastPlayed - a.lastPlayed;
+    });
+  }, [sessions, searchQuery, activeSystem, activeCategory, sortBy]);
+
+  const quickResults = useMemo(() => {
+    if (!searchQuery) return [];
+    return filteredSessions.slice(0, 10).map(s => ({ id: s.id, name: s.name }));
+  }, [filteredSessions, searchQuery]);
+
+  const handleResultClick = (id: string) => {
+    const el = sessionRefs.current.get(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-gold-bright', 'ring-offset-4', 'ring-offset-black');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-gold-bright', 'ring-offset-4', 'ring-offset-black'), 2000);
+    }
+  };
+
+  const canEdit = isMJ;
 
   const handleCreateSession = (name: string, system: string, imageUrl?: string) => {
     const id = crypto.randomUUID();
     const key = generateSessionKey();
-    addSession({
-      id,
-      name,
-      lastPlayed: Date.now(),
-      hostPeerId: key,
-      system,
-      imageUrl
-    });
+    addSession({ id, name, lastPlayed: Date.now(), hostPeerId: key, system, imageUrl });
     setShowCreateModal(false);
     onEnterSession(id);
   };
 
   const handleUpdateSession = (name: string, system: string, imageUrl?: string) => {
     if (!editingSession) return;
-    addSession({
-      ...editingSession,
-      name,
-      system,
-      imageUrl,
-      lastPlayed: Date.now()
-    });
+    addSession({ ...editingSession, name, system, imageUrl, lastPlayed: Date.now() });
     setEditingSession(null);
   };
 
   const handleDeleteSession = (session: Session) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la session "${session.name}" ? Cette action est irréversible.`)) {
+    if (window.confirm(`Voulez-vous vraiment bannir cette archive ?`)) {
       removeSession(session.id);
     }
   };
 
   return (
-    <div className="flex h-screen bg-surface w-full overflow-hidden text-white font-sans selection:bg-gold-DEFAULT/30 relative">
-      {/* Texture de fond Grimoire */}
-      <div className="absolute inset-0 bg-grimoire-texture opacity-[0.03] pointer-events-none z-[1]" />
-      <div className="absolute inset-0 bg-vignette pointer-events-none z-[2]" />
-      
-      <Sidebar
-        onSearchToggle={() => setShowSearch(!showSearch)}
-        onKeyOpen={() => setShowModal(true)}
-      />
+    <div className="flex h-screen bg-[#050507] w-full overflow-hidden text-white font-sans selection:bg-gold-DEFAULT/30 relative">
+      <Sidebar onSearchToggle={() => {}} onKeyOpen={() => setShowModal(true)} />
 
-      <main className="flex-1 relative flex flex-col overflow-hidden z-[3]">
-        <RuneCanvas />
+      <div className="flex flex-1 overflow-hidden relative">
+        <div className="absolute inset-0 bg-grimoire-texture opacity-[0.03] pointer-events-none z-0" />
+        <div className="absolute inset-0 bg-vignette pointer-events-none z-0" />
 
-        <div className="relative z-10 flex flex-col h-full pointer-events-none">
-          <header className="flex flex-col items-center justify-center px-8 py-12 pointer-events-auto">
-            <div className="text-center space-y-2">
-              <h1 className="text-4xl font-black text-glow-gold text-gold-bright tracking-[0.3em] mb-2">
-                Signet
-              </h1>
-              <div className="flex items-center justify-center gap-4">
-                <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
-                <span className="text-xs font-cinzel text-gold-dim tracking-[0.2em] uppercase italic">
-                  {sessions.length} Archive{sessions.length > 1 ? 's' : ''} Découverte{sessions.length > 1 ? 's' : ''}
-                </span>
-                <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
-              </div>
+        <aside className={`border-r border-gold-DEFAULT/10 bg-black/40 backdrop-blur-xl flex flex-col z-10 relative overflow-hidden transition-all duration-500 ease-in-out ${
+          isSearchOpen ? 'w-[350px] opacity-100' : 'w-0 opacity-0 pointer-events-none border-none'
+        }`}>
+          <div className="min-w-[350px] flex-1 flex flex-col h-full">
+            <div className="p-8 space-y-8 flex-1 overflow-y-auto custom-scrollbar">
+              <SearchBar 
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onClear={() => setSearchQuery('')}
+                results={quickResults}
+                onResultClick={handleResultClick}
+                activeFiltersCount={(activeSystem ? 1 : 0) + (activeCategory !== 'all' ? 1 : 0)}
+                onFilterClick={() => setShowFilterMenu(!showFilterMenu)}
+              />
+
+              {showFilterMenu && (
+                <div className="p-6 rounded-[1.5rem] bg-white/[0.03] border border-gold-DEFAULT/20 animate-in zoom-in-95 duration-200 space-y-6">
+                  <div className="relative" ref={sysDropdownRef}>
+                    <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Système</h3>
+                    <button 
+                      onClick={() => setIsSysDropdownOpen(!isSysDropdownOpen)}
+                      className="w-full flex items-center justify-between bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-[10px] font-cinzel text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
+                    >
+                      <span className="tracking-widest uppercase">{activeSystem || 'Tous'}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isSysDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isSysDropdownOpen && (
+                      <div className="absolute top-full left-0 w-full mt-2 bg-[#121216] border border-gold-DEFAULT/20 rounded-xl shadow-2xl z-[60] overflow-hidden">
+                        {['Seal'].map(sys => (
+                          <div 
+                            key={sys}
+                            onClick={() => { setActiveSystem(activeSystem === sys ? null : sys); setIsSysDropdownOpen(false); }}
+                            className="flex items-center justify-between px-4 py-3 text-[10px] font-cinzel text-gold-dim hover:text-gold-bright hover:bg-gold-DEFAULT/5 cursor-pointer border-b border-white/5 last:border-0"
+                          >
+                            <span className="tracking-widest uppercase">{sys}</span>
+                            {activeSystem === sys && <Check className="w-3 h-3 text-gold-bright" />}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {isMJ && (
+                    <div>
+                      <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Archives</h3>
+                      <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 gap-1">
+                        <button
+                          onClick={() => setActiveCategory(activeCategory === 'mine' ? 'all' : 'mine')}
+                          className={`flex-1 py-2 text-[8px] font-cinzel font-bold rounded-lg transition-all border ${
+                            activeCategory === 'mine' ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'text-white/40 border-transparent hover:text-white'
+                          }`}
+                        >
+                          MES CAMPAGNES
+                        </button>
+                        <button
+                          onClick={() => setActiveCategory(activeCategory === 'public' ? 'all' : 'public')}
+                          className={`flex-1 py-2 text-[8px] font-cinzel font-bold rounded-lg transition-all border ${
+                            activeCategory === 'public' ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'text-white/40 border-transparent hover:text-white'
+                          }`}
+                        >
+                          JE PARTICIPE
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Trier par</h3>
+                    <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 gap-1">
+                      {[
+                        { id: 'date', label: 'Récents' },
+                        { id: 'name', label: 'A-Z' },
+                      ].map(opt => (
+                        <button
+                          key={opt.id}
+                          onClick={() => setSortBy(opt.id as SortOption)}
+                          className={`flex-1 py-2 text-[9px] font-cinzel font-bold rounded-lg transition-all ${
+                            sortBy === opt.id ? 'bg-white/10 text-white border border-white/10' : 'text-white/40 hover:text-white border border-transparent'
+                          }`}
+                        >
+                          {opt.label.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => {setActiveSystem(null); setSortBy('date'); setActiveCategory('all'); setSearchQuery('');}}
+                    className="w-full py-2 text-[8px] font-black text-gold-dim hover:text-gold-bright uppercase tracking-[0.2em] transition-colors border-t border-white/5 pt-4"
+                  >
+                    Retirez les filtres
+                  </button>
+                </div>
+              )}
             </div>
 
-            {showSearch && (
-              <div className="mt-8 w-full max-w-md">
-                <SearchBar
-                  value={searchQuery}
-                  onChange={setSearchQuery}
-                  onClear={() => {
-                    setSearchQuery('');
-                    setShowSearch(false);
-                  }}
-                />
+            {canEdit && (
+              <div className="p-6 border-t border-gold-DEFAULT/10 bg-black/20">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-gold-DEFAULT text-black font-black text-[10px] tracking-[0.2em] uppercase hover:bg-gold-bright hover:scale-[1.02] active:scale-95 transition-all shadow-[0_10px_30px_rgba(212,175,55,0.15)]"
+                >
+                  <Plus className="w-4 h-4 stroke-[3px]" />
+                  Invoquer Archive
+                </button>
               </div>
             )}
+          </div>
+        </aside>
+
+        <main className="flex-1 flex flex-col relative z-[5] overflow-hidden" ref={resultsContainerRef}>
+          <RuneCanvas />
+          <header className="px-12 py-10 flex items-end justify-between relative z-10 shrink-0">
+            <div>
+              <h1 className="text-4xl font-black text-white tracking-tight leading-none mb-2">
+                Archives <span className="text-gold-bright italic">Signet</span>
+              </h1>
+              <div className="flex items-center gap-4 text-gold-dim/40 text-[10px] font-cinzel tracking-widest uppercase font-bold">
+                <span>{filteredSessions.length} Chronique{filteredSessions.length > 1 ? 's' : ''}</span>
+                <div className="w-1 h-1 rounded-full bg-gold-muted/30" />
+                <span>Vue: {activeCategory === 'all' ? 'Toutes' : activeCategory === 'mine' ? 'Mes Campagnes' : 'Participations'}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="p-1 rounded-lg bg-white/[0.03] border border-white/5 flex gap-1">
+                <button className="p-1.5 rounded-md bg-gold-DEFAULT/10 text-gold-bright border border-gold-DEFAULT/20"><LayoutGrid className="w-3.5 h-3.5" /></button>
+                <button className="p-1.5 rounded-md text-white/20 hover:text-white/40 transition-colors"><List className="w-3.5 h-3.5" /></button>
+              </div>
+            </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto px-12 pb-12 pointer-events-auto custom-scrollbar">
+          <div className="flex-1 overflow-y-auto px-12 pb-12 relative z-10 custom-scrollbar">
             {isLoading ? (
-              <div className="flex items-center justify-center h-full font-cinzel text-gold-dim animate-pulse tracking-widest">
-                Invocation des Archives...
+              <div className="flex items-center justify-center h-full font-cinzel text-gold-dim animate-pulse tracking-widest text-[10px]">ÉVEIL DES ARCHIVES...</div>
+            ) : filteredSessions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-3xl rounded-full" />
+                  <Search className="w-16 h-16 text-gold-dim mb-4 relative z-10" />
+                </div>
+                <p className="font-serif italic text-xl text-gold-dim">Aucune rune ne correspond à votre recherche...</p>
+                <button onClick={() => {setSearchQuery(''); setActiveSystem(null); setActiveCategory('all');}} className="px-6 py-2 rounded-full border border-gold-DEFAULT/20 text-[9px] font-cinzel text-gold-bright hover:bg-gold-DEFAULT/5 tracking-[0.2em] uppercase transition-all">Retirez les filtres</button>
               </div>
             ) : (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-8 content-start max-w-7xl mx-auto w-full">
-
-                {canEdit && (
-                  <div
-                    onClick={() => setShowCreateModal(true)}
-                    className="h-[180px] rounded-2xl border border-dashed border-gold-muted/30 flex flex-col items-center justify-center text-gold-dim hover:text-gold-bright hover:border-gold-DEFAULT hover:bg-gold-DEFAULT/5 cursor-pointer transition-all hover:scale-[1.02] group relative overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-rune-glow opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Plus className="w-10 h-10 mb-3 relative z-10" />
-                    <span className="text-xs font-cinzel tracking-widest relative z-10">Invoquer une Session</span>
-                  </div>
-                )}
-
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 content-start animate-page-enter">
                 {filteredSessions.map(session => (
-                  <SessionCard
-                    key={session.id}
-                    session={session}
-                    isActive={false}
-                    canEdit={canEdit && !session.isSummoned}
-                    onEdit={canEdit && !session.isSummoned ? () => setEditingSession(session) : undefined}
-                    onDelete={(canEdit && !session.isSummoned) || session.isSummoned ? () => handleDeleteSession(session) : undefined}
-                    onClick={() => onEnterSession(session.id)}
-                  />
+                  <div key={session.id} ref={el => { if (el) sessionRefs.current.set(session.id, el); else sessionRefs.current.delete(session.id); }} className="transition-all duration-300">
+                    <SessionCard
+                      session={session}
+                      isActive={false}
+                      canEdit={canEdit && !session.isSummoned}
+                      onEdit={canEdit && !session.isSummoned ? () => setEditingSession(session) : undefined}
+                      onDelete={(canEdit && !session.isSummoned) || session.isSummoned ? () => handleDeleteSession(session) : undefined}
+                      onClick={() => onEnterSession(session.id)}
+                    />
+                  </div>
                 ))}
               </div>
             )}
           </div>
-        </div>
+        </main>
+      </div>
 
-        <div className="pointer-events-auto">
-          <CreateSessionModal
-            isOpen={showCreateModal || !!editingSession}
-            onClose={() => {
-              setShowCreateModal(false);
-              setEditingSession(null);
-            }}
-            onSubmit={editingSession ? handleUpdateSession : handleCreateSession}
-            initialData={editingSession || undefined}
-            title={editingSession ? "Modifier la Session" : "Nouvelle Session"}
-            submitLabel={editingSession ? "Enregistrer" : "Créer"}
-          />
-          <KeyModal
-            isOpen={showModal}
-            onClose={() => setShowModal(false)}
-            onJoin={(key) => {
-              onEnterSession(key);
-              setShowModal(false);
-            }}
-          />
-        </div>
-      </main>
+      <CreateSessionModal
+        isOpen={showCreateModal || !!editingSession}
+        onClose={() => { setShowCreateModal(false); setEditingSession(null); }}
+        onSubmit={editingSession ? handleUpdateSession : handleCreateSession}
+        initialData={editingSession || undefined}
+        title={editingSession ? "Altérer Archive" : "Nouvelle Archive"}
+        submitLabel={editingSession ? "Enregistrer" : "Invoquer"}
+      />
+      <KeyModal isOpen={showModal} onClose={() => setShowModal(false)} onJoin={(key) => { onEnterSession(key); setShowModal(false); }} />
     </div>
   );
 }
