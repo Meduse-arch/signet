@@ -3,8 +3,10 @@ import Database from 'better-sqlite3';
 import * as path from 'path';
 
 let db: Database.Database;
+let mainWin: BrowserWindow | null = null;
 
-export function registerIpcHandlers() {
+export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
+  mainWin = mainWindow;
   const dbPath = path.join(app.getPath('userData'), 'sigil-vtt.db');
   console.log('Database path:', dbPath);
   db = new Database(dbPath);
@@ -91,7 +93,27 @@ export function registerIpcHandlers() {
     clearPlayersStmt.run(sessionId);
   });
 
-  ipcMain.handle('windows:openExternal', (_, type, sessionId) => {
+  ipcMain.handle('windows:reDock', (event, type, sessionId) => {
+    console.log('IPC: Re-docking window', type);
+    const targetWin = mainWin || BrowserWindow.getAllWindows().find(w => !w.webContents.getURL().includes('/external/'));
+    if (targetWin) {
+      targetWin.webContents.send('windows:reDocked', type);
+    }
+    
+    const callerWin = BrowserWindow.fromWebContents(event.sender);
+    if (callerWin) {
+      callerWin.close();
+    }
+  });
+
+  ipcMain.handle('windows:openExternal', (event, type, sessionId) => {
+    if (!mainWin || mainWin.isDestroyed()) {
+      const caller = BrowserWindow.fromWebContents(event.sender);
+      if (caller && !caller.webContents.getURL().includes('/external/')) {
+        mainWin = caller;
+      }
+    }
+    
     const win = new BrowserWindow({
       width: 400,
       height: 600,

@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { SceneWindowContent } from '../../components/SignetInterface';
 import { PlayerHUD } from '../../components/PlayerHUD';
 import { usePeer } from '../../hooks/usePeer';
-import { usePeersStore } from '../../store/peers';
+import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { getSessionPlayers } from '../../services/session.service';
 import { MapItem } from '../../components/BoardCanvas';
+import { LogIn } from 'lucide-react';
 
 interface ExternalWindowPageProps {
   type: string;
@@ -14,7 +15,9 @@ interface ExternalWindowPageProps {
 
 export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps) {
   const { onData, broadcast, init } = usePeer();
-  const { isHost } = usePeersStore();
+  const { user } = useAuthStore();
+  const isMJ = !!user && user.role >= SecurityLevel.MJ;
+  
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string }[]>([]);
   const [maps, setMaps] = useState<MapItem[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('');
@@ -30,7 +33,7 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
       }
     };
     setup();
-  }, [sessionId, type, init]); // Suppression de isHost des dépendances pour forcer false
+  }, [sessionId, type, init]);
 
   // Chargement initial des données (Scènes)
   useEffect(() => {
@@ -61,7 +64,6 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
       if (data.type === 'PLAYER_LIST') {
         setPlayers(data.payload);
       } else if (data.type === 'MAP_CHANGE') {
-        // Synchroniser l'affichage de la map active en utilisant l'état local ou localStorage
         const targetUrl = data.payload.url;
         const map = maps.find((m: MapItem) => m.url === targetUrl);
         
@@ -69,8 +71,6 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
           setCurrentMapId(map.id);
           localStorage.setItem(`active_map_${sessionId}`, map.id);
         } else {
-          // Si on n'a pas encore la map dans l'état (ex: MAP_UPDATE pas encore reçu)
-          // On peut essayer de la trouver dans localStorage pour être sûr
           const savedMaps = localStorage.getItem(`maps_${sessionId}`);
           if (savedMaps) {
             const parsed = JSON.parse(savedMaps);
@@ -82,30 +82,62 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
           }
         }
       } else if (data.type === 'MAP_UPDATE') {
-        // Une nouvelle map a été ajoutée par l'app principale
         setMaps(data.payload);
       }
     });
     return () => unsub();
   }, [onData, sessionId, maps]);
+const handleSelectMap = (map: MapItem) => {
+  setCurrentMapId(map.id);
+  localStorage.setItem(`active_map_${sessionId}`, map.id);
 
-  const handleSelectMap = (map: MapItem) => {
-    setCurrentMapId(map.id);
-    localStorage.setItem(`active_map_${sessionId}`, map.id);
-    if (isHost) {
-      broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
+  // Sync local via BroadcastChannel
+  const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+  channel.postMessage({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
+  channel.close();
+
+  if (isMJ) {
+    broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
+  }
+};
+
+const handleAddMap = (name: string, url: string) => {
+  const newMap = { id: Math.random().toString(36).substring(2, 9), name, url };
+  const updatedMaps = [...maps, newMap];
+  setMaps(updatedMaps);
+  localStorage.setItem(`maps_${sessionId}`, JSON.stringify(updatedMaps));
+
+  // Sync local via BroadcastChannel
+  const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+  channel.postMessage({ type: 'MAP_UPDATE', payload: updatedMaps });
+  channel.close();
+
+  if (isMJ) {
+    // Prévenir l'app principale et les autres
+    broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+  }
+};
+
+// Écoute BroadcastChannel pour recevoir les mises à jour de l'app principale
+useEffect(() => {
+  const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+  channel.onmessage = (event) => {
+    const { type, payload } = event.data;
+    if (type === 'MAP_CHANGE') {
+      const map = maps.find((m: MapItem) => m.url === payload.url);
+      if (map) {
+        setCurrentMapId(map.id);
+      }
+    } else if (type === 'MAP_UPDATE') {
+      setMaps(payload);
     }
   };
+  return () => channel.close();
+}, [sessionId, maps]);
 
-  const handleAddMap = (name: string, url: string) => {
-    const newMap = { id: Math.random().toString(36).substring(2, 9), name, url };
-    const updatedMaps = [...maps, newMap];
-    setMaps(updatedMaps);
-    localStorage.setItem(`maps_${sessionId}`, JSON.stringify(updatedMaps));
-    
-    if (isHost) {
-      // Prévenir l'app principale et les autres
-      broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+  const handleReDock = () => {
+    if (window.electronAPI) {
+      window.electronAPI.reDock(type, sessionId);
     }
   };
 
@@ -120,6 +152,15 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
               type === 'players' ? 'Cercle des Voyageurs' : 
               type.toUpperCase()}
           </h1>
+
+          <button 
+            onClick={handleReDock}
+            className="flex items-center gap-1.5 px-2 py-1 rounded bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-[8px] font-cinzel text-gold-bright hover:bg-gold-DEFAULT/20 transition-all"
+            title="Réintégrer l'application"
+          >
+            <LogIn size={10} className="rotate-180" />
+            RÉINTÉGRER
+          </button>
        </div>
 
        <div className="flex-1 overflow-y-auto custom-scrollbar">

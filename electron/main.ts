@@ -47,12 +47,13 @@ app.whenReady().then(() => {
     });
   });
 
-  registerIpcHandlers();
   createWindow();
+  registerIpcHandlers(mainWindow);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
+      registerIpcHandlers(mainWindow);
     }
   });
 });

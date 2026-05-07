@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BoardCanvas, MapItem } from '../../components/BoardCanvas';
 import { SignetLauncher, DraggableWindow, SceneWindowContent } from '../../components/SignetInterface';
 import { useSignetInterface } from '../../hooks/useSignetInterface';
 import { usePeersStore } from '../../store/peers';
+import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { PlayerHUD } from '../../components/PlayerHUD';
 
@@ -14,6 +15,9 @@ interface SealEngineProps {
 
 export default function SealEngine({ sessionId, imageUrl, players }: SealEngineProps) {
   const { isHost } = usePeersStore();
+  const { user } = useAuthStore();
+  const isMJ = !!user && user.role >= SecurityLevel.MJ;
+  
   const { broadcast, onData } = usePeer();
   const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
 
@@ -44,48 +48,87 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
     localStorage.setItem(`active_map_${sessionId}`, currentMapId);
   }, [currentMapId, sessionId]);
 
-  const handleSelectMap = (map: MapItem) => {
+  // Canal de communication local pour les fenêtres du MJ
+  useEffect(() => {
+    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    
+    channel.onmessage = (event) => {
+      const { type, payload } = event.data;
+      console.log(`[SealEngine] Sync reçu via BroadcastChannel: ${type}`);
+      
+      if (type === 'MAP_CHANGE') {
+        const map = maps.find(m => m.url === payload.url);
+        if (map) {
+          setCurrentMapId(map.id);
+          // Si on est l'hôte, on relaye aux autres joueurs via P2P
+          if (isHost) {
+            broadcast({ type, payload });
+          }
+        }
+      } else if (type === 'MAP_UPDATE') {
+        setMaps(payload);
+        if (isHost) {
+          broadcast({ type, payload });
+        }
+      }
+    };
+
+    return () => channel.close();
+  }, [sessionId, maps, isHost, broadcast]);
+
+  const handleSelectMap = useCallback((map: MapItem) => {
     setCurrentMapId(map.id);
+    
+    // Sync local
+    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    channel.postMessage({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
+    channel.close();
+
     if (isHost) {
       broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
     }
-  };
+  }, [sessionId, isHost, broadcast]);
 
-  const handleAddMap = (name: string, url: string) => {
+  const handleAddMap = useCallback((name: string, url: string) => {
     const newMap = { id: Math.random().toString(36).substring(2, 9), name, url };
     const updatedMaps = [...maps, newMap];
     setMaps(updatedMaps);
+
+    // Sync local
+    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    channel.postMessage({ type: 'MAP_UPDATE', payload: updatedMaps });
+    channel.close();
+
     if (isHost) {
       broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
     }
-  };
+  }, [sessionId, maps, isHost, broadcast]);
 
-  // Écoute des messages (pour synchronisation avec fenêtres externes)
+  // Écoute des messages P2P (pour les joueurs distants)
   useEffect(() => {
-    const unsub = onData((data) => {
+    const unsubData = onData((data) => {
       if (data.type === 'MAP_CHANGE') {
         const map = maps.find(m => m.url === data.payload.url);
         if (map) {
           setCurrentMapId(map.id);
-          // RELAY: On re-diffuse aux autres (joueurs) ce que la fenêtre externe a envoyé
-          if (isHost) {
-            broadcast(data);
-          }
         }
       } else if (data.type === 'MAP_UPDATE') {
         setMaps(data.payload);
-        // RELAY: On synchronise tout le monde sur la nouvelle liste de cartes
-        if (isHost) {
-          broadcast(data);
-        }
       }
     });
-    return () => unsub();
-  }, [onData, maps, isHost, broadcast]);
 
-  // On simule des joueurs pour le HUD (Normalement passé par le parent, mais on peut le récupérer du store)
-  // Dans LobbyPage, players est géré localement. On devrait peut-être utiliser usePeersStore ?
-  // Pour l'instant, on va juste afficher le HUD si on a des infos.
+    let unsubDock: (() => void) | undefined;
+    if (window.electronAPI && window.electronAPI.onReDock) {
+      unsubDock = window.electronAPI.onReDock((type) => {
+        openWindow(type as any);
+      });
+    }
+
+    return () => {
+      unsubData();
+      if (unsubDock) unsubDock();
+    };
+  }, [onData, maps, openWindow]);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center bg-[#0D0D0F] relative w-full h-full overflow-hidden">
@@ -98,7 +141,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
       />
 
       {/* Signet Launcher (Orb) */}
-      {isHost && (
+      {isMJ && (
         <SignetLauncher onOpenWindow={openWindow} />
       )}
 
@@ -123,6 +166,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
         </DraggableWindow>
       )}
 
+      {/* ... (rest of windows) ... */}
       {windows.story.isOpen && (
         <DraggableWindow
           id="story"
@@ -197,4 +241,4 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
       )}
       </div>
       );
-      }
+}

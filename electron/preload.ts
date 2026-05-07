@@ -26,6 +26,8 @@ export interface ElectronAPI {
   removePlayer: (sessionId: string, peerId: string) => Promise<void>;
   clearPlayers: (sessionId: string) => Promise<void>;
   openExternalWindow: (type: string, sessionId: string) => Promise<void>;
+  reDock: (type: string, sessionId: string) => Promise<void>;
+  onReDock: (callback: (type: string) => void) => void;
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -38,6 +40,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removePlayer: (sessionId: string, peerId: string) => ipcRenderer.invoke('players:remove', sessionId, peerId),
   clearPlayers: (sessionId: string) => ipcRenderer.invoke('players:clear', sessionId),
   openExternalWindow: (type: string, sessionId: string) => ipcRenderer.invoke('windows:openExternal', type, sessionId),
+  reDock: (type: string, sessionId: string) => ipcRenderer.invoke('windows:reDock', type, sessionId),
+  onReDock: (callback: (type: string) => void) => {
+    const listener = (_event: any, type: string) => callback(type);
+    ipcRenderer.on('windows:reDocked', listener);
+    return () => {
+      ipcRenderer.removeListener('windows:reDocked', listener);
+    };
+  },
 });
 
 declare global {
