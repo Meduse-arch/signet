@@ -7,10 +7,10 @@ import { CreateSessionModal } from '../../components/CreateSessionModal';
 import { SearchBar } from '../../components/SearchBar';
 import { useUIStore } from '../../store/ui';
 import { useSession } from '../../hooks/useSession';
-import { useAuthStore } from '../../store/auth';
+import { SecurityLevel, useAuthStore } from '../../store/auth';
 import { generateSessionKey } from '../../services/peer.service';
 import { Session } from '../../services/session.service';
-import { Plus, Search, Filter, ChevronDown, Check } from 'lucide-react';
+import { Search, ChevronDown, Check } from 'lucide-react';
 
 interface HubPageProps {
   onEnterSession: (sessionId: string) => void;
@@ -35,7 +35,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
   const sessionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const isSearchOpen = activeTab === 'search';
-  const isMJ = user?.role === 'mj' || user?.role === 'admin';
+  const isMJ = !!user && user.role >= SecurityLevel.MJ;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -48,7 +48,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
   }, []);
 
   const filteredSessions = useMemo(() => {
-    let result = sessions.filter(s => {
+    const result = sessions.filter(s => {
       const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesSystem = !activeSystem || s.system === activeSystem;
       const matchesCategory = 

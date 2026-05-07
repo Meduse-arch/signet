@@ -1,6 +1,6 @@
 import { Library, Search, Key, ChevronLeft, ChevronRight, LogOut, Plus } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
-import { useAuthStore } from '../../store/auth';
+import { SecurityLevel, useAuthStore } from '../../store/auth';
 import logo from '../../assets/logo.png';
 
 interface SidebarProps {
@@ -11,7 +11,7 @@ interface SidebarProps {
 export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
   const { sidebarOpen, setSidebarOpen, activeTab, setActiveTab, setShowCreateModal } = useUIStore();
   const { logout, user } = useAuthStore();
-  const isMJ = user?.role === 'mj' || user?.role === 'admin';
+  const isMJ = user && user.role >= SecurityLevel.MJ;
 
   const navItems = [
     { id: 'library', icon: Library, label: 'Bibliothèque', action: () => setActiveTab('library') },

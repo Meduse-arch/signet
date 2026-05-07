@@ -25,6 +25,7 @@ export interface ElectronAPI {
   addPlayer: (sessionId: string, peerId: string, pseudo: string) => Promise<void>;
   removePlayer: (sessionId: string, peerId: string) => Promise<void>;
   clearPlayers: (sessionId: string) => Promise<void>;
+  openExternalWindow: (type: string, sessionId: string) => Promise<void>;
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -36,6 +37,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   addPlayer: (sessionId: string, peerId: string, pseudo: string) => ipcRenderer.invoke('players:add', sessionId, peerId, pseudo),
   removePlayer: (sessionId: string, peerId: string) => ipcRenderer.invoke('players:remove', sessionId, peerId),
   clearPlayers: (sessionId: string) => ipcRenderer.invoke('players:clear', sessionId),
+  openExternalWindow: (type: string, sessionId: string) => ipcRenderer.invoke('windows:openExternal', type, sessionId),
 });
 
 declare global {

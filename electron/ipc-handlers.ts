@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron';
+import { app, ipcMain, BrowserWindow } from 'electron';
 import Database from 'better-sqlite3';
 import * as path from 'path';
 
@@ -89,5 +89,30 @@ export function registerIpcHandlers() {
 
   ipcMain.handle('players:clear', (_, sessionId) => {
     clearPlayersStmt.run(sessionId);
+  });
+
+  ipcMain.handle('windows:openExternal', (_, type, sessionId) => {
+    const win = new BrowserWindow({
+      width: 400,
+      height: 600,
+      title: `Sigil - ${type.toUpperCase()}`,
+      backgroundColor: '#0D0D0F',
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        webSecurity: false,
+        preload: path.join(__dirname, 'preload.js'),
+      },
+    });
+
+    const url = process.env.NODE_ENV === 'development' || !app.isPackaged
+      ? `http://localhost:5173/#/external/${type}/${sessionId}`
+      : `${path.join(__dirname, '../dist/index.html')}#/external/${type}/${sessionId}`;
+
+    if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+      win.loadURL(url);
+    } else {
+      win.loadFile(path.join(__dirname, '../dist/index.html'), { hash: `/external/${type}/${sessionId}` });
+    }
   });
 }

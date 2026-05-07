@@ -8,9 +8,10 @@ interface Player {
 
 interface PlayerHUDProps {
   players: Player[];
+  className?: string;
 }
 
-export function PlayerHUD({ players }: PlayerHUDProps) {
+export function PlayerHUD({ players, className }: PlayerHUDProps) {
   const { peerId, isHost } = usePeersStore();
   const { user } = useAuthStore();
 
@@ -18,7 +19,7 @@ export function PlayerHUD({ players }: PlayerHUDProps) {
   const otherPlayers = players.filter(p => p.peer_id !== peerId);
 
   return (
-    <div className="absolute top-4 right-4 flex flex-col gap-3 z-10 pointer-events-none">
+    <div className={className || "absolute top-4 right-4 flex flex-col gap-3 z-10 pointer-events-none"}>
       {/* Self (Moi) */}
       <div className="flex items-center gap-3 bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/30 p-1.5 pr-4 rounded-full shadow-2xl pointer-events-auto hover:border-gold-DEFAULT transition-colors group">
         <div className="relative">

@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { HashRouter, Routes, Route, useParams } from 'react-router-dom';
 import { HubPage } from './pages/HubPage';
 import { LobbyPage } from './pages/LobbyPage';
 import { AuthPage } from './pages/AuthPage';
+import { ExternalWindowPage } from './pages/ExternalWindowPage';
 import { useAuthStore } from './store/auth';
 import logo from './assets/logo.png';
 
-export function App() {
+function MainApp() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showRune, setShowRune] = useState(false);
@@ -75,5 +77,22 @@ export function App() {
         </div>
       )}
     </div>
+  );
+}
+
+function ExternalWindowWrapper() {
+  const { type, sessionId } = useParams<{ type: string; sessionId: string }>();
+  if (!type || !sessionId) return null;
+  return <ExternalWindowPage type={type} sessionId={sessionId} />;
+}
+
+export function App() {
+  return (
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<MainApp />} />
+        <Route path="/external/:type/:sessionId" element={<ExternalWindowWrapper />} />
+      </Routes>
+    </HashRouter>
   );
 }

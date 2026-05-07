@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, ChevronDown, Search, Check, Settings2 } from 'lucide-react';
+import { X, ChevronDown, Check, Settings2 } from 'lucide-react';
 import { SealSettingsModal } from './SealSettingsModal';
 
 interface SessionModalProps {

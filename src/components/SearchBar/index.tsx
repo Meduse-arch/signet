@@ -1,5 +1,4 @@
 import { Search, X, Sliders, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
 
 interface SearchBarProps {
   value: string;

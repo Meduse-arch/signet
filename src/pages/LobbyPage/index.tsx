@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePeer } from '../../hooks/usePeer';
-import { useAuthStore } from '../../store/auth';
+import { SecurityLevel, useAuthStore } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
-import { relayService } from '../../services/relay.service';
 import { usePeersStore } from '../../store/peers';
-import { PlayerHUD } from '../../components/PlayerHUD';
-import { RuneCanvas } from '../../components/RuneCanvas';
 import {
   addSessionPlayer,
   clearSessionPlayers,
@@ -43,11 +40,9 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   // ✅ État local pour les métadonnées (au cas où le joueur n'ait pas la session en DB)
   const [localMetadata, setLocalMetadata] = useState<{name?: string, imageUrl?: string, system?: string, hostPeerId?: string} | null>(null);
 
-  const pendingJoinRef = useRef<{ peerId: string; pseudo: string } | null>(null);
-
   // ✅ Stabiliser les refs pour les callbacks asynchrones
   const currentUser = useAuthStore(state => state.user);
-  const isMJ = (currentUser?.role === 'mj' || currentUser?.role === 'admin') && !sessionId.startsWith('SIGNET-');
+  const isMJ = !!currentUser && currentUser.role >= SecurityLevel.MJ && !sessionId.startsWith('SIGNET-');
 
   // ✅ Récupérer les infos de la session
   const currentSessions = useSessionStore(state => state.sessions);
@@ -65,11 +60,13 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const broadcastRef = useRef(broadcast);
   const initRef = useRef(init);
   const statusRef = useRef(status);
+  const onLeaveRef = useRef(onLeave);
 
   useEffect(() => { isMJRef.current = isMJ; }, [isMJ]);
   useEffect(() => { broadcastRef.current = broadcast; }, [broadcast]);
   useEffect(() => { initRef.current = init; }, [init]);
   useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { onLeaveRef.current = onLeave; }, [onLeave]);
 
   // ✅ refreshPlayers stable
   const refreshPlayers = useCallback(async () => {
@@ -250,14 +247,16 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
   // Nettoyage à la sortie
   useEffect(() => {
+    const bc = broadcastRef.current;
+    const mj = isMJRef.current;
     return () => { 
       const currentPeerId = usePeersStore.getState().peerId;
       if (currentPeerId) {
-        if (isMJRef.current) {
+        if (mj) {
           console.log('[LobbyPage] Hôte quitte : envoi SESSION_CLOSED');
-          broadcastRef.current({ type: 'SESSION_CLOSED', payload: {} });
+          bc({ type: 'SESSION_CLOSED', payload: {} });
         } else {
-          broadcastRef.current({ 
+          bc({ 
             type: 'PLAYER_LEAVE', 
             payload: { peerId: currentPeerId } 
           });
@@ -295,6 +294,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
           onPause={handlePauseSession}
           sessionId={sessionId}
           imageUrl={sessionImage}
+          players={players}
         />
       </div>
     );
