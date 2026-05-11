@@ -28,6 +28,16 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       pseudo TEXT,
       PRIMARY KEY(session_id, peer_id)
     );
+
+    CREATE TABLE IF NOT EXISTS characters (
+      id TEXT PRIMARY KEY,
+      session_id TEXT,
+      peer_id TEXT,
+      name TEXT,
+      stats TEXT,
+      bars TEXT,
+      FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+    );
   `);
 
   // Migration: Ajouter la colonne settings si elle n'existe pas
@@ -47,6 +57,11 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
   const addPlayerStmt = db.prepare('INSERT OR REPLACE INTO session_players (session_id, peer_id, pseudo) VALUES (?, ?, ?)');
   const removePlayerStmt = db.prepare('DELETE FROM session_players WHERE session_id = ? AND peer_id = ?');
   const clearPlayersStmt = db.prepare('DELETE FROM session_players WHERE session_id = ?');
+
+  const getCharactersStmt = db.prepare('SELECT * FROM characters WHERE session_id = ?');
+  const addCharacterStmt = db.prepare('INSERT OR REPLACE INTO characters (id, session_id, peer_id, name, stats, bars) VALUES (?, ?, ?, ?, ?, ?)');
+  const removeCharacterStmt = db.prepare('DELETE FROM characters WHERE id = ?');
+  const updateCharacterStmt = db.prepare('UPDATE characters SET name = ?, stats = ?, bars = ? WHERE id = ?');
 
   ipcMain.handle('sessions:getAll', () => {
     const sessions = getAllStmt.all() as any[];
@@ -93,17 +108,68 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     clearPlayersStmt.run(sessionId);
   });
 
+  ipcMain.handle('characters:getAll', (_, sessionId) => {
+    const chars = getCharactersStmt.all(sessionId) as any[];
+    return chars.map(c => ({
+      ...c,
+      stats: c.stats ? JSON.parse(c.stats) : {},
+      bars: c.bars ? JSON.parse(c.bars) : {}
+    }));
+  });
+
+  ipcMain.handle('characters:add', (_, c) => {
+    addCharacterStmt.run(c.id, c.session_id, c.peer_id, c.name, JSON.stringify(c.stats), JSON.stringify(c.bars));
+  });
+
+  ipcMain.handle('characters:remove', (_, id) => {
+    removeCharacterStmt.run(id);
+  });
+
+  ipcMain.handle('characters:update', (_, id, name, stats, bars) => {
+    updateCharacterStmt.run(name, JSON.stringify(stats), JSON.stringify(bars), id);
+  });
+
   ipcMain.handle('windows:reDock', (event, type, sessionId) => {
     console.log('IPC: Re-docking window', type);
     const targetWin = mainWin || BrowserWindow.getAllWindows().find(w => !w.webContents.getURL().includes('/external/'));
     if (targetWin) {
       targetWin.webContents.send('windows:reDocked', type);
+
+      const callerWin = BrowserWindow.fromWebContents(event.sender);
+      if (callerWin && callerWin !== targetWin) {
+        callerWin.close();
+      }
     }
-    
-    const callerWin = BrowserWindow.fromWebContents(event.sender);
-    if (callerWin) {
-      callerWin.close();
+  });
+
+  // Window Controls
+  ipcMain.on('window:minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.minimize();
+  });
+
+  ipcMain.on('window:maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      if (win.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win.maximize();
+      }
     }
+  });
+
+  ipcMain.on('window:toggle-fullscreen', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      const isFS = win.isFullScreen();
+      win.setFullScreen(!isFS);
+    }
+  });
+
+  ipcMain.on('window:close', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.close();
   });
 
   ipcMain.handle('windows:openExternal', (event, type, sessionId) => {
@@ -119,6 +185,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       height: 600,
       title: `Sigil - ${type.toUpperCase()}`,
       backgroundColor: '#0D0D0F',
+      frame: false,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -136,5 +203,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     } else {
       win.loadFile(path.join(__dirname, '../dist/index.html'), { hash: `/external/${type}/${sessionId}` });
     }
+
+    win.on('enter-full-screen', () => win.webContents.send('window:fullscreen', true));
+    win.on('leave-full-screen', () => win.webContents.send('window:fullscreen', false));
   });
 }

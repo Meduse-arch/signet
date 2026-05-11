@@ -16,6 +16,7 @@ function createWindow() {
     height: 800,
     title: "Sigil VTT",
     backgroundColor: '#0D0D0F',
+    frame: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -33,6 +34,14 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+
+  mainWindow.on('enter-full-screen', () => {
+    mainWindow?.webContents.send('window:fullscreen', true);
+  });
+  
+  mainWindow.on('leave-full-screen', () => {
+    mainWindow?.webContents.send('window:fullscreen', false);
   });
 }
 

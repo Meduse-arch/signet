@@ -59,17 +59,6 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId }: BoardCa
   return (
     <div className="relative w-full h-full overflow-hidden">
       <div ref={containerRef} className="absolute inset-0 z-0" />
-      
-      {isHost && (
-        <div className="absolute bottom-4 left-4 z-20 pointer-events-auto">
-          <button
-            onClick={handleAddToken}
-            className="px-4 py-2 rounded-lg bg-gold-DEFAULT/20 hover:bg-gold-DEFAULT/40 text-gold-DEFAULT text-xs font-bold border border-gold-DEFAULT/30 backdrop-blur-md transition-all uppercase tracking-widest"
-          >
-            Invoquer Pion
-          </button>
-        </div>
-      )}
     </div>
   );
 }

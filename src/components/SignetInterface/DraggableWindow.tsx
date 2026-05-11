@@ -47,16 +47,19 @@ export function DraggableWindow({
           <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-gold-DEFAULT/50 pointer-events-none" />
 
           {/* Header */}
-          <div className="window-header flex items-center justify-between px-3 py-2 bg-white/5 cursor-grab active:cursor-grabbing border-b border-white/5 select-none">
-            <span className="text-[10px] font-cinzel font-bold text-gold-DEFAULT drop-shadow-md tracking-[0.2em] uppercase pointer-events-none">
+          <div className="window-header relative flex items-center justify-between px-4 py-2 bg-gradient-to-r from-transparent via-gold-DEFAULT/10 to-transparent cursor-grab active:cursor-grabbing border-b border-gold-DEFAULT/20 select-none overflow-hidden">
+            {/* Effet lumineux de ligne façon Jarvis */}
+            <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />
+            
+            <span className="text-[10px] font-cinzel font-black text-gold-DEFAULT drop-shadow-[0_0_8px_rgba(212,175,55,0.8)] tracking-[0.3em] uppercase pointer-events-none">
               {title}
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2 relative z-10">
               {onPopOut && (
                 <button 
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onPopOut(); }}
-                  className="p-1 hover:bg-white/10 rounded-full transition-colors text-gold-DEFAULT drop-shadow-md hover:text-gold-bright"
+                  className="p-1 hover:bg-gold-DEFAULT/20 rounded border border-transparent hover:border-gold-DEFAULT/40 transition-all text-gold-DEFAULT hover:text-gold-bright drop-shadow-md"
                   title="Détacher la fenêtre"
                 >
                   <ExternalLink size={12} />
@@ -65,7 +68,7 @@ export function DraggableWindow({
               <button 
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onClose(); }}
-                className="p-1 hover:bg-white/10 rounded-full transition-colors text-gold-DEFAULT drop-shadow-md hover:text-gold-bright"
+                className="p-1 hover:bg-red-500/20 rounded border border-transparent hover:border-red-500/40 transition-all text-gold-DEFAULT hover:text-red-400 drop-shadow-md"
               >
                 <X size={14} />
               </button>

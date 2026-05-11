@@ -6,6 +6,11 @@ import { usePeersStore } from '../../store/peers';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { PlayerHUD } from '../../components/PlayerHUD';
+import { CharacterHUD } from '../../components/CharacterHUD';
+import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
+import { useSessionStore } from '../../store/session';
+import { useCharactersStore } from '../../store/characters';
+import { getSessionCharacters } from '../../services/characters.service';
 
 interface SealEngineProps {
   sessionId: string;
@@ -17,9 +22,34 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
   const { isHost } = usePeersStore();
   const { user } = useAuthStore();
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
+
+  const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
+  const { addOrUpdateCharacter, setCharacters } = useCharactersStore();
   
   const { broadcast, onData } = usePeer();
   const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
+
+  // Charger les personnages initiaux
+  useEffect(() => {
+    const loadChars = async () => {
+      const chars = await getSessionCharacters(sessionId);
+      setCharacters(chars);
+    };
+    loadChars();
+  }, [sessionId]);
+
+  // Écoute BroadcastChannel pour les personnages (UI locale)
+  useEffect(() => {
+    const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
+    channel.onmessage = (event) => {
+      const { type, payload } = event.data;
+      if (type === 'CHAR_UPDATE') {
+        addOrUpdateCharacter(payload);
+        if (isHost) broadcast({ type: 'CHAR_UPDATE', payload });
+      }
+    };
+    return () => channel.close();
+  }, [sessionId, isHost, broadcast, addOrUpdateCharacter]);
 
   const handlePopOut = (type: string) => {
     if (window.electronAPI) {
@@ -146,6 +176,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
       {/* Player HUD en overlay permanent */}
       <div className="absolute inset-0 pointer-events-none z-[60]">
         <PlayerHUD players={players} />
+        <CharacterHUD />
       </div>
 
       {/* Signet Launcher (Orb) */}
@@ -244,7 +275,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
           zIndex={windows.players.zIndex}
           defaultPosition={windows.players.position}
         >
-          <PlayerHUD players={players} className="flex flex-col gap-3" />
+          <PlayerWindowContent players={players} />
         </DraggableWindow>
       )}
       </div>

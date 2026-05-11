@@ -5,6 +5,7 @@ import { LobbyPage } from './pages/LobbyPage';
 import { AuthPage } from './pages/AuthPage';
 import { ExternalWindowPage } from './pages/ExternalWindowPage';
 import { useAuthStore } from './store/auth';
+import { TitleBar } from './components/TitleBar';
 import logo from './assets/logo.png';
 
 function MainApp() {
@@ -45,7 +46,7 @@ function MainApp() {
   }
 
   return (
-    <div className="relative w-full h-screen bg-[#050507] overflow-hidden">
+    <div className="relative w-full h-full bg-[#050507] overflow-hidden">
       {/* HUB PAGE */}
       {!activeSessionId && (
         <div className={`absolute inset-0 ${isTransitioning ? 'animate-page-exit' : 'animate-page-enter'}`}>
@@ -88,11 +89,16 @@ function ExternalWindowWrapper() {
 
 export function App() {
   return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<MainApp />} />
-        <Route path="/external/:type/:sessionId" element={<ExternalWindowWrapper />} />
-      </Routes>
-    </HashRouter>
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-[#0D0D0F]">
+      <TitleBar />
+      <div className="flex-1 relative">
+        <HashRouter>
+          <Routes>
+            <Route path="/" element={<MainApp />} />
+            <Route path="/external/:type/:sessionId" element={<ExternalWindowWrapper />} />
+          </Routes>
+        </HashRouter>
+      </div>
+    </div>
   );
 }

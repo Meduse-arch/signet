@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SceneWindowContent } from '../../components/SignetInterface';
-import { PlayerHUD } from '../../components/PlayerHUD';
+import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
 import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
@@ -142,28 +142,12 @@ useEffect(() => {
   };
 
   return (
-    <div className="w-full h-screen bg-[#0D0D0F] p-4 overflow-hidden flex flex-col">
-       <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-gold-DEFAULT/30 rounded-tl-2xl pointer-events-none" />
-       <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-gold-DEFAULT/30 rounded-br-2xl pointer-events-none" />
+    <div className="w-full h-screen bg-[#0D0D0F]/80 p-0 overflow-hidden flex flex-col relative">
+       {/* Golden Corners */}
+       <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-gold-DEFAULT/50 pointer-events-none z-10" />
+       <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-gold-DEFAULT/50 pointer-events-none z-10" />
 
-       <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
-          <h1 className="text-[10px] font-cinzel font-black text-gold-bright tracking-[0.2em] uppercase">
-             {type === 'scenes' ? 'Archive des Scènes' : 
-              type === 'players' ? 'Cercle des Voyageurs' : 
-              type.toUpperCase()}
-          </h1>
-
-          <button 
-            onClick={handleReDock}
-            className="flex items-center gap-1.5 px-2 py-1 rounded bg-gold-DEFAULT/10 border border-gold-DEFAULT/40 text-[8px] font-cinzel text-gold-bright hover:bg-gold-DEFAULT/20 transition-all"
-            title="Réintégrer l'application"
-          >
-            <LogIn size={10} className="rotate-180" />
-            RÉINTÉGRER
-          </button>
-       </div>
-
-       <div className="flex-1 overflow-y-auto custom-scrollbar">
+       <div className="flex-1 p-4 custom-scrollbar overflow-y-auto">
           {type === 'scenes' && (
             <SceneWindowContent 
               scenes={maps}
@@ -174,7 +158,7 @@ useEffect(() => {
           )}
 
           {type === 'players' && (
-            <PlayerHUD players={players} className="flex flex-col gap-3" />
+            <PlayerWindowContent players={players} />
           )}
 
           {type === 'dice' && (
