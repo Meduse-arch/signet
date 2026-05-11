@@ -128,8 +128,8 @@ export class BoardScene extends Container {
     if (imgBounds.width > 0 && imgBounds.height > 0) {
       const scaleX = this.app.screen.width / imgBounds.width;
       const scaleY = this.app.screen.height / imgBounds.height;
-      // On calcule l'échelle pour que l'image occupe 85% de l'écran (sans la déformer)
-      const scale = Math.min(scaleX, scaleY) * 0.85;
+      // On calcule l'échelle pour que l'image couvre tout l'écran (façon object-cover du hub)
+      const scale = Math.max(scaleX, scaleY);
       this.scale.set(scale);
       this.x = this.app.screen.width / 2;
       this.y = this.app.screen.height / 2;
