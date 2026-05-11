@@ -32,7 +32,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap }: MapGalleryProps)
     <div className="absolute bottom-6 right-8 flex flex-col items-end gap-4 z-30">
       {/* GALLERY POPUP (Foundry style) */}
       {isOpen && (
-        <div className="mb-2 w-80 max-h-[400px] bg-black/80 backdrop-blur-xl border border-gold-DEFAULT/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="mb-2 w-80 max-h-[400px] bg-black/80 backdrop-blur-xl border border-gold-DEFAULT/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
             <div className="flex items-center gap-2">
               <Grid className="w-4 h-4 text-gold-bright" />
@@ -42,7 +42,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap }: MapGalleryProps)
               onClick={() => setIsOpen(false)}
               className="p-1 hover:bg-white/10 rounded-full transition-colors"
             >
-              <X className="w-4 h-4 text-white/50" />
+              <X className="w-4 h-4 text-white/80" />
             </button>
           </div>
 
@@ -93,19 +93,19 @@ export function MapGallery({ maps, currentMapId, onSelectMap }: MapGalleryProps)
       {/* COMPACT HUD CARD */}
       <div className="flex items-center gap-3">
         {/* Search HUD (Integrated) */}
-        <div className="h-12 bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl flex items-center px-4 gap-3 group hover:border-white/10 transition-all">
+        <div className="h-12 bg-[#0D0D0F]/80 backdrop-blur-md border border-white/5 rounded-2xl flex items-center px-4 gap-3 group hover:border-white/10 transition-all">
           <Search className="w-4 h-4 text-white/30 group-focus-within:text-gold-bright transition-colors" />
           <input 
             type="text"
             placeholder={currentMap?.name || 'Explorer...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none outline-none text-xs text-white/80 placeholder:text-white/40 w-32 group-focus-within:w-48 transition-all duration-300"
+            className="bg-transparent border-none outline-none text-xs text-white/80 placeholder:text-white/70 w-32 group-focus-within:w-48 transition-all duration-300"
           />
           <div className="h-4 w-px bg-white/10" />
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className={`p-2 rounded-xl transition-all ${isOpen ? 'bg-gold-DEFAULT text-black' : 'hover:bg-white/5 text-white/50 hover:text-gold-bright'}`}
+            className={`p-2 rounded-xl transition-all ${isOpen ? 'bg-gold-DEFAULT text-black' : 'hover:bg-white/5 text-white/80 hover:text-gold-bright'}`}
             title="Galerie des Cartes"
           >
             <Grid className="w-4 h-4" />
@@ -113,13 +113,13 @@ export function MapGallery({ maps, currentMapId, onSelectMap }: MapGalleryProps)
         </div>
 
         {/* Current Map Indicator */}
-        <div className="h-12 px-5 bg-black/60 backdrop-blur-xl border border-gold-DEFAULT/20 rounded-2xl flex items-center gap-3 shadow-2xl">
+        <div className="h-12 px-5 bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 rounded-2xl flex items-center gap-3 shadow-2xl">
           <div className="relative">
             <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-md rounded-full animate-pulse" />
             <MapIcon className="w-4 h-4 text-gold-bright relative z-10" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[7px] font-black text-gold-dim uppercase tracking-[0.2em] leading-none mb-1">Localisation</span>
+            <span className="text-[7px] font-black text-gold-DEFAULT drop-shadow-md uppercase tracking-[0.2em] leading-none mb-1">Localisation</span>
             <span className="text-[10px] font-cinzel font-black text-white tracking-widest uppercase">
               {currentMap?.name || 'Hub Spirituel'}
             </span>

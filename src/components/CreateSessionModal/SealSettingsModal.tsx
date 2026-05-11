@@ -40,7 +40,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                 Paramètres Seal
               </h2>
             </div>
-            <button onClick={onClose} className="text-gold-dim hover:text-gold-bright transition-colors">
+            <button onClick={onClose} className="text-gold-DEFAULT drop-shadow-md hover:text-gold-bright transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -59,7 +59,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                   className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
                     localSettings.sheetMode === 'manual'
                       ? 'bg-gold-DEFAULT/10 border-gold-DEFAULT text-gold-bright shadow-rune-gold'
-                      : 'bg-black/40 border-gold-DEFAULT/10 text-gold-dim hover:border-gold-DEFAULT/30'
+                      : 'bg-[#0D0D0F]/80 border-gold-DEFAULT/30 text-gold-DEFAULT drop-shadow-md hover:border-gold-DEFAULT/30'
                   }`}
                 >
                   <UserCog className="w-6 h-6 mb-1" />
@@ -70,7 +70,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                   className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
                     localSettings.sheetMode === 'roll'
                       ? 'bg-gold-DEFAULT/10 border-gold-DEFAULT text-gold-bright shadow-rune-gold'
-                      : 'bg-black/40 border-gold-DEFAULT/10 text-gold-dim hover:border-gold-DEFAULT/30'
+                      : 'bg-[#0D0D0F]/80 border-gold-DEFAULT/30 text-gold-DEFAULT drop-shadow-md hover:border-gold-DEFAULT/30'
                   }`}
                 >
                   <Dices className="w-6 h-6 mb-1" />
@@ -80,7 +80,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
             </div>
 
             {/* Paramètres selon le mode */}
-            <div className="p-6 bg-black/40 border border-gold-DEFAULT/10 rounded-2xl animate-in fade-in zoom-in-95 duration-300">
+            <div className="p-6 bg-[#0D0D0F]/80 border border-gold-DEFAULT/30 rounded-2xl animate-in fade-in zoom-in-95 duration-300">
               {localSettings.sheetMode === 'manual' ? (
                 <div className="space-y-4">
                   <label className="block text-[10px] font-cinzel font-black text-gold-muted tracking-widest uppercase text-center mb-2">Points de Caractéristiques</label>
@@ -91,10 +91,10 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                       max="999"
                       value={localSettings.manualPoints}
                       onChange={(e) => setLocalSettings({ ...localSettings, manualPoints: parseInt(e.target.value) || 0 })}
-                      className="w-20 bg-black/60 border border-gold-DEFAULT/20 rounded-lg py-3 text-center text-gold-bright font-cinzel font-black text-lg focus:outline-none focus:border-gold-DEFAULT transition-all"
+                      className="w-20 bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-lg py-3 text-center text-gold-bright font-cinzel font-black text-lg focus:outline-none focus:border-gold-DEFAULT transition-all"
                     />
                   </div>
-                  <p className="text-[9px] font-serif italic text-gold-dim/60 text-center">Les joueurs devront répartir ces points entre leurs attributs.</p>
+                  <p className="text-[9px] font-serif italic text-gold-DEFAULT drop-shadow-md/60 text-center">Les joueurs devront répartir ces points entre leurs attributs.</p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -111,9 +111,9 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                           ...localSettings,
                           rollFormula: { ...localSettings.rollFormula!, diceCount: parseInt(e.target.value) || 1 }
                         })}
-                        className="w-12 bg-black/60 border border-gold-DEFAULT/20 rounded-lg py-2 text-center text-xs focus:outline-none focus:border-gold-DEFAULT"
+                        className="w-12 bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-lg py-2 text-center text-xs focus:outline-none focus:border-gold-DEFAULT"
                       />
-                      <span className="text-[8px] text-gold-dim uppercase tracking-tighter">Dés</span>
+                      <span className="text-[8px] text-gold-DEFAULT drop-shadow-md uppercase tracking-tighter">Dés</span>
                     </div>
                     
                     <span className="text-xl">D</span>
@@ -128,9 +128,9 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                           ...localSettings,
                           rollFormula: { ...localSettings.rollFormula!, diceSides: parseInt(e.target.value) || 2 }
                         })}
-                        className="w-12 bg-black/60 border border-gold-DEFAULT/20 rounded-lg py-2 text-center text-xs focus:outline-none focus:border-gold-DEFAULT"
+                        className="w-12 bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-lg py-2 text-center text-xs focus:outline-none focus:border-gold-DEFAULT"
                       />
-                      <span className="text-[8px] text-gold-dim uppercase tracking-tighter">Faces</span>
+                      <span className="text-[8px] text-gold-DEFAULT drop-shadow-md uppercase tracking-tighter">Faces</span>
                     </div>
                   </div>
 
@@ -146,7 +146,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                           ...localSettings,
                           rollFormula: { ...localSettings.rollFormula!, rerolls: parseInt(e.target.value) || 0 }
                         })}
-                        className="w-16 bg-black/60 border border-gold-DEFAULT/20 rounded-lg py-2 text-center text-gold-bright font-cinzel font-black text-sm focus:outline-none focus:border-gold-DEFAULT transition-all"
+                        className="w-16 bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-lg py-2 text-center text-gold-bright font-cinzel font-black text-sm focus:outline-none focus:border-gold-DEFAULT transition-all"
                       />
                     </div>
                   </div>

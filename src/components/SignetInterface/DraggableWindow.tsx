@@ -37,7 +37,7 @@ export function DraggableWindow({
     >
       <div 
         ref={nodeRef}
-        className="w-80 bg-black/60 backdrop-blur-2xl rounded-sm border border-white/5 shadow-2xl overflow-hidden flex flex-col group pointer-events-auto"
+        className="w-80 bg-[#0D0D0F]/80 backdrop-blur-2xl rounded-sm border border-white/5 shadow-2xl overflow-hidden flex flex-col group pointer-events-auto"
         style={{ zIndex, position: 'absolute' }}
         onClick={onFocus}
       >
@@ -48,7 +48,7 @@ export function DraggableWindow({
 
           {/* Header */}
           <div className="window-header flex items-center justify-between px-3 py-2 bg-white/5 cursor-grab active:cursor-grabbing border-b border-white/5 select-none">
-            <span className="text-[10px] font-cinzel font-bold text-gold-dim tracking-[0.2em] uppercase pointer-events-none">
+            <span className="text-[10px] font-cinzel font-bold text-gold-DEFAULT drop-shadow-md tracking-[0.2em] uppercase pointer-events-none">
               {title}
             </span>
             <div className="flex items-center gap-1">
@@ -56,7 +56,7 @@ export function DraggableWindow({
                 <button 
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onPopOut(); }}
-                  className="p-1 hover:bg-white/10 rounded-full transition-colors text-gold-dim hover:text-gold-bright"
+                  className="p-1 hover:bg-white/10 rounded-full transition-colors text-gold-DEFAULT drop-shadow-md hover:text-gold-bright"
                   title="Détacher la fenêtre"
                 >
                   <ExternalLink size={12} />
@@ -65,7 +65,7 @@ export function DraggableWindow({
               <button 
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onClose(); }}
-                className="p-1 hover:bg-white/10 rounded-full transition-colors text-gold-dim hover:text-gold-bright"
+                className="p-1 hover:bg-white/10 rounded-full transition-colors text-gold-DEFAULT drop-shadow-md hover:text-gold-bright"
               >
                 <X size={14} />
               </button>

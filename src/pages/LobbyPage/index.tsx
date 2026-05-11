@@ -321,11 +321,11 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       </div>
 
       {/* Header */}
-      <header className="relative z-10 flex items-center justify-between px-8 py-5 border-b border-gold-DEFAULT/10 bg-black/60 backdrop-blur-md shrink-0">
+      <header className="relative z-10 flex items-center justify-between px-8 py-5 border-b border-gold-DEFAULT/30 bg-[#0D0D0F]/80 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-6">
           <div className="relative group">
             <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-xl group-hover:bg-gold-DEFAULT/40 transition-all rounded-full" />
-            <div className="relative p-2 rounded-full border border-gold-DEFAULT/30 bg-black/40">
+            <div className="relative p-2 rounded-full border border-gold-DEFAULT/30 bg-[#0D0D0F]/80">
               <img src={logo} alt="Logo" className="w-6 h-6 object-contain animate-rune-pulse" />
             </div>
           </div>
@@ -339,7 +339,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                 status === 'relay' ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]' :
                 status === 'error' ? 'bg-red-500' : 'bg-yellow-500 animate-pulse'
               }`} />
-              <span className="text-gold-dim uppercase tracking-[0.15em] font-bold">
+              <span className="text-gold-DEFAULT drop-shadow-md uppercase tracking-[0.15em] font-bold">
                 {status === 'initializing' ? 'Invocation...' :
                  status === 'connecting' ? 'Liaison...' :
                  status === 'connected' ? 'Signet Actif (P2P)' :
@@ -354,7 +354,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
           {isMJ && (
             <button 
               onClick={copyId}
-              className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/5 hover:bg-gold-DEFAULT/10 text-[10px] font-cinzel font-bold text-gold-bright transition-all border border-gold-DEFAULT/20 hover:border-gold-DEFAULT/50"
+              className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/5 hover:bg-gold-DEFAULT/10 text-[10px] font-cinzel font-bold text-gold-bright transition-all border border-gold-DEFAULT/40 hover:border-gold-DEFAULT/50"
             >
               {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? 'CLEF COPIÉE' : 'PARTAGER LE SIGNET'}
@@ -374,13 +374,13 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       <main className="relative z-10 flex-1 flex overflow-hidden">
         <section className="flex-1 flex flex-col items-center justify-center p-8">
           {status === 'error' ? (
-            <div className="max-w-md w-full p-10 rounded-3xl bg-black/60 border border-red-500/20 text-center backdrop-blur-xl relative overflow-hidden group">
+            <div className="max-w-md w-full p-10 rounded-3xl bg-[#0D0D0F]/80 border border-red-500/20 text-center backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-8 border border-red-500/20">
                 <WifiOff className="w-10 h-10 text-red-500" />
               </div>
               <h2 className="text-2xl font-black text-white mb-3 tracking-widest uppercase">Lien Brisé</h2>
-              <p className="text-white/50 text-sm mb-8 font-serif italic leading-relaxed">{errorMessage}</p>
+              <p className="text-white/80 text-sm mb-8 font-serif italic leading-relaxed">{errorMessage}</p>
               <button 
                 onClick={() => window.location.reload()} 
                 className="w-full px-8 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white text-xs font-cinzel font-bold transition-all border border-white/10"
@@ -398,7 +398,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                 <h2 className="text-2xl font-black text-gold-bright mb-3 uppercase tracking-[0.4em] text-glow-gold">
                   Établissement du Signet
                 </h2>
-                <p className="text-white/40 text-sm italic font-serif tracking-widest animate-pulse">
+                <p className="text-white/70 text-sm italic font-serif tracking-widest animate-pulse">
                   {status === 'initializing' ? "Éveil des protocoles de signalement..." : "Recherche de la porte de l'hôte..."}
                 </p>
               </div>
@@ -416,19 +416,19 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                   <h2 className="text-5xl font-black text-white tracking-tight leading-none">
                     {sessionData?.name}
                   </h2>
-                  <p className="text-gold-dim/60 text-lg font-serif italic leading-relaxed">
+                  <p className="text-gold-DEFAULT drop-shadow-md/60 text-lg font-serif italic leading-relaxed">
                     Le grimoire est ouvert, les destins s'entrelacent dans l'obscurité.
                   </p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="p-5 rounded-2xl bg-black/40 border border-gold-border hover:border-gold-DEFAULT/30 transition-colors group">
+                  <div className="p-5 rounded-2xl bg-[#0D0D0F]/80 border border-gold-border hover:border-gold-DEFAULT/30 transition-colors group">
                     <span className="block text-[10px] text-gold-muted uppercase font-black tracking-widest mb-2">Système</span>
                     <span className="text-md text-gold-bright font-cinzel group-hover:text-white transition-colors">
                       {sessionData?.system || 'Seal'}
                     </span>
                   </div>
-                  <div className="p-5 rounded-2xl bg-black/40 border border-gold-border hover:border-gold-DEFAULT/30 transition-colors group">
+                  <div className="p-5 rounded-2xl bg-[#0D0D0F]/80 border border-gold-border hover:border-gold-DEFAULT/30 transition-colors group">
                     <span className="block text-[10px] text-gold-muted uppercase font-black tracking-widest mb-2">Assemblage</span>
                     <span className="text-md text-gold-bright font-cinzel group-hover:text-white transition-colors italic">
                       {players.length} {players.length > 1 ? 'Inities' : 'Initie'}
@@ -437,24 +437,24 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                 </div>
 
                 {isMJ ? (
-                  <button 
+                  <button
                     onClick={handleLaunchSession}
-                    className="w-full p-6 rounded-3xl bg-gold-DEFAULT text-black flex items-center justify-center gap-5 relative overflow-hidden group shadow-[0_0_30px_rgba(212,175,55,0.2)] hover:shadow-[0_0_50px_rgba(212,175,55,0.4)] transition-all active:scale-95"
+                    className="w-full p-6 rounded-3xl bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 flex items-center justify-center gap-5 relative overflow-hidden group shadow-[0_4px_30px_rgba(212,175,55,0.15)] hover:border-gold-DEFAULT/80 hover:shadow-[0_4px_50px_rgba(212,175,55,0.4)] transition-all active:scale-95"
                   >
-                    <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                    <Play className="w-8 h-8 fill-black relative z-10" />
+                    <div className="absolute inset-0 bg-gold-DEFAULT/5 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                    <div className="absolute inset-0 bg-rune-glow opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    <Play className="w-8 h-8 fill-gold-DEFAULT group-hover:fill-gold-bright transition-colors relative z-10 drop-shadow-[0_0_8px_rgba(212,175,55,0.5)]" />
                     <div className="relative z-10 text-left">
-                      <span className="block text-sm font-black uppercase tracking-widest leading-none">Lancer Session</span>
-                      <span className="text-[10px] font-serif italic opacity-70">Ouvrir les portes de l'Archive</span>
+                      <span className="block text-sm font-black text-gold-DEFAULT group-hover:text-gold-bright uppercase tracking-widest leading-none drop-shadow-md transition-colors">Lancer Session</span>
+                      <span className="text-[10px] font-serif italic text-gold-dim group-hover:text-gold-bright/80 transition-colors">Ouvrir les portes de l'Archive</span>
                     </div>
                   </button>
-                ) : (
-                  <div className="p-6 rounded-3xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/20 flex items-center gap-5 relative overflow-hidden group">
+                ) : (                  <div className="p-6 rounded-3xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/40 flex items-center gap-5 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-rune-glow opacity-30 group-hover:opacity-60 transition-opacity" />
                     <Zap className="w-8 h-8 text-gold-bright animate-rune-pulse relative z-10" />
                     <div className="relative z-10">
                       <span className="block text-sm font-black text-white uppercase tracking-widest">Le MJ prépare le Rituel</span>
-                      <span className="text-xs text-gold-dim italic font-serif">L'aventure commencera dès que l'hôte l'ordonnera.</span>
+                      <span className="text-xs text-gold-DEFAULT drop-shadow-md italic font-serif">L'aventure commencera dès que l'hôte l'ordonnera.</span>
                     </div>
                   </div>
                 )}
@@ -465,7 +465,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                 <div className="absolute -top-4 -left-4 w-12 h-12 border-t-2 border-l-2 border-gold-DEFAULT/30 rounded-tl-3xl group-hover:scale-110 transition-transform" />
                 <div className="absolute -bottom-4 -right-4 w-12 h-12 border-b-2 border-r-2 border-gold-DEFAULT/30 rounded-br-3xl group-hover:scale-110 transition-transform" />
                 
-                <div className="bg-black/40 backdrop-blur-2xl rounded-[2.5rem] border border-gold-border/20 p-6 shadow-2xl relative overflow-hidden h-[220px] flex flex-col">
+                <div className="bg-[#0D0D0F]/80 backdrop-blur-2xl rounded-[2.5rem] border border-gold-border/20 p-6 shadow-2xl relative overflow-hidden h-[220px] flex flex-col">
                   <div className="absolute inset-0 bg-grimoire-texture opacity-[0.02] pointer-events-none" />
                   
                   <div className="flex items-center justify-between mb-4 px-2 relative z-10">
@@ -483,7 +483,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                       {players.map((player) => (
                         <div 
                           key={player.peer_id}
-                          className="snap-start flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-gold-DEFAULT/[0.05] hover:border-gold-DEFAULT/10 transition-all group h-[50px]"
+                          className="snap-start flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-gold-DEFAULT/[0.05] hover:border-gold-DEFAULT/30 transition-all group h-[50px]"
                         >
                           <div className="flex items-center gap-3">
                             <div className="relative">
@@ -504,7 +504,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                             </div>
                           </div>
                           {player.pseudo === 'MJ' && (
-                            <div className="p-1 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/10">
+                            <div className="p-1 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/30">
                               <img src={logo} alt="MJ" className="w-4 h-4 object-contain opacity-60 group-hover:opacity-100 transition-opacity" />
                             </div>
                           )}
@@ -525,7 +525,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         </section>
 
         {/* Debug Info Overlay */}
-        <div className="absolute bottom-6 right-8 p-5 rounded-2xl bg-black/60 border border-gold-border backdrop-blur-xl text-[9px] font-cinzel font-bold text-gold-dim space-y-2 z-10 group hover:border-gold-DEFAULT/40 transition-colors shadow-2xl opacity-40 hover:opacity-100">
+        <div className="absolute bottom-6 right-8 p-5 rounded-2xl bg-[#0D0D0F]/80 border border-gold-border backdrop-blur-xl text-[9px] font-cinzel font-bold text-gold-DEFAULT drop-shadow-md space-y-2 z-10 group hover:border-gold-DEFAULT/40 transition-colors shadow-2xl opacity-40 hover:opacity-100">
           <div className="flex justify-between gap-12 border-b border-gold-DEFAULT/5 pb-2">
             <span className="tracking-widest">LIAISONS ACTIVES</span>
             <span className="text-gold-bright">{connections.length}</span>

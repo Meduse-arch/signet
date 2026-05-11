@@ -108,7 +108,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
         <div className="absolute inset-0 bg-vignette pointer-events-none z-0" />
 
         {/* PANNEAU D'EXPLORATION (GAUCHE) */}
-        <aside className={`border-r border-gold-DEFAULT/10 bg-black/40 backdrop-blur-xl flex flex-col z-10 relative overflow-hidden transition-all duration-500 ease-in-out ${
+        <aside className={`border-r border-gold-DEFAULT/30 bg-[#0D0D0F]/80 backdrop-blur-xl flex flex-col z-10 relative overflow-hidden transition-all duration-500 ease-in-out ${
           isSearchOpen ? 'w-[350px] opacity-100' : 'w-0 opacity-0 pointer-events-none border-none'
         }`}>
           <div className="min-w-[350px] flex-1 flex flex-col h-full">
@@ -124,23 +124,23 @@ export function HubPage({ onEnterSession }: HubPageProps) {
               />
 
               {showFilterMenu && (
-                <div className="p-6 rounded-[1.5rem] bg-white/[0.03] border border-gold-DEFAULT/20 animate-in zoom-in-95 duration-200 space-y-6">
+                <div className="p-6 rounded-[1.5rem] bg-white/[0.03] border border-gold-DEFAULT/40 animate-in zoom-in-95 duration-200 space-y-6">
                   <div className="relative" ref={sysDropdownRef}>
                     <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Système</h3>
                     <button 
                       onClick={() => setIsSysDropdownOpen(!isSysDropdownOpen)}
-                      className="w-full flex items-center justify-between bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-[10px] font-cinzel text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
+                      className="w-full flex items-center justify-between bg-[#0D0D0F]/80 border border-white/10 rounded-xl py-3 px-4 text-[10px] font-cinzel text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
                     >
                       <span className="tracking-widest uppercase">{activeSystem || 'Tous'}</span>
                       <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isSysDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {isSysDropdownOpen && (
-                      <div className="absolute top-full left-0 w-full mt-2 bg-[#121216] border border-gold-DEFAULT/20 rounded-xl shadow-2xl z-[60] overflow-hidden">
+                      <div className="absolute top-full left-0 w-full mt-2 bg-[#121216] border border-gold-DEFAULT/40 rounded-xl shadow-2xl z-[60] overflow-hidden">
                         {['Seal'].map(sys => (
                           <div 
                             key={sys}
                             onClick={() => { setActiveSystem(activeSystem === sys ? null : sys); setIsSysDropdownOpen(false); }}
-                            className="flex items-center justify-between px-4 py-3 text-[10px] font-cinzel text-gold-dim hover:text-gold-bright hover:bg-gold-DEFAULT/5 cursor-pointer border-b border-white/5 last:border-0"
+                            className="flex items-center justify-between px-4 py-3 text-[10px] font-cinzel text-gold-DEFAULT drop-shadow-md hover:text-gold-bright hover:bg-gold-DEFAULT/5 cursor-pointer border-b border-white/5 last:border-0"
                           >
                             <span className="tracking-widest uppercase">{sys}</span>
                             {activeSystem === sys && <Check className="w-3 h-3 text-gold-bright" />}
@@ -153,11 +153,11 @@ export function HubPage({ onEnterSession }: HubPageProps) {
                   {isMJ && (
                     <div>
                       <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Filtres de Rôle</h3>
-                      <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 gap-1">
+                      <div className="flex bg-[#0D0D0F]/80 p-1 rounded-xl border border-white/5 gap-1">
                         <button
                           onClick={() => setActiveCategory(activeCategory === 'mine' ? 'all' : 'mine')}
                           className={`flex-1 py-2 text-[8px] font-cinzel font-bold rounded-lg transition-all border ${
-                            activeCategory === 'mine' ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'text-white/40 border-transparent hover:text-white'
+                            activeCategory === 'mine' ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'text-white/70 border-transparent hover:text-white'
                           }`}
                         >
                           MES CAMPAGNES
@@ -165,7 +165,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
                         <button
                           onClick={() => setActiveCategory(activeCategory === 'public' ? 'all' : 'public')}
                           className={`flex-1 py-2 text-[8px] font-cinzel font-bold rounded-lg transition-all border ${
-                            activeCategory === 'public' ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'text-white/40 border-transparent hover:text-white'
+                            activeCategory === 'public' ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'text-white/70 border-transparent hover:text-white'
                           }`}
                         >
                           JE PARTICIPE
@@ -176,7 +176,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
 
                   <div>
                     <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Trier par</h3>
-                    <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 gap-1">
+                    <div className="flex bg-[#0D0D0F]/80 p-1 rounded-xl border border-white/5 gap-1">
                       {[
                         { id: 'date', label: 'Récents' },
                         { id: 'name', label: 'A-Z' },
@@ -185,7 +185,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
                           key={opt.id}
                           onClick={() => setSortBy(opt.id as SortOption)}
                           className={`flex-1 py-2 text-[9px] font-cinzel font-bold rounded-lg transition-all ${
-                            sortBy === opt.id ? 'bg-white/10 text-white border border-white/10' : 'text-white/40 hover:text-white border border-transparent'
+                            sortBy === opt.id ? 'bg-white/10 text-white border border-white/10' : 'text-white/70 hover:text-white border border-transparent'
                           }`}
                         >
                           {opt.label.toUpperCase()}
@@ -196,7 +196,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
                   
                   <button 
                     onClick={() => {setActiveSystem(null); setSortBy('date'); setActiveCategory('all'); setSearchQuery('');}}
-                    className="w-full py-2 text-[8px] font-black text-gold-dim hover:text-gold-bright uppercase tracking-[0.2em] transition-colors border-t border-white/5 pt-4"
+                    className="w-full py-2 text-[8px] font-black text-gold-DEFAULT drop-shadow-md hover:text-gold-bright uppercase tracking-[0.2em] transition-colors border-t border-white/5 pt-4"
                   >
                     Retirez les filtres
                   </button>
@@ -216,7 +216,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
               </h1>
               <div className="flex items-center justify-center gap-4">
                 <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
-                <span className="text-xs font-cinzel text-gold-dim tracking-[0.2em] uppercase italic">
+                <span className="text-xs font-cinzel text-gold-DEFAULT drop-shadow-md tracking-[0.2em] uppercase italic">
                   {filteredSessions.length} Archive{filteredSessions.length > 1 ? 's' : ''} Révélée{filteredSessions.length > 1 ? 's' : ''}
                 </span>
                 <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
@@ -226,15 +226,15 @@ export function HubPage({ onEnterSession }: HubPageProps) {
 
           <div className="flex-1 overflow-y-auto px-12 pb-12 relative z-10 custom-scrollbar">
             {isLoading ? (
-              <div className="flex items-center justify-center h-full font-cinzel text-gold-dim animate-pulse tracking-widest text-[10px]">ÉVEIL DES ARCHIVES...</div>
+              <div className="flex items-center justify-center h-full font-cinzel text-gold-DEFAULT drop-shadow-md animate-pulse tracking-widest text-[10px]">ÉVEIL DES ARCHIVES...</div>
             ) : filteredSessions.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-3xl rounded-full" />
-                  <Search className="w-16 h-16 text-gold-dim mb-4 relative z-10" />
+                  <Search className="w-16 h-16 text-gold-DEFAULT drop-shadow-md mb-4 relative z-10" />
                 </div>
-                <p className="font-serif italic text-xl text-gold-dim">Aucune rune ne correspond à votre recherche...</p>
-                <button onClick={() => {setSearchQuery(''); setActiveSystem(null); setActiveCategory('all');}} className="px-6 py-2 rounded-full border border-gold-DEFAULT/20 text-[9px] font-cinzel text-gold-bright hover:bg-gold-DEFAULT/5 tracking-[0.2em] uppercase transition-all">Retirez les filtres</button>
+                <p className="font-serif italic text-xl text-gold-DEFAULT drop-shadow-md">Aucune rune ne correspond à votre recherche...</p>
+                <button onClick={() => {setSearchQuery(''); setActiveSystem(null); setActiveCategory('all');}} className="px-6 py-2 rounded-full border border-gold-DEFAULT/40 text-[9px] font-cinzel text-gold-bright hover:bg-gold-DEFAULT/5 tracking-[0.2em] uppercase transition-all">Retirez les filtres</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 content-start animate-page-enter">

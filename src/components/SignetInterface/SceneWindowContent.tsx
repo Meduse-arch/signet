@@ -58,7 +58,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
             {/* Content */}
             <div className="relative h-full flex items-center px-4 gap-4">
               <span className={`text-[10px] font-cinzel font-black transition-colors ${
-                currentSceneId === scene.id ? 'text-gold-bright' : 'text-gold-dim/50'
+                currentSceneId === scene.id ? 'text-gold-bright' : 'text-gold-DEFAULT drop-shadow-md/50'
               }`}>
                 {(index + 1).toString().padStart(2, '0')}
               </span>
@@ -82,7 +82,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
       {onAddScene && (
         <>
           {isAdding ? (
-            <form onSubmit={handleAddSubmit} className="p-3 rounded-lg border border-gold-DEFAULT/20 bg-black/40 space-y-3 animate-in fade-in zoom-in-95 duration-200">
+            <form onSubmit={handleAddSubmit} className="p-3 rounded-lg border border-gold-DEFAULT/40 bg-[#0D0D0F]/80 space-y-3 animate-in fade-in zoom-in-95 duration-200">
                <div className="space-y-1">
                   <label className="text-[8px] font-cinzel text-gold-muted uppercase tracking-widest">Nom du lieu</label>
                   <input 
@@ -108,7 +108,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
                   <button 
                     type="button"
                     onClick={() => setIsAdding(false)}
-                    className="flex-1 py-1.5 rounded bg-white/5 text-[9px] font-cinzel text-white/50 hover:bg-white/10"
+                    className="flex-1 py-1.5 rounded bg-white/5 text-[9px] font-cinzel text-white/80 hover:bg-white/10"
                   >
                     ANNULER
                   </button>
@@ -124,7 +124,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
           ) : (
             <button
               onClick={() => setIsAdding(true)}
-              className="w-full py-3 rounded-lg border border-dashed border-gold-DEFAULT/30 bg-gold-DEFAULT/5 hover:bg-gold-DEFAULT/10 text-gold-dim hover:text-gold-bright transition-all flex items-center justify-center gap-2 group"
+              className="w-full py-3 rounded-lg border border-dashed border-gold-DEFAULT/30 bg-gold-DEFAULT/5 hover:bg-gold-DEFAULT/10 text-gold-DEFAULT drop-shadow-md hover:text-gold-bright transition-all flex items-center justify-center gap-2 group"
             >
               <Plus size={16} className="group-hover:rotate-90 transition-transform" />
               <span className="text-[10px] font-cinzel font-black tracking-widest uppercase">Nouvelle Scène</span>

@@ -27,7 +27,7 @@ export interface ElectronAPI {
   clearPlayers: (sessionId: string) => Promise<void>;
   openExternalWindow: (type: string, sessionId: string) => Promise<void>;
   reDock: (type: string, sessionId: string) => Promise<void>;
-  onReDock: (callback: (type: string) => void) => void;
+  onReDock: (callback: (type: string) => void) => (() => void);
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {

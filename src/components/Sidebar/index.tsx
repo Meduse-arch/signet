@@ -20,7 +20,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
 
   return (
     <div 
-      className={`h-full bg-surface-sidebar border-r border-gold-DEFAULT/10 flex flex-col transition-all duration-300 z-10 relative overflow-hidden ${
+      className={`h-full bg-surface-sidebar border-r border-gold-DEFAULT/30 flex flex-col transition-all duration-300 z-10 relative overflow-hidden ${
         sidebarOpen ? 'w-[220px]' : 'w-[64px]'
       }`}
     >
@@ -49,7 +49,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
               className={`w-full flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all group overflow-hidden border ${
                 isActive 
                   ? 'bg-gold-DEFAULT/10 border-gold-DEFAULT/30 text-gold-bright shadow-rune-gold' 
-                  : 'border-transparent hover:bg-gold-DEFAULT/5 text-gold-dim hover:text-gold-bright hover:border-gold-DEFAULT/10'
+                  : 'border-transparent hover:bg-gold-DEFAULT/5 text-gold-DEFAULT drop-shadow-md hover:text-gold-bright hover:border-gold-DEFAULT/30'
               }`}
               title={!sidebarOpen ? item.label : undefined}
             >
@@ -73,7 +73,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
         {/* BOUTON ACTION CLÉ */}
         <button
           onClick={onKeyOpen}
-          className="w-full flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all group overflow-hidden border border-transparent hover:bg-gold-DEFAULT/5 text-gold-dim hover:text-gold-bright hover:border-gold-DEFAULT/10"
+          className="w-full flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all group overflow-hidden border border-transparent hover:bg-gold-DEFAULT/5 text-gold-DEFAULT drop-shadow-md hover:text-gold-bright hover:border-gold-DEFAULT/30"
           title={!sidebarOpen ? "Rejoindre (Clé)" : undefined}
         >
           <div className="relative">
@@ -109,16 +109,16 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
         )}
       </div>
       
-      <div className="p-3 border-t border-gold-DEFAULT/10 space-y-3 relative z-10 bg-black/20">
+      <div className="p-3 border-t border-gold-DEFAULT/30 space-y-3 relative z-10 bg-black/20">
         {sidebarOpen && user && (
-          <div className="px-3 py-2 mb-2 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/10">
+          <div className="px-3 py-2 mb-2 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/30">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-gold-bright animate-pulse shadow-[0_0_8px_rgba(212,160,23,0.6)]"></div>
               <span className="text-[10px] font-cinzel font-black text-gold-bright tracking-widest truncate">
                 {user.pseudo}
               </span>
             </div>
-            <div className="mt-1 text-[8px] font-mono text-gold-dim/60 uppercase tracking-tighter ml-5">
+            <div className="mt-1 text-[8px] font-mono text-gold-DEFAULT drop-shadow-md/60 uppercase tracking-tighter ml-5">
               Grade: {user.role}
             </div>
           </div>
@@ -127,7 +127,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
         <div className="flex flex-col gap-1">
           <button
             onClick={logout}
-            className={`w-full flex items-center ${sidebarOpen ? 'justify-start px-3 gap-4' : 'justify-center'} py-2.5 rounded-xl hover:bg-red-500/10 text-gold-dim/60 hover:text-red-400 transition-all group`}
+            className={`w-full flex items-center ${sidebarOpen ? 'justify-start px-3 gap-4' : 'justify-center'} py-2.5 rounded-xl hover:bg-red-500/10 text-gold-DEFAULT drop-shadow-md/60 hover:text-red-400 transition-all group`}
             title={!sidebarOpen ? "Se déconnecter" : undefined}
           >
             <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
@@ -140,7 +140,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
           
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center justify-center py-2.5 rounded-xl hover:bg-gold-DEFAULT/5 text-gold-dim/40 hover:text-gold-bright transition-all"
+            className="w-full flex items-center justify-center py-2.5 rounded-xl hover:bg-gold-DEFAULT/5 text-gold-DEFAULT drop-shadow-md/40 hover:text-gold-bright transition-all"
           >
             {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
           </button>

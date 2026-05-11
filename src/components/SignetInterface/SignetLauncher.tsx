@@ -50,11 +50,11 @@ export function SignetLauncher({ onOpenWindow }: SignetLauncherProps) {
                 opacity: isOpen ? 1 : 0,
                 transitionDelay: `${index * 40}ms`,
               }}
-              className={`absolute top-0 left-0 -ml-5 -mt-5 flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl border border-gold-DEFAULT/30 text-gold-dim hover:text-gold-bright hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isOpen ? 'pointer-events-auto' : ''}`}
+              className={`absolute top-0 left-0 -ml-5 -mt-5 flex items-center justify-center w-10 h-10 rounded-full bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 text-gold-DEFAULT hover:text-gold-bright hover:bg-[#0D0D0F]/90 hover:border-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isOpen ? 'pointer-events-auto' : ''}`}
             >
               {item.icon}
               {/* Tooltip Alchemy-style */}
-              <div className="absolute top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded bg-black/80 backdrop-blur-md border border-gold-DEFAULT/20 text-[9px] font-cinzel text-gold-bright whitespace-nowrap tracking-widest pointer-events-none">
+              <div className="absolute top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded bg-black/90 backdrop-blur-md border border-gold-DEFAULT/30 text-[9px] font-cinzel text-gold-bright drop-shadow-md whitespace-nowrap tracking-widest pointer-events-none">
                 {item.label}
               </div>
             </button>
@@ -68,7 +68,7 @@ export function SignetLauncher({ onOpenWindow }: SignetLauncherProps) {
         className="relative w-16 h-16 rounded-full flex items-center justify-center transition-transform duration-500 z-10 group"
       >
         {/* Cercles holographiques rotatifs (Jarvis effect) */}
-        <div className={`absolute inset-[-10px] rounded-full border-t-2 border-l-2 border-gold-DEFAULT/20 transition-transform duration-[3000ms] ease-linear ${isOpen ? 'rotate-[360deg] scale-110' : 'rotate-0 scale-100'}`} />
+        <div className={`absolute inset-[-10px] rounded-full border-t-2 border-l-2 border-gold-DEFAULT/40 transition-transform duration-[3000ms] ease-linear ${isOpen ? 'rotate-[360deg] scale-110' : 'rotate-0 scale-100'}`} />
         <div className={`absolute inset-[-4px] rounded-full border-b-2 border-r-2 border-gold-bright/30 transition-transform duration-[2000ms] ease-linear ${isOpen ? '-rotate-[360deg] scale-105' : 'rotate-0 scale-100'}`} />
         
         {/* Cœur de l'orbe */}

@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useRef } from 'react';
+import { RefObject, useEffect, useRef, useCallback } from 'react';
 import * as PIXI from 'pixi.js';
 import { BoardScene } from '../pixi/BoardScene';
 import { usePeer } from './usePeer';
@@ -150,12 +150,16 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     return () => unsub();
   }, [onData, isHost, broadcast, sendTo, peerId]);
 
-  const addToken = (token: TokenData) => {
+  const addToken = useCallback((token: TokenData) => {
     if (boardRef.current) {
       boardRef.current.addToken(token);
       broadcast({ type: 'TOKEN_ADD', payload: token });
     }
-  };
+  }, [broadcast]);
 
-  return { addToken, loadMap: (url: string, format?: string) => boardRef.current?.loadMap(url, format) };
+  const loadMap = useCallback((url: string, format?: string) => {
+    return boardRef.current?.loadMap(url, format);
+  }, []);
+
+  return { addToken, loadMap };
 }

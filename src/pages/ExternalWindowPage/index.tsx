@@ -155,7 +155,7 @@ useEffect(() => {
 
           <button 
             onClick={handleReDock}
-            className="flex items-center gap-1.5 px-2 py-1 rounded bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-[8px] font-cinzel text-gold-bright hover:bg-gold-DEFAULT/20 transition-all"
+            className="flex items-center gap-1.5 px-2 py-1 rounded bg-gold-DEFAULT/10 border border-gold-DEFAULT/40 text-[8px] font-cinzel text-gold-bright hover:bg-gold-DEFAULT/20 transition-all"
             title="Réintégrer l'application"
           >
             <LogIn size={10} className="rotate-180" />
@@ -180,7 +180,7 @@ useEffect(() => {
           {type === 'dice' && (
             <div className="grid grid-cols-3 gap-2">
               {[4, 6, 8, 10, 12, 20].map(d => (
-                <button key={d} className="h-10 rounded bg-white/5 border border-gold-DEFAULT/20 text-gold-bright font-cinzel text-xs hover:bg-gold-DEFAULT/10 transition-colors">
+                <button key={d} className="h-10 rounded bg-white/5 border border-gold-DEFAULT/40 text-gold-bright font-cinzel text-xs hover:bg-gold-DEFAULT/10 transition-colors">
                   D{d}
                 </button>
               ))}
@@ -188,7 +188,7 @@ useEffect(() => {
           )}
 
           {type === 'story' && (
-             <p className="text-xs font-serif italic text-gold-dim/70 leading-relaxed text-center py-20">
+             <p className="text-xs font-serif italic text-gold-DEFAULT drop-shadow-md/70 leading-relaxed text-center py-20">
                 Le grimoire externe est en attente d'écriture...
              </p>
           )}

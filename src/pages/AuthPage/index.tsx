@@ -88,7 +88,7 @@ export function AuthPage({ onEnterApp }: AuthPageProps) {
       <div className={`relative z-10 flex flex-col items-center transition-all duration-1000 ${isStarted ? 'scale-110 opacity-0 blur-xl pointer-events-none' : 'opacity-100'}`}>
         <div className="mb-12 relative group">
           <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-3xl animate-pulse rounded-full" />
-          <div className="relative p-8 rounded-full border-2 border-gold-DEFAULT/20 bg-black/40 backdrop-blur-md">
+          <div className="relative p-8 rounded-full border-2 border-gold-DEFAULT/40 bg-[#0D0D0F]/80 backdrop-blur-md">
             <img src={logo} alt="Signet Logo" className="w-24 h-24 object-contain animate-rune-pulse" />
           </div>
         </div>
@@ -98,7 +98,7 @@ export function AuthPage({ onEnterApp }: AuthPageProps) {
         </h1>
         <div className="flex items-center gap-6 mb-24">
           <div className="h-px w-24 bg-gradient-to-r from-transparent to-gold-muted/50" />
-          <span className="text-sm font-cinzel text-gold-dim tracking-[0.4em] uppercase font-bold">Virtual Tabletop</span>
+          <span className="text-sm font-cinzel text-gold-DEFAULT drop-shadow-md tracking-[0.4em] uppercase font-bold">Virtual Tabletop</span>
           <div className="h-px w-24 bg-gradient-to-l from-transparent to-gold-muted/50" />
         </div>
 
@@ -130,12 +130,12 @@ export function AuthPage({ onEnterApp }: AuthPageProps) {
                 <div className="space-y-3">
                   <label className="text-[11px] font-black text-gold-bright uppercase tracking-[0.2em] ml-1">Pseudo</label>
                   <div className="relative group">
-                    <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50 group-focus-within:text-gold-bright transition-colors" />
+                    <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/80 group-focus-within:text-gold-bright transition-colors" />
                     <input
                       type="text"
                       value={pseudo}
                       onChange={(e) => setPseudo(e.target.value)}
-                      className="w-full bg-black/60 border-2 border-gold-border rounded-2xl py-5 pl-14 pr-6 text-md focus:border-gold-bright focus:bg-black/80 outline-none transition-all placeholder:text-white/30 text-white"
+                      className="w-full bg-[#0D0D0F]/80 border-2 border-gold-border rounded-2xl py-5 pl-14 pr-6 text-md focus:border-gold-bright focus:bg-black/80 outline-none transition-all placeholder:text-white/30 text-white"
                       placeholder="Ex: Alistair"
                       required
                     />
@@ -145,12 +145,12 @@ export function AuthPage({ onEnterApp }: AuthPageProps) {
                 <div className="space-y-3">
                   <label className="text-[11px] font-black text-gold-bright uppercase tracking-[0.2em] ml-1">Mot de passe</label>
                   <div className="relative group">
-                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50 group-focus-within:text-gold-bright transition-colors" />
+                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/80 group-focus-within:text-gold-bright transition-colors" />
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-black/60 border-2 border-gold-border rounded-2xl py-5 pl-14 pr-6 text-md focus:border-gold-bright focus:bg-black/80 outline-none transition-all placeholder:text-white/30 text-white"
+                      className="w-full bg-[#0D0D0F]/80 border-2 border-gold-border rounded-2xl py-5 pl-14 pr-6 text-md focus:border-gold-bright focus:bg-black/80 outline-none transition-all placeholder:text-white/30 text-white"
                       placeholder="••••••••"
                       required
                     />
@@ -159,10 +159,10 @@ export function AuthPage({ onEnterApp }: AuthPageProps) {
 
                 {/* REMEMBER ME CHECKBOX */}
                 <div className="flex items-center gap-3 ml-2 group cursor-pointer" onClick={() => setRememberMe(!rememberMe)}>
-                  <div className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${rememberMe ? 'bg-gold-DEFAULT border-gold-DEFAULT shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-gold-border bg-black/40'}`}>
+                  <div className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${rememberMe ? 'bg-gold-DEFAULT border-gold-DEFAULT shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-gold-border bg-[#0D0D0F]/80'}`}>
                     {rememberMe && <Check className="w-3.5 h-3.5 text-black stroke-[4px]" />}
                   </div>
-                  <span className="text-[10px] font-cinzel font-bold text-gold-dim group-hover:text-gold-bright transition-colors tracking-widest uppercase">
+                  <span className="text-[10px] font-cinzel font-bold text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright transition-colors tracking-widest uppercase">
                     Rester connecté
                   </span>
                 </div>
@@ -193,7 +193,7 @@ export function AuthPage({ onEnterApp }: AuthPageProps) {
               <div className="mt-10 text-center">
                 <button
                   onClick={() => { setIsLogin(!isLogin); setError(null); }}
-                  className="px-6 py-2 rounded-full border border-gold-muted/20 text-[10px] font-cinzel text-gold-dim hover:text-gold-bright hover:border-gold-bright tracking-widest uppercase transition-all"
+                  className="px-6 py-2 rounded-full border border-gold-muted/20 text-[10px] font-cinzel text-gold-DEFAULT drop-shadow-md hover:text-gold-bright hover:border-gold-bright tracking-widest uppercase transition-all"
                 >
                   {isLogin ? "Pas encore de Signet ? Forgez-en un" : "Déjà membre ? Identifiez-vous"}
                 </button>

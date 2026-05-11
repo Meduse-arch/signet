@@ -24,7 +24,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap, onAddMap }: MapGal
       <div className="flex items-center gap-2 pointer-events-auto">
         <div 
           ref={scrollRef}
-          className="flex gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory max-w-[400px] p-2 bg-black/40 backdrop-blur-md rounded-2xl border border-gold-DEFAULT/20"
+          className="flex gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory max-w-[400px] p-2 bg-[#0D0D0F]/80 backdrop-blur-md rounded-2xl border border-gold-DEFAULT/40"
         >
           {maps.map((map) => (
             <button
@@ -106,14 +106,14 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-auto">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
       
-      <div className="relative w-full max-w-4xl bg-[#0D0D0F] border border-gold-DEFAULT/20 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-        <div className="p-8 border-b border-gold-DEFAULT/10 flex items-center justify-between">
+      <div className="relative w-full max-w-4xl bg-[#0D0D0F] border border-gold-DEFAULT/40 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="p-8 border-b border-gold-DEFAULT/30 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-black text-gold-bright tracking-widest uppercase">Galerie des Cartographies</h2>
-            <p className="text-gold-dim/60 font-serif italic">Sélectionnez ou invoquez un nouveau royaume</p>
+            <p className="text-gold-DEFAULT drop-shadow-md/60 font-serif italic">Sélectionnez ou invoquez un nouveau royaume</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-            <X className="w-6 h-6 text-gold-dim" />
+            <X className="w-6 h-6 text-gold-DEFAULT drop-shadow-md" />
           </button>
         </div>
 
@@ -122,10 +122,10 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
             {/* Add Map Trigger */}
             <button 
               onClick={() => setIsAdding(true)}
-              className="aspect-video rounded-2xl border-2 border-dashed border-gold-DEFAULT/20 hover:border-gold-DEFAULT/50 hover:bg-gold-DEFAULT/5 transition-all flex flex-col items-center justify-center gap-3 group"
+              className="aspect-video rounded-2xl border-2 border-dashed border-gold-DEFAULT/40 hover:border-gold-DEFAULT/50 hover:bg-gold-DEFAULT/5 transition-all flex flex-col items-center justify-center gap-3 group"
             >
-              <Plus className="w-8 h-8 text-gold-dim group-hover:text-gold-bright transition-colors" />
-              <span className="text-[10px] font-cinzel font-bold text-gold-dim group-hover:text-gold-bright tracking-widest">NOUVEL ANCRAGE</span>
+              <Plus className="w-8 h-8 text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright transition-colors" />
+              <span className="text-[10px] font-cinzel font-bold text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright tracking-widest">NOUVEL ANCRAGE</span>
             </button>
 
             {maps.map((map) => (
@@ -162,7 +162,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
       {/* Add Map Overlay */}
       {isAdding && (
         <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsAdding(false)} />
+          <div className="absolute inset-0 bg-[#0D0D0F]/80 backdrop-blur-sm" onClick={() => setIsAdding(false)} />
           <form 
             onSubmit={handleSubmit}
             className="relative w-full max-w-md bg-[#16161A] border border-gold-DEFAULT/30 rounded-3xl p-8 shadow-2xl space-y-6"
@@ -171,22 +171,22 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
             
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-cinzel font-black text-gold-dim tracking-widest uppercase ml-1">Nom du Lieu</label>
+                <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">Nom du Lieu</label>
                 <input 
                   autoFocus
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   placeholder="ex: Donjon des Ombres"
-                  className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-sm focus:border-gold-DEFAULT/50 outline-none transition-all placeholder:text-white/10"
+                  className="w-full bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-xl px-4 py-3 text-sm focus:border-gold-DEFAULT/50 outline-none transition-all placeholder:text-white/10"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-cinzel font-black text-gold-dim tracking-widest uppercase ml-1">Lien du Grimoire (URL)</label>
+                <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">Lien du Grimoire (URL)</label>
                 <input 
                   value={newUrl}
                   onChange={e => setNewUrl(e.target.value)}
                   placeholder="https://..."
-                  className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-sm focus:border-gold-DEFAULT/50 outline-none transition-all placeholder:text-white/10"
+                  className="w-full bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-xl px-4 py-3 text-sm focus:border-gold-DEFAULT/50 outline-none transition-all placeholder:text-white/10"
                 />
               </div>
             </div>

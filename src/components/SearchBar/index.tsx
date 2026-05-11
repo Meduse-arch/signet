@@ -26,19 +26,19 @@ export function SearchBar({
       {/* 1. SEARCH INPUT */}
       <div className="relative group">
         <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${
-          value ? 'text-gold-bright' : 'text-gold-dim/40 group-focus-within:text-gold-bright'
+          value ? 'text-gold-bright' : 'text-gold-DEFAULT drop-shadow-md/40 group-focus-within:text-gold-bright'
         }`} />
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Chercher une archive..."
-          className="w-full bg-black/40 border border-gold-DEFAULT/10 rounded-2xl py-4 pl-12 pr-10 text-sm text-gold-bright focus:outline-none focus:border-gold-DEFAULT/50 focus:ring-1 focus:ring-gold-DEFAULT/20 transition-all placeholder:text-gold-dim/20 italic font-serif"
+          className="w-full bg-[#0D0D0F]/80 border border-gold-DEFAULT/30 rounded-2xl py-4 pl-12 pr-10 text-sm text-gold-bright focus:outline-none focus:border-gold-DEFAULT/50 focus:ring-1 focus:ring-gold-DEFAULT/20 transition-all placeholder:text-gold-DEFAULT drop-shadow-md/20 italic font-serif"
         />
         {value && (
           <button
             onClick={onClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded-md text-gold-dim hover:text-gold-bright transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded-md text-gold-DEFAULT drop-shadow-md hover:text-gold-bright transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -76,7 +76,7 @@ export function SearchBar({
               <li key={res.id}>
                 <button
                   onClick={() => onResultClick(res.id)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gold-DEFAULT/5 text-gold-dim/70 hover:text-gold-bright transition-all group border border-transparent hover:border-gold-DEFAULT/10"
+                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gold-DEFAULT/5 text-gold-DEFAULT drop-shadow-md/70 hover:text-gold-bright transition-all group border border-transparent hover:border-gold-DEFAULT/30"
                 >
                   <span className="text-[11px] font-serif italic truncate pr-4">{res.name}</span>
                   <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all translate-x-[-4px] group-hover:translate-x-0" />
