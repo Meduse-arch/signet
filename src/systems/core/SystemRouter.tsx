@@ -15,12 +15,15 @@ interface SystemRouterProps {
 export function SystemRouter({ system, isMJ, onPause, sessionId, imageUrl, players }: SystemRouterProps) {
   // Composant MJ Overlay (Bouton Pause)
   const MJOverlay = () => (
-    <div className="absolute top-6 left-6 z-[100] flex items-center gap-4 animate-in fade-in duration-1000">
+    <div className="absolute top-8 left-1/2 -translate-x-1/2 z-[100] flex items-center justify-center animate-in fade-in slide-in-from-top-4 duration-1000">
       <button 
         onClick={onPause}
-        className="px-6 py-2.5 rounded-xl bg-black/60 backdrop-blur-md border border-gold-DEFAULT/20 text-gold-dim hover:text-gold-bright hover:border-gold-DEFAULT/50 text-[10px] font-cinzel font-black tracking-widest transition-all shadow-2xl group"
+        className="relative group px-8 py-2 rounded-full bg-black/40 backdrop-blur-xl border border-gold-DEFAULT/20 hover:border-gold-DEFAULT/60 hover:bg-black/60 transition-all shadow-[0_0_20px_rgba(0,0,0,0.5)]"
       >
-        <span className="group-hover:scale-105 inline-block transition-transform">SESSION PAUSE</span>
+        <div className="absolute inset-0 rounded-full border border-white/5 group-hover:scale-105 transition-transform duration-500 pointer-events-none" />
+        <span className="text-gold-dim group-hover:text-gold-bright text-[10px] font-cinzel font-black tracking-[0.2em] transition-colors">
+          PAUSE SESSION
+        </span>
       </button>
     </div>
   );

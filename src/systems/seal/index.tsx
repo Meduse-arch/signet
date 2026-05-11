@@ -140,6 +140,14 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
         onSelectMap={handleSelectMap}
       />
 
+      {/* HUD Global - Vignette et Interface Principale */}
+      <div className="absolute inset-0 pointer-events-none z-50 shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]" />
+      
+      {/* Player HUD en overlay permanent */}
+      <div className="absolute inset-0 pointer-events-none z-[60]">
+        <PlayerHUD players={players} />
+      </div>
+
       {/* Signet Launcher (Orb) */}
       {isMJ && (
         <SignetLauncher onOpenWindow={openWindow} />

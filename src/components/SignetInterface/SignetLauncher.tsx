@@ -24,45 +24,67 @@ export function SignetLauncher({ onOpenWindow }: SignetLauncherProps) {
     { type: 'players' as const, icon: <Users size={18} />, label: 'Voyageurs' },
   ];
 
+  // Calcul pour une disposition en quart de cercle (arc)
+  const radius = 90; // Distance des boutons par rapport au centre
+
   return (
-    <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-center gap-4">
-      {/* Menu items */}
-      <div className={`flex flex-col gap-3 transition-all duration-300 ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
-        {menuItems.map((item, index) => (
-          <button
-            key={item.type}
-            onClick={() => {
-              onOpenWindow(item.type);
-              setIsOpen(false);
-            }}
-            className="group relative flex items-center justify-center w-10 h-10 rounded-full bg-black/60 backdrop-blur-xl border border-gold-DEFAULT/30 text-gold-dim hover:text-gold-bright hover:border-gold-DEFAULT transition-all shadow-xl hover:scale-110"
-            style={{ transitionDelay: `${index * 50}ms` }}
-          >
-             <div className="absolute right-full mr-4 px-2 py-1 rounded bg-black/80 text-[10px] font-cinzel text-gold-bright opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-gold-DEFAULT/20 whitespace-nowrap tracking-widest">
-              {item.label}
-            </div>
-            {item.icon}
-          </button>
-        ))}
+    <div className="fixed bottom-10 right-10 z-[100] flex items-center justify-center">
+      {/* Menu items (Radial/Arc) */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+        {menuItems.map((item, index) => {
+          // Angle entre 180° (gauche) et 270° (haut) car on est en bas à droite
+          const angle = 180 + (90 / (menuItems.length - 1)) * index;
+          const radian = (angle * Math.PI) / 180;
+          const tx = Math.cos(radian) * radius;
+          const ty = Math.sin(radian) * radius;
+
+          return (
+            <button
+              key={item.type}
+              onClick={() => {
+                onOpenWindow(item.type);
+                setIsOpen(false);
+              }}
+              style={{
+                transform: isOpen ? `translate(${tx}px, ${ty}px) scale(1)` : `translate(0px, 0px) scale(0)`,
+                opacity: isOpen ? 1 : 0,
+                transitionDelay: `${index * 40}ms`,
+              }}
+              className={`absolute top-0 left-0 -ml-5 -mt-5 flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl border border-gold-DEFAULT/30 text-gold-dim hover:text-gold-bright hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isOpen ? 'pointer-events-auto' : ''}`}
+            >
+              {item.icon}
+              {/* Tooltip Alchemy-style */}
+              <div className="absolute top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded bg-black/80 backdrop-blur-md border border-gold-DEFAULT/20 text-[9px] font-cinzel text-gold-bright whitespace-nowrap tracking-widest pointer-events-none">
+                {item.label}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Main Orb */}
+      {/* Main Orb / Jarvis Core */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] ${isOpen ? 'rotate-90' : 'rotate-0'}`}
+        className="relative w-16 h-16 rounded-full flex items-center justify-center transition-transform duration-500 z-10 group"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-gold-DEFAULT/20 to-black/80 rounded-full border border-gold-DEFAULT/30 backdrop-blur-xl" />
-        <div className="absolute inset-0 rounded-full border-2 border-gold-DEFAULT/10 animate-pulse" />
+        {/* Cercles holographiques rotatifs (Jarvis effect) */}
+        <div className={`absolute inset-[-10px] rounded-full border-t-2 border-l-2 border-gold-DEFAULT/20 transition-transform duration-[3000ms] ease-linear ${isOpen ? 'rotate-[360deg] scale-110' : 'rotate-0 scale-100'}`} />
+        <div className={`absolute inset-[-4px] rounded-full border-b-2 border-r-2 border-gold-bright/30 transition-transform duration-[2000ms] ease-linear ${isOpen ? '-rotate-[360deg] scale-105' : 'rotate-0 scale-100'}`} />
         
-        {isOpen ? (
-          <X className="text-gold-bright relative z-20 animate-page-enter" size={24} />
-        ) : (
-          <img 
-            src={logo} 
-            alt="Signet" 
-            className="w-8 h-8 object-contain relative z-10 transition-transform hover:scale-110" 
-          />
-        )}
+        {/* Cœur de l'orbe */}
+        <div className="absolute inset-0 bg-[#0D0D0F]/80 backdrop-blur-2xl rounded-full border border-gold-DEFAULT/30 shadow-[0_0_20px_rgba(212,175,55,0.1)] group-hover:shadow-[0_0_30px_rgba(212,175,55,0.3)] group-hover:border-gold-DEFAULT/60 transition-all duration-500" />
+        
+        <div className={`relative flex items-center justify-center w-full h-full transition-all duration-500 ${isOpen ? 'rotate-90' : 'rotate-0'}`}>
+          {isOpen ? (
+            <X className="text-gold-bright animate-in zoom-in duration-300" size={26} />
+          ) : (
+            <img 
+              src={logo} 
+              alt="Signet" 
+              className="w-9 h-9 object-contain animate-rune-pulse transition-transform group-hover:scale-110" 
+            />
+          )}
+        </div>
       </button>
     </div>
   );
