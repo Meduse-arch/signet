@@ -168,7 +168,8 @@ function SnapColumn({
             style={{
               scrollSnapAlign: 'start',
               scrollSnapStop: 'always',
-              height: '100%',         // each page = full container height
+              height: needsScroll ? '100%' : 'max-content',
+              minHeight: '100%',
               padding: isPopup ? '4px' : '6px',
               gap: isPopup ? '3px' : '5px',
               justifyContent: 'flex-start',
@@ -234,16 +235,9 @@ export function CharacterSheetContent({
   useEffect(() => {
     if (isPopup) {
       setItemsPerPage(3);
-      return;
+    } else {
+      setItemsPerPage(999); // En mode fenêtre, on affiche tout sur une seule page déroulante
     }
-    const handleResize = () => {
-      const availableHeight = window.innerHeight - 320;
-      const count = Math.max(3, Math.floor(availableHeight / 85));
-      setItemsPerPage(count);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, [isPopup]);
 
   const character = characters.find(c => c.user_id === user?.id);

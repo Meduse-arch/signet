@@ -93,11 +93,15 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
 
   return (
-    <div className="absolute bottom-10 left-10 z-[60] pointer-events-auto flex items-center gap-6 p-4 rounded-[2rem] bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/30 shadow-[0_4px_30px_rgba(0,0,0,0.6)] group hover:border-gold-DEFAULT/50 transition-colors">
+    <div className="absolute bottom-10 left-10 z-[60] pointer-events-auto group">
       {/* Avatar / Profile */}
-      <div className="relative group/avatar cursor-pointer" onClick={() => openWindow('character')}>
-        <div className="absolute inset-[-6px] rounded-full border border-gold-DEFAULT/20 group-hover/avatar:border-gold-DEFAULT/60 group-hover/avatar:rotate-180 transition-all duration-1000 ease-linear" />
-        <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-gold-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)] overflow-hidden">
+      <div 
+        className="relative group/avatar cursor-pointer" 
+        onClick={() => openWindow('character')}
+        title="Ouvrir la fiche de personnage"
+      >
+        <div className="absolute inset-[-6px] rounded-full border border-gold-DEFAULT/30 bg-[#0D0D0F]/80 backdrop-blur-xl group-hover/avatar:border-gold-DEFAULT/60 shadow-[0_4px_30px_rgba(0,0,0,0.6)] transition-all duration-500 ease-linear" />
+        <div className="relative w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-gold-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)] overflow-hidden">
           {image_url ? (
             <img src={image_url} alt={name} className="w-full h-full object-cover" />
           ) : (
@@ -110,42 +114,6 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
           <Layout className="w-5 h-5 text-gold-bright" />
         </div>
       </div>
-
-      {/* Stats bars */}
-      <div className="flex flex-col gap-2.5 w-48 pt-1">
-        {barDefs.map((bar: any) => {
-          const Icon = bar.id === 'hp' ? Heart : bar.id === 'mana' ? Zap : bar.id === 'stam' ? Shield : Activity;
-          const maxVal = bars[`max${bar.id.charAt(0).toUpperCase()}${bar.id.slice(1)}`] || bars[bar.id] || 1;
-          const currentVal = bars[bar.id] || 0;
-          const percent = Math.min(100, Math.max(0, (currentVal / maxVal) * 100));
-
-          return (
-            <div key={bar.id} className="flex items-center gap-3">
-              <Icon className="w-3.5 h-3.5 drop-shadow-[0_0_5px_rgba(0,0,0,0.5)]" style={{ color: bar.color }} />
-              <div className="flex-1 h-1.5 bg-black/60 rounded-full border border-white/5 overflow-hidden relative">
-                <div 
-                  className="absolute top-0 left-0 h-full transition-all duration-500" 
-                  style={{ 
-                    width: `${percent}%`, 
-                    backgroundColor: bar.color,
-                    boxShadow: `0 0 10px ${bar.color}88`
-                  }} 
-                />
-              </div>
-              <span className="w-8 text-right text-[10px] font-mono text-white/90 drop-shadow-md">{Math.floor(currentVal)}</span>
-            </div>
-          );
-        })}
-      </div>
-      
-      {/* Full Sheet Button */}
-      <button 
-        onClick={() => openWindow('character')}
-        className="flex items-center justify-center w-10 h-10 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-DEFAULT hover:text-gold-bright hover:border-gold-DEFAULT/60 hover:bg-gold-DEFAULT/20 transition-all shadow-lg"
-        title="Ouvrir la fiche complète"
-      >
-        <Layout size={18} />
-      </button>
     </div>
   );
 }
