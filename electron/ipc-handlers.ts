@@ -5,60 +5,121 @@ import * as fs from 'fs';
 
 let masterDb: Database.Database;
 const sessionDbs = new Map<string, Database.Database>();
+const initializedDbs = new Set<string>(); // ✅ Track initialized DBs to avoid redundant exec()
 let mainWin: BrowserWindow | null = null;
 
 /**
  * Récupère ou initialise la base de données spécifique à une session.
- * La DB est stockée dans : userData/sessions/{hostPeerId}/{hostPeerId}.db
+ * Supporte la recherche par UUID (id) ou par clef (hostPeerId).
  */
 function getSessionDb(sessionId: string): Database.Database {
   if (sessionDbs.has(sessionId)) return sessionDbs.get(sessionId)!;
 
-  const session = masterDb.prepare('SELECT hostPeerId FROM sessions WHERE id = ?').get(sessionId) as any;
-  if (!session) throw new Error(`Session ${sessionId} introuvable dans la base maître`);
+  // 1. Chercher la session dans la Master DB
+  let session = masterDb.prepare('SELECT id, hostPeerId FROM sessions WHERE id = ? OR hostPeerId = ?').get(sessionId, sessionId) as any;
+  
+  if (!session) {
+    console.warn(`[DB] Session ${sessionId} introuvable. Création d'une entrée temporaire ou erreur ?`);
+    // Si c'est un joueur qui rejoint via une clé SIGNET, on peut créer le dossier si nécessaire
+    if (sessionId.startsWith('SIGNET-')) {
+      session = { id: sessionId, hostPeerId: sessionId };
+    } else {
+      throw new Error(`Session ${sessionId} introuvable dans la base maître`);
+    }
+  }
 
   const hostPeerId = session.hostPeerId;
-  const sessionsDir = path.join(app.getPath('userData'), 'sessions');
-  if (!fs.existsSync(sessionsDir)) fs.mkdirSync(sessionsDir, { recursive: true });
+  
+  // ✅ On utilise le dossier AppData pour les bases de données (conforme aux standards OS)
+  const baseDir = app.getPath('userData');
+  const sessionsDir = path.join(baseDir, 'data', 'sessions');
+  
+  if (!fs.existsSync(sessionsDir)) {
+    console.log(`[DB] Création du répertoire des sessions : ${sessionsDir}`);
+    fs.mkdirSync(sessionsDir, { recursive: true });
+  }
 
   const sessionFolder = path.join(sessionsDir, hostPeerId);
-  if (!fs.existsSync(sessionFolder)) fs.mkdirSync(sessionFolder, { recursive: true });
+  if (!fs.existsSync(sessionFolder)) {
+    console.log(`[DB] Création du dossier session : ${sessionFolder}`);
+    fs.mkdirSync(sessionFolder, { recursive: true });
+  }
 
   const dbPath = path.join(sessionFolder, `${hostPeerId}.db`);
-  const db = new Database(dbPath);
+  console.log(`[DB] Ouverture de la base session : ${dbPath}`);
   
-  // Activer les performances et clés étrangères
+  // ✅ On ajoute un timeout pour éviter les erreurs SQLITE_BUSY lors de micro-conflits
+  const db = new Database(dbPath, { timeout: 5000 });
+  
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
 
-  // Initialisation des tables spécifiques à la session
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS players (
-      peer_id TEXT PRIMARY KEY,
-      pseudo TEXT
-    );
+  // ✅ On n'exécute le script d'initialisation qu'une seule fois par session de l'app
+  if (!initializedDbs.has(dbPath)) {
+    try {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS players (
+          peer_id TEXT PRIMARY KEY,
+          pseudo TEXT,
+          role INTEGER DEFAULT 0
+        );
 
-    CREATE TABLE IF NOT EXISTS characters (
-      id TEXT PRIMARY KEY,
-      peer_id TEXT,
-      name TEXT,
-      stats TEXT,
-      bars TEXT
-    );
-  `);
+        CREATE TABLE IF NOT EXISTS characters (
+          id TEXT PRIMARY KEY,
+          user_id TEXT,
+          name TEXT,
+          stats TEXT,
+          bars TEXT
+        );
+      `);
+
+      // Migration: Ajouter les colonnes manquantes si nécessaire
+      const playerTableInfo = db.prepare("PRAGMA table_info(players)").all() as any[];
+      if (!playerTableInfo.some(col => col.name === 'role')) {
+        db.exec('ALTER TABLE players ADD COLUMN role INTEGER DEFAULT 0');
+      }
+
+      const charTableInfo = db.prepare("PRAGMA table_info(characters)").all() as any[];
+      if (!charTableInfo.some(col => col.name === 'user_id')) {
+        db.exec('ALTER TABLE characters ADD COLUMN user_id TEXT');
+      }
+      
+      initializedDbs.add(dbPath);
+    } catch (err) {
+      console.error(`[DB] Erreur lors de l'initialisation de la session ${sessionId}:`, err);
+      db.close();
+      throw err;
+    }
+  }
 
   sessionDbs.set(sessionId, db);
+  // On indexe aussi par l'autre ID pour les recherches futures
+  if (session.id !== sessionId) sessionDbs.set(session.id, db);
+  if (session.hostPeerId !== sessionId) sessionDbs.set(session.hostPeerId, db);
+  
   return db;
 }
 
 export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
   mainWin = mainWindow;
   
-  const userDataPath = app.getPath('userData');
-  const masterDbPath = path.join(userDataPath, 'sigil-vtt.db');
-  console.log('Master Database path:', masterDbPath);
+  // ✅ On utilise le dossier AppData pour les bases de données (conforme aux standards OS)
+  const baseDir = app.getPath('userData');
+  const dataDir = path.join(baseDir, 'data');
+  const masterDbPath = path.join(dataDir, 'sigil-vtt.db');
+  const sessionsDir = path.join(dataDir, 'sessions');
   
-  masterDb = new Database(masterDbPath);
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  if (!fs.existsSync(sessionsDir)) fs.mkdirSync(sessionsDir, { recursive: true });
+
+  console.log('--- SIGIL VTT DATABASE INFO ---');
+  console.log('Base Directory:', baseDir);
+  console.log('Data Directory:', dataDir);
+  console.log('Master DB Path:', masterDbPath);
+  console.log('Sessions Dir :', sessionsDir);
+  console.log('-------------------------------');
+  
+  masterDb = new Database(masterDbPath, { timeout: 5000 });
   masterDb.pragma('journal_mode = WAL');
 
   // Table des sessions (Globale)
@@ -126,7 +187,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       }
       
       // Supprimer le dossier de la session
-      const sessionFolder = path.join(app.getPath('userData'), 'sessions', session.hostPeerId);
+      const baseDir = app.getPath('userData');
+      const sessionFolder = path.join(baseDir, 'data', 'sessions', session.hostPeerId);
       if (fs.existsSync(sessionFolder)) {
         try {
           fs.rmSync(sessionFolder, { recursive: true, force: true });
@@ -154,10 +216,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     }
   });
 
-  ipcMain.handle('players:add', (_, sessionId, peerId, pseudo) => {
+  ipcMain.handle('players:add', (_, sessionId, peerId, pseudo, role) => {
     try {
       const db = getSessionDb(sessionId);
-      db.prepare('INSERT OR REPLACE INTO players (peer_id, pseudo) VALUES (?, ?)').run(peerId, pseudo);
+      db.prepare('INSERT OR REPLACE INTO players (peer_id, pseudo, role) VALUES (?, ?, ?)').run(peerId, pseudo, role || 0);
     } catch (e) {
       console.error('[DB] players:add error', e);
     }
@@ -202,8 +264,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
   ipcMain.handle('characters:add', (_, c) => {
     try {
       const db = getSessionDb(c.session_id);
-      db.prepare('INSERT OR REPLACE INTO characters (id, peer_id, name, stats, bars) VALUES (?, ?, ?, ?, ?)')
-        .run(c.id, c.peer_id, c.name, JSON.stringify(c.stats), JSON.stringify(c.bars));
+      db.prepare('INSERT OR REPLACE INTO characters (id, user_id, name, stats, bars) VALUES (?, ?, ?, ?, ?)')
+        .run(c.id, c.user_id || null, c.name, JSON.stringify(c.stats), JSON.stringify(c.bars));
     } catch (e) {
       console.error('[DB] characters:add error', e);
     }

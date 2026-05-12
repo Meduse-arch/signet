@@ -45,27 +45,41 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
-  // ✅ Force les en-têtes CORS pour toutes les requêtes (contourne les limitations des Web Workers)
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Access-Control-Allow-Origin': ['*'],
-      },
-    });
-  });
+// ✅ Empêche plusieurs instances de l'application de s'exécuter simultanément (évite les conflits DB)
+const gotTheLock = app.requestSingleInstanceLock();
 
-  createWindow();
-  registerIpcHandlers(mainWindow);
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-      registerIpcHandlers(mainWindow);
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
     }
   });
-});
+
+  app.whenReady().then(() => {
+    // ✅ Force les en-têtes CORS pour toutes les requêtes (contourne les limitations des Web Workers)
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Access-Control-Allow-Origin': ['*'],
+        },
+      });
+    });
+
+    createWindow();
+    registerIpcHandlers(mainWindow);
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+        registerIpcHandlers(mainWindow);
+      }
+    });
+  });
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

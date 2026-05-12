@@ -20,9 +20,9 @@ export async function getSessionPlayers(sessionId: string) {
   return window.electronAPI.getPlayers(sessionId);
 }
 
-export async function addSessionPlayer(sessionId: string, peerId: string, pseudo: string) {
+export async function addSessionPlayer(sessionId: string, peerId: string, pseudo: string, role?: number) {
   if (!window.electronAPI) return;
-  return window.electronAPI.addPlayer(sessionId, peerId, pseudo);
+  return window.electronAPI.addPlayer(sessionId, peerId, pseudo, role);
 }
 
 export async function removeSessionPlayer(sessionId: string, peerId: string) {

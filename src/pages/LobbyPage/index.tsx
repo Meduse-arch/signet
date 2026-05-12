@@ -33,9 +33,15 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const { init, broadcast, onData, destroy, connections, peerId } = usePeer();
   const [status, setStatus] = useState<ConnectionStatus>('initializing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [players, setPlayers] = useState<{ peer_id: string; pseudo: string }[]>([]);
+  const [players, setPlayers] = useState<{ peer_id: string; pseudo: string; role?: number }[]>([]);
   const [copied, setCopied] = useState(false);
   const [isGameStarted, setIsGameStarted] = useState(false);
+
+  const getRoleLabel = (role?: number) => {
+    if (role === SecurityLevel.ADMIN) return 'ADMINISTRATEUR';
+    if (role === SecurityLevel.MJ) return 'MAÎTRE DE JEU';
+    return 'INITIÉ';
+  };
   
   // ✅ État local pour les métadonnées (au cas où le joueur n'ait pas la session en DB)
   const [localMetadata, setLocalMetadata] = useState<{name?: string, imageUrl?: string, system?: string, hostPeerId?: string, settings?: any} | null>(null);
@@ -94,18 +100,23 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       }
       
       // Pour le joueur : Confirme que la connexion P2P avec l'hôte est ouverte
-      if (data.type === 'CONN_READY' && !isMJRef.current) {
+      else if (data.type === 'CONN_READY' && !isMJRef.current) {
         if (statusRef.current === 'connected') return;
 
-        const myActualId = usePeersStore.getState().peerId;
+        // ✅ Utiliser peerId directement du hook s'il est dispo, sinon fallback sur le store
+        const myActualId = peerId || usePeersStore.getState().peerId;
+        const currentUser = useAuthStore.getState().user;
+        
         const joinMsg = {
           type: 'PLAYER_JOIN',
           payload: {
-            peerId: myActualId,
-            pseudo: useAuthStore.getState().user?.pseudo || 'Joueur'
+            peer_id: myActualId,
+            userId: currentUser?.id,
+            pseudo: currentUser?.pseudo || 'Joueur',
+            role: currentUser?.role || 0 // ✅ On envoie le niveau de sécurité
           }
         };
-        console.log(`[LobbyPage] Envoi PLAYER_JOIN suite à CONN_READY (ID: ${myActualId})`);
+        console.log(`[LobbyPage] Envoi PLAYER_JOIN (ID: ${myActualId}, Role: ${currentUser?.role})`);
         broadcastRef.current(joinMsg);
         setStatus('connected');
         return;
@@ -115,7 +126,9 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       if (data.type === 'PLAYER_JOIN' && isMJRef.current) {
         const newPeerId = data.payload.peer_id || fromPeerId;
         const pseudo = data.payload.pseudo;
-        console.log(`[LobbyPage] Joueur rejoint: ${pseudo} (${newPeerId})`);
+        const userId = data.payload.userId;
+        const role = data.payload.role;
+        console.log(`[LobbyPage] Joueur rejoint: ${pseudo} (Role: ${role})`);
 
         // 1. Nettoyage préventif des doublons (ID ou Pseudo)
         const currentList = await getSessionPlayers(sessionIdRef.current);
@@ -125,8 +138,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
           }
         }
 
-        // 2. Ajout du nouveau joueur
-        await addSessionPlayer(sessionIdRef.current, newPeerId, pseudo);
+        // 2. Ajout du nouveau joueur avec son rôle
+        await addSessionPlayer(sessionIdRef.current, newPeerId, pseudo, role);
         
         // 3. Récupération et diffusion de la liste propre
         const updatedList = await getSessionPlayers(sessionIdRef.current);
@@ -141,9 +154,26 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
             system: sessionData?.system,
             imageUrl: sessionData?.imageUrl,
             hostPeerId: sessionData?.hostPeerId,
-            settings: sessionData?.settings
+            settings: sessionData?.settings,
+            isGameStarted: isGameStarted // ✅ On informe le joueur si la partie a déjà commencé
           }
         });
+
+        // 5. Si la partie est lancée, on force le passage en mode jeu pour le nouveau
+        if (isGameStarted) {
+          broadcastRef.current({ type: 'SESSION_START', payload: {} });
+        }
+
+        // 5. Récupération auto du personnage si l'utilisateur en a déjà un
+        if (userId && window.electronAPI) {
+          const sessionChars = await window.electronAPI.getCharacters(sessionIdRef.current);
+          const ownedChar = sessionChars.find((c: any) => c.user_id === userId);
+          if (ownedChar) {
+            console.log(`[LobbyPage] Personnage trouvé pour ${pseudo} (${ownedChar.name}), envoi de la fiche...`);
+            // On broadcast pour que tout le monde (dont le nouveau joueur) soit à jour
+            broadcastRef.current({ type: 'CHAR_UPDATE', payload: ownedChar });
+          }
+        }
       } 
       
       // Pour le JOUEUR : Reçoit les métadonnées et les stocke
@@ -503,7 +533,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                                 {player.pseudo}
                               </span>
                               <span className="text-[7px] text-gold-muted/40 font-mono tracking-tighter uppercase">
-                                {player.peer_id === peerId ? 'VOTRE SIGNET' : 'ÂME LIÉE'}
+                                {player.peer_id === peerId ? `VOTRE SIGNET (${getRoleLabel(player.role)})` : getRoleLabel(player.role)}
                               </span>
                             </div>
                           </div>

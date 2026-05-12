@@ -5,7 +5,8 @@ import { usePeersStore } from '../../store/peers';
 import { useSessionStore } from '../../store/session';
 import { usePeer } from '../../hooks/usePeer';
 import { CreateCharacterModal } from '../CreateCharacterModal';
-import { addSessionCharacter } from '../../services/characters.service';
+import { useAuthStore } from '../../store/auth';
+import { addSessionCharacter, Character } from '../../services/characters.service';
 import { DEFAULT_BARS } from '../../systems/seal/constants';
 
 interface CharacterHUDProps {
@@ -13,6 +14,7 @@ interface CharacterHUDProps {
 }
 
 export function CharacterHUD({ sessionId }: CharacterHUDProps) {
+  const { user } = useAuthStore();
   const { peerId } = usePeersStore();
   const { characters, addOrUpdateCharacter } = useCharactersStore();
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
@@ -20,13 +22,13 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Trouver le personnage de l'utilisateur actuel
-  const myCharacter = characters.find(c => c.peer_id === peerId);
+  const myCharacter = characters.find(c => c.user_id === user?.id);
 
   const handleCreateSave = async (data: { name: string; stats: Record<string, number>; bars: Record<string, number> }) => {
-    const newChar = {
-      id: myCharacter?.id || Math.random().toString(36).substring(2, 9),
+    const newChar: Character = {
+      id: myCharacter?.id || crypto.randomUUID(),
       session_id: sessionId,
-      peer_id: peerId!,
+      user_id: user?.id,
       name: data.name,
       stats: data.stats,
       bars: data.bars

@@ -5,6 +5,7 @@ import { Shield, Zap, Heart, User, ChevronRight } from 'lucide-react';
 interface Player {
   peer_id: string;
   pseudo: string;
+  role?: number;
 }
 
 interface PlayerWindowContentProps {
@@ -15,6 +16,12 @@ export function PlayerWindowContent({ players }: PlayerWindowContentProps) {
   const { user } = useAuthStore();
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+
+  const getRoleLabel = (role?: number) => {
+    if (role === SecurityLevel.ADMIN) return 'ADMINISTRATEUR';
+    if (role === SecurityLevel.MJ) return 'MAÎTRE DE JEU';
+    return 'INITIÉ';
+  };
 
   // Vue Fiche de Personnage
   const renderCharacterSheet = (player: Player | null) => {
@@ -122,7 +129,7 @@ export function PlayerWindowContent({ players }: PlayerWindowContentProps) {
                 {p.pseudo}
               </span>
               <span className="text-[9px] text-white/40 font-mono">
-                {p.pseudo === 'MJ' ? 'Hôte' : 'Joueur'}
+                {getRoleLabel(p.role)}
               </span>
             </div>
           </div>

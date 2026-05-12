@@ -1,7 +1,7 @@
 export interface Character {
   id: string;
   session_id: string;
-  peer_id: string;
+  user_id?: string;
   name: string;
   stats: Record<string, number>;
   bars: Record<string, number>;
