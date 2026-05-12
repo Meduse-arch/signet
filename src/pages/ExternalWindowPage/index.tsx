@@ -189,7 +189,7 @@ useEffect(() => {
           )}
 
           {type === 'character' && (
-            <CharacterSheetContent sessionId={sessionId} />
+            <CharacterSheetContent sessionId={sessionId} variant="window" />
           )}
 
           {type === 'dice' && (

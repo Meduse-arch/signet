@@ -8,13 +8,25 @@ interface WindowState {
   position: { x: number; y: number };
 }
 
+const getCenterPosition = (offset = 0) => {
+  if (typeof window !== 'undefined') {
+    const w = 320; // approx width (w-80)
+    const h = 400; // approx height
+    return {
+      x: Math.max(0, (window.innerWidth - w) / 2 + offset),
+      y: Math.max(0, (window.innerHeight - h) / 2 + offset)
+    };
+  }
+  return { x: 100, y: 100 };
+};
+
 const DEFAULT_WINDOWS: Record<WindowType, WindowState> = {
-  scenes: { isOpen: false, zIndex: 50, position: { x: 50, y: 50 } },
-  story: { isOpen: false, zIndex: 50, position: { x: 100, y: 100 } },
-  dice: { isOpen: false, zIndex: 50, position: { x: 150, y: 150 } },
-  assets: { isOpen: false, zIndex: 50, position: { x: 200, y: 200 } },
-  players: { isOpen: false, zIndex: 50, position: { x: 250, y: 250 } },
-  character: { isOpen: false, zIndex: 50, position: { x: 300, y: 300 } },
+  scenes: { isOpen: false, zIndex: 50, position: getCenterPosition(0) },
+  story: { isOpen: false, zIndex: 50, position: getCenterPosition(20) },
+  dice: { isOpen: false, zIndex: 50, position: getCenterPosition(40) },
+  assets: { isOpen: false, zIndex: 50, position: getCenterPosition(60) },
+  players: { isOpen: false, zIndex: 50, position: getCenterPosition(80) },
+  character: { isOpen: false, zIndex: 50, position: getCenterPosition(100) },
 };
 
 interface SignetInterfaceState {

@@ -109,7 +109,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
         )}
       </div>
       
-      <div className="p-3 border-t border-gold-DEFAULT/30 space-y-3 relative z-10 bg-black/20">
+      <div className="p-3 pb-8 border-t border-gold-DEFAULT/30 space-y-3 relative z-10 bg-black/20">
         {sidebarOpen && user && (
           <div className="px-3 py-2 mb-2 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/30">
             <div className="flex items-center gap-3">
