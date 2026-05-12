@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BoardCanvas, MapItem } from '../../components/BoardCanvas';
-import { SignetLauncher, DraggableWindow, SceneWindowContent } from '../../components/SignetInterface';
+import { SignetLauncher, DraggableWindow, SceneWindowContent, CharacterSheetContent } from '../../components/SignetInterface';
 import { useSignetInterface } from '../../hooks/useSignetInterface';
 import { usePeersStore } from '../../store/peers';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
@@ -10,7 +10,8 @@ import { CharacterHUD } from '../../components/CharacterHUD';
 import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
-import { getSessionCharacters, addSessionCharacter } from '../../services/characters.service';
+import { getSessionCharacters, addSessionCharacter, Character } from '../../services/characters.service';
+import { getSessionMaps, addSessionMap, removeSessionMap } from '../../services/maps.service';
 
 interface SealEngineProps {
   sessionId: string;
@@ -24,19 +25,26 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
 
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
-  const { addOrUpdateCharacter, setCharacters } = useCharactersStore();
+  const { characters, addOrUpdateCharacter, setCharacters, initialize: initChars } = useCharactersStore();
   
   const { broadcast, onData } = usePeer();
   const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
 
-  // Charger les personnages initiaux
+  // Initialiser les personnages depuis le storage local (important pour les clients)
+  useEffect(() => {
+    initChars(sessionId);
+  }, [sessionId, initChars]);
+
+  // Charger les personnages initiaux (seulement si Hôte/Electron)
   useEffect(() => {
     const loadChars = async () => {
-      const chars = await getSessionCharacters(sessionId);
-      setCharacters(chars);
+      if (isHost && window.electronAPI) {
+        const chars = await getSessionCharacters(sessionId);
+        setCharacters(chars);
+      }
     };
     loadChars();
-  }, [sessionId]);
+  }, [sessionId, isHost, setCharacters]);
 
   // Écoute BroadcastChannel pour les personnages (UI locale)
   useEffect(() => {
@@ -64,20 +72,38 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
   };
 
   // État des cartes (Scènes)
-  const [maps, setMaps] = useState<MapItem[]>(() => {
-    const saved = localStorage.getItem(`maps_${sessionId}`);
-    if (saved) return JSON.parse(saved);
-    return imageUrl ? [{ id: 'default', name: 'Carte Initiale', url: imageUrl }] : [];
-  });
+  const [maps, setMaps] = useState<MapItem[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>(() => {
     const saved = localStorage.getItem(`active_map_${sessionId}`);
     if (saved) return saved;
     return imageUrl ? 'default' : '';
   });
 
+  // Charger les cartes initiales
   useEffect(() => {
-    localStorage.setItem(`maps_${sessionId}`, JSON.stringify(maps));
-  }, [maps, sessionId]);
+    const loadMaps = async () => {
+      if (isHost && window.electronAPI) {
+        const dbMaps = await getSessionMaps(sessionId);
+        if (dbMaps.length > 0) {
+          setMaps(dbMaps);
+        } else if (imageUrl) {
+          const defaultMap = { id: 'default', name: 'Carte Initiale', url: imageUrl };
+          setMaps([defaultMap]);
+          await addSessionMap(sessionId, defaultMap);
+        }
+      } else {
+        const saved = localStorage.getItem(`maps_${sessionId}`);
+        if (saved) setMaps(JSON.parse(saved));
+      }
+    };
+    loadMaps();
+  }, [sessionId, isHost, imageUrl]);
+
+  useEffect(() => {
+    if (!isHost) {
+      localStorage.setItem(`maps_${sessionId}`, JSON.stringify(maps));
+    }
+  }, [maps, sessionId, isHost]);
 
   useEffect(() => {
     localStorage.setItem(`active_map_${sessionId}`, currentMapId);
@@ -124,10 +150,14 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
     }
   }, [sessionId, isHost, broadcast]);
 
-  const handleAddMap = useCallback((name: string, url: string) => {
+  const handleAddMap = useCallback(async (name: string, url: string) => {
     const newMap = { id: Math.random().toString(36).substring(2, 9), name, url };
     const updatedMaps = [...maps, newMap];
     setMaps(updatedMaps);
+
+    if (isHost && window.electronAPI) {
+      await addSessionMap(sessionId, newMap);
+    }
 
     // Sync local
     const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
@@ -171,7 +201,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
       unsubData();
       if (unsubDock) unsubDock();
     };
-  }, [onData, maps, openWindow]);
+  }, [onData, maps, openWindow, isHost, broadcast, addOrUpdateCharacter, sessionId]);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center bg-[#0D0D0F] relative w-full h-full overflow-hidden">
@@ -181,6 +211,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
         maps={maps}
         currentMapId={currentMapId}
         onSelectMap={handleSelectMap}
+        characters={characters}
       />
 
       {/* HUD Global - Vignette et Interface Principale */}
@@ -289,6 +320,21 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
           defaultPosition={windows.players.position}
         >
           <PlayerWindowContent players={players} />
+        </DraggableWindow>
+      )}
+
+      {windows.character.isOpen && (
+        <DraggableWindow
+          id="character"
+          title="Fiche de Personnage"
+          onClose={() => closeWindow('character')}
+          onPopOut={() => handlePopOut('character')}
+          onFocus={() => focusWindow('character')}
+          onPositionChange={(x, y) => updatePosition('character', x, y)}
+          zIndex={windows.character.zIndex}
+          defaultPosition={windows.character.position}
+        >
+          <CharacterSheetContent sessionId={sessionId} />
         </DraggableWindow>
       )}
       </div>

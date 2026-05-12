@@ -3,6 +3,8 @@ import { usePeer } from '../../hooks/usePeer';
 import { SecurityLevel, useAuthStore } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { usePeersStore } from '../../store/peers';
+import { useCharactersStore } from '../../store/characters';
+import { peerService } from '../../services/peer.service';
 import {
   addSessionPlayer,
   clearSessionPlayers,
@@ -49,6 +51,11 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   // ✅ Stabiliser les refs pour les callbacks asynchrones
   const currentUser = useAuthStore(state => state.user);
   const isMJ = !!currentUser && currentUser.role >= SecurityLevel.MJ && !sessionId.startsWith('SIGNET-');
+
+  // ✅ Initialiser le store des personnages
+  useEffect(() => {
+    useCharactersStore.getState().initialize(sessionId);
+  }, [sessionId]);
 
   // ✅ Récupérer les infos de la session
   const { sessions, addSession: addSessionToStore } = useSessionStore();
@@ -164,13 +171,15 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
           broadcastRef.current({ type: 'SESSION_START', payload: {} });
         }
 
-        // 5. Récupération auto du personnage si l'utilisateur en a déjà un
+        // 6. Récupération auto du personnage et envoi DIRECT au nouveau joueur
         if (userId && window.electronAPI) {
           const sessionChars = await window.electronAPI.getCharacters(sessionIdRef.current);
           const ownedChar = sessionChars.find((c: any) => c.user_id === userId);
           if (ownedChar) {
             console.log(`[LobbyPage] Personnage trouvé pour ${pseudo} (${ownedChar.name}), envoi de la fiche...`);
-            // On broadcast pour que tout le monde (dont le nouveau joueur) soit à jour
+            // On envoie DIRECTEMENT au nouveau peerId
+            peerService.sendTo(newPeerId, { type: 'CHAR_UPDATE', payload: ownedChar });
+            // Et on broadcast aussi pour que le HUD des autres soit à jour si besoin
             broadcastRef.current({ type: 'CHAR_UPDATE', payload: ownedChar });
           }
         }
@@ -215,6 +224,12 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       else if (data.type === 'SESSION_CLOSED') {
         console.log('[LobbyPage] Session fermée par l\'hôte');
         onLeave();
+      }
+      
+      // Pour tout le monde : Mise à jour des personnages
+      else if (data.type === 'CHAR_UPDATE') {
+        console.log('[LobbyPage] Personnage reçu:', data.payload.name);
+        useCharactersStore.getState().addOrUpdateCharacter(data.payload);
       }
       
       // Pour tout le monde : Déconnexions

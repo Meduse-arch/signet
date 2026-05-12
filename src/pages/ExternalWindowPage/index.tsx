@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { SceneWindowContent } from '../../components/SignetInterface';
+import { SceneWindowContent, CharacterSheetContent } from '../../components/SignetInterface';
 import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
 import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
+import { useCharactersStore } from '../../store/characters';
 import { getSessionPlayers } from '../../services/session.service';
+import { getSessionMaps, addSessionMap } from '../../services/maps.service';
 import { MapItem } from '../../components/BoardCanvas';
-import { LogIn } from 'lucide-react';
 
 interface ExternalWindowPageProps {
   type: string;
@@ -16,11 +17,17 @@ interface ExternalWindowPageProps {
 export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps) {
   const { onData, broadcast, init } = usePeer();
   const { user } = useAuthStore();
+  const { addOrUpdateCharacter, initialize: initChars } = useCharactersStore();
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string }[]>([]);
   const [maps, setMaps] = useState<MapItem[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('');
+
+  // Initialisation des données personnages depuis le storage
+  useEffect(() => {
+    initChars(sessionId);
+  }, [sessionId, initChars]);
 
   // Initialisation P2P pour rester synchronisé
   useEffect(() => {
@@ -35,27 +42,38 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
     setup();
   }, [sessionId, type, init]);
 
-  // Chargement initial des données (Scènes)
+  // Chargement initial des données (Scènes et Joueurs)
   useEffect(() => {
-    const savedMaps = localStorage.getItem(`maps_${sessionId}`);
-    if (savedMaps) {
-      const parsed = JSON.parse(savedMaps);
-      setMaps(parsed);
-      
-      // On essaie de retrouver la map active par défaut
-      const lastActive = localStorage.getItem(`active_map_${sessionId}`);
-      if (lastActive) {
-        setCurrentMapId(lastActive);
+    const loadData = async () => {
+      // Chargement des cartes
+      if (window.electronAPI) {
+        try {
+          const dbMaps = await getSessionMaps(sessionId);
+          if (dbMaps.length > 0) {
+            setMaps(dbMaps);
+          } else {
+            const savedMaps = localStorage.getItem(`maps_${sessionId}`);
+            if (savedMaps) setMaps(JSON.parse(savedMaps));
+          }
+        } catch (e) {
+          console.error('[ExternalWindow] Error loading maps from DB:', e);
+          const savedMaps = localStorage.getItem(`maps_${sessionId}`);
+          if (savedMaps) setMaps(JSON.parse(savedMaps));
+        }
       } else {
-        setCurrentMapId(parsed[0]?.id || '');
+        const savedMaps = localStorage.getItem(`maps_${sessionId}`);
+        if (savedMaps) setMaps(JSON.parse(savedMaps));
       }
-    }
-    
-    const loadPlayers = async () => {
+
+      // Map active
+      const lastActive = localStorage.getItem(`active_map_${sessionId}`);
+      if (lastActive) setCurrentMapId(lastActive);
+
+      // Joueurs
       const list = await getSessionPlayers(sessionId);
       setPlayers(list);
     };
-    loadPlayers();
+    loadData();
   }, [sessionId]);
 
   // Écoute des mises à jour
@@ -70,53 +88,50 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
         if (map) {
           setCurrentMapId(map.id);
           localStorage.setItem(`active_map_${sessionId}`, map.id);
-        } else {
-          const savedMaps = localStorage.getItem(`maps_${sessionId}`);
-          if (savedMaps) {
-            const parsed = JSON.parse(savedMaps);
-            const found = parsed.find((m: MapItem) => m.url === targetUrl);
-            if (found) {
-              setCurrentMapId(found.id);
-              localStorage.setItem(`active_map_${sessionId}`, found.id);
-            }
-          }
         }
       } else if (data.type === 'MAP_UPDATE') {
         setMaps(data.payload);
+      } else if (data.type === 'CHAR_UPDATE') {
+        addOrUpdateCharacter(data.payload);
       }
     });
     return () => unsub();
-  }, [onData, sessionId, maps]);
-const handleSelectMap = (map: MapItem) => {
-  setCurrentMapId(map.id);
-  localStorage.setItem(`active_map_${sessionId}`, map.id);
+  }, [onData, sessionId, maps, addOrUpdateCharacter]);
 
-  // Sync local via BroadcastChannel
-  const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
-  channel.postMessage({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
-  channel.close();
+  const handleSelectMap = (map: MapItem) => {
+    setCurrentMapId(map.id);
+    localStorage.setItem(`active_map_${sessionId}`, map.id);
 
-  if (isMJ) {
-    broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
-  }
-};
+    // Sync local via BroadcastChannel
+    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    channel.postMessage({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
+    channel.close();
 
-const handleAddMap = (name: string, url: string) => {
-  const newMap = { id: Math.random().toString(36).substring(2, 9), name, url };
-  const updatedMaps = [...maps, newMap];
-  setMaps(updatedMaps);
-  localStorage.setItem(`maps_${sessionId}`, JSON.stringify(updatedMaps));
+    if (isMJ) {
+      broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
+    }
+  };
 
-  // Sync local via BroadcastChannel
-  const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
-  channel.postMessage({ type: 'MAP_UPDATE', payload: updatedMaps });
-  channel.close();
+  const handleAddMap = async (name: string, url: string) => {
+    const newMap = { id: Math.random().toString(36).substring(2, 9), name, url };
+    const updatedMaps = [...maps, newMap];
+    setMaps(updatedMaps);
+    
+    if (window.electronAPI) {
+      await addSessionMap(sessionId, newMap);
+    } else {
+      localStorage.setItem(`maps_${sessionId}`, JSON.stringify(updatedMaps));
+    }
 
-  if (isMJ) {
-    // Prévenir l'app principale et les autres
-    broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
-  }
-};
+    // Sync local via BroadcastChannel
+    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    channel.postMessage({ type: 'MAP_UPDATE', payload: updatedMaps });
+    channel.close();
+
+    if (isMJ) {
+      broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+    }
+  };
 
 // Écoute BroadcastChannel pour recevoir les mises à jour de l'app principale
 useEffect(() => {
@@ -134,6 +149,18 @@ useEffect(() => {
   };
   return () => channel.close();
 }, [sessionId, maps]);
+
+// Écoute BroadcastChannel pour les personnages
+useEffect(() => {
+  const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
+  channel.onmessage = (event) => {
+    const { type, payload } = event.data;
+    if (type === 'CHAR_UPDATE') {
+      addOrUpdateCharacter(payload);
+    }
+  };
+  return () => channel.close();
+}, [sessionId, addOrUpdateCharacter]);
 
   const handleReDock = () => {
     if (window.electronAPI) {
@@ -159,6 +186,10 @@ useEffect(() => {
 
           {type === 'players' && (
             <PlayerWindowContent players={players} />
+          )}
+
+          {type === 'character' && (
+            <CharacterSheetContent sessionId={sessionId} />
           )}
 
           {type === 'dice' && (

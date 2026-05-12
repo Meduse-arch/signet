@@ -69,7 +69,14 @@ function getSessionDb(sessionId: string): Database.Database {
           user_id TEXT,
           name TEXT,
           stats TEXT,
-          bars TEXT
+          bars TEXT,
+          image_url TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS maps (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          url TEXT
         );
       `);
 
@@ -82,6 +89,9 @@ function getSessionDb(sessionId: string): Database.Database {
       const charTableInfo = db.prepare("PRAGMA table_info(characters)").all() as any[];
       if (!charTableInfo.some(col => col.name === 'user_id')) {
         db.exec('ALTER TABLE characters ADD COLUMN user_id TEXT');
+      }
+      if (!charTableInfo.some(col => col.name === 'image_url')) {
+        db.exec('ALTER TABLE characters ADD COLUMN image_url TEXT');
       }
       
       initializedDbs.add(dbPath);
@@ -264,17 +274,14 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
   ipcMain.handle('characters:add', (_, c) => {
     try {
       const db = getSessionDb(c.session_id);
-      db.prepare('INSERT OR REPLACE INTO characters (id, user_id, name, stats, bars) VALUES (?, ?, ?, ?, ?)')
-        .run(c.id, c.user_id || null, c.name, JSON.stringify(c.stats), JSON.stringify(c.bars));
+      db.prepare('INSERT OR REPLACE INTO characters (id, user_id, name, stats, bars, image_url) VALUES (?, ?, ?, ?, ?, ?)')
+        .run(c.id, c.user_id || null, c.name, JSON.stringify(c.stats), JSON.stringify(c.bars), c.image_url || null);
     } catch (e) {
       console.error('[DB] characters:add error', e);
     }
   });
 
   ipcMain.handle('characters:remove', (_, id) => {
-    // Note: Dans cette architecture, characters:remove ne reçoit plus le sessionId.
-    // Pour être rigoureux, il faudrait le passer. Pour l'instant, on cherche dans toutes les DB ouvertes
-    // ou on modifie le frontend. On va chercher dans tous les sessionDbs par simplicité si id est unique.
     try {
       for (const db of sessionDbs.values()) {
         const result = db.prepare('DELETE FROM characters WHERE id = ?').run(id);
@@ -285,15 +292,46 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     }
   });
 
-  ipcMain.handle('characters:update', (_, id, name, stats, bars) => {
+  ipcMain.handle('characters:update', (_, id, name, stats, bars, imageUrl) => {
     try {
       for (const db of sessionDbs.values()) {
-        const result = db.prepare('UPDATE characters SET name = ?, stats = ?, bars = ? WHERE id = ?')
-          .run(name, JSON.stringify(stats), JSON.stringify(bars), id);
+        const result = db.prepare('UPDATE characters SET name = ?, stats = ?, bars = ?, image_url = ? WHERE id = ?')
+          .run(name, JSON.stringify(stats), JSON.stringify(bars), imageUrl || null, id);
         if (result.changes > 0) break;
       }
     } catch (e) {
       console.error('[DB] characters:update error', e);
+    }
+  });
+
+  // --- HANDLERS MAPS (SESSION DB) ---
+
+  ipcMain.handle('maps:getAll', (_, sessionId) => {
+    try {
+      const db = getSessionDb(sessionId);
+      return db.prepare('SELECT * FROM maps').all();
+    } catch (e) {
+      console.error('[DB] maps:getAll error', e);
+      return [];
+    }
+  });
+
+  ipcMain.handle('maps:add', (_, sessionId, map) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare('INSERT OR REPLACE INTO maps (id, name, url) VALUES (?, ?, ?)')
+        .run(map.id, map.name, map.url);
+    } catch (e) {
+      console.error('[DB] maps:add error', e);
+    }
+  });
+
+  ipcMain.handle('maps:remove', (_, sessionId, id) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare('DELETE FROM maps WHERE id = ?').run(id);
+    } catch (e) {
+      console.error('[DB] maps:remove error', e);
     }
   });
 

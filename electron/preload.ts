@@ -24,6 +24,13 @@ export interface Character {
   name: string;
   stats: Record<string, number>;
   bars: Record<string, number>;
+  image_url?: string;
+}
+
+export interface MapItem {
+  id: string;
+  name: string;
+  url: string;
 }
 
 export interface ElectronAPI {
@@ -38,7 +45,10 @@ export interface ElectronAPI {
   getCharacters: (sessionId: string) => Promise<Character[]>;
   addCharacter: (character: Character) => Promise<void>;
   removeCharacter: (id: string) => Promise<void>;
-  updateCharacter: (id: string, name: string, stats: Record<string, number>, bars: Record<string, number>) => Promise<void>;
+  updateCharacter: (id: string, name: string, stats: Record<string, number>, bars: Record<string, number>, imageUrl?: string) => Promise<void>;
+  getMaps: (sessionId: string) => Promise<MapItem[]>;
+  addMap: (sessionId: string, map: MapItem) => Promise<void>;
+  removeMap: (sessionId: string, id: string) => Promise<void>;
   openExternalWindow: (type: string, sessionId: string) => Promise<void>;
   reDock: (type: string, sessionId: string) => Promise<void>;
   onReDock: (callback: (type: string) => void) => (() => void);
@@ -61,7 +71,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCharacters: (sessionId: string) => ipcRenderer.invoke('characters:getAll', sessionId),
   addCharacter: (character: Character) => ipcRenderer.invoke('characters:add', character),
   removeCharacter: (id: string) => ipcRenderer.invoke('characters:remove', id),
-  updateCharacter: (id: string, name: string, stats: Record<string, number>, bars: Record<string, number>) => ipcRenderer.invoke('characters:update', id, name, stats, bars),
+  updateCharacter: (id: string, name: string, stats: Record<string, number>, bars: Record<string, number>, imageUrl?: string) => ipcRenderer.invoke('characters:update', id, name, stats, bars, imageUrl),
+  getMaps: (sessionId: string) => ipcRenderer.invoke('maps:getAll', sessionId),
+  addMap: (sessionId: string, map: MapItem) => ipcRenderer.invoke('maps:add', sessionId, map),
+  removeMap: (sessionId: string, id: string) => ipcRenderer.invoke('maps:remove', sessionId, id),
   openExternalWindow: (type: string, sessionId: string) => ipcRenderer.invoke('windows:openExternal', type, sessionId),
   reDock: (type: string, sessionId: string) => ipcRenderer.invoke('windows:reDock', type, sessionId),
   onReDock: (callback: (type: string) => void) => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, Zap, Heart, Plus, Activity } from 'lucide-react';
+import { Shield, Zap, Heart, Plus, Activity, Layout } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { usePeersStore } from '../../store/peers';
 import { useSessionStore } from '../../store/session';
@@ -8,6 +8,7 @@ import { CreateCharacterModal } from '../CreateCharacterModal';
 import { useAuthStore } from '../../store/auth';
 import { addSessionCharacter, Character } from '../../services/characters.service';
 import { DEFAULT_BARS } from '../../systems/seal/constants';
+import { useSignetStore } from '../../store/signet';
 
 interface CharacterHUDProps {
   sessionId: string;
@@ -20,16 +21,23 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const { broadcast } = usePeer();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { openWindow } = useSignetStore();
 
   // Trouver le personnage de l'utilisateur actuel
   const myCharacter = characters.find(c => c.user_id === user?.id);
 
-  const handleCreateSave = async (data: { name: string; stats: Record<string, number>; bars: Record<string, number> }) => {
+  const handleCreateSave = async (data: { 
+    name: string; 
+    image_url?: string;
+    stats: Record<string, number>; 
+    bars: Record<string, number> 
+  }) => {
     const newChar: Character = {
       id: myCharacter?.id || crypto.randomUUID(),
       session_id: sessionId,
       user_id: user?.id,
       name: data.name,
+      image_url: data.image_url,
       stats: data.stats,
       bars: data.bars
     };
@@ -80,19 +88,25 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
     );
   }
 
-  const { bars, name } = myCharacter;
+  const { bars, name, image_url } = myCharacter;
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
 
   return (
     <div className="absolute bottom-10 left-10 z-[60] pointer-events-auto flex items-center gap-6 p-4 rounded-[2rem] bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/30 shadow-[0_4px_30px_rgba(0,0,0,0.6)] group hover:border-gold-DEFAULT/50 transition-colors">
-      {/* Avatar / Class icon */}
-      <div className="relative cursor-pointer" onClick={() => setIsModalOpen(true)}>
-        <div className="absolute inset-[-6px] rounded-full border border-gold-DEFAULT/20 group-hover:border-gold-DEFAULT/60 group-hover:rotate-180 transition-all duration-1000 ease-linear" />
-        <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-gold-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)]">
-          <span className="text-2xl font-cinzel text-gold-bright drop-shadow-md">{name.substring(0, 1).toUpperCase()}</span>
+      {/* Avatar / Profile */}
+      <div className="relative group/avatar cursor-pointer" onClick={() => openWindow('character')}>
+        <div className="absolute inset-[-6px] rounded-full border border-gold-DEFAULT/20 group-hover/avatar:border-gold-DEFAULT/60 group-hover/avatar:rotate-180 transition-all duration-1000 ease-linear" />
+        <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-gold-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)] overflow-hidden">
+          {image_url ? (
+            <img src={image_url} alt={name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-2xl font-cinzel text-gold-bright drop-shadow-md">{name.substring(0, 1).toUpperCase()}</span>
+          )}
         </div>
-        <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0D0D0F] border border-gold-DEFAULT/40 flex items-center justify-center font-bold text-[9px] text-gold-bright font-mono drop-shadow-md shadow-[0_0_10px_rgba(212,175,55,0.2)]">
-          1
+        
+        {/* Open Sheet Button Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full transition-opacity">
+          <Layout className="w-5 h-5 text-gold-bright" />
         </div>
       </div>
 
@@ -123,16 +137,14 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
         })}
       </div>
       
-      {isModalOpen && (
-        <CreateCharacterModal 
-          onClose={() => setIsModalOpen(false)} 
-          onSave={handleCreateSave}
-          initialStats={myCharacter.stats}
-          initialName={myCharacter.name}
-          title={`Modifier ${name}`}
-          settings={session?.settings}
-        />
-      )}
+      {/* Full Sheet Button */}
+      <button 
+        onClick={() => openWindow('character')}
+        className="flex items-center justify-center w-10 h-10 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-DEFAULT hover:text-gold-bright hover:border-gold-DEFAULT/60 hover:bg-gold-DEFAULT/20 transition-all shadow-lg"
+        title="Ouvrir la fiche complète"
+      >
+        <Layout size={18} />
+      </button>
     </div>
   );
 }

@@ -14,7 +14,10 @@ declare global {
       getCharacters: (sessionId: string) => Promise<any[]>;
       addCharacter: (character: any) => Promise<void>;
       removeCharacter: (id: string) => Promise<void>;
-      updateCharacter: (id: string, name: string, stats: Record<string, number>, bars: Record<string, number>) => Promise<void>;
+      updateCharacter: (id: string, name: string, stats: Record<string, number>, bars: Record<string, number>, imageUrl?: string) => Promise<void>;
+      getMaps: (sessionId: string) => Promise<any[]>;
+      addMap: (sessionId: string, map: any) => Promise<void>;
+      removeMap: (sessionId: string, id: string) => Promise<void>;
       openExternalWindow: (type: string, sessionId: string) => void;
       reDock: (type: string, sessionId: string) => void;
       onReDock: (callback: (type: string) => void) => (() => void);

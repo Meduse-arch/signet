@@ -3,6 +3,7 @@ import { useBoard } from '../../hooks/useBoard';
 import { usePeersStore } from '../../store/peers';
 import { useAuthStore } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
+import { Character } from '../../services/characters.service';
 
 export interface MapItem {
   id: string;
@@ -16,13 +17,13 @@ interface BoardCanvasProps {
   maps: MapItem[];
   currentMapId: string;
   onSelectMap: (map: MapItem) => void;
+  characters: Character[];
 }
 
-export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId }: BoardCanvasProps) {
+export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, characters }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { addToken, loadMap } = useBoard(containerRef, sessionId, imageUrl);
   const { isHost } = usePeersStore();
-  const { user } = useAuthStore();
   const { onData } = usePeer();
 
   // Synchronisation de la map initiale et des changements de props
@@ -35,6 +36,19 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId }: BoardCa
     }
   }, [currentMapId, maps, imageUrl, loadMap]);
 
+  // Synchronisation des personnages en tant que tokens
+  useEffect(() => {
+    characters.forEach(char => {
+      addToken({
+        id: char.id,
+        name: char.name,
+        image_url: char.image_url,
+        x: 0,
+        y: 0,
+      });
+    });
+  }, [characters, addToken]);
+
   // Synchronisation des changements de map pour les joueurs
   useEffect(() => {
     const unsub = onData((data) => {
@@ -45,16 +59,6 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId }: BoardCa
     });
     return () => unsub();
   }, [onData, isHost, loadMap]);
-
-  const handleAddToken = () => {
-    const id = Math.random().toString(36).substring(2, 9);
-    addToken({
-      id,
-      name: user?.pseudo || 'Joueur',
-      x: (Math.random() - 0.5) * 200,
-      y: (Math.random() - 0.5) * 200,
-    });
-  };
 
   return (
     <div className="relative w-full h-full overflow-hidden">

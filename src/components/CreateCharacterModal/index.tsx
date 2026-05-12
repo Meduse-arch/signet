@@ -6,10 +6,13 @@ interface CreateCharacterModalProps {
   onClose: () => void;
   onSave: (characterData: {
     name: string;
+    image_url?: string;
     stats: Record<string, number>;
     bars: Record<string, number>;
   }) => void;
   initialStats?: Record<string, number>;
+  initialName?: string;
+  initialImageUrl?: string;
   title?: string;
   settings?: {
     stats?: StatDefinition[];
@@ -26,10 +29,13 @@ export function CreateCharacterModal({
   onSave, 
   initialStats, 
   initialName = '',
+  initialImageUrl = '',
   title = "Éveiller un Voyageur",
   settings 
 }: CreateCharacterModalProps) {
   const [name, setName] = useState(initialName);
+  const [imageUrl, setImageUrl] = useState(initialImageUrl);
+  const isEditing = !!initialStats;
   
   // Utiliser les stats définies dans les paramètres ou les stats par défaut
   const availableStats = settings?.stats || DEFAULT_STATS;
@@ -47,13 +53,13 @@ export function CreateCharacterModal({
   const [rerollsLeft, setRerollsLeft] = useState(settings?.rollFormula?.rerolls || 0);
   const [hasInitialRoll, setHasInitialRoll] = useState(false);
 
-  // Auto-roll une fois si on est en mode roll
+  // Auto-roll une fois si on est en mode roll et pas en édition
   useEffect(() => {
-    if (settings?.sheetMode === 'roll' && !initialStats && !hasInitialRoll) {
+    if (settings?.sheetMode === 'roll' && !isEditing && !hasInitialRoll) {
       handleRollAll();
       setHasInitialRoll(true);
     }
-  }, [settings?.sheetMode, initialStats, hasInitialRoll]);
+  }, [settings?.sheetMode, isEditing, hasInitialRoll]);
 
   useEffect(() => {
     if (settings?.sheetMode === 'manual') {
@@ -63,7 +69,7 @@ export function CreateCharacterModal({
   }, [stats, settings, availableStats]);
 
   const handleStatChange = (statId: string, val: number) => {
-    if (settings?.sheetMode === 'roll') return;
+    if (isEditing || settings?.sheetMode === 'roll') return;
     
     const currentVal = stats[statId] || 0;
     const diff = val - currentVal;
@@ -79,7 +85,7 @@ export function CreateCharacterModal({
   };
 
   const rollStat = (statId: string) => {
-    if (!settings?.rollFormula) return;
+    if (isEditing || !settings?.rollFormula) return;
     const { diceCount, diceSides } = settings.rollFormula;
     let roll = 0;
     for (let i = 0; i < diceCount; i++) {
@@ -89,7 +95,7 @@ export function CreateCharacterModal({
   };
 
   const handleRerollStat = (statId: string) => {
-    if (rerollsLeft <= 0 && settings?.sheetMode === 'roll') return;
+    if (isEditing || (rerollsLeft <= 0 && settings?.sheetMode === 'roll')) return;
     rollStat(statId);
     if (settings?.sheetMode === 'roll') {
       setRerollsLeft(prev => prev - 1);
@@ -97,6 +103,7 @@ export function CreateCharacterModal({
   };
 
   const handleRollAll = () => {
+    if (isEditing) return;
     const newStats = { ...stats };
     availableStats.forEach(s => {
       if (!settings?.rollFormula) return;
@@ -143,6 +150,7 @@ export function CreateCharacterModal({
     if (!name.trim()) return;
     onSave({
       name,
+      image_url: imageUrl,
       stats,
       bars: derivedBars
     });
@@ -176,7 +184,7 @@ export function CreateCharacterModal({
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
-            {settings?.sheetMode === 'roll' && (settings?.rerollAllAllowed || !stats[availableStats[0].id]) && (
+            {!isEditing && settings?.sheetMode === 'roll' && (settings?.rerollAllAllowed || !stats[availableStats[0].id]) && (
               <button 
                 onClick={handleRollAll}
                 className="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-[8px] sm:text-[9px] font-cinzel font-black text-gold-bright hover:bg-gold-DEFAULT/20 transition-all tracking-widest uppercase flex items-center justify-center gap-2"
@@ -195,15 +203,29 @@ export function CreateCharacterModal({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
             {/* Colonne Gauche: Identité & Stats */}
             <div className="space-y-6 sm:space-y-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Nom du Personnage</label>
-                <input 
-                  type="text" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: Kaelen l'Errant"
-                  className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 sm:py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm sm:text-base"
-                />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Nom du Personnage</label>
+                  <input 
+                    type="text" 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isEditing}
+                    placeholder="Ex: Kaelen l'Errant"
+                    className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 sm:py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm sm:text-base disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Image du Voyageur (URL)</label>
+                  <input 
+                    type="text" 
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 sm:py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm sm:text-base"
+                  />
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -218,28 +240,31 @@ export function CreateCharacterModal({
                       <div className="flex items-center gap-3 sm:gap-4">
                         {settings?.sheetMode === 'manual' ? (
                           <>
-                            <button onClick={() => handleStatChange(stat.id, stats[stat.id] - 1)} className="w-6 h-6 flex items-center justify-center rounded bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 transition-colors">-</button>
+                            {!isEditing && <button onClick={() => handleStatChange(stat.id, stats[stat.id] - 1)} className="w-6 h-6 flex items-center justify-center rounded bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 transition-colors">-</button>}
                             <input
                               type="number"
                               value={stats[stat.id]}
                               onChange={(e) => handleStatChange(stat.id, parseInt(e.target.value) || 0)}
-                              className="w-10 bg-transparent border-b border-gold-DEFAULT/30 text-center font-mono font-bold text-sm text-gold-bright focus:outline-none focus:border-gold-bright transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              disabled={isEditing}
+                              className="w-10 bg-transparent border-b border-gold-DEFAULT/30 text-center font-mono font-bold text-sm text-gold-bright focus:outline-none focus:border-gold-bright transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:border-none"
                             />
-                            <button onClick={() => handleStatChange(stat.id, stats[stat.id] + 1)} className="w-6 h-6 flex items-center justify-center rounded bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 transition-colors">+</button>
+                            {!isEditing && <button onClick={() => handleStatChange(stat.id, stats[stat.id] + 1)} className="w-6 h-6 flex items-center justify-center rounded bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 transition-colors">+</button>}
                           </>
                         ) : (
                           <>
                             <span className="w-10 text-center font-cinzel font-black text-lg text-gold-bright drop-shadow-md">
                               {stats[stat.id] || '?'}
                             </span>
-                            <button 
-                              onClick={() => handleRerollStat(stat.id)} 
-                              disabled={rerollsLeft <= 0}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 disabled:opacity-20 transition-all border border-gold-DEFAULT/20"
-                              title="Relancer cet attribut"
-                            >
-                              <Dices size={14} />
-                            </button>
+                            {!isEditing && (
+                              <button 
+                                onClick={() => handleRerollStat(stat.id)} 
+                                disabled={rerollsLeft <= 0}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 disabled:opacity-20 transition-all border border-gold-DEFAULT/20"
+                                title="Relancer cet attribut"
+                              >
+                                <Dices size={14} />
+                              </button>
+                            )}
                           </>
                         )}
                       </div>

@@ -1,10 +1,11 @@
-import { Container, Graphics, Text, TextStyle, FederatedPointerEvent } from 'pixi.js';
+import { Container, Graphics, Text, TextStyle, FederatedPointerEvent, Sprite, Texture, Assets } from 'pixi.js';
 
 export interface TokenData {
   id: string;
   name: string;
   x: number;
   y: number;
+  image_url?: string;
   color?: string;
 }
 
@@ -12,6 +13,8 @@ export class TokenSprite extends Container {
   private bgGraphics: Graphics;
   private labelText: Text;
   private idText: Text;
+  private sprite: Sprite | null = null;
+  private maskGraphics: Graphics;
   
   private dragging = false;
   private onMoveCallback?: (x: number, y: number) => void;
@@ -25,16 +28,24 @@ export class TokenSprite extends Container {
     this.interactive = true;
     this.cursor = 'pointer';
 
+    // Background circle
     this.bgGraphics = new Graphics();
     this.drawBg(false);
     this.addChild(this.bgGraphics);
 
+    // Mask for the sprite (circular)
+    this.maskGraphics = new Graphics();
+    this.maskGraphics.circle(0, 0, 18);
+    this.maskGraphics.fill(0xffffff);
+    this.addChild(this.maskGraphics);
+
+    // Initialals (fallback)
     const initials = data.name.substring(0, 2).toUpperCase();
     this.idText = new Text({
       text: initials,
       style: new TextStyle({
-        fontFamily: 'sans-serif',
-        fontSize: 16,
+        fontFamily: 'Cinzel, serif',
+        fontSize: 14,
         fill: '#0D0D0F',
         fontWeight: 'bold'
       })
@@ -42,12 +53,19 @@ export class TokenSprite extends Container {
     this.idText.anchor.set(0.5);
     this.addChild(this.idText);
 
+    // Load Image if available
+    if (data.image_url) {
+      this.loadImage(data.image_url);
+    }
+
+    // Name Label
     this.labelText = new Text({
       text: data.name,
       style: new TextStyle({
-        fontFamily: 'sans-serif',
-        fontSize: 12,
-        fill: '#e8d5a0'
+        fontFamily: 'Cinzel, serif',
+        fontSize: 11,
+        fill: '#e8d5a0',
+        stroke: { color: '#000000', width: 2 }
       })
     });
     this.labelText.anchor.set(0.5, 0);
@@ -61,13 +79,39 @@ export class TokenSprite extends Container {
     this.on('pointermove', this.onDragMove, this);
   }
 
+  private async loadImage(url: string) {
+    try {
+      const texture = await Assets.load(url);
+      if (this.sprite) {
+        this.sprite.texture = texture;
+      } else {
+        this.sprite = new Sprite(texture);
+        this.sprite.anchor.set(0.5);
+        this.sprite.width = 36;
+        this.sprite.height = 36;
+        this.sprite.mask = this.maskGraphics;
+        this.addChildAt(this.sprite, 2); // Above bg, below initials/label
+        
+        // Hide initials if image loaded
+        this.idText.visible = false;
+      }
+    } catch (e) {
+      console.error('Failed to load token image:', e);
+    }
+  }
+
   private drawBg(selected: boolean) {
     this.bgGraphics.clear();
     this.bgGraphics.circle(0, 0, 20);
     this.bgGraphics.fill(selected ? '#F0C040' : '#D4A017');
     
-    // Ajout d'un petit contour
+    // Gold border
     this.bgGraphics.stroke({ color: selected ? '#FFFFFF' : '#B8860B', width: 2 });
+    
+    // Outer glow effect (simplified)
+    if (selected) {
+        this.bgGraphics.stroke({ color: 'rgba(240, 192, 64, 0.5)', width: 6 });
+    }
   }
 
   private onDragStart() {

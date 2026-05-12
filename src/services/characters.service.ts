@@ -5,13 +5,12 @@ export interface Character {
   name: string;
   stats: Record<string, number>;
   bars: Record<string, number>;
+  image_url?: string;
 }
 
 export async function getSessionCharacters(sessionId: string): Promise<Character[]> {
-  if (window.electronAPI) {
-    return await window.electronAPI.getCharacters(sessionId);
-  }
-  return [];
+  if (!window.electronAPI) return [];
+  return await window.electronAPI.getCharacters(sessionId);
 }
 
 export async function addSessionCharacter(character: Character): Promise<void> {
@@ -20,9 +19,9 @@ export async function addSessionCharacter(character: Character): Promise<void> {
   }
 }
 
-export async function updateSessionCharacter(id: string, name: string, stats: Record<string, number>, bars: Record<string, number>): Promise<void> {
+export async function updateSessionCharacter(id: string, name: string, stats: Record<string, number>, bars: Record<string, number>, imageUrl?: string): Promise<void> {
   if (window.electronAPI) {
-    await window.electronAPI.updateCharacter(id, name, stats, bars);
+    await window.electronAPI.updateCharacter(id, name, stats, bars, imageUrl);
   }
 }
 
