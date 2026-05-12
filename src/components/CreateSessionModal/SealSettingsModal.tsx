@@ -60,6 +60,16 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
     });
   };
 
+  const handleAddBar = () => {
+    const id = Math.random().toString(36).substring(2, 9);
+    const newBar: BarDefinition = { id, name: 'Nouvelle Ressource', color: '#ffffff', formula: '10' };
+    setLocalSettings({ ...localSettings, bars: [...(localSettings.bars || []), newBar] });
+  };
+
+  const handleRemoveBar = (id: string) => {
+    setLocalSettings({ ...localSettings, bars: localSettings.bars?.filter(b => b.id !== id) });
+  };
+
   return (
     <div 
       className="absolute inset-0 z-[100] bg-black/95 flex items-center justify-center backdrop-blur-xl p-2 sm:p-4 pointer-events-auto"
@@ -102,7 +112,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
               onClick={() => setActiveTab('bars')}
               className={`px-4 py-3 text-[8px] sm:text-[9px] font-cinzel font-black tracking-widest uppercase transition-all border-b-2 whitespace-nowrap ${activeTab === 'bars' ? 'border-gold-DEFAULT text-gold-bright' : 'border-transparent text-gold-muted hover:text-gold-DEFAULT'}`}
             >
-              Énergies
+              Ressources
             </button>
           </div>
 
@@ -293,11 +303,25 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
 
             {activeTab === 'bars' && (
               <div className="space-y-6 animate-in fade-in duration-300">
-                <h3 className="text-[10px] font-cinzel font-black text-gold-muted tracking-widest uppercase mb-4">Formules de Calcul (Runes)</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-[10px] font-cinzel font-black text-gold-muted tracking-widest uppercase">Formules de Calcul (Runes)</h3>
+                  <button 
+                    onClick={handleAddBar}
+                    className="flex items-center gap-2 px-3 py-1 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-[8px] font-cinzel font-black text-gold-bright hover:bg-gold-DEFAULT/20 transition-all"
+                  >
+                    <Plus size={10} /> AJOUTER
+                  </button>
+                </div>
                 
                 {localSettings.bars?.map((bar) => (
-                  <div key={bar.id} className="p-4 sm:p-5 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-                    <div className="flex items-center justify-between">
+                  <div key={bar.id} className="p-4 sm:p-5 rounded-2xl bg-white/5 border border-white/10 space-y-4 relative group">
+                    <button 
+                      onClick={() => handleRemoveBar(bar.id)}
+                      className="absolute top-4 right-4 text-white/20 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                    <div className="flex items-center justify-between pr-8">
                       <div className="flex items-center gap-3">
                         <Activity className="w-4 h-4" style={{ color: bar.color }} />
                         <input 

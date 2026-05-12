@@ -366,7 +366,7 @@ export function CharacterSheetContent({
 
         <div
           className="flex flex-col"
-          style={{ width: '100%', height: '100%', overflow: 'hidden' }}
+          style={{ width: '100%', overflow: 'hidden' }}
         >
           {/* ── Header compact ── */}
           <div
@@ -406,7 +406,7 @@ export function CharacterSheetContent({
           </div>
 
           {/* ── Two independent snap columns ── */}
-          <div className="flex-1 min-h-0 flex gap-2 p-2">
+          <div className="flex gap-2 p-2" style={{ height: '160px' }}>
             <SnapColumn
               items={statDefs}
               itemsPerPage={ITEMS_PER_PAGE}
