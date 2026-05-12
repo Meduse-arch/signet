@@ -15,13 +15,14 @@ interface CharacterHUDProps {
 }
 
 export function CharacterHUD({ sessionId }: CharacterHUDProps) {
-  const { user } = useAuthStore();
-  const { peerId } = usePeersStore();
-  const { characters, addOrUpdateCharacter } = useCharactersStore();
+  const user = useAuthStore(state => state.user);
+  const peerId = usePeersStore(state => state.peerId);
+  const characters = useCharactersStore(state => state.characters);
+  const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const { broadcast } = usePeer();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { openWindow } = useSignetStore();
+  const openWindow = useSignetStore(state => state.openWindow);
 
   // Trouver le personnage de l'utilisateur actuel
   const myCharacter = characters.find(c => c.user_id === user?.id);

@@ -3,7 +3,12 @@ import { usePeersStore } from '../store/peers';
 import { peerService, PeerMessage } from '../services/peer.service';
 
 export function usePeer() {
-  const { peerId, isHost, connections, setPeerId, setIsHost, setConnections } = usePeersStore();
+  const peerId = usePeersStore(state => state.peerId);
+  const isHost = usePeersStore(state => state.isHost);
+  const connections = usePeersStore(state => state.connections);
+  const setPeerId = usePeersStore(state => state.setPeerId);
+  const setIsHost = usePeersStore(state => state.setIsHost);
+  const setConnections = usePeersStore(state => state.setConnections);
 
   useEffect(() => {
     const unsub = peerService.onConnectionChange((conns) => {

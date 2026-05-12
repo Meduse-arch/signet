@@ -7,7 +7,9 @@ import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { getSessionPlayers } from '../../services/session.service';
 import { getSessionMaps, addSessionMap } from '../../services/maps.service';
+import { getSessionCharacters } from '../../services/characters.service';
 import { MapItem } from '../../components/BoardCanvas';
+import { useSession } from '../../hooks/useSession';
 
 interface ExternalWindowPageProps {
   type: string;
@@ -16,9 +18,13 @@ interface ExternalWindowPageProps {
 
 export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps) {
   const { onData, broadcast, init } = usePeer();
-  const { user } = useAuthStore();
-  const { addOrUpdateCharacter, initialize: initChars } = useCharactersStore();
+  const user = useAuthStore(state => state.user);
+  const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
+  const initChars = useCharactersStore(state => state.initialize);
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
+  
+  // Call useSession to make sure the session store is populated
+  const { sessions } = useSession();
   
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string }[]>([]);
   const [maps, setMaps] = useState<MapItem[]>([]);
@@ -40,12 +46,12 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
       }
     };
     setup();
-  }, [sessionId, type, init]);
+  }, [sessionId, type, init, sessions]); // Also depend on sessions so it re-runs when they are loaded
 
-  // Chargement initial des données (Scènes et Joueurs)
+  // Chargement initial des données (Scènes, Joueurs, Personnages)
   useEffect(() => {
     const loadData = async () => {
-      // Chargement des cartes
+      // Chargement des cartes et personnages
       if (window.electronAPI) {
         try {
           const dbMaps = await getSessionMaps(sessionId);
@@ -55,8 +61,14 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
             const savedMaps = localStorage.getItem(`maps_${sessionId}`);
             if (savedMaps) setMaps(JSON.parse(savedMaps));
           }
+
+          // Personnages
+          const dbChars = await getSessionCharacters(sessionId);
+          if (dbChars.length > 0) {
+            useCharactersStore.getState().setCharacters(dbChars);
+          }
         } catch (e) {
-          console.error('[ExternalWindow] Error loading maps from DB:', e);
+          console.error('[ExternalWindow] Error loading data from DB:', e);
           const savedMaps = localStorage.getItem(`maps_${sessionId}`);
           if (savedMaps) setMaps(JSON.parse(savedMaps));
         }
@@ -149,18 +161,6 @@ useEffect(() => {
   };
   return () => channel.close();
 }, [sessionId, maps]);
-
-// Écoute BroadcastChannel pour les personnages
-useEffect(() => {
-  const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
-  channel.onmessage = (event) => {
-    const { type, payload } = event.data;
-    if (type === 'CHAR_UPDATE') {
-      addOrUpdateCharacter(payload);
-    }
-  };
-  return () => channel.close();
-}, [sessionId, addOrUpdateCharacter]);
 
   const handleReDock = () => {
     if (window.electronAPI) {

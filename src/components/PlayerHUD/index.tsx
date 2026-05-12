@@ -12,8 +12,9 @@ interface PlayerHUDProps {
 }
 
 export function PlayerHUD({ players, className }: PlayerHUDProps) {
-  const { peerId, isHost } = usePeersStore();
-  const { user } = useAuthStore();
+  const peerId = usePeersStore(state => state.peerId);
+  const isHost = usePeersStore(state => state.isHost);
+  const user = useAuthStore(state => state.user);
 
   // On filtre les autres joueurs (ceux qui ne sont pas nous)
   const otherPlayers = players.filter(p => p.peer_id !== peerId);

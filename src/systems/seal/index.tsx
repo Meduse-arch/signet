@@ -20,12 +20,15 @@ interface SealEngineProps {
 }
 
 export default function SealEngine({ sessionId, imageUrl, players }: SealEngineProps) {
-  const { isHost } = usePeersStore();
-  const { user } = useAuthStore();
+  const isHost = usePeersStore(state => state.isHost);
+  const user = useAuthStore(state => state.user);
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
 
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
-  const { characters, addOrUpdateCharacter, setCharacters, initialize: initChars } = useCharactersStore();
+  const characters = useCharactersStore(state => state.characters);
+  const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
+  const setCharacters = useCharactersStore(state => state.setCharacters);
+  const initChars = useCharactersStore(state => state.initialize);
   
   const { broadcast, onData } = usePeer();
   const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
@@ -39,7 +42,9 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
   useEffect(() => {
     const loadChars = async () => {
       if (isHost && window.electronAPI) {
+        console.log('[SealEngine] Host detected, fetching characters from DB');
         const chars = await getSessionCharacters(sessionId);
+        console.log(`[SealEngine] Characters fetched: ${chars.length}`);
         setCharacters(chars);
       }
     };
@@ -47,22 +52,22 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
   }, [sessionId, isHost, setCharacters]);
 
   // Écoute BroadcastChannel pour les personnages (UI locale)
+  // NOTE: Le store gère déjà sa propre synchro via sigil_char_store_sync_
+  // On utilise ce canal ici pour déclencher les actions réseau/DB uniquement si on est l'hôte
   useEffect(() => {
-    const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
+    const channel = new BroadcastChannel(`sigil_char_store_sync_${sessionId}`);
     channel.onmessage = (event) => {
+      if (!isHost) return; // Seul l'hôte réagit aux updates locales pour les propager
+      
       const { type, payload } = event.data;
-      if (type === 'CHAR_UPDATE') {
-        addOrUpdateCharacter(payload);
-        if (isHost) {
-          if (window.electronAPI) addSessionCharacter(payload);
-          broadcast({ type: 'CHAR_UPDATE', payload });
-        } else {
-          broadcast({ type: 'CHAR_UPDATE', payload });
-        }
+      if (type === 'CHAR_UPDATE_INTERNAL') {
+        console.log(`[SealEngine] Host relaying local update for ${payload.name} to DB and P2P`);
+        if (window.electronAPI) addSessionCharacter(payload);
+        broadcast({ type: 'CHAR_UPDATE', payload });
       }
     };
     return () => channel.close();
-  }, [sessionId, isHost, broadcast, addOrUpdateCharacter]);
+  }, [sessionId, isHost, broadcast]);
 
   const handlePopOut = (type: string) => {
     if (window.electronAPI) {

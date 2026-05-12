@@ -10,8 +10,8 @@ interface CharacterSheetContentProps {
 }
 
 export function CharacterSheetContent({ sessionId }: CharacterSheetContentProps) {
-  const { user } = useAuthStore();
-  const { characters } = useCharactersStore();
+  const user = useAuthStore(state => state.user);
+  const characters = useCharactersStore(state => state.characters);
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   
   const character = characters.find(c => c.user_id === user?.id);
