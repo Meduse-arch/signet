@@ -32,7 +32,7 @@ const DEFAULT_WINDOWS: Record<WindowType, WindowState> = {
 interface SignetInterfaceState {
   windows: Record<WindowType, WindowState>;
   maxZIndex: number;
-  openWindow: (type: WindowType) => void;
+  openWindow: (type: WindowType, position?: { x: number, y: number }) => void;
   closeWindow: (type: WindowType) => void;
   focusWindow: (type: WindowType) => void;
   updatePosition: (type: WindowType, x: number, y: number) => void;
@@ -49,14 +49,21 @@ export const useSignetStore = create<SignetInterfaceState>((set, get) => ({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // On récupère les positions/z-index mais on force la fermeture au lancement
         const closedWindows = { ...DEFAULT_WINDOWS };
         Object.keys(parsed).forEach((key) => {
           const k = key as WindowType;
           if (closedWindows[k]) {
+            // Check if saved position is way off screen, if so, reset it
+            let pos = parsed[k].position;
+            if (typeof window !== 'undefined' && pos) {
+              if (pos.y > window.innerHeight - 50 || pos.x > window.innerWidth - 50 || pos.y < -50 || pos.x < -50) {
+                 pos = getCenterPosition();
+              }
+            }
             closedWindows[k] = { 
               ...parsed[k], 
-              isOpen: false // Force la fermeture
+              isOpen: false,
+              position: pos || getCenterPosition()
             };
           }
         });
@@ -71,16 +78,25 @@ export const useSignetStore = create<SignetInterfaceState>((set, get) => ({
     }
   },
 
-  openWindow: (type) => {
+  openWindow: (type, position) => {
     const { maxZIndex, windows } = get();
     const newMaxZ = maxZIndex + 1;
+    
+    let targetPos = position || windows[type].position;
+    
+    // Fallback recentering if the window is off-screen
+    if (typeof window !== 'undefined') {
+       if (targetPos.y > window.innerHeight - 100 || targetPos.x > window.innerWidth - 100) {
+           targetPos = getCenterPosition();
+       }
+    }
+
     const newWindows = {
       ...windows,
-      [type]: { ...windows[type], isOpen: true, zIndex: newMaxZ }
+      [type]: { ...windows[type], isOpen: true, zIndex: newMaxZ, position: targetPos }
     };
     set({ windows: newWindows, maxZIndex: newMaxZ });
     
-    // Auto-save (on pourrait passer le sessionId au store ou le déduire)
     const sessionId = window.location.hash.split('/').pop()?.split('?')[0];
     if (sessionId) {
       localStorage.setItem(`signet_windows_${sessionId}`, JSON.stringify(newWindows));

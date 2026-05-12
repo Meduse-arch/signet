@@ -3,6 +3,8 @@ import { useCharactersStore } from '../../store/characters';
 import { useAuthStore } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
+import { usePeer } from '../../hooks/usePeer';
+import { addSessionCharacter } from '../../services/characters.service';
 
 interface CharacterSheetContentProps {
   sessionId: string;
@@ -223,14 +225,18 @@ export function CharacterSheetContent({
 }: CharacterSheetContentProps) {
   const user = useAuthStore(state => state.user);
   const characters = useCharactersStore(state => state.characters);
+  const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
   const session = useSessionStore(state =>
     state.sessions.find(s => s.id === sessionId)
   );
+  const { broadcast } = usePeer();
 
   const isPopup = variant === 'popup';
 
   // ── how many items visible per page per mode ──
   const [itemsPerPage, setItemsPerPage] = useState(3);
+  const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
+  const [avatarUrlInput, setAvatarUrlInput] = useState('');
 
   useEffect(() => {
     if (isPopup) {
@@ -241,6 +247,35 @@ export function CharacterSheetContent({
   }, [isPopup]);
 
   const character = characters.find(c => c.user_id === user?.id);
+
+  const handleAvatarClick = () => {
+    if (!character) return;
+    setAvatarUrlInput(character.image_url || '');
+    setShowAvatarPrompt(true);
+  };
+
+  const submitAvatarChange = async () => {
+    if (!character) return;
+    const updatedChar = { ...character, image_url: avatarUrlInput };
+    
+    // Update local store
+    addOrUpdateCharacter(updatedChar);
+    
+    // Persist to DB if in electron
+    if (window.electronAPI) {
+      await addSessionCharacter(updatedChar);
+    }
+    
+    // Broadcast via P2P
+    broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+    
+    // Broadcast local
+    const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
+    channel.postMessage({ type: 'CHAR_UPDATE', payload: updatedChar });
+    channel.close();
+    
+    setShowAvatarPrompt(false);
+  };
 
   if (!character) {
     return (
@@ -258,6 +293,43 @@ export function CharacterSheetContent({
   const { name = 'Inconnu', stats = {}, bars = {}, image_url } = character;
   const statDefs = session?.settings?.stats || DEFAULT_STATS;
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
+
+  const CustomAvatarPrompt = () => {
+    if (!showAvatarPrompt) return null;
+    return (
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="bg-[#0A0A0C]/90 border border-gold-DEFAULT/40 p-6 rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.2)] w-[90%] max-w-sm flex flex-col gap-4">
+          <h3 className="text-gold-bright font-cinzel font-black uppercase tracking-widest text-center text-sm">Portrait du Voyageur</h3>
+          <input 
+            type="text" 
+            value={avatarUrlInput}
+            onChange={(e) => setAvatarUrlInput(e.target.value)}
+            placeholder="URL de l'image (https://...)"
+            className="w-full bg-black/50 border border-gold-DEFAULT/20 rounded-lg px-3 py-2 text-white/90 text-xs font-mono focus:outline-none focus:border-gold-DEFAULT/60 transition-colors"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submitAvatarChange();
+              if (e.key === 'Escape') setShowAvatarPrompt(false);
+            }}
+          />
+          <div className="flex justify-end gap-2 mt-2">
+            <button 
+              onClick={() => setShowAvatarPrompt(false)}
+              className="px-4 py-1.5 rounded-lg text-white/50 hover:text-white/90 text-xs font-cinzel uppercase tracking-wider transition-colors"
+            >
+              Annuler
+            </button>
+            <button 
+              onClick={submitAvatarChange}
+              className="px-4 py-1.5 rounded-lg bg-gold-DEFAULT/20 border border-gold-DEFAULT/40 text-gold-bright hover:bg-gold-DEFAULT/40 hover:border-gold-bright text-xs font-cinzel font-black uppercase tracking-wider transition-all"
+            >
+              Graver
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // ── renderers ──────────────────────────────────
   const renderStat = (stat: unknown) => {
@@ -372,6 +444,8 @@ export function CharacterSheetContent({
             100% { transform: translateX(100%); }
           }
         `}</style>
+        
+        <CustomAvatarPrompt />
 
         <div
           className="flex flex-col"
@@ -386,7 +460,9 @@ export function CharacterSheetContent({
             }}
           >
             <div
-              className="flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden"
+              className="flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:border-gold-bright transition-colors"
+              onClick={handleAvatarClick}
+              title="Changer l'image de profil"
               style={{
                 width: 32,
                 height: 32,
@@ -445,6 +521,8 @@ export function CharacterSheetContent({
           100% { transform: translateX(100%); }
         }
       `}</style>
+      
+      <CustomAvatarPrompt />
 
       <div
         className="flex flex-col flex-1"
@@ -459,7 +537,9 @@ export function CharacterSheetContent({
           }}
         >
           <div
-            className="flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden"
+            className="flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:border-gold-bright transition-colors"
+            onClick={handleAvatarClick}
+            title="Changer l'image de profil"
             style={{
               width: 56,
               height: 56,

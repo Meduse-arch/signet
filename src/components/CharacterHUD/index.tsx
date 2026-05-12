@@ -97,7 +97,10 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
       {/* Avatar / Profile */}
       <div 
         className="relative group/avatar cursor-pointer" 
-        onClick={() => openWindow('character')}
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          openWindow('character', { x: rect.right + 20, y: Math.max(20, rect.top - 350) });
+        }}
         title="Ouvrir la fiche de personnage"
       >
         <div className="absolute inset-[-6px] rounded-full border border-gold-DEFAULT/30 bg-[#0D0D0F]/80 backdrop-blur-xl group-hover/avatar:border-gold-DEFAULT/60 shadow-[0_4px_30px_rgba(0,0,0,0.6)] transition-all duration-500 ease-linear" />
