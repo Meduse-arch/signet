@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Shield, Zap, Heart, Plus } from 'lucide-react';
+import { Shield, Zap, Heart, Plus, Activity } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { usePeersStore } from '../../store/peers';
 import { useSessionStore } from '../../store/session';
+import { usePeer } from '../../hooks/usePeer';
 import { CreateCharacterModal } from '../CreateCharacterModal';
 import { addSessionCharacter } from '../../services/characters.service';
+import { DEFAULT_BARS } from '../../systems/seal/constants';
 
 interface CharacterHUDProps {
   sessionId: string;
@@ -14,6 +16,7 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
   const { peerId } = usePeersStore();
   const { characters, addOrUpdateCharacter } = useCharactersStore();
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
+  const { broadcast } = usePeer();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Trouver le personnage de l'utilisateur actuel
@@ -21,7 +24,7 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
 
   const handleCreateSave = async (data: { name: string; stats: Record<string, number>; bars: Record<string, number> }) => {
     const newChar = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: myCharacter?.id || Math.random().toString(36).substring(2, 9),
       session_id: sessionId,
       peer_id: peerId!,
       name: data.name,
@@ -37,7 +40,10 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
     // Mise à jour store local
     addOrUpdateCharacter(newChar);
     
-    // Broadcast via P2P (sera géré par SealEngine)
+    // Broadcast via P2P (sera reçu par le MJ ou les autres joueurs via SealEngine)
+    broadcast({ type: 'CHAR_UPDATE', payload: newChar });
+    
+    // Broadcast local (si plusieurs fenêtres sur la même machine)
     const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
     channel.postMessage({ type: 'CHAR_UPDATE', payload: newChar });
     channel.close();
@@ -73,6 +79,7 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
   }
 
   const { bars, name } = myCharacter;
+  const barDefs = session?.settings?.bars || DEFAULT_BARS;
 
   return (
     <div className="absolute bottom-10 left-10 z-[60] pointer-events-auto flex items-center gap-6 p-4 rounded-[2rem] bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/30 shadow-[0_4px_30px_rgba(0,0,0,0.6)] group hover:border-gold-DEFAULT/50 transition-colors">
@@ -89,30 +96,29 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
 
       {/* Stats bars */}
       <div className="flex flex-col gap-2.5 w-48 pt-1">
-        {/* HP */}
-        <div className="flex items-center gap-3">
-          <Heart className="w-3.5 h-3.5 text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]" />
-          <div className="flex-1 h-1.5 bg-black/60 rounded-full border border-red-500/20 overflow-hidden relative">
-            <div className="absolute top-0 left-0 h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] transition-all duration-500" style={{ width: `${(bars.hp / bars.maxHp) * 100}%` }} />
-          </div>
-          <span className="w-8 text-right text-[10px] font-mono text-white/90 drop-shadow-md">{Math.floor(bars.hp)}</span>
-        </div>
-        {/* Mana */}
-        <div className="flex items-center gap-3">
-          <Zap className="w-3.5 h-3.5 text-blue-400 drop-shadow-[0_0_5px_rgba(96,165,250,0.8)]" />
-          <div className="flex-1 h-1.5 bg-black/60 rounded-full border border-blue-400/20 overflow-hidden relative">
-            <div className="absolute top-0 left-0 h-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.8)] transition-all duration-500" style={{ width: `${(bars.mana / bars.maxMana) * 100}%` }} />
-          </div>
-          <span className="w-8 text-right text-[10px] font-mono text-white/90 drop-shadow-md">{Math.floor(bars.mana)}</span>
-        </div>
-        {/* Stamina */}
-        <div className="flex items-center gap-3">
-          <Shield className="w-3.5 h-3.5 text-green-400 drop-shadow-[0_0_5px_rgba(74,222,128,0.8)]" />
-          <div className="flex-1 h-1.5 bg-black/60 rounded-full border border-green-400/20 overflow-hidden relative">
-            <div className="absolute top-0 left-0 h-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.8)] transition-all duration-500" style={{ width: `${(bars.stam / bars.maxStam) * 100}%` }} />
-          </div>
-          <span className="w-8 text-right text-[10px] font-mono text-white/90 drop-shadow-md">{Math.floor(bars.stam)}</span>
-        </div>
+        {barDefs.map((bar: any) => {
+          const Icon = bar.id === 'hp' ? Heart : bar.id === 'mana' ? Zap : bar.id === 'stam' ? Shield : Activity;
+          const maxVal = bars[`max${bar.id.charAt(0).toUpperCase()}${bar.id.slice(1)}`] || bars[bar.id] || 1;
+          const currentVal = bars[bar.id] || 0;
+          const percent = Math.min(100, Math.max(0, (currentVal / maxVal) * 100));
+
+          return (
+            <div key={bar.id} className="flex items-center gap-3">
+              <Icon className="w-3.5 h-3.5 drop-shadow-[0_0_5px_rgba(0,0,0,0.5)]" style={{ color: bar.color }} />
+              <div className="flex-1 h-1.5 bg-black/60 rounded-full border border-white/5 overflow-hidden relative">
+                <div 
+                  className="absolute top-0 left-0 h-full transition-all duration-500" 
+                  style={{ 
+                    width: `${percent}%`, 
+                    backgroundColor: bar.color,
+                    boxShadow: `0 0 10px ${bar.color}88`
+                  }} 
+                />
+              </div>
+              <span className="w-8 text-right text-[10px] font-mono text-white/90 drop-shadow-md">{Math.floor(currentVal)}</span>
+            </div>
+          );
+        })}
       </div>
       
       {isModalOpen && (
@@ -120,6 +126,7 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
           onClose={() => setIsModalOpen(false)} 
           onSave={handleCreateSave}
           initialStats={myCharacter.stats}
+          initialName={myCharacter.name}
           title={`Modifier ${name}`}
           settings={session?.settings}
         />

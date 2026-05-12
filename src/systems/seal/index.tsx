@@ -10,7 +10,7 @@ import { CharacterHUD } from '../../components/CharacterHUD';
 import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
-import { getSessionCharacters } from '../../services/characters.service';
+import { getSessionCharacters, addSessionCharacter } from '../../services/characters.service';
 
 interface SealEngineProps {
   sessionId: string;
@@ -45,7 +45,12 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
       const { type, payload } = event.data;
       if (type === 'CHAR_UPDATE') {
         addOrUpdateCharacter(payload);
-        if (isHost) broadcast({ type: 'CHAR_UPDATE', payload });
+        if (isHost) {
+          if (window.electronAPI) addSessionCharacter(payload);
+          broadcast({ type: 'CHAR_UPDATE', payload });
+        } else {
+          broadcast({ type: 'CHAR_UPDATE', payload });
+        }
       }
     };
     return () => channel.close();
@@ -144,6 +149,14 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
         }
       } else if (data.type === 'MAP_UPDATE') {
         setMaps(data.payload);
+      } else if (data.type === 'CHAR_UPDATE') {
+        console.log('[SealEngine] Mise à jour personnage reçue via P2P:', data.payload.name);
+        addOrUpdateCharacter(data.payload);
+        // Si on est l'hôte, on persiste en DB et on relaye aux autres
+        if (isHost) {
+          if (window.electronAPI) addSessionCharacter(data.payload);
+          broadcast({ type: 'CHAR_UPDATE', payload: data.payload });
+        }
       }
     });
 
@@ -176,7 +189,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
       {/* Player HUD en overlay permanent */}
       <div className="absolute inset-0 pointer-events-none z-[60]">
         <PlayerHUD players={players} />
-        <CharacterHUD />
+        <CharacterHUD sessionId={sessionId} />
       </div>
 
       {/* Signet Launcher (Orb) */}

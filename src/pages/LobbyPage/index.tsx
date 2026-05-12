@@ -38,15 +38,15 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const [isGameStarted, setIsGameStarted] = useState(false);
   
   // ✅ État local pour les métadonnées (au cas où le joueur n'ait pas la session en DB)
-  const [localMetadata, setLocalMetadata] = useState<{name?: string, imageUrl?: string, system?: string, hostPeerId?: string} | null>(null);
+  const [localMetadata, setLocalMetadata] = useState<{name?: string, imageUrl?: string, system?: string, hostPeerId?: string, settings?: any} | null>(null);
 
   // ✅ Stabiliser les refs pour les callbacks asynchrones
   const currentUser = useAuthStore(state => state.user);
   const isMJ = !!currentUser && currentUser.role >= SecurityLevel.MJ && !sessionId.startsWith('SIGNET-');
 
   // ✅ Récupérer les infos de la session
-  const currentSessions = useSessionStore(state => state.sessions);
-  const sessionDataFromStore = currentSessions.find(s => s.id === sessionId);
+  const { sessions, addSession: addSessionToStore } = useSessionStore();
+  const sessionDataFromStore = sessions.find(s => s.id === sessionId);
   
   // Priorité aux métadonnées reçues par P2P pour le joueur (données fraîches du MJ)
   const sessionData = isMJ 
@@ -140,7 +140,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
             name: sessionData?.name,
             system: sessionData?.system,
             imageUrl: sessionData?.imageUrl,
-            hostPeerId: sessionData?.hostPeerId
+            hostPeerId: sessionData?.hostPeerId,
+            settings: sessionData?.settings
           }
         });
       } 
@@ -154,7 +155,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         const existingIndex = savedSessions.findIndex((s: any) => s.hostPeerId === data.payload.hostPeerId);
 
         const updatedSession = {
-          id: existingIndex >= 0 ? savedSessions[existingIndex].id : `summoned-${data.payload.hostPeerId}`,
+          id: existingIndex >= 0 ? savedSessions[existingIndex].id : sessionId,
           ...data.payload,
           lastPlayed: Date.now(),
           isSummoned: true
@@ -166,6 +167,9 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         } else {
           localStorage.setItem('summoned_sessions', JSON.stringify([...savedSessions, updatedSession]));
         }
+
+        // ✅ Mettre à jour le store global immédiatement pour que les composants (HUD) voient les réglages
+        addSessionToStore(updatedSession);
       }
 
       // Pour tout le monde : Liste des joueurs
