@@ -226,6 +226,26 @@ export function CharacterSheetContent({
     state.sessions.find(s => s.id === sessionId)
   );
 
+  const isPopup = variant === 'popup';
+
+  // ── how many items visible per page per mode ──
+  const [itemsPerPage, setItemsPerPage] = useState(3);
+
+  useEffect(() => {
+    if (isPopup) {
+      setItemsPerPage(3);
+      return;
+    }
+    const handleResize = () => {
+      const availableHeight = window.innerHeight - 320;
+      const count = Math.max(3, Math.floor(availableHeight / 85));
+      setItemsPerPage(count);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isPopup]);
+
   const character = characters.find(c => c.user_id === user?.id);
 
   if (!character) {
@@ -241,14 +261,9 @@ export function CharacterSheetContent({
     );
   }
 
-  const { name, stats, bars, image_url } = character;
+  const { name = 'Inconnu', stats = {}, bars = {}, image_url } = character;
   const statDefs = session?.settings?.stats || DEFAULT_STATS;
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
-
-  const isPopup = variant === 'popup';
-
-  // ── how many items visible per page per mode ──
-  const ITEMS_PER_PAGE = 3;
 
   // ── renderers ──────────────────────────────────
   const renderStat = (stat: unknown) => {
@@ -409,14 +424,14 @@ export function CharacterSheetContent({
           <div className="flex gap-2 p-2" style={{ height: '160px' }}>
             <SnapColumn
               items={statDefs}
-              itemsPerPage={ITEMS_PER_PAGE}
+              itemsPerPage={itemsPerPage}
               renderItem={renderStat}
               label="Attributs"
               variant="popup"
             />
             <SnapColumn
               items={barDefs}
-              itemsPerPage={ITEMS_PER_PAGE}
+              itemsPerPage={itemsPerPage}
               renderItem={renderBar}
               label="Ressources"
               variant="popup"
@@ -438,8 +453,8 @@ export function CharacterSheetContent({
       `}</style>
 
       <div
-        className="flex flex-col"
-        style={{ width: '100%', height: '100%', overflow: 'hidden', padding: '16px' }}
+        className="flex flex-col flex-1"
+        style={{ width: '100%', minHeight: '100%', overflow: 'hidden', padding: '16px' }}
       >
         {/* ── Header large ── */}
         <div
@@ -482,14 +497,14 @@ export function CharacterSheetContent({
         <div className="flex-1 min-h-0 flex gap-4">
           <SnapColumn
             items={statDefs}
-            itemsPerPage={ITEMS_PER_PAGE}
+            itemsPerPage={itemsPerPage}
             renderItem={renderStat}
             label="Attributs"
             variant="window"
           />
           <SnapColumn
             items={barDefs}
-            itemsPerPage={ITEMS_PER_PAGE}
+            itemsPerPage={itemsPerPage}
             renderItem={renderBar}
             label="Ressources"
             variant="window"

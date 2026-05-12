@@ -174,7 +174,7 @@ useEffect(() => {
        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-gold-DEFAULT/50 pointer-events-none z-10" />
        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-gold-DEFAULT/50 pointer-events-none z-10" />
 
-       <div className="flex-1 p-4 custom-scrollbar overflow-y-auto">
+       <div className="flex-1 p-4 custom-scrollbar overflow-y-auto flex flex-col">
           {type === 'scenes' && (
             <SceneWindowContent 
               scenes={maps}
