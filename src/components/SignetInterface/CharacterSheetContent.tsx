@@ -171,7 +171,7 @@ function SnapColumn({
               height: '100%',         // each page = full container height
               padding: isPopup ? '4px' : '6px',
               gap: isPopup ? '3px' : '5px',
-              justifyContent: 'space-evenly',
+              justifyContent: 'flex-start',
             }}
           >
             {pageItems.map((item, i) => renderItem(item, pageIndex * itemsPerPage + i))}
