@@ -78,6 +78,16 @@ function getSessionDb(sessionId: string): Database.Database {
           name TEXT,
           url TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS logs (
+          id TEXT PRIMARY KEY,
+          type TEXT,
+          action TEXT,
+          details TEXT,
+          timestamp INTEGER,
+          character_id TEXT,
+          character_name TEXT
+        );
       `);
 
       // Migration: Ajouter les colonnes manquantes si nécessaire
@@ -332,6 +342,28 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       db.prepare('DELETE FROM maps WHERE id = ?').run(id);
     } catch (e) {
       console.error('[DB] maps:remove error', e);
+    }
+  });
+
+  // --- HANDLERS LOGS (SESSION DB) ---
+
+  ipcMain.handle('logs:getAll', (_, sessionId) => {
+    try {
+      const db = getSessionDb(sessionId);
+      return db.prepare('SELECT * FROM logs ORDER BY timestamp DESC').all();
+    } catch (e) {
+      console.error('[DB] logs:getAll error', e);
+      return [];
+    }
+  });
+
+  ipcMain.handle('logs:add', (_, sessionId, log) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare('INSERT INTO logs (id, type, action, details, timestamp, character_id, character_name) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .run(log.id, log.type, log.action, JSON.stringify(log.details), log.timestamp, log.character_id, log.character_name);
+    } catch (e) {
+      console.error('[DB] logs:add error', e);
     }
   });
 

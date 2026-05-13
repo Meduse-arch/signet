@@ -49,6 +49,8 @@ export interface ElectronAPI {
   getMaps: (sessionId: string) => Promise<MapItem[]>;
   addMap: (sessionId: string, map: MapItem) => Promise<void>;
   removeMap: (sessionId: string, id: string) => Promise<void>;
+  getLogs: (sessionId: string) => Promise<any[]>;
+  addLog: (sessionId: string, log: any) => Promise<void>;
   openExternalWindow: (type: string, sessionId: string) => Promise<void>;
   reDock: (type: string, sessionId: string) => Promise<void>;
   onReDock: (callback: (type: string) => void) => (() => void);
@@ -75,6 +77,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getMaps: (sessionId: string) => ipcRenderer.invoke('maps:getAll', sessionId),
   addMap: (sessionId: string, map: MapItem) => ipcRenderer.invoke('maps:add', sessionId, map),
   removeMap: (sessionId: string, id: string) => ipcRenderer.invoke('maps:remove', sessionId, id),
+  getLogs: (sessionId: string) => ipcRenderer.invoke('logs:getAll', sessionId),
+  addLog: (sessionId: string, log: any) => ipcRenderer.invoke('logs:add', sessionId, log),
   openExternalWindow: (type: string, sessionId: string) => ipcRenderer.invoke('windows:openExternal', type, sessionId),
   reDock: (type: string, sessionId: string) => ipcRenderer.invoke('windows:reDock', type, sessionId),
   onReDock: (callback: (type: string) => void) => {
@@ -96,9 +100,3 @@ contextBridge.exposeInMainWorld('electronAPI', {
     };
   },
 });
-
-declare global {
-  interface Window {
-    electronAPI: ElectronAPI;
-  }
-}

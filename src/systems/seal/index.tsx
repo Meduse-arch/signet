@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BoardCanvas, MapItem } from '../../components/BoardCanvas';
-import { SignetLauncher, DraggableWindow, SceneWindowContent, CharacterSheetContent } from '../../components/SignetInterface';
+import { 
+  SignetLauncher, 
+  DraggableWindow, 
+  SceneWindowContent, 
+  CharacterSheetContent,
+  DiceWindowContent
+} from '../../components/SignetInterface';
+import { DiceRollModal } from '../../components/DiceRollModal';
 import { useSignetInterface } from '../../hooks/useSignetInterface';
 import { usePeersStore } from '../../store/peers';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
@@ -229,9 +236,10 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
       </div>
 
       {/* Signet Launcher (Orb) */}
-      {isMJ && (
-        <SignetLauncher onOpenWindow={openWindow} />
-      )}
+      <SignetLauncher 
+        onOpenWindow={openWindow} 
+        securityLevel={user?.role ?? SecurityLevel.PLAYER} 
+      />
 
       {/* Draggable Windows */}
       {windows.scenes.isOpen && (
@@ -285,13 +293,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
           zIndex={windows.dice.zIndex}
           defaultPosition={windows.dice.position}
         >
-          <div className="grid grid-cols-3 gap-2">
-            {[4, 6, 8, 10, 12, 20].map(d => (
-              <button key={d} className="h-10 rounded bg-white/5 border border-gold-DEFAULT/40 text-gold-bright font-cinzel text-xs hover:bg-gold-DEFAULT/10 transition-colors">
-                D{d}
-              </button>
-            ))}
-          </div>
+          <DiceWindowContent sessionId={sessionId} />
         </DraggableWindow>
       )}
 
@@ -342,6 +344,8 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
           <CharacterSheetContent sessionId={sessionId} />
         </DraggableWindow>
       )}
+
+      <DiceRollModal />
       </div>
       );
 }

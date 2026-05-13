@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SceneWindowContent, CharacterSheetContent } from '../../components/SignetInterface';
+import { SceneWindowContent, CharacterSheetContent, DiceWindowContent } from '../../components/SignetInterface';
 import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
 import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
@@ -193,13 +193,7 @@ useEffect(() => {
           )}
 
           {type === 'dice' && (
-            <div className="grid grid-cols-3 gap-2">
-              {[4, 6, 8, 10, 12, 20].map(d => (
-                <button key={d} className="h-10 rounded bg-white/5 border border-gold-DEFAULT/40 text-gold-bright font-cinzel text-xs hover:bg-gold-DEFAULT/10 transition-colors">
-                  D{d}
-                </button>
-              ))}
-            </div>
+            <DiceWindowContent sessionId={sessionId} />
           )}
 
           {type === 'story' && (

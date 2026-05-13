@@ -34,3 +34,27 @@ export async function clearSessionPlayers(sessionId: string) {
   if (!window.electronAPI) return;
   return window.electronAPI.clearPlayers(sessionId);
 }
+
+export interface SessionLog {
+  id: string;
+  type: 'des' | 'action' | 'system';
+  action: string;
+  details: any;
+  timestamp: number;
+  character_id?: string;
+  character_name?: string;
+}
+
+export async function getSessionLogs(sessionId: string): Promise<SessionLog[]> {
+  if (!window.electronAPI) return [];
+  const logs = await window.electronAPI.getLogs(sessionId);
+  return logs.map((l: any) => ({
+    ...l,
+    details: l.details ? JSON.parse(l.details) : {}
+  }));
+}
+
+export async function addSessionLog(sessionId: string, log: SessionLog): Promise<void> {
+  if (!window.electronAPI) return;
+  return window.electronAPI.addLog(sessionId, log);
+}

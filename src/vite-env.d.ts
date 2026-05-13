@@ -2,13 +2,13 @@
 
 declare global {
   interface Window {
-    electronAPI?: {
+    electronAPI: {
       getSessions: () => Promise<any[]>;
       addSession: (session: any) => Promise<void>;
       removeSession: (id: string) => Promise<void>;
       updateLastPlayed: (id: string, lastPlayed: number) => Promise<void>;
       getPlayers: (sessionId: string) => Promise<any[]>;
-      addPlayer: (sessionId: string, peerId: string, pseudo: string) => Promise<void>;
+      addPlayer: (sessionId: string, peerId: string, pseudo: string, role?: number) => Promise<void>;
       removePlayer: (sessionId: string, peerId: string) => Promise<void>;
       clearPlayers: (sessionId: string) => Promise<void>;
       getCharacters: (sessionId: string) => Promise<any[]>;
@@ -18,8 +18,10 @@ declare global {
       getMaps: (sessionId: string) => Promise<any[]>;
       addMap: (sessionId: string, map: any) => Promise<void>;
       removeMap: (sessionId: string, id: string) => Promise<void>;
-      openExternalWindow: (type: string, sessionId: string) => void;
-      reDock: (type: string, sessionId: string) => void;
+      getLogs: (sessionId: string) => Promise<any[]>;
+      addLog: (sessionId: string, log: any) => Promise<void>;
+      openExternalWindow: (type: string, sessionId: string) => Promise<void>;
+      reDock: (type: string, sessionId: string) => Promise<void>;
       onReDock: (callback: (type: string) => void) => (() => void);
       minimizeWindow: () => void;
       maximizeWindow: () => void;

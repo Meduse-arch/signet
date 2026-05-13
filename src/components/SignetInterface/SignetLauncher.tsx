@@ -9,20 +9,23 @@ import {
   X
 } from 'lucide-react';
 
+import { SecurityLevel } from '../../store/auth';
+
 interface SignetLauncherProps {
   onOpenWindow: (type: 'scenes' | 'story' | 'dice' | 'assets' | 'players') => void;
+  securityLevel?: SecurityLevel;
 }
 
-export function SignetLauncher({ onOpenWindow }: SignetLauncherProps) {
+export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLAYER }: SignetLauncherProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const menuItems = [
-    { type: 'scenes' as const, icon: <ImageIcon size={18} />, label: 'Scènes' },
-    { type: 'story' as const, icon: <ScrollText size={18} />, label: 'Histoire' },
-    { type: 'dice' as const, icon: <Dices size={18} />, label: 'Dés' },
-    { type: 'assets' as const, icon: <Package size={18} />, label: 'Coffre' },
-    { type: 'players' as const, icon: <Users size={18} />, label: 'Voyageurs' },
-  ];
+    { type: 'scenes' as const, icon: <ImageIcon size={18} />, label: 'Scènes', minSecurity: SecurityLevel.MJ },
+    { type: 'story' as const, icon: <ScrollText size={18} />, label: 'Histoire', minSecurity: SecurityLevel.PLAYER },
+    { type: 'dice' as const, icon: <Dices size={18} />, label: 'Dés', minSecurity: SecurityLevel.PLAYER },
+    { type: 'assets' as const, icon: <Package size={18} />, label: 'Coffre', minSecurity: SecurityLevel.PLAYER },
+    { type: 'players' as const, icon: <Users size={18} />, label: 'Voyageurs', minSecurity: SecurityLevel.PLAYER },
+  ].filter(item => securityLevel >= item.minSecurity);
 
   // Calcul pour une disposition en quart de cercle (arc)
   const radius = 90; // Distance des boutons par rapport au centre

@@ -1,10 +1,13 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useCharactersStore } from '../../store/characters';
-import { useAuthStore } from '../../store/auth';
+import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
+import { useDiceStore } from '../../store/dice';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { usePeer } from '../../hooks/usePeer';
 import { addSessionCharacter } from '../../services/characters.service';
+import { lancerDes } from '../../services/des.service';
+import { addSessionLog } from '../../services/db.service';
 
 interface CharacterSheetContentProps {
   sessionId: string;
@@ -331,30 +334,81 @@ export function CharacterSheetContent({
     );
   };
 
+  const { nbDice, modifier, setDiceResult, diceSharingEnabled } = useDiceStore();
+
+  const handleRollStat = async (statName: string, faces: number) => {
+    if (!character) return;
+    
+    const nb = Math.max(1, nbDice);
+    const mod = modifier;
+    const res = lancerDes(nb, faces, mod);
+    
+    // Format diceString for DiceRollModal: nb d (Label=Faces) + mod
+    const labelPart = `(${statName}=${faces})`;
+    const diceString = `${nb}d${labelPart}${mod !== 0 ? (mod > 0 ? '+' : '') + mod : ''}`;
+    
+    const result = {
+      rolls: res.rolls,
+      total: res.total,
+      bonus: mod,
+      diceString,
+      label: statName,
+      color: '#d4af37',
+      secret: !diceSharingEnabled,
+      timestamp: Date.now(),
+      sender_id: user?.id,
+      sender_name: character.name
+    };
+
+    setDiceResult([result]);
+
+    // Save to DB (Logs)
+    const logEntry = {
+      id: crypto.randomUUID(),
+      type: 'des',
+      action: `Lance ${result.label} (${diceString})`,
+      details: { rolls: res.rolls, total: res.total, diceString },
+      timestamp: Date.now(),
+      character_id: character.id,
+      character_name: character.name
+    };
+
+    if (window.electronAPI) {
+      await addSessionLog(sessionId, logEntry as any);
+    }
+
+    // Broadcast via P2P
+    if (diceSharingEnabled) {
+      broadcast({ type: 'DICE_ROLL', payload: result });
+    }
+  };
+
   // ── renderers ──────────────────────────────────
   const renderStat = (stat: unknown) => {
     const s = stat as { id: string; name: string };
+    const val = stats[s.id] || 20;
     return (
       <div
         key={s.id}
-        className="flex items-center justify-between flex-shrink-0 rounded-lg"
+        onClick={() => handleRollStat(s.name, val)}
+        className="flex items-center justify-between flex-shrink-0 rounded-lg cursor-pointer group"
         style={{
           padding: isPopup ? '5px 8px' : '7px 12px',
           background: 'rgba(255,255,255,0.04)',
           border: '1px solid rgba(255,255,255,0.07)',
-          transition: 'border-color 0.2s',
+          transition: 'all 0.2s',
         }}
-        onMouseEnter={e =>
-          ((e.currentTarget as HTMLDivElement).style.borderColor =
-            'rgba(212,175,55,0.3)')
-        }
-        onMouseLeave={e =>
-          ((e.currentTarget as HTMLDivElement).style.borderColor =
-            'rgba(255,255,255,0.07)')
-        }
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(212,175,55,0.3)';
+          (e.currentTarget as HTMLDivElement).style.background = 'rgba(212,175,55,0.08)';
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)';
+          (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)';
+        }}
       >
         <span
-          className="font-cinzel uppercase tracking-widest truncate mr-2 flex-1 min-w-0"
+          className="font-cinzel uppercase tracking-widest truncate mr-2 flex-1 min-w-0 group-hover:text-gold-bright transition-colors"
           style={{
             fontSize: isPopup ? '8px' : '10px',
             color: 'rgba(255,255,255,0.75)',
@@ -364,13 +418,13 @@ export function CharacterSheetContent({
           {s.name}
         </span>
         <span
-          className="font-cinzel font-black flex-shrink-0"
+          className="font-cinzel font-black flex-shrink-0 group-hover:scale-110 transition-transform"
           style={{
             fontSize: isPopup ? '10px' : '13px',
             color: '#d4af37',
           }}
         >
-          {stats[s.id] || 0}
+          D{val}
         </span>
       </div>
     );
