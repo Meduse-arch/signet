@@ -10,6 +10,7 @@ import { getSessionMaps, addSessionMap } from '../../services/maps.service';
 import { getSessionCharacters } from '../../services/characters.service';
 import { MapItem } from '../../components/BoardCanvas';
 import { useSession } from '../../hooks/useSession';
+import { Sparkles } from 'lucide-react';
 
 interface ExternalWindowPageProps {
   type: string;
@@ -185,7 +186,7 @@ useEffect(() => {
           )}
 
           {type === 'players' && (
-            <PlayerWindowContent players={players} />
+            <PlayerWindowContent players={players} sessionId={sessionId} />
           )}
 
           {type === 'character' && (
@@ -206,6 +207,15 @@ useEffect(() => {
              <div className="flex flex-col items-center justify-center py-20 opacity-20">
                <div className="w-12 h-12 border-2 border-dashed border-gold-DEFAULT/50 rounded-lg mb-2" />
                <span className="text-[10px] font-cinzel">Aucun artefact</span>
+             </div>
+          )}
+
+          {type === 'skills' && (
+             <div className="flex flex-col items-center justify-center py-20 opacity-20">
+               <div className="w-12 h-12 border-2 border-dashed border-gold-DEFAULT/50 rounded-lg mb-2 flex items-center justify-center">
+                 <Sparkles className="w-6 h-6 text-gold-DEFAULT" />
+               </div>
+               <span className="text-[10px] font-cinzel">Aucune maîtrise apprise</span>
              </div>
           )}
        </div>

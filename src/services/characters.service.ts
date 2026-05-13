@@ -1,11 +1,16 @@
 export interface Character {
   id: string;
   session_id: string;
-  user_id?: string;
+  user_id?: string | null;
   name: string;
   stats: Record<string, number>;
+  skills: Record<string, number>;
   bars: Record<string, number>;
   image_url?: string;
+  inventory?: any[];
+  custom_skills?: any[];
+  type?: 'Joueur' | 'PNJ' | 'Monstre' | 'Boss';
+  is_template?: boolean;
 }
 
 export async function getSessionCharacters(sessionId: string): Promise<Character[]> {
@@ -23,10 +28,27 @@ export async function addSessionCharacter(character: Character): Promise<void> {
   }
 }
 
-export async function updateSessionCharacter(id: string, name: string, stats: Record<string, number>, bars: Record<string, number>, imageUrl?: string): Promise<void> {
+export async function updateSessionCharacter(
+  id: string, 
+  name: string, 
+  stats: Record<string, number>, 
+  skills: Record<string, number>, 
+  bars: Record<string, number>, 
+  imageUrl?: string,
+  inventory?: any[],
+  custom_skills?: any[],
+  type?: string,
+  is_template?: boolean
+): Promise<void> {
   if (window.electronAPI) {
     console.log(`[CharactersService] Updating character in DB: ${name}`);
-    await window.electronAPI.updateCharacter(id, name, stats, bars, imageUrl);
+    await window.electronAPI.updateCharacter(id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template);
+  }
+}
+
+export async function updateCharacterBars(id: string, bars: Record<string, number>): Promise<void> {
+  if (window.electronAPI) {
+    await window.electronAPI.updateCharacterBars(id, bars);
   }
 }
 

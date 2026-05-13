@@ -7,6 +7,7 @@ import {
   CharacterSheetContent,
   DiceWindowContent
 } from '../../components/SignetInterface';
+import { BestiaryWindowContent } from '../../components/SignetInterface/BestiaryWindowContent';
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { useSignetInterface } from '../../hooks/useSignetInterface';
 import { usePeersStore } from '../../store/peers';
@@ -14,6 +15,7 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { PlayerHUD } from '../../components/PlayerHUD';
 import { CharacterHUD } from '../../components/CharacterHUD';
+import { Sparkles } from 'lucide-react';
 import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
@@ -262,6 +264,22 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
         </DraggableWindow>
       )}
 
+      {windows.bestiary.isOpen && (
+        <DraggableWindow
+          id="bestiary"
+          title="Bestiaire"
+          onClose={() => closeWindow('bestiary')}
+          onPopOut={() => handlePopOut('bestiary')}
+          onFocus={() => focusWindow('bestiary')}
+          onPositionChange={(x, y) => updatePosition('bestiary', x, y)}
+          zIndex={windows.bestiary.zIndex}
+          defaultPosition={windows.bestiary.position}
+          className="w-[400px]"
+        >
+          <BestiaryWindowContent sessionId={sessionId} />
+        </DraggableWindow>
+      )}
+
       {/* ... (rest of windows) ... */}
       {windows.story.isOpen && (
         <DraggableWindow
@@ -326,7 +344,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
           zIndex={windows.players.zIndex}
           defaultPosition={windows.players.position}
         >
-          <PlayerWindowContent players={players} />
+          <PlayerWindowContent players={players} sessionId={sessionId} />
         </DraggableWindow>
       )}
 

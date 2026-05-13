@@ -6,13 +6,15 @@ import {
   Dices, 
   Package,
   Users,
-  X
+  X,
+  Sparkles,
+  Ghost
 } from 'lucide-react';
 
 import { SecurityLevel } from '../../store/auth';
 
 interface SignetLauncherProps {
-  onOpenWindow: (type: 'scenes' | 'story' | 'dice' | 'assets' | 'players') => void;
+  onOpenWindow: (type: 'scenes' | 'story' | 'dice' | 'assets' | 'players' | 'bestiary') => void;
   securityLevel?: SecurityLevel;
 }
 
@@ -21,6 +23,7 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
 
   const menuItems = [
     { type: 'scenes' as const, icon: <ImageIcon size={18} />, label: 'Scènes', minSecurity: SecurityLevel.MJ },
+    { type: 'bestiary' as const, icon: <Ghost size={18} />, label: 'Bestiaire', minSecurity: SecurityLevel.MJ },
     { type: 'story' as const, icon: <ScrollText size={18} />, label: 'Histoire', minSecurity: SecurityLevel.PLAYER },
     { type: 'dice' as const, icon: <Dices size={18} />, label: 'Dés', minSecurity: SecurityLevel.PLAYER },
     { type: 'assets' as const, icon: <Package size={18} />, label: 'Coffre', minSecurity: SecurityLevel.PLAYER },

@@ -8,6 +8,7 @@ import { lancerDes, DiceResult } from '../../services/des.service';
 import { addSessionLog, getSessionLogs, SessionLog } from '../../services/db.service';
 import { History, Share2, Plus, Minus, Trash2, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DEFAULT_STATS, DEFAULT_SKILLS } from '../../systems/seal/constants';
 
 const DIE_TYPES = [4, 6, 8, 10, 12, 20, 100];
 
@@ -86,7 +87,7 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
     }
   };
 
-  const statDefs = session?.settings?.stats || [];
+  const statDefs = session?.settings?.stats || DEFAULT_STATS;
 
   return (
     <div className="flex flex-col gap-6 h-full overflow-hidden">
@@ -159,7 +160,7 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
               <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 tracking-widest uppercase border-b border-white/5 pb-2">Jets d'Attributs</h3>
               <div className="grid grid-cols-2 gap-2">
                 {statDefs.map((stat: any) => {
-                  const val = character?.stats[stat.id] || 20;
+                  const val = character?.stats?.[stat.id] || 20;
                   return (
                     <button
                       key={stat.id}

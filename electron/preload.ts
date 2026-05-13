@@ -23,8 +23,11 @@ export interface Character {
   user_id?: string;
   name: string;
   stats: Record<string, number>;
+  skills: Record<string, number>;
   bars: Record<string, number>;
   image_url?: string;
+  inventory?: any[];
+  custom_skills?: any[];
 }
 
 export interface MapItem {
@@ -45,7 +48,8 @@ export interface ElectronAPI {
   getCharacters: (sessionId: string) => Promise<Character[]>;
   addCharacter: (character: Character) => Promise<void>;
   removeCharacter: (id: string) => Promise<void>;
-  updateCharacter: (id: string, name: string, stats: Record<string, number>, bars: Record<string, number>, imageUrl?: string) => Promise<void>;
+  updateCharacter: (id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => Promise<void>;
+  updateCharacterBars: (id: string, bars: Record<string, number>) => Promise<void>;
   getMaps: (sessionId: string) => Promise<MapItem[]>;
   addMap: (sessionId: string, map: MapItem) => Promise<void>;
   removeMap: (sessionId: string, id: string) => Promise<void>;
@@ -73,7 +77,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCharacters: (sessionId: string) => ipcRenderer.invoke('characters:getAll', sessionId),
   addCharacter: (character: Character) => ipcRenderer.invoke('characters:add', character),
   removeCharacter: (id: string) => ipcRenderer.invoke('characters:remove', id),
-  updateCharacter: (id: string, name: string, stats: Record<string, number>, bars: Record<string, number>, imageUrl?: string) => ipcRenderer.invoke('characters:update', id, name, stats, bars, imageUrl),
+  updateCharacter: (id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => ipcRenderer.invoke('characters:update', id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template),
+  updateCharacterBars: (id: string, bars: Record<string, number>) => ipcRenderer.invoke('characters:updateBars', id, bars),
   getMaps: (sessionId: string) => ipcRenderer.invoke('maps:getAll', sessionId),
   addMap: (sessionId: string, map: MapItem) => ipcRenderer.invoke('maps:add', sessionId, map),
   removeMap: (sessionId: string, id: string) => ipcRenderer.invoke('maps:remove', sessionId, id),

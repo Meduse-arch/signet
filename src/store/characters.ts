@@ -3,14 +3,17 @@ import { Character } from '../services/characters.service';
 
 interface CharactersState {
   characters: Character[];
+  controlledCharacterId: string | null;
   setCharacters: (characters: Character[]) => void;
   addOrUpdateCharacter: (character: Character, skipSync?: boolean) => void;
   removeCharacter: (id: string) => void;
+  setPnjControle: (id: string | null) => void;
   initialize: (sessionId: string) => void;
 }
 
 export const useCharactersStore = create<CharactersState>((set, get) => ({
   characters: [],
+  controlledCharacterId: null,
   setCharacters: (characters) => set((state) => {
     if (characters.length > 0) {
       localStorage.setItem(`sigil_chars_${characters[0].session_id}`, JSON.stringify(characters));
@@ -31,6 +34,9 @@ export const useCharactersStore = create<CharactersState>((set, get) => ({
       }
     }
 
+    const savedPnj = localStorage.getItem(`sigil_pnj_control_${sessionId}`);
+    if (savedPnj) set({ controlledCharacterId: savedPnj });
+
     // Listen for updates from other windows/stores
     const syncChannel = new BroadcastChannel(`sigil_char_store_sync_${sessionId}`);
     syncChannel.onmessage = (event) => {
@@ -48,9 +54,23 @@ export const useCharactersStore = create<CharactersState>((set, get) => ({
           newChars = [...state.characters, payload];
         }
         set({ characters: newChars });
+      } else if (type === 'PNJ_CONTROL_INTERNAL') {
+        set({ controlledCharacterId: payload });
       }
     };
   },
+
+  setPnjControle: (id) => set((state) => {
+    const sessionId = state.characters[0]?.session_id;
+    if (sessionId) {
+      if (id) localStorage.setItem(`sigil_pnj_control_${sessionId}`, id);
+      else localStorage.removeItem(`sigil_pnj_control_${sessionId}`);
+
+      const syncChannel = new BroadcastChannel(`sigil_char_store_sync_${sessionId}`);
+      syncChannel.postMessage({ type: 'PNJ_CONTROL_INTERNAL', payload: id });
+    }
+    return { controlledCharacterId: id };
+  }),
 
   addOrUpdateCharacter: (character, skipSync = false) => set((state) => {
     console.log(`[CharactersStore] Add/Update character: ${character.name}`, { id: character.id, user_id: character.user_id });

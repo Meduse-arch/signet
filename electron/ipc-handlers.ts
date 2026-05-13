@@ -69,8 +69,23 @@ function getSessionDb(sessionId: string): Database.Database {
           user_id TEXT,
           name TEXT,
           stats TEXT,
+          skills TEXT,
           bars TEXT,
-          image_url TEXT
+          image_url TEXT,
+          inventory TEXT,
+          custom_skills TEXT,
+          type TEXT,
+          is_template INTEGER DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS items (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          description TEXT,
+          category TEXT,
+          image_url TEXT,
+          effects TEXT,
+          stats TEXT
         );
 
         CREATE TABLE IF NOT EXISTS maps (
@@ -97,11 +112,26 @@ function getSessionDb(sessionId: string): Database.Database {
       }
 
       const charTableInfo = db.prepare("PRAGMA table_info(characters)").all() as any[];
+      if (!charTableInfo.some(col => col.name === 'inventory')) {
+        db.exec('ALTER TABLE characters ADD COLUMN inventory TEXT');
+      }
+      if (!charTableInfo.some(col => col.name === 'custom_skills')) {
+        db.exec('ALTER TABLE characters ADD COLUMN custom_skills TEXT');
+      }
       if (!charTableInfo.some(col => col.name === 'user_id')) {
         db.exec('ALTER TABLE characters ADD COLUMN user_id TEXT');
       }
       if (!charTableInfo.some(col => col.name === 'image_url')) {
         db.exec('ALTER TABLE characters ADD COLUMN image_url TEXT');
+      }
+      if (!charTableInfo.some(col => col.name === 'skills')) {
+        db.exec('ALTER TABLE characters ADD COLUMN skills TEXT');
+      }
+      if (!charTableInfo.some(col => col.name === 'type')) {
+        db.exec('ALTER TABLE characters ADD COLUMN type TEXT');
+      }
+      if (!charTableInfo.some(col => col.name === 'is_template')) {
+        db.exec('ALTER TABLE characters ADD COLUMN is_template INTEGER DEFAULT 0');
       }
       
       initializedDbs.add(dbPath);
@@ -271,9 +301,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       const chars = db.prepare('SELECT * FROM characters').all() as any[];
       return chars.map(c => ({
         ...c,
-        session_id: sessionId, // On rajoute l'id attendu par le frontend
+        session_id: sessionId,
         stats: c.stats ? JSON.parse(c.stats) : {},
-        bars: c.bars ? JSON.parse(c.bars) : {}
+        skills: c.skills ? JSON.parse(c.skills) : {},
+        bars: c.bars ? JSON.parse(c.bars) : {},
+        inventory: c.inventory ? JSON.parse(c.inventory) : [],
+        custom_skills: c.custom_skills ? JSON.parse(c.custom_skills) : [],
+        is_template: c.is_template === 1
       }));
     } catch (e) {
       console.error('[DB] characters:getAll error', e);
@@ -284,8 +318,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
   ipcMain.handle('characters:add', (_, c) => {
     try {
       const db = getSessionDb(c.session_id);
-      db.prepare('INSERT OR REPLACE INTO characters (id, user_id, name, stats, bars, image_url) VALUES (?, ?, ?, ?, ?, ?)')
-        .run(c.id, c.user_id || null, c.name, JSON.stringify(c.stats), JSON.stringify(c.bars), c.image_url || null);
+      db.prepare('INSERT OR REPLACE INTO characters (id, user_id, name, stats, skills, bars, image_url, inventory, custom_skills, type, is_template) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(c.id, c.user_id || null, c.name, JSON.stringify(c.stats), JSON.stringify(c.skills || {}), JSON.stringify(c.bars), c.image_url || null, JSON.stringify(c.inventory || []), JSON.stringify(c.custom_skills || []), c.type || null, c.is_template ? 1 : 0);
     } catch (e) {
       console.error('[DB] characters:add error', e);
     }
@@ -302,15 +336,27 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     }
   });
 
-  ipcMain.handle('characters:update', (_, id, name, stats, bars, imageUrl) => {
+  ipcMain.handle('characters:update', (_, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template) => {
     try {
       for (const db of sessionDbs.values()) {
-        const result = db.prepare('UPDATE characters SET name = ?, stats = ?, bars = ?, image_url = ? WHERE id = ?')
-          .run(name, JSON.stringify(stats), JSON.stringify(bars), imageUrl || null, id);
+        const result = db.prepare('UPDATE characters SET name = ?, stats = ?, skills = ?, bars = ?, image_url = ?, inventory = ?, custom_skills = ?, type = ?, is_template = ? WHERE id = ?')
+          .run(name, JSON.stringify(stats), JSON.stringify(skills || {}), JSON.stringify(bars), imageUrl || null, JSON.stringify(inventory || []), JSON.stringify(custom_skills || []), type || null, is_template ? 1 : 0, id);
         if (result.changes > 0) break;
       }
     } catch (e) {
       console.error('[DB] characters:update error', e);
+    }
+  });
+
+  ipcMain.handle('characters:updateBars', (_, id, bars) => {
+    try {
+      for (const db of sessionDbs.values()) {
+        const result = db.prepare('UPDATE characters SET bars = ? WHERE id = ?')
+          .run(JSON.stringify(bars), id);
+        if (result.changes > 0) break;
+      }
+    } catch (e) {
+      console.error('[DB] characters:updateBars error', e);
     }
   });
 

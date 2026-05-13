@@ -12,6 +12,7 @@ interface DraggableWindowProps {
   onFocus?: () => void;
   onPositionChange?: (x: number, y: number) => void;
   zIndex?: number;
+  className?: string;
 }
 
 export function DraggableWindow({ 
@@ -23,7 +24,8 @@ export function DraggableWindow({
   defaultPosition = { x: 100, y: 100 },
   onFocus,
   onPositionChange,
-  zIndex = 50
+  zIndex = 50,
+  className = "w-80"
 }: DraggableWindowProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +39,7 @@ export function DraggableWindow({
     >
       <div 
         ref={nodeRef}
-        className="w-80 bg-[#0D0D0F]/80 backdrop-blur-2xl rounded-sm border border-white/5 shadow-2xl overflow-hidden flex flex-col group pointer-events-auto"
+        className={`${className} bg-[#0D0D0F]/80 backdrop-blur-2xl rounded-sm border border-white/5 shadow-2xl overflow-hidden flex flex-col group pointer-events-auto`}
         style={{ zIndex, position: 'absolute' }}
         onClick={onFocus}
       >

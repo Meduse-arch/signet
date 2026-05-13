@@ -14,7 +14,9 @@ declare global {
       getCharacters: (sessionId: string) => Promise<any[]>;
       addCharacter: (character: any) => Promise<void>;
       removeCharacter: (id: string) => Promise<void>;
-      updateCharacter: (id: string, name: string, stats: Record<string, number>, bars: Record<string, number>, imageUrl?: string) => Promise<void>;
+      updateCharacter: (id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => Promise<void>;
+
+      updateCharacterBars: (id: string, bars: Record<string, number>) => Promise<void>;
       getMaps: (sessionId: string) => Promise<any[]>;
       addMap: (sessionId: string, map: any) => Promise<void>;
       removeMap: (sessionId: string, id: string) => Promise<void>;

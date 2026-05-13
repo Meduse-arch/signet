@@ -1,9 +1,9 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useCharactersStore } from '../../store/characters';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { useDiceStore } from '../../store/dice';
-import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
+import { DEFAULT_STATS, DEFAULT_BARS, DEFAULT_SKILLS } from '../../systems/seal/constants';
 import { usePeer } from '../../hooks/usePeer';
 import { addSessionCharacter } from '../../services/characters.service';
 import { lancerDes } from '../../services/des.service';
@@ -249,7 +249,13 @@ export function CharacterSheetContent({
     }
   }, [isPopup]);
 
-  const character = characters.find(c => c.user_id === user?.id);
+  const { controlledCharacterId } = useCharactersStore();
+  const character = useMemo(() => {
+    if (controlledCharacterId) {
+      return characters.find(c => c.id === controlledCharacterId);
+    }
+    return characters.find(c => c.user_id === user?.id);
+  }, [characters, controlledCharacterId, user?.id]);
 
   const handleAvatarClick = () => {
     if (!character) return;
@@ -293,8 +299,9 @@ export function CharacterSheetContent({
     );
   }
 
-  const { name = 'Inconnu', stats = {}, bars = {}, image_url } = character;
+  const { name = 'Inconnu', stats = {}, skills = {}, bars = {}, image_url } = character;
   const statDefs = session?.settings?.stats || DEFAULT_STATS;
+  const skillDefs = session?.settings?.skills || DEFAULT_SKILLS;
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
 
   const CustomAvatarPrompt = () => {
@@ -343,7 +350,6 @@ export function CharacterSheetContent({
     const mod = modifier;
     const res = lancerDes(nb, faces, mod);
     
-    // Format diceString for DiceRollModal: nb d (Label=Faces) + mod
     const labelPart = `(${statName}=${faces})`;
     const diceString = `${nb}d${labelPart}${mod !== 0 ? (mod > 0 ? '+' : '') + mod : ''}`;
     
@@ -362,7 +368,6 @@ export function CharacterSheetContent({
 
     setDiceResult([result]);
 
-    // Save to DB (Logs)
     const logEntry = {
       id: crypto.randomUUID(),
       type: 'des',
@@ -377,7 +382,6 @@ export function CharacterSheetContent({
       await addSessionLog(sessionId, logEntry as any);
     }
 
-    // Broadcast via P2P
     if (diceSharingEnabled) {
       broadcast({ type: 'DICE_ROLL', payload: result });
     }
@@ -409,21 +413,12 @@ export function CharacterSheetContent({
       >
         <span
           className="font-cinzel uppercase tracking-widest truncate mr-2 flex-1 min-w-0 group-hover:text-gold-bright transition-colors"
-          style={{
-            fontSize: isPopup ? '8px' : '10px',
-            color: 'rgba(255,255,255,0.75)',
-          }}
+          style={{ fontSize: isPopup ? '8px' : '10px', color: 'rgba(255,255,255,0.75)' }}
           title={s.name}
         >
           {s.name}
         </span>
-        <span
-          className="font-cinzel font-black flex-shrink-0 group-hover:scale-110 transition-transform"
-          style={{
-            fontSize: isPopup ? '10px' : '13px',
-            color: '#d4af37',
-          }}
-        >
+        <span className="font-cinzel font-black" style={{ fontSize: isPopup ? '10px' : '13px', color: '#d4af37' }}>
           D{val}
         </span>
       </div>
@@ -440,7 +435,7 @@ export function CharacterSheetContent({
     return (
       <div
         key={b.id}
-        className="flex flex-col justify-center flex-shrink-0 rounded-lg"
+        className="flex flex-col justify-center flex-shrink-0 rounded-lg p-2"
         style={{
           padding: isPopup ? '5px 8px' : '8px 12px',
           background: 'rgba(255,255,255,0.04)',
@@ -448,42 +443,12 @@ export function CharacterSheetContent({
           gap: isPopup ? 4 : 6,
           transition: 'border-color 0.2s',
         }}
-        onMouseEnter={e =>
-          ((e.currentTarget as HTMLDivElement).style.borderColor =
-            'rgba(212,175,55,0.3)')
-        }
-        onMouseLeave={e =>
-          ((e.currentTarget as HTMLDivElement).style.borderColor =
-            'rgba(255,255,255,0.07)')
-        }
       >
-        <div className="flex items-center justify-between">
-          <span
-            className="font-cinzel uppercase tracking-widest truncate mr-2 flex-1 min-w-0"
-            style={{
-              fontSize: isPopup ? '8px' : '10px',
-              color: b.color,
-              textShadow: `0 0 8px ${b.color}66`,
-            }}
-            title={b.name}
-          >
-            {b.name}
-          </span>
-          <span
-            className="font-mono font-black flex-shrink-0"
-            style={{
-              fontSize: isPopup ? '8px' : '11px',
-              color: b.color,
-            }}
-          >
-            {Math.floor(currentVal)}/{Math.floor(maxVal)}
-          </span>
+        <div className="flex items-center justify-between mb-1 gap-2">
+          <span className="font-cinzel uppercase tracking-widest text-[8px] sm:text-[10px] truncate flex-1 min-w-0" title={b.name} style={{ color: b.color }}>{b.name}</span>
+          <span className="font-mono font-black text-[8px] sm:text-[10px] truncate shrink-0 max-w-[50%]" title={`${Math.floor(currentVal)}/${Math.floor(maxVal)}`} style={{ color: b.color }}>{Math.floor(currentVal)}/{Math.floor(maxVal)}</span>
         </div>
-        <LiquidBar
-          percent={percent}
-          color={b.color}
-          height={isPopup ? 5 : 8}
-        />
+        <LiquidBar percent={percent} color={b.color} height={isPopup ? 4 : 6} />
       </div>
     );
   };
@@ -501,65 +466,23 @@ export function CharacterSheetContent({
         
         <CustomAvatarPrompt />
 
-        <div
-          className="flex flex-col"
-          style={{ width: '100%', overflow: 'hidden' }}
-        >
-          {/* ── Header compact ── */}
-          <div
-            className="flex-shrink-0 flex items-center gap-2 p-2"
-            style={{
-              background: 'rgba(0,0,0,0.35)',
-              borderBottom: '1px solid rgba(212,175,55,0.15)',
-            }}
-          >
-            <div
-              className="flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:border-gold-bright transition-colors"
+        <div className="flex flex-col h-full w-full overflow-hidden">
+          {/* ── Header ── */}
+          <div className="flex-shrink-0 flex items-center gap-3 p-2 bg-black/40 border-b border-gold-DEFAULT/10">
+            <div 
+              className="w-8 h-8 shrink-0 rounded-full border border-gold-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-gold-DEFAULT transition-colors"
               onClick={handleAvatarClick}
-              title="Changer l'image de profil"
-              style={{
-                width: 32,
-                height: 32,
-                background: 'rgba(30,22,10,0.8)',
-                border: '1px solid rgba(212,175,55,0.4)',
-                boxShadow: '0 0 10px rgba(212,175,55,0.1)',
-              }}
             >
-              {image_url ? (
-                <img src={image_url} alt={name} className="w-full h-full object-cover" />
-              ) : (
-                <span
-                  className="font-cinzel font-black"
-                  style={{ fontSize: 13, color: '#d4af37' }}
-                >
-                  {name.charAt(0).toUpperCase()}
-                </span>
-              )}
+              {image_url ? <img src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black">{name.charAt(0)}</div>}
             </div>
-            <h2
-              className="font-cinzel font-black uppercase tracking-widest truncate flex-1 min-w-0"
-              style={{ fontSize: 13, color: '#d4af37' }}
-            >
-              {name}
-            </h2>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-[10px] font-cinzel font-black text-gold-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
+            </div>
           </div>
 
-          {/* ── Two independent snap columns ── */}
-          <div className="flex gap-2 p-2" style={{ height: '160px' }}>
-            <SnapColumn
-              items={statDefs}
-              itemsPerPage={itemsPerPage}
-              renderItem={renderStat}
-              label="Attributs"
-              variant="popup"
-            />
-            <SnapColumn
-              items={barDefs}
-              itemsPerPage={itemsPerPage}
-              renderItem={renderBar}
-              label="Ressources"
-              variant="popup"
-            />
+          <div className="flex gap-2 p-2 h-[160px]">
+            <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs" variant="popup" />
+            <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Ressources" variant="popup" />
           </div>
         </div>
       </>
@@ -578,65 +501,23 @@ export function CharacterSheetContent({
       
       <CustomAvatarPrompt />
 
-      <div
-        className="flex flex-col flex-1"
-        style={{ width: '100%', minHeight: '100%', overflow: 'hidden', padding: '16px' }}
-      >
-        {/* ── Header large ── */}
-        <div
-          className="flex-shrink-0 flex items-center gap-4 mb-4 p-3 rounded-xl"
-          style={{
-            background: 'rgba(0,0,0,0.3)',
-            border: '1px solid rgba(212,175,55,0.15)',
-          }}
-        >
-          <div
-            className="flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:border-gold-bright transition-colors"
+      <div className="flex flex-col h-full w-full overflow-hidden p-4">
+        {/* ── Header ── */}
+        <div className="flex-shrink-0 flex items-center gap-4 mb-4 p-3 bg-black/40 border border-gold-DEFAULT/15 rounded-xl shadow-lg">
+          <div 
+            className="w-14 h-14 shrink-0 rounded-full border-2 border-gold-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-gold-DEFAULT transition-colors"
             onClick={handleAvatarClick}
-            title="Changer l'image de profil"
-            style={{
-              width: 56,
-              height: 56,
-              background: 'rgba(30,22,10,0.8)',
-              border: '1.5px solid rgba(212,175,55,0.45)',
-              boxShadow: '0 0 20px rgba(212,175,55,0.15)',
-            }}
           >
-            {image_url ? (
-              <img src={image_url} alt={name} className="w-full h-full object-cover" />
-            ) : (
-              <span
-                className="font-cinzel font-black"
-                style={{ fontSize: 22, color: '#d4af37' }}
-              >
-                {name.charAt(0).toUpperCase()}
-              </span>
-            )}
+            {image_url ? <img src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black text-2xl">{name.charAt(0)}</div>}
           </div>
-          <h1
-            className="font-cinzel font-black uppercase tracking-widest truncate flex-1 min-w-0"
-            style={{ fontSize: 22, color: '#d4af37' }}
-          >
-            {name}
-          </h1>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-cinzel font-black text-gold-bright uppercase tracking-[0.2em] truncate" title={name}>{name}</h1>
+          </div>
         </div>
 
-        {/* ── Two independent snap columns, fill remaining height ── */}
-        <div className="flex-1 min-h-0 flex gap-4">
-          <SnapColumn
-            items={statDefs}
-            itemsPerPage={itemsPerPage}
-            renderItem={renderStat}
-            label="Attributs"
-            variant="window"
-          />
-          <SnapColumn
-            items={barDefs}
-            itemsPerPage={itemsPerPage}
-            renderItem={renderBar}
-            label="Ressources"
-            variant="window"
-          />
+        <div className="flex-1 flex gap-4 min-h-0">
+          <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs Primordiaux" variant="window" />
+          <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Essences Vitales" variant="window" />
         </div>
       </div>
     </>
