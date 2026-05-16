@@ -22,6 +22,9 @@ declare global {
       removeMap: (sessionId: string, id: string) => Promise<void>;
       getLogs: (sessionId: string) => Promise<any[]>;
       addLog: (sessionId: string, log: any) => Promise<void>;
+      getMapTokens: (sessionId: string, mapId: string) => Promise<any[]>;
+      updateMapToken: (sessionId: string, mapId: string, characterId: string, x: number, y: number) => Promise<void>;
+      removeMapToken: (sessionId: string, mapId: string, characterId: string) => Promise<void>;
       openExternalWindow: (type: string, sessionId: string) => Promise<void>;
       reDock: (type: string, sessionId: string) => Promise<void>;
       onReDock: (callback: (type: string) => void) => (() => void);

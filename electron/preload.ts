@@ -84,6 +84,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeMap: (sessionId: string, id: string) => ipcRenderer.invoke('maps:remove', sessionId, id),
   getLogs: (sessionId: string) => ipcRenderer.invoke('logs:getAll', sessionId),
   addLog: (sessionId: string, log: any) => ipcRenderer.invoke('logs:add', sessionId, log),
+  getMapTokens: (sessionId: string, mapId: string) => ipcRenderer.invoke('map_tokens:getAll', sessionId, mapId),
+  updateMapToken: (sessionId: string, mapId: string, characterId: string, x: number, y: number) => ipcRenderer.invoke('map_tokens:update', sessionId, mapId, characterId, x, y),
+  removeMapToken: (sessionId: string, mapId: string, characterId: string) => ipcRenderer.invoke('map_tokens:remove', sessionId, mapId, characterId),
   openExternalWindow: (type: string, sessionId: string) => ipcRenderer.invoke('windows:openExternal', type, sessionId),
   reDock: (type: string, sessionId: string) => ipcRenderer.invoke('windows:reDock', type, sessionId),
   onReDock: (callback: (type: string) => void) => {

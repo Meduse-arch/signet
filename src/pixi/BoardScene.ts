@@ -161,6 +161,14 @@ export class BoardScene extends Container {
     }
   }
 
+  clearTokens() {
+    this.tokens.forEach(token => {
+      this.removeChild(token);
+      token.destroy();
+    });
+    this.tokens.clear();
+  }
+
   moveToken(id: string, x: number, y: number) {
     const token = this.tokens.get(id);
     if (token) {

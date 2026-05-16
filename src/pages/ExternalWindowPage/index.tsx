@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SceneWindowContent, CharacterSheetContent, DiceWindowContent } from '../../components/SignetInterface';
+import { SceneWindowContent, CharacterSheetContent, DiceWindowContent, BestiaryWindowContent } from '../../components/SignetInterface';
 import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
 import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
@@ -210,13 +210,8 @@ useEffect(() => {
              </div>
           )}
 
-          {type === 'skills' && (
-             <div className="flex flex-col items-center justify-center py-20 opacity-20">
-               <div className="w-12 h-12 border-2 border-dashed border-gold-DEFAULT/50 rounded-lg mb-2 flex items-center justify-center">
-                 <Sparkles className="w-6 h-6 text-gold-DEFAULT" />
-               </div>
-               <span className="text-[10px] font-cinzel">Aucune maîtrise apprise</span>
-             </div>
+          {type === 'bestiary' && (
+             <BestiaryWindowContent sessionId={sessionId} />
           )}
        </div>
     </div>

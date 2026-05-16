@@ -5,7 +5,7 @@ import { usePeer } from './usePeer';
 import { TokenData } from '../pixi/TokenSprite';
 import { usePeersStore } from '../store/peers';
 
-export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: string, imageUrl?: string) {
+export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: string, currentMapId?: string, imageUrl?: string) {
   const boardRef = useRef<BoardScene | null>(null);
   const { onData, broadcast, sendTo, peerId } = usePeer();
   const { isHost } = usePeersStore();
@@ -78,6 +78,10 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
             broadcast({ type: 'TOKEN_MOVE', payload: { id, x, y } });
             lastBroadcast = now;
           }
+          // Sauvegarder la position (seulement le host ou via un relai)
+          if (isHost && window.electronAPI && currentMapId) {
+             window.electronAPI.updateMapToken(sessionId, currentMapId, id, x, y).catch(console.error);
+          }
         };
 
         // Resize handling
@@ -108,7 +112,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       }
       boardRef.current = null;
     };
-  }, [containerRef, sessionId, broadcast, imageUrl, isHost, peerId]);
+  }, [containerRef, sessionId, currentMapId, broadcast, imageUrl, isHost, peerId]);
 
   // Networking logic for tokens & map
   useEffect(() => {
@@ -120,6 +124,8 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       } else if (data.type === 'TOKEN_MOVE') {
         const { id, x, y } = data.payload;
         boardRef.current.moveToken(id, x, y);
+      } else if (data.type === 'TOKEN_REMOVE') {
+        boardRef.current.removeToken(data.payload.id);
       } else if (data.type === 'REQUEST_MAP_IMAGE' && isHost) {
         // Le MJ reçoit une demande d'image d'un joueur
         if (cachedMapBuffer.current) {
@@ -157,9 +163,22 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
   }, [broadcast]);
 
+  const removeToken = useCallback((id: string) => {
+    if (boardRef.current) {
+      boardRef.current.removeToken(id);
+      broadcast({ type: 'TOKEN_REMOVE', payload: { id } });
+    }
+  }, [broadcast]);
+
+  const clearTokens = useCallback(() => {
+    if (boardRef.current) {
+      boardRef.current.clearTokens();
+    }
+  }, []);
+
   const loadMap = useCallback((url: string, format?: string) => {
     return boardRef.current?.loadMap(url, format);
   }, []);
 
-  return { addToken, loadMap };
+  return { addToken, removeToken, loadMap, clearTokens };
 }

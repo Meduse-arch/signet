@@ -232,7 +232,8 @@ export function CharacterSheetContent({
   const session = useSessionStore(state =>
     state.sessions.find(s => s.id === sessionId)
   );
-  const { broadcast } = usePeer();
+  const { broadcast, onData } = usePeer();
+  const { nbDice, modifier, setDiceResult, diceSharingEnabled } = useDiceStore();
 
   const isPopup = variant === 'popup';
 
@@ -284,6 +285,67 @@ export function CharacterSheetContent({
     channel.close();
     
     setShowAvatarPrompt(false);
+  };
+
+  // ── MAP TOKENS SYNC ──────────────────────────────
+  const [currentMapId, setCurrentMapId] = useState<string>('');
+  const [isTokenOnMap, setIsTokenOnMap] = useState(false);
+
+  useEffect(() => {
+    // Initial load
+    const activeMap = localStorage.getItem(`active_map_${sessionId}`);
+    if (activeMap) setCurrentMapId(activeMap);
+
+    // Listen to changes
+    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    channel.onmessage = (event) => {
+      if (event.data.type === 'MAP_CHANGE' || event.data.type === 'MAP_UPDATE') {
+        const active = localStorage.getItem(`active_map_${sessionId}`);
+        if (active) setCurrentMapId(active);
+      }
+    };
+    return () => channel.close();
+  }, [sessionId]);
+
+  // Check if token is on map
+  useEffect(() => {
+    if (!character || !currentMapId || !window.electronAPI) return;
+    
+    const checkToken = async () => {
+      const tokens = await window.electronAPI.getMapTokens(sessionId, currentMapId);
+      setIsTokenOnMap(tokens.some((t: any) => t.character_id === character.id));
+    };
+    checkToken();
+    
+    // We also need to listen to P2P token events to update the UI
+    const unsub = onData((data: any) => {
+       if (data.type === 'TOKEN_ADD' && data.payload.id === character.id) setIsTokenOnMap(true);
+       if (data.type === 'TOKEN_REMOVE' && data.payload.id === character.id) setIsTokenOnMap(false);
+    });
+
+    return () => { if (unsub) unsub(); };
+  }, [character, currentMapId, sessionId, onData]);
+
+  const toggleTokenPlacement = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!character || !currentMapId || !window.electronAPI) return;
+    
+    if (isTokenOnMap) {
+      await window.electronAPI.removeMapToken(sessionId, currentMapId, character.id);
+      broadcast({ type: 'TOKEN_REMOVE', payload: { id: character.id } });
+      setIsTokenOnMap(false);
+    } else {
+      await window.electronAPI.updateMapToken(sessionId, currentMapId, character.id, 0, 0);
+      const payload = {
+        id: character.id,
+        name: character.name,
+        image_url: character.image_url,
+        x: 0,
+        y: 0
+      };
+      broadcast({ type: 'TOKEN_ADD', payload });
+      setIsTokenOnMap(true);
+    }
   };
 
   if (!character) {
@@ -340,8 +402,6 @@ export function CharacterSheetContent({
       </div>
     );
   };
-
-  const { nbDice, modifier, setDiceResult, diceSharingEnabled } = useDiceStore();
 
   const handleRollStat = async (statName: string, faces: number) => {
     if (!character) return;
@@ -469,11 +529,18 @@ export function CharacterSheetContent({
         <div className="flex flex-col h-full w-full overflow-hidden">
           {/* ── Header ── */}
           <div className="flex-shrink-0 flex items-center gap-3 p-2 bg-black/40 border-b border-gold-DEFAULT/10">
-            <div 
-              className="w-8 h-8 shrink-0 rounded-full border border-gold-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-gold-DEFAULT transition-colors"
-              onClick={handleAvatarClick}
-            >
-              {image_url ? <img src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black">{name.charAt(0)}</div>}
+            <div className="relative">
+              <div 
+                className="w-8 h-8 shrink-0 rounded-full border border-gold-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-gold-DEFAULT transition-colors"
+                onClick={handleAvatarClick}
+              >
+                {image_url ? <img src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black">{name.charAt(0)}</div>}
+              </div>
+              <button 
+                onClick={toggleTokenPlacement}
+                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-[#0D0D0F] shadow-sm transition-colors ${isTokenOnMap ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'}`}
+                title={isTokenOnMap ? "Retirer de la carte" : "Placer sur la carte"}
+              />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-[10px] font-cinzel font-black text-gold-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
@@ -504,11 +571,18 @@ export function CharacterSheetContent({
       <div className="flex flex-col h-full w-full overflow-hidden p-4">
         {/* ── Header ── */}
         <div className="flex-shrink-0 flex items-center gap-4 mb-4 p-3 bg-black/40 border border-gold-DEFAULT/15 rounded-xl shadow-lg">
-          <div 
-            className="w-14 h-14 shrink-0 rounded-full border-2 border-gold-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-gold-DEFAULT transition-colors"
-            onClick={handleAvatarClick}
-          >
-            {image_url ? <img src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black text-2xl">{name.charAt(0)}</div>}
+          <div className="relative">
+            <div 
+              className="w-14 h-14 shrink-0 rounded-full border-2 border-gold-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-gold-DEFAULT transition-colors"
+              onClick={handleAvatarClick}
+            >
+              {image_url ? <img src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black text-2xl">{name.charAt(0)}</div>}
+            </div>
+            <button 
+              onClick={toggleTokenPlacement}
+              className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-sm transition-colors ${isTokenOnMap ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'}`}
+              title={isTokenOnMap ? "Retirer de la carte" : "Placer sur la carte"}
+            />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-cinzel font-black text-gold-bright uppercase tracking-[0.2em] truncate" title={name}>{name}</h1>

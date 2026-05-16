@@ -94,6 +94,15 @@ function getSessionDb(sessionId: string): Database.Database {
           url TEXT
         );
 
+        CREATE TABLE IF NOT EXISTS map_tokens (
+          id TEXT PRIMARY KEY,
+          map_id TEXT NOT NULL,
+          character_id TEXT NOT NULL,
+          x REAL NOT NULL DEFAULT 0,
+          y REAL NOT NULL DEFAULT 0,
+          FOREIGN KEY (map_id) REFERENCES maps(id) ON DELETE CASCADE
+        );
+
         CREATE TABLE IF NOT EXISTS logs (
           id TEXT PRIMARY KEY,
           type TEXT,
@@ -388,6 +397,37 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       db.prepare('DELETE FROM maps WHERE id = ?').run(id);
     } catch (e) {
       console.error('[DB] maps:remove error', e);
+    }
+  });
+
+  // --- HANDLERS MAP TOKENS (SESSION DB) ---
+
+  ipcMain.handle('map_tokens:getAll', (_, sessionId, mapId) => {
+    try {
+      const db = getSessionDb(sessionId);
+      return db.prepare('SELECT * FROM map_tokens WHERE map_id = ?').all(mapId);
+    } catch (e) {
+      console.error('[DB] map_tokens:getAll error', e);
+      return [];
+    }
+  });
+
+  ipcMain.handle('map_tokens:update', (_, sessionId, mapId, characterId, x, y) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare('INSERT OR REPLACE INTO map_tokens (id, map_id, character_id, x, y) VALUES (?, ?, ?, ?, ?)')
+        .run(`${mapId}_${characterId}`, mapId, characterId, x, y);
+    } catch (e) {
+      console.error('[DB] map_tokens:update error', e);
+    }
+  });
+
+  ipcMain.handle('map_tokens:remove', (_, sessionId, mapId, characterId) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare('DELETE FROM map_tokens WHERE map_id = ? AND character_id = ?').run(mapId, characterId);
+    } catch (e) {
+      console.error('[DB] map_tokens:remove error', e);
     }
   });
 

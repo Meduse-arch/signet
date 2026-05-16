@@ -17,6 +17,7 @@ export class TokenSprite extends Container {
   private maskGraphics: Graphics;
   
   private dragging = false;
+  private dragOffset = { x: 0, y: 0 };
   private onMoveCallback?: (x: number, y: number) => void;
   
   constructor(data: TokenData, onMove?: (x: number, y: number) => void) {
@@ -114,10 +115,18 @@ export class TokenSprite extends Container {
     }
   }
 
-  private onDragStart() {
+  private onDragStart(event: FederatedPointerEvent) {
     this.dragging = true;
     this.setSelected(true);
     this.alpha = 0.8;
+    
+    if (this.parent) {
+      const pos = event.getLocalPosition(this.parent);
+      this.dragOffset = {
+        x: this.x - pos.x,
+        y: this.y - pos.y
+      };
+    }
   }
 
   private onDragEnd() {
@@ -125,15 +134,20 @@ export class TokenSprite extends Container {
       this.dragging = false;
       this.setSelected(false);
       this.alpha = 1;
+      // You could dispatch a final move event here to save to DB
+      if (this.onMoveCallback) {
+        this.onMoveCallback(this.x, this.y);
+      }
     }
   }
 
   private onDragMove(event: FederatedPointerEvent) {
     if (this.dragging && this.parent) {
       const newPosition = event.getLocalPosition(this.parent);
-      this.moveTo(newPosition.x, newPosition.y);
+      this.moveTo(newPosition.x + this.dragOffset.x, newPosition.y + this.dragOffset.y);
+      // Real-time update for others
       if (this.onMoveCallback) {
-        this.onMoveCallback(newPosition.x, newPosition.y);
+        this.onMoveCallback(this.x, this.y);
       }
     }
   }
