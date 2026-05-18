@@ -1,5 +1,7 @@
 import { usePeersStore } from '../../store/peers';
-import { useAuthStore } from '../../store/auth';
+import { useAuthStore, SecurityLevel } from '../../store/auth';
+import { useCharactersStore } from '../../store/characters';
+import { useState, useEffect } from 'react';
 
 interface Player {
   peer_id: string;
@@ -9,15 +11,63 @@ interface Player {
 interface PlayerHUDProps {
   players: Player[];
   className?: string;
+  sessionId: string;
 }
 
-export function PlayerHUD({ players, className }: PlayerHUDProps) {
+export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
   const peerId = usePeersStore(state => state.peerId);
   const isHost = usePeersStore(state => state.isHost);
   const user = useAuthStore(state => state.user);
+  const characters = useCharactersStore(state => state.characters);
+  const [tokenStatus, setTokenStatus] = useState<Record<string, boolean>>({});
+
+  const isMJ = user && user.role >= SecurityLevel.MJ;
+
+  // Sync token status
+  useEffect(() => {
+    if (!isMJ) return;
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    
+    const askStatus = () => {
+        characters.forEach(c => {
+            if (!c.is_template) {
+                channel.postMessage({ type: 'GET_TOKEN_STATUS', payload: { id: c.id } });
+            }
+        });
+    };
+
+    askStatus();
+
+    channel.onmessage = (event) => {
+        const { type, payload } = event.data;
+        if (type === 'TOKEN_STATUS_RESPONSE') {
+            setTokenStatus(prev => ({ ...prev, [payload.id]: payload.isOnMap }));
+        } else if (type === 'TOKEN_LIST_UPDATE') {
+            const newStatus: Record<string, boolean> = {};
+            characters.forEach(c => {
+                newStatus[c.id] = payload.tokens.includes(c.id);
+            });
+            setTokenStatus(newStatus);
+        }
+    };
+
+    const interval = setInterval(askStatus, 5000);
+    return () => {
+        clearInterval(interval);
+        channel.close();
+    };
+  }, [sessionId, isMJ, characters]);
+
+  const handleToggleToken = (charId: string) => {
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: charId } });
+    setTokenStatus(prev => ({ ...prev, [charId]: !prev[charId] }));
+    channel.close();
+  };
 
   // On filtre les autres joueurs (ceux qui ne sont pas nous)
   const otherPlayers = players.filter(p => p.peer_id !== peerId);
+  const selfChar = characters.find(c => c.user_id === user?.id);
 
   return (
     <div className={className || "absolute top-8 left-8 flex flex-col gap-4 z-10 pointer-events-none"}>
@@ -27,10 +77,29 @@ export function PlayerHUD({ players, className }: PlayerHUDProps) {
           {/* Anneau rotatif façon Jarvis/HUD */}
           <div className="absolute inset-[-4px] rounded-full border border-gold-DEFAULT/40 group-hover:border-gold-DEFAULT/50 group-hover:rotate-180 transition-all duration-1000 ease-linear" />
           
-          <div className="w-12 h-12 rounded-full bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 flex items-center justify-center text-gold-bright text-lg font-cinzel font-black shadow-[0_0_20px_rgba(212,175,55,0.15)] group-hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] transition-all">
-            {user?.pseudo.substring(0, 1).toUpperCase() || 'M'}
+          <div className="w-12 h-12 rounded-full bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 flex items-center justify-center text-gold-bright text-lg font-cinzel font-black shadow-[0_0_20px_rgba(212,175,55,0.15)] group-hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] transition-all overflow-hidden">
+            {selfChar?.image_url ? (
+                <img src={selfChar.image_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+                user?.pseudo.substring(0, 1).toUpperCase() || 'M'
+            )}
           </div>
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#0D0D0F] flex items-center justify-center border border-gold-DEFAULT/40">
+
+          {/* MJ Toggle Button on Self (Top Right) */}
+          {isMJ && selfChar && (
+            <button 
+                onClick={() => handleToggleToken(selfChar.id)}
+                className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border border-[#0D0D0F] shadow-sm transition-colors z-20 ${
+                    tokenStatus[selfChar.id]
+                    ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' 
+                    : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
+                }`}
+                title={tokenStatus[selfChar.id] ? "Retirer votre figurine du plateau" : "Placer votre figurine sur la carte"}
+            />
+          )}
+
+          {/* Online indicator (Bottom Right) - Restored */}
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#0D0D0F] flex items-center justify-center border border-gold-DEFAULT/40 z-10">
             <div className="w-2 h-2 rounded-full bg-[#8ab040] shadow-[0_0_8px_#8ab040] animate-pulse" />
           </div>
         </div>
@@ -58,16 +127,37 @@ export function PlayerHUD({ players, className }: PlayerHUDProps) {
       {/* Other Players (Voyageurs) */}
       <div className="flex flex-col gap-3">
         {otherPlayers.map((p) => {
+          const char = characters.find(c => c.user_id === p.peer_id);
           const initial = p.pseudo.substring(0, 1).toUpperCase();
           return (
             <div key={p.peer_id} className="flex items-center gap-4 pointer-events-auto group opacity-80 hover:opacity-100 transition-all">
               <div className="relative ml-2">
-                <div className="w-9 h-9 rounded-full bg-[#0D0D0F]/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/90 text-sm font-cinzel group-hover:border-white/40 group-hover:text-white transition-all shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
-                  {initial}
+                <div className="w-9 h-9 rounded-full bg-[#0D0D0F]/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/90 text-sm font-cinzel group-hover:border-white/40 group-hover:text-white transition-all shadow-[0_2px_10px_rgba(0,0,0,0.5)] overflow-hidden">
+                  {char?.image_url ? (
+                      <img src={char.image_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                      initial
+                  )}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#0D0D0F] flex items-center justify-center border border-white/10">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#8ab040]" />
-                </div>
+                
+                {/* MJ Toggle Button on Other Players */}
+                {isMJ && char && (
+                    <button 
+                        onClick={() => handleToggleToken(char.id)}
+                        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border border-[#0D0D0F] shadow-sm transition-colors ${
+                            tokenStatus[char.id]
+                            ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]' 
+                            : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]'
+                        }`}
+                        title={tokenStatus[char.id] ? "Retirer de la carte" : "Placer sur la carte"}
+                    />
+                )}
+
+                {!isMJ && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#0D0D0F] flex items-center justify-center border border-white/10">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#8ab040]" />
+                    </div>
+                )}
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">

@@ -288,64 +288,49 @@ export function CharacterSheetContent({
   };
 
   // ── MAP TOKENS SYNC ──────────────────────────────
-  const [currentMapId, setCurrentMapId] = useState<string>('');
   const [isTokenOnMap, setIsTokenOnMap] = useState(false);
 
   useEffect(() => {
-    // Initial load
-    const activeMap = localStorage.getItem(`active_map_${sessionId}`);
-    if (activeMap) setCurrentMapId(activeMap);
+    if (!character) return;
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    
+    const askStatus = () => {
+        channel.postMessage({ type: 'GET_TOKEN_STATUS', payload: { id: character.id } });
+    };
 
-    // Listen to changes
-    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    askStatus();
+
     channel.onmessage = (event) => {
-      if (event.data.type === 'MAP_CHANGE' || event.data.type === 'MAP_UPDATE') {
-        const active = localStorage.getItem(`active_map_${sessionId}`);
-        if (active) setCurrentMapId(active);
-      }
+        const { type, payload } = event.data;
+        if (type === 'TOKEN_STATUS_RESPONSE' && payload.id === character.id) {
+            setIsTokenOnMap(payload.isOnMap);
+        } else if (type === 'TOKEN_LIST_UPDATE') {
+            setIsTokenOnMap(payload.tokens.includes(character.id));
+        }
     };
-    return () => channel.close();
-  }, [sessionId]);
 
-  // Check if token is on map
-  useEffect(() => {
-    if (!character || !currentMapId || !window.electronAPI) return;
-    
-    const checkToken = async () => {
-      const tokens = await window.electronAPI.getMapTokens(sessionId, currentMapId);
-      setIsTokenOnMap(tokens.some((t: any) => t.character_id === character.id));
-    };
-    checkToken();
-    
     // We also need to listen to P2P token events to update the UI
     const unsub = onData((data: any) => {
        if (data.type === 'TOKEN_ADD' && data.payload.id === character.id) setIsTokenOnMap(true);
        if (data.type === 'TOKEN_REMOVE' && data.payload.id === character.id) setIsTokenOnMap(false);
     });
 
-    return () => { if (unsub) unsub(); };
-  }, [character, currentMapId, sessionId, onData]);
+    const interval = setInterval(askStatus, 5000);
+
+    return () => { 
+        if (unsub) unsub(); 
+        clearInterval(interval);
+        channel.close();
+    };
+  }, [character, sessionId, onData]);
 
   const toggleTokenPlacement = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!character || !currentMapId || !window.electronAPI) return;
+    if (!character) return;
     
-    if (isTokenOnMap) {
-      await window.electronAPI.removeMapToken(sessionId, currentMapId, character.id);
-      broadcast({ type: 'TOKEN_REMOVE', payload: { id: character.id } });
-      setIsTokenOnMap(false);
-    } else {
-      await window.electronAPI.updateMapToken(sessionId, currentMapId, character.id, 0, 0);
-      const payload = {
-        id: character.id,
-        name: character.name,
-        image_url: character.image_url,
-        x: 0,
-        y: 0
-      };
-      broadcast({ type: 'TOKEN_ADD', payload });
-      setIsTokenOnMap(true);
-    }
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: character.id } });
+    channel.close();
   };
 
   if (!character) {

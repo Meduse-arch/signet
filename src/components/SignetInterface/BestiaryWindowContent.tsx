@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCharactersStore } from '../../store/characters';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
@@ -24,6 +24,55 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [editingNPC, setEditingNPC] = useState<Character | null>(null);
   const [creationMode, setCreationMode] = useState<'manual' | 'roll'>('roll');
+  const [tokenStatus, setTokenStatus] = useState<Record<string, boolean>>({});
+
+  // Écouter le status des tokens depuis le Board
+  useEffect(() => {
+    if (!isMJ) return;
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    
+    // 1. Demander l'état initial
+    const askStatus = () => {
+        characters.forEach(c => {
+            if (!c.is_template) {
+                channel.postMessage({ type: 'GET_TOKEN_STATUS', payload: { id: c.id } });
+            }
+        });
+    };
+
+    askStatus();
+
+    // 2. Écouter les réponses et les mises à jour automatiques
+    channel.onmessage = (event) => {
+        const { type, payload } = event.data;
+        if (type === 'TOKEN_STATUS_RESPONSE') {
+            setTokenStatus(prev => ({ ...prev, [payload.id]: payload.isOnMap }));
+        } else if (type === 'TOKEN_LIST_UPDATE') {
+            // Mise à jour massive (après un fetch du board)
+            const newStatus: Record<string, boolean> = {};
+            characters.forEach(c => {
+                newStatus[c.id] = payload.tokens.includes(c.id);
+            });
+            setTokenStatus(newStatus);
+        }
+    };
+
+    // Poll léger au cas où (plus fiable que onData dans des fenêtres détachées)
+    const interval = setInterval(askStatus, 5000); 
+
+    return () => {
+        clearInterval(interval);
+        channel.close();
+    };
+  }, [sessionId, isMJ, characters]);
+
+  const handleToggleToken = (charId: string) => {
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: charId } });
+    // Optimistic update
+    setTokenStatus(prev => ({ ...prev, [charId]: !prev[charId] }));
+    channel.close();
+  };
 
   const handleCreateNewTemplate = () => {
     let stats: Record<string, number> = {};
@@ -215,6 +264,19 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                 {controlledCharacterId === npc.id && (
                   <div className="absolute inset-0 bg-gold-bright/20 animate-pulse" />
                 )}
+
+                {/* Token Toggle Button on Portrait */}
+                {isMJ && !npc.is_template && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleToggleToken(npc.id); }}
+                    className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-[#0D0D0F] shadow-sm transition-colors ${
+                        tokenStatus[npc.id]
+                          ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' 
+                          : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
+                      }`}
+                    title={tokenStatus[npc.id] ? "Retirer de la carte" : "Placer sur la carte"}
+                  />
+                )}
               </div>
 
               <div className="flex-1 min-w-0">
@@ -251,7 +313,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 {!npc.is_template && (
                   <button 
                     onClick={() => setPnjControle(controlledCharacterId === npc.id ? null : npc.id)}

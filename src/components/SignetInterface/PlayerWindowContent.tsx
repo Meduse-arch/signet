@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useCharactersStore } from '../../store/characters';
 import { useSessionStore } from '../../store/session';
 import { usePeer } from '../../hooks/usePeer';
-import { Shield, User, ChevronRight, Ghost, Settings } from 'lucide-react';
+import { Shield, User, ChevronRight, Ghost, Settings, Plus } from 'lucide-react';
 import { Character, updateSessionCharacter } from '../../services/characters.service';
 import { CreateCharacterModal } from '../CreateCharacterModal';
 
@@ -26,6 +26,44 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const { broadcast } = usePeer();
   const [isEditing, setIsEditing] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<Record<string, boolean>>({});
+
+  // Écouter le status des tokens depuis le Board
+  useEffect(() => {
+    if (!isMJ) return;
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    
+    const askStatus = () => {
+        characters.forEach(c => {
+            if (!c.is_template) {
+                channel.postMessage({ type: 'GET_TOKEN_STATUS', payload: { id: c.id } });
+            }
+        });
+    };
+
+    askStatus();
+
+    channel.onmessage = (event) => {
+        const { type, payload } = event.data;
+        if (type === 'TOKEN_STATUS_RESPONSE') {
+            setTokenStatus(prev => ({ ...prev, [payload.id]: payload.isOnMap }));
+        }
+    };
+
+    const interval = setInterval(askStatus, 2000);
+
+    return () => {
+        clearInterval(interval);
+        channel.close();
+    };
+  }, [sessionId, isMJ, characters]);
+
+  const handleToggleToken = (charId: string) => {
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: charId } });
+    setTokenStatus(prev => ({ ...prev, [charId]: !prev[charId] }));
+    channel.close();
+  };
 
   const getRoleLabel = (role?: number) => {
     if (role === SecurityLevel.ADMIN) return 'ADMINISTRATEUR';
@@ -75,15 +113,30 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
         {/* Header Fiche */}
         <div className="flex items-center justify-between border-b border-gold-DEFAULT/20 pb-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-black/60 border border-gold-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)] overflow-hidden">
-              {char?.image_url ? (
-                <img src={char.image_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-2xl font-cinzel text-gold-bright drop-shadow-md">
-                  {pseudo.substring(0, 1).toUpperCase()}
-                </span>
-              )}
+            <div className="relative">
+                <div className="w-14 h-14 rounded-full bg-black/60 border border-gold-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)] overflow-hidden">
+                {char?.image_url ? (
+                    <img src={char.image_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                    <span className="text-2xl font-cinzel text-gold-bright drop-shadow-md">
+                    {pseudo.substring(0, 1).toUpperCase()}
+                    </span>
+                )}
+                </div>
+                {/* Token Toggle Button on Portrait */}
+                {isMJ && char && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); handleToggleToken(char.id); }}
+                        className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-sm transition-colors ${
+                            tokenStatus[char.id]
+                            ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' 
+                            : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'
+                        }`}
+                        title={tokenStatus[char.id] ? "Retirer de la carte" : "Placer sur la carte"}
+                    />
+                )}
             </div>
+
             <div className="flex-1 min-w-0">
               <h2 className="text-lg font-cinzel font-black text-gold-DEFAULT tracking-widest drop-shadow-md uppercase truncate" title={pseudo}>
                 {pseudo}
@@ -202,28 +255,49 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
   // Si on est MJ et qu'on regarde la liste
   return (
     <div className="flex flex-col gap-2">
-      {players.map((p) => (
-        <button
-          key={p.peer_id}
-          onClick={() => setSelectedPlayer(p)}
-          className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-gold-DEFAULT/20 hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/40 transition-all group text-left min-w-0"
-        >
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-8 h-8 shrink-0 rounded-full bg-black/60 border border-gold-DEFAULT/30 flex items-center justify-center group-hover:border-gold-bright transition-colors">
-              <User className="w-4 h-4 text-gold-DEFAULT group-hover:text-gold-bright" />
+      {players.map((p) => {
+        const char = characters.find(c => c.user_id === p.peer_id);
+        return (
+            <button
+            key={p.peer_id}
+            onClick={() => setSelectedPlayer(p)}
+            className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-gold-DEFAULT/20 hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/40 transition-all group text-left min-w-0"
+            >
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="relative">
+                    <div className="w-8 h-8 shrink-0 rounded-full bg-black/60 border border-gold-DEFAULT/30 flex items-center justify-center group-hover:border-gold-bright transition-colors">
+                        {char?.image_url ? (
+                            <img src={char.image_url} alt="" className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                            <User className="w-4 h-4 text-gold-DEFAULT group-hover:text-gold-bright" />
+                        )}
+                    </div>
+                    {/* Token Toggle Button on Portrait in List */}
+                    {isMJ && char && (
+                        <div 
+                            onClick={(e) => { e.stopPropagation(); handleToggleToken(char.id); }}
+                            className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-[#0D0D0F] shadow-sm transition-colors ${
+                                tokenStatus[char.id]
+                                ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' 
+                                : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
+                            }`}
+                            title={tokenStatus[char.id] ? "Retirer de la carte" : "Placer sur la carte"}
+                        />
+                    )}
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-sm font-cinzel font-bold text-white/90 group-hover:text-white drop-shadow-md truncate" title={p.pseudo}>
+                    {p.pseudo}
+                </span>
+                <span className="text-[9px] text-white/40 font-mono truncate">
+                    {getRoleLabel(p.role)}
+                </span>
+                </div>
             </div>
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-sm font-cinzel font-bold text-white/90 group-hover:text-white drop-shadow-md truncate" title={p.pseudo}>
-                {p.pseudo}
-              </span>
-              <span className="text-[9px] text-white/40 font-mono truncate">
-                {getRoleLabel(p.role)}
-              </span>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 shrink-0 text-gold-DEFAULT/50 group-hover:text-gold-bright transition-colors ml-2" />
-        </button>
-      ))}
+            <ChevronRight className="w-4 h-4 shrink-0 text-gold-DEFAULT/50 group-hover:text-gold-bright transition-colors ml-2" />
+            </button>
+        );
+      })}
       {players.length === 0 && (
         <p className="text-xs text-center text-gold-DEFAULT/50 font-serif italic py-8">
           Aucun voyageur connecté...

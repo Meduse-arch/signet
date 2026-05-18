@@ -241,6 +241,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
       <SignetLauncher 
         onOpenWindow={openWindow} 
         securityLevel={user?.role ?? SecurityLevel.PLAYER} 
+        sessionId={sessionId}
       />
 
       {/* Draggable Windows */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import logo from '../../assets/logo.png';
 import { 
   Image as ImageIcon, 
@@ -8,18 +8,62 @@ import {
   Users,
   X,
   Sparkles,
-  Ghost
+  Ghost,
+  Plus
 } from 'lucide-react';
 
-import { SecurityLevel } from '../../store/auth';
+import { SecurityLevel, useAuthStore } from '../../store/auth';
+import { useCharactersStore } from '../../store/characters';
 
 interface SignetLauncherProps {
   onOpenWindow: (type: 'scenes' | 'story' | 'dice' | 'assets' | 'players' | 'bestiary') => void;
   securityLevel?: SecurityLevel;
+  sessionId: string;
 }
 
-export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLAYER }: SignetLauncherProps) {
+export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLAYER, sessionId }: SignetLauncherProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuthStore();
+  const characters = useCharactersStore(state => state.characters);
+  const [tokenStatus, setTokenStatus] = useState(false);
+  
+  const isMJ = securityLevel >= SecurityLevel.MJ;
+  const selfChar = characters.find(c => c.user_id === user?.id);
+
+  // Sync token status
+  useEffect(() => {
+    if (!isMJ || !selfChar) return;
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    
+    const askStatus = () => {
+        channel.postMessage({ type: 'GET_TOKEN_STATUS', payload: { id: selfChar.id } });
+    };
+
+    askStatus();
+
+    channel.onmessage = (event) => {
+        const { type, payload } = event.data;
+        if (type === 'TOKEN_STATUS_RESPONSE' && payload.id === selfChar.id) {
+            setTokenStatus(payload.isOnMap);
+        } else if (type === 'TOKEN_LIST_UPDATE') {
+            setTokenStatus(payload.tokens.includes(selfChar.id));
+        }
+    };
+
+    const interval = setInterval(askStatus, 5000);
+    return () => {
+        clearInterval(interval);
+        channel.close();
+    };
+  }, [sessionId, isMJ, selfChar]);
+
+  const handleToggleToken = () => {
+    if (!selfChar) return;
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: selfChar.id } });
+    setTokenStatus(!tokenStatus);
+    channel.close();
+  };
 
   const menuItems = [
     { type: 'scenes' as const, icon: <ImageIcon size={18} />, label: 'Scènes', minSecurity: SecurityLevel.MJ },
@@ -35,6 +79,21 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
 
   return (
     <div className="fixed bottom-10 right-10 z-[100] flex items-center justify-center">
+      {/* MJ Token Toggle (External to menu) */}
+      {isMJ && selfChar && (
+        <button
+          onClick={handleToggleToken}
+          className={`absolute -top-4 -left-4 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all z-20 hover:scale-110 flex items-center justify-center ${
+            tokenStatus
+              ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.6)]' 
+              : 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)]'
+          }`}
+          title={tokenStatus ? "Retirer votre figurine du plateau" : "Invoquer votre figurine"}
+        >
+            <Plus size={12} className={`text-white transition-transform ${tokenStatus ? 'rotate-45' : ''}`} />
+        </button>
+      )}
+
       {/* Menu items (Radial/Arc) */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
         {menuItems.map((item, index) => {

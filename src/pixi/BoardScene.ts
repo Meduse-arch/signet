@@ -7,6 +7,7 @@ export class BoardScene extends Container {
   private app: Application;
   public mapLayer: MapLayer;
   private fow: FogOfWar;
+  private tokenLayer: Container;
   private tokens: Map<string, TokenSprite> = new Map();
   public onTokenMove?: (id: string, x: number, y: number) => void;
 
@@ -24,6 +25,9 @@ export class BoardScene extends Container {
     this.fow = new FogOfWar();
     this.addChild(this.fow);
 
+    this.tokenLayer = new Container();
+    this.addChild(this.tokenLayer);
+
     // Center the board by default
     this.x = app.screen.width / 2;
     this.y = app.screen.height / 2;
@@ -33,8 +37,7 @@ export class BoardScene extends Container {
 
   private setupInteractivity() {
     this.app.stage.eventMode = 'static';
-    // We use a large hitArea so the stage catches events everywhere
-    this.app.stage.hitArea = { contains: () => true } as any;
+    this.app.stage.hitArea = this.app.screen;
 
     // Zoom
     this.app.canvas.addEventListener('wheel', (e) => {
@@ -144,26 +147,31 @@ export class BoardScene extends Container {
   }
 
   addToken(data: TokenData) {
-    if (this.tokens.has(data.id)) return;
+    if (this.tokens.has(data.id)) {
+        console.log('[BoardScene] Token already exists:', data.id);
+        return;
+    }
+    console.log('[BoardScene] Adding token:', data.name, 'at', data.x, data.y);
     const token = new TokenSprite(data, (x, y) => {
       if (this.onTokenMove) this.onTokenMove(data.id, x, y);
     });
     this.tokens.set(data.id, token);
-    this.addChild(token);
+    this.tokenLayer.addChild(token);
   }
 
   removeToken(id: string) {
     const token = this.tokens.get(id);
     if (token) {
-      this.removeChild(token);
+      this.tokenLayer.removeChild(token);
       token.destroy();
       this.tokens.delete(id);
     }
   }
 
   clearTokens() {
+    console.log('[BoardScene] Clearing all tokens');
     this.tokens.forEach(token => {
-      this.removeChild(token);
+      this.tokenLayer.removeChild(token);
       token.destroy();
     });
     this.tokens.clear();

@@ -26,28 +26,27 @@ export class TokenSprite extends Container {
     this.y = data.y;
     this.onMoveCallback = onMove;
 
-    this.interactive = true;
+    this.eventMode = 'static';
     this.cursor = 'pointer';
+
+    // Mask for the sprite (circular) - We don't add it as a child if we only use it as a mask
+    this.maskGraphics = new Graphics();
+    this.maskGraphics.circle(0, 0, 18).fill(0xffffff);
+    // Don't addChild(this.maskGraphics) to avoid seeing the white circle
 
     // Background circle
     this.bgGraphics = new Graphics();
     this.drawBg(false);
     this.addChild(this.bgGraphics);
 
-    // Mask for the sprite (circular)
-    this.maskGraphics = new Graphics();
-    this.maskGraphics.circle(0, 0, 18);
-    this.maskGraphics.fill(0xffffff);
-    this.addChild(this.maskGraphics);
-
-    // Initialals (fallback)
+    // Initials (fallback)
     const initials = data.name.substring(0, 2).toUpperCase();
     this.idText = new Text({
       text: initials,
       style: new TextStyle({
         fontFamily: 'Cinzel, serif',
         fontSize: 14,
-        fill: '#0D0D0F',
+        fill: '#000000',
         fontWeight: 'bold'
       })
     });
@@ -82,6 +81,7 @@ export class TokenSprite extends Container {
 
   private async loadImage(url: string) {
     try {
+      console.log('[TokenSprite] Loading image:', url);
       const texture = await Assets.load(url);
       if (this.sprite) {
         this.sprite.texture = texture;
@@ -91,27 +91,28 @@ export class TokenSprite extends Container {
         this.sprite.width = 36;
         this.sprite.height = 36;
         this.sprite.mask = this.maskGraphics;
-        this.addChildAt(this.sprite, 2); // Above bg, below initials/label
+        this.addChild(this.maskGraphics); // Must be a child to work as a mask in some Pixi versions/setups
+        this.maskGraphics.visible = false; // But we keep it invisible
+        this.addChildAt(this.sprite, 1); // Above bg
         
         // Hide initials if image loaded
         this.idText.visible = false;
       }
     } catch (e) {
-      console.error('Failed to load token image:', e);
+      console.error('[TokenSprite] Failed to load token image:', e);
     }
   }
 
   private drawBg(selected: boolean) {
     this.bgGraphics.clear();
-    this.bgGraphics.circle(0, 0, 20);
-    this.bgGraphics.fill(selected ? '#F0C040' : '#D4A017');
+    this.bgGraphics.circle(0, 0, 20).fill(selected ? 0xF0C040 : 0xD4A017);
     
     // Gold border
-    this.bgGraphics.stroke({ color: selected ? '#FFFFFF' : '#B8860B', width: 2 });
+    this.bgGraphics.stroke({ color: selected ? 0xFFFFFF : 0xB8860B, width: 2 });
     
     // Outer glow effect (simplified)
     if (selected) {
-        this.bgGraphics.stroke({ color: 'rgba(240, 192, 64, 0.5)', width: 6 });
+        this.bgGraphics.stroke({ color: 0xF0C040, alpha: 0.5, width: 6 });
     }
   }
 

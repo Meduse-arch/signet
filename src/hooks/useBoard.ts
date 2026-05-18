@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useRef, useCallback } from 'react';
+import { RefObject, useEffect, useRef, useCallback, useState } from 'react';
 import * as PIXI from 'pixi.js';
 import { BoardScene } from '../pixi/BoardScene';
 import { usePeer } from './usePeer';
@@ -10,7 +10,31 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   const { onData, broadcast, sendTo, peerId } = usePeer();
   const { isHost } = usePeersStore();
   const cachedMapBuffer = useRef<{ buffer: ArrayBuffer; type: string } | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
+  const loadMap = useCallback(async (url: string, format?: string) => {
+    if (!boardRef.current) {
+      console.warn('[useBoard] Attempted to load map before board is ready');
+      return;
+    }
+    
+    console.log('[useBoard] Loading map:', url);
+    await boardRef.current.loadMap(url, format);
+
+    if (isHost && !url.startsWith('blob:')) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const buffer = await blob.arrayBuffer();
+        cachedMapBuffer.current = { buffer, type: blob.type };
+        broadcast({ type: 'MAP_READY', payload: {} });
+      } catch (e) {
+        console.error('Erreur MJ lors de la mise en cache de la map:', e);
+      }
+    }
+  }, [isHost, broadcast]);
+
+  // 1. Initialisation de Pixi (Une seule fois)
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -20,6 +44,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     let isInitialized = false;
 
     async function init() {
+      console.log('[useBoard] Initializing Pixi Application');
       app = new PIXI.Application();
       
       try {
@@ -35,7 +60,8 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         isInitialized = true;
 
         if (isDestroyed) {
-          app.destroy(true);
+          console.log('[useBoard] Init finished but already destroyed, cleaning up...');
+          app.destroy({ removeView: true, children: true });
           return;
         }
 
@@ -47,52 +73,17 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         boardRef.current = scene;
         app.stage.addChild(scene);
 
-        if (imageUrl) {
-          if (isHost) {
-            // Le MJ charge l'image directement (pas de restriction CORS dans Electron avec nos réglages)
-            await scene.loadMap(imageUrl);
-            
-            // Le MJ prépare l'image en ArrayBuffer pour l'envoyer aux joueurs plus tard
-            try {
-              const response = await fetch(imageUrl);
-              const blob = await response.blob();
-              const buffer = await blob.arrayBuffer();
-              cachedMapBuffer.current = { buffer, type: blob.type };
-              
-              // Prévenir les joueurs déjà connectés que l'image est prête (s'ils attendent)
-              broadcast({ type: 'MAP_READY', payload: {} });
-            } catch (e) {
-              console.error('Erreur MJ lors de la mise en cache de la map:', e);
-            }
-          } else {
-            // Le joueur demande l'image au MJ au lieu de la fetch lui-même
-            broadcast({ type: 'REQUEST_MAP_IMAGE', payload: { peerId } });
-          }
-        }
-
-        // ✅ Gestion des mouvements (Network Broadcast)
-        let lastBroadcast = 0;
-        scene.onTokenMove = (id, x, y) => {
-          const now = Date.now();
-          if (now - lastBroadcast > 50) { // Throttle 20fps
-            broadcast({ type: 'TOKEN_MOVE', payload: { id, x, y } });
-            lastBroadcast = now;
-          }
-          // Sauvegarder la position (seulement le host ou via un relai)
-          if (isHost && window.electronAPI && currentMapId) {
-             window.electronAPI.updateMapToken(sessionId, currentMapId, id, x, y).catch(console.error);
-          }
-        };
-
         // Resize handling
         const resizeObserver = new ResizeObserver(() => {
-          if (app && !isDestroyed) {
+          if (app && isInitialized && !isDestroyed) {
             app.renderer.resize(container!.offsetWidth, container!.offsetHeight);
             scene.x = app.screen.width / 2;
             scene.y = app.screen.height / 2;
           }
         });
         resizeObserver.observe(container!);
+
+        setIsReady(true);
 
         return () => {
           resizeObserver.disconnect();
@@ -105,14 +96,45 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     init();
 
     return () => {
+      console.log('[useBoard] Requesting destruction of Pixi Application');
       isDestroyed = true;
+      setIsReady(false);
       if (app && isInitialized) {
-        app.destroy(true);
+        app.destroy({ removeView: true, children: true });
         app = null;
       }
       boardRef.current = null;
     };
-  }, [containerRef, sessionId, currentMapId, broadcast, imageUrl, isHost, peerId]);
+  }, [containerRef]); // On ne dépend que du container
+
+  // Gestion du onTokenMove avec les IDs à jour
+  const currentMapIdRef = useRef(currentMapId);
+  useEffect(() => { currentMapIdRef.current = currentMapId; }, [currentMapId]);
+
+  useEffect(() => {
+    if (isReady && boardRef.current) {
+      boardRef.current.onTokenMove = (id, x, y) => {
+        broadcast({ type: 'TOKEN_MOVE', payload: { id, x, y } });
+        if (isHost && window.electronAPI && currentMapIdRef.current) {
+          window.electronAPI.updateMapToken(sessionId, currentMapIdRef.current, id, x, y).catch(console.error);
+        }
+      };
+    }
+  }, [isReady, isHost, sessionId, broadcast]);
+
+  // 2. Chargement initial et synchronisation
+  useEffect(() => {
+    if (!isReady) return;
+
+    if (imageUrl) {
+      if (isHost) {
+        loadMap(imageUrl);
+      } else {
+        // Le joueur demande l'image au MJ
+        broadcast({ type: 'REQUEST_MAP_IMAGE', payload: { peerId } });
+      }
+    }
+  }, [isReady, imageUrl, isHost, loadMap, broadcast, peerId]);
 
   // Networking logic for tokens & map
   useEffect(() => {
@@ -176,9 +198,17 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
   }, []);
 
-  const loadMap = useCallback((url: string, format?: string) => {
-    return boardRef.current?.loadMap(url, format);
-  }, []);
+  const getCenterView = useCallback(() => {
+    if (!boardRef.current || !containerRef.current) return { x: 0, y: 0 };
+    
+    // On calcule le centre du container en coordonnée "monde" Pixi
+    const container = containerRef.current;
+    const centerX = container.offsetWidth / 2;
+    const centerY = container.offsetHeight / 2;
+    
+    // On convertit ce point local au container vers le repère local de la scène
+    return boardRef.current.toLocal({ x: centerX, y: centerY });
+  }, [containerRef]);
 
-  return { addToken, removeToken, loadMap, clearTokens };
+  return { addToken, removeToken, loadMap, clearTokens, isReady, getCenterView };
 }
