@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Shield, Zap, Heart, Plus, Activity, Layout, Ghost } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { usePeersStore } from '../../store/peers';
@@ -22,7 +22,9 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const { broadcast } = usePeer();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState(false);
   const openWindow = useSignetStore(state => state.openWindow);
+  const isMJ = !!user && user.role >= SecurityLevel.MJ;
 
 // Trouver le personnage de l'utilisateur actuel OU celui qu'il contrôle (PNJ)
 const myCharacter = useMemo(() => {
@@ -32,6 +34,42 @@ const myCharacter = useMemo(() => {
   // Si c'est un MJ, il n'a pas de perso par défaut (sauf s'il s'en crée un explicitement avec son user_id)
   return characters.find(c => c.user_id === user?.id);
 }, [characters, controlledCharacterId, user?.id]);
+
+  // Sync token status
+  useEffect(() => {
+    if (!isMJ || !myCharacter) return;
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    
+    const askStatus = () => {
+        channel.postMessage({ type: 'GET_TOKEN_STATUS', payload: { id: myCharacter.id } });
+    };
+
+    askStatus();
+
+    channel.onmessage = (event) => {
+        const { type, payload } = event.data;
+        if (type === 'TOKEN_STATUS_RESPONSE' && payload.id === myCharacter.id) {
+            setTokenStatus(payload.isOnMap);
+        } else if (type === 'TOKEN_LIST_UPDATE') {
+            setTokenStatus(payload.tokens.includes(myCharacter.id));
+        }
+    };
+
+    const interval = setInterval(askStatus, 5000);
+    return () => {
+        clearInterval(interval);
+        channel.close();
+    };
+  }, [sessionId, isMJ, myCharacter]);
+
+  const handleToggleToken = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!myCharacter) return;
+    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+    channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: myCharacter.id } });
+    setTokenStatus(!tokenStatus);
+    channel.close();
+  };
 
   const handleCreateSave = async (data: { 
     name: string; 
@@ -98,6 +136,20 @@ if (!myCharacter) {
                <Shield className="w-8 h-8 text-gold-DEFAULT/40" />
              )}
            </div>
+           
+           {/* Token Toggle Button for controlled character (MJ Only) */}
+           {isMJ && controlledCharacterId && (
+                <button 
+                    onClick={handleToggleToken}
+                    className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-sm transition-colors z-20 ${
+                        tokenStatus
+                        ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' 
+                        : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'
+                    }`}
+                    title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
+                />
+            )}
+
            <div className="absolute -top-1 -right-1 bg-gold-DEFAULT text-black text-[10px] font-cinzel font-black px-1.5 py-0.5 rounded shadow-lg">MJ</div>
          </div>
        </div>
@@ -131,8 +183,7 @@ if (!myCharacter) {
   );
 }
 
-  const { bars, name, image_url } = myCharacter;
-  const barDefs = session?.settings?.bars || DEFAULT_BARS;
+  const { name, image_url } = myCharacter;
 
   return (
     <div className="absolute bottom-10 left-10 z-[60] pointer-events-auto group">
@@ -153,6 +204,19 @@ if (!myCharacter) {
             <span className="text-2xl font-cinzel text-gold-bright drop-shadow-md">{name.substring(0, 1).toUpperCase()}</span>
           )}
         </div>
+
+        {/* Token Toggle Button (MJ Only) */}
+        {isMJ && (
+            <button 
+                onClick={handleToggleToken}
+                className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-sm transition-colors z-20 ${
+                    tokenStatus
+                    ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' 
+                    : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'
+                }`}
+                title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
+            />
+        )}
         
         {/* Open Sheet Button Overlay */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full transition-opacity">
