@@ -1,11 +1,20 @@
+export interface ItemModifier {
+  target: 'stat' | 'bar';
+  targetId: string;
+  targetProperty?: 'value' | 'max'; // Pour les jauges (bar)
+  mode: 'flat' | 'percent' | 'dice';
+  value: number; // Valeur fixe ou pourcentage
+  formula?: string; // Formule de dés (ex: '1d6+2')
+}
+
 export interface Item {
   id: string;
   name: string;
   description: string;
   category: string;
   image_url?: string;
+  modifiers: ItemModifier[];
   effects: any[];
-  stats: any[];
 }
 
 export const itemsService = {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { SceneWindowContent, CharacterSheetContent, DiceWindowContent, BestiaryWindowContent, InventoryWindowContent } from '../../components/SignetInterface';
+import { SceneWindowContent, CharacterSheetContent, DiceWindowContent, BestiaryWindowContent, InventoryWindowContent, ItemCreationModal } from '../../components/SignetInterface';
 import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
+import { DiceRollModal } from '../../components/DiceRollModal';
 import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
@@ -211,6 +212,8 @@ useEffect(() => {
              <BestiaryWindowContent sessionId={sessionId} />
           )}
        </div>
+       <DiceRollModal />
+       <ItemCreationModal sessionId={sessionId} />
     </div>
   );
 }

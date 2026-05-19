@@ -347,10 +347,52 @@ export function CharacterSheetContent({
     );
   }
 
-  const { name = 'Inconnu', stats = {}, skills = {}, bars = {}, image_url } = character;
+  const { name = 'Inconnu', stats = {}, skills = {}, bars = {}, image_url, inventory = [] } = character;
   const statDefs = session?.settings?.stats || DEFAULT_STATS;
   const skillDefs = session?.settings?.skills || DEFAULT_SKILLS;
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
+
+  // Calculer les modificateurs d'équipement complexes
+  const itemModifiers = useMemo(() => {
+    const statsFlat: Record<string, number> = {};
+    const statsPercent: Record<string, number> = {};
+    const barsFlat: Record<string, { value: number; max: number }> = {};
+    
+    inventory.forEach((item: any) => {
+      if (item.equipped && item.modifiers) {
+        item.modifiers.forEach((m: any, idx: number) => {
+          if (m.target === 'stat') {
+            if (m.mode === 'percent') {
+              statsPercent[m.targetId] = (statsPercent[m.targetId] || 0) + m.value;
+            } else if (m.mode === 'dice') {
+              statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + (item.rolledValues?.[idx] || 0);
+            } else {
+              statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
+            }
+          } else if (m.target === 'bar') {
+            if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
+            const prop = m.targetProperty || 'max';
+            if (m.mode === 'dice') {
+               barsFlat[m.targetId][prop] += (item.rolledValues?.[idx] || 0);
+            } else {
+               barsFlat[m.targetId][prop] += m.value;
+            }
+          }
+        });
+      }
+    });
+
+    // Calculer les bonus finaux des stats
+    const statsFinal: Record<string, number> = {};
+    statDefs.forEach(s => {
+      const base = stats[s.id] || 20;
+      const flat = statsFlat[s.id] || 0;
+      const percent = statsPercent[s.id] || 0;
+      statsFinal[s.id] = flat + Math.round(base * (percent / 100));
+    });
+
+    return { stats: statsFinal, bars: barsFlat };
+  }, [inventory, stats, statDefs]);
 
   const CustomAvatarPrompt = () => {
     if (!showAvatarPrompt) return null;
@@ -389,15 +431,17 @@ export function CharacterSheetContent({
     );
   };
 
-  const handleRollStat = async (statName: string, faces: number) => {
+  const handleRollStat = async (statName: string, faces: number, statId: string) => {
     if (!character) return;
     
     const nb = Math.max(1, nbDice);
-    const mod = modifier;
+    const itemMod = itemModifiers[statId] || 0;
+    const mod = modifier + itemMod;
     const res = lancerDes(nb, faces, mod);
     
     const labelPart = `(${statName}=${faces})`;
-    const diceString = `${nb}d${labelPart}${mod !== 0 ? (mod > 0 ? '+' : '') + mod : ''}`;
+    const modStr = mod !== 0 ? (mod > 0 ? '+' : '') + mod : '';
+    const diceString = `${nb}d${labelPart}${modStr}`;
     
     const result = {
       rolls: res.rolls,
@@ -437,10 +481,12 @@ export function CharacterSheetContent({
   const renderStat = (stat: unknown) => {
     const s = stat as { id: string; name: string };
     const val = stats[s.id] || 20;
+    const itemMod = itemModifiers.stats[s.id] || 0;
+
     return (
       <div
         key={s.id}
-        onClick={() => handleRollStat(s.name, val)}
+        onClick={() => handleRollStat(s.name, val, s.id)}
         className="flex items-center justify-between flex-shrink-0 rounded-lg cursor-pointer group"
         style={{
           padding: isPopup ? '5px 8px' : '7px 12px',
@@ -457,13 +503,20 @@ export function CharacterSheetContent({
           (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)';
         }}
       >
-        <span
-          className="font-cinzel uppercase tracking-widest truncate mr-2 flex-1 min-w-0 group-hover:text-gold-bright transition-colors"
-          style={{ fontSize: isPopup ? '8px' : '10px', color: 'rgba(255,255,255,0.75)' }}
-          title={s.name}
-        >
-          {s.name}
-        </span>
+        <div className="flex flex-col flex-1 min-w-0">
+          <span
+            className="font-cinzel uppercase tracking-widest truncate group-hover:text-gold-bright transition-colors"
+            style={{ fontSize: isPopup ? '8px' : '10px', color: 'rgba(255,255,255,0.75)' }}
+            title={s.name}
+          >
+            {s.name}
+          </span>
+          {itemMod !== 0 && (
+            <span className="text-[7px] font-bold text-gold-DEFAULT/60">
+              MOD: {itemMod > 0 ? '+' : ''}{itemMod}
+            </span>
+          )}
+        </div>
         <span className="font-cinzel font-black" style={{ fontSize: isPopup ? '10px' : '13px', color: '#d4af37' }}>
           D{val}
         </span>
@@ -474,8 +527,14 @@ export function CharacterSheetContent({
   const renderBar = (bar: unknown) => {
     const b = bar as { id: string; name: string; color: string };
     const maxKey = `max${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}`;
-    const maxVal = (bars as Record<string, number>)[maxKey] || (bars as Record<string, number>)[b.id] || 1;
-    const currentVal = (bars as Record<string, number>)[b.id] || 0;
+    const itemMod = itemModifiers.bars[b.id] || { value: 0, max: 0 };
+    
+    const baseMaxVal = (bars as Record<string, number>)[maxKey] || (bars as Record<string, number>)[b.id] || 1;
+    const baseCurrentVal = (bars as Record<string, number>)[b.id] || 0;
+    
+    const maxVal = baseMaxVal + itemMod.max;
+    const currentVal = baseCurrentVal + itemMod.value;
+    
     const percent = Math.min(100, Math.max(0, (currentVal / maxVal) * 100));
 
     return (
@@ -491,7 +550,15 @@ export function CharacterSheetContent({
         }}
       >
         <div className="flex items-center justify-between mb-1 gap-2">
-          <span className="font-cinzel uppercase tracking-widest text-[8px] sm:text-[10px] truncate flex-1 min-w-0" title={b.name} style={{ color: b.color }}>{b.name}</span>
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className="font-cinzel uppercase tracking-widest text-[8px] sm:text-[10px] truncate" title={b.name} style={{ color: b.color }}>{b.name}</span>
+            {(itemMod.value !== 0 || itemMod.max !== 0) && (
+              <span className="text-[7px] font-bold opacity-50" style={{ color: b.color }}>
+                {itemMod.value !== 0 && `ACTU:${itemMod.value > 0 ? '+' : ''}${itemMod.value} `}
+                {itemMod.max !== 0 && `MAX:${itemMod.max > 0 ? '+' : ''}${itemMod.max}`}
+              </span>
+            )}
+          </div>
           <span className="font-mono font-black text-[8px] sm:text-[10px] truncate shrink-0 max-w-[50%]" title={`${Math.floor(currentVal)}/${Math.floor(maxVal)}`} style={{ color: b.color }}>{Math.floor(currentVal)}/{Math.floor(maxVal)}</span>
         </div>
         <LiquidBar percent={percent} color={b.color} height={isPopup ? 4 : 6} />

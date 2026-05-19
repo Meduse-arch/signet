@@ -25,3 +25,23 @@ export interface DiceResult {
   sender_id?: string;
   sender_name?: string;
 }
+
+export function parseAndRoll(formula: string): number {
+  try {
+    const match = formula.match(/^(\d+)?d(\d+)([\+\-]\d+)?$/i);
+    if (!match) return 0;
+    
+    const nb = parseInt(match[1]) || 1;
+    const faces = parseInt(match[2]) || 6;
+    const mod = parseInt(match[3]) || 0;
+    
+    let total = 0;
+    for (let i = 0; i < nb; i++) {
+      total += Math.floor(Math.random() * faces) + 1;
+    }
+    return total + mod;
+  } catch (e) {
+    console.error("Error parsing formula:", formula, e);
+    return 0;
+  }
+}
