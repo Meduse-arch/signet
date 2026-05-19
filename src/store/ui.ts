@@ -2,12 +2,12 @@ import { create } from 'zustand';
 
 interface UIState {
   sidebarOpen: boolean;
-  activeTab: 'library' | 'search' | 'key';
+  activeTab: 'library' | 'search' | 'key' | 'forge';
   showModal: boolean;
   showCreateModal: boolean;
   searchQuery: string;
   setSidebarOpen: (open: boolean) => void;
-  setActiveTab: (tab: 'library' | 'search' | 'key') => void;
+  setActiveTab: (tab: 'library' | 'search' | 'key' | 'forge') => void;
   setShowModal: (show: boolean) => void;
   setShowCreateModal: (show: boolean) => void;
   setSearchQuery: (query: string) => void;

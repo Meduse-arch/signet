@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SceneWindowContent, CharacterSheetContent, DiceWindowContent, BestiaryWindowContent } from '../../components/SignetInterface';
+import { SceneWindowContent, CharacterSheetContent, DiceWindowContent, BestiaryWindowContent, InventoryWindowContent } from '../../components/SignetInterface';
 import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
 import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
@@ -204,10 +204,7 @@ useEffect(() => {
           )}
 
           {type === 'assets' && (
-             <div className="flex flex-col items-center justify-center py-20 opacity-20">
-               <div className="w-12 h-12 border-2 border-dashed border-gold-DEFAULT/50 rounded-lg mb-2" />
-               <span className="text-[10px] font-cinzel">Aucun artefact</span>
-             </div>
+             <InventoryWindowContent sessionId={sessionId} />
           )}
 
           {type === 'bestiary' && (

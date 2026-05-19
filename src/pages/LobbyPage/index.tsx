@@ -4,6 +4,7 @@ import { SecurityLevel, useAuthStore } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { usePeersStore } from '../../store/peers';
 import { useCharactersStore } from '../../store/characters';
+import { useItemsStore } from '../../store/items';
 import { peerService } from '../../services/peer.service';
 import {
   addSessionPlayer,

@@ -5,7 +5,8 @@ import {
   DraggableWindow, 
   SceneWindowContent, 
   CharacterSheetContent,
-  DiceWindowContent
+  DiceWindowContent,
+  InventoryWindowContent
 } from '../../components/SignetInterface';
 import { BestiaryWindowContent } from '../../components/SignetInterface/BestiaryWindowContent';
 import { DiceRollModal } from '../../components/DiceRollModal';
@@ -233,7 +234,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
       
       {/* Player HUD en overlay permanent */}
       <div className="absolute inset-0 pointer-events-none z-[60]">
-        <PlayerHUD players={players} />
+        <PlayerHUD players={players} sessionId={sessionId} />
         <CharacterHUD sessionId={sessionId} />
       </div>
 
@@ -327,10 +328,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
           zIndex={windows.assets.zIndex}
           defaultPosition={windows.assets.position}
         >
-          <div className="flex flex-col items-center justify-center py-8 opacity-20">
-            <div className="w-12 h-12 border-2 border-dashed border-gold-DEFAULT/50 rounded-lg mb-2" />
-            <span className="text-[10px] font-cinzel">Aucun artefact</span>
-          </div>
+          <InventoryWindowContent sessionId={sessionId} />
         </DraggableWindow>
       )}
 

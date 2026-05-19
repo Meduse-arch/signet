@@ -75,7 +75,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
   };
 
   const handleCreateNewTemplate = () => {
-    let stats: Record<string, number> = {};
+    const stats: Record<string, number> = {};
     const statIds = session?.settings?.stats?.map((s: any) => s.id) || ['FOR', 'AGI', 'INT', 'CHA', 'PER'];
     statIds.forEach((id: string) => stats[id] = 10); // Neutral default
 
@@ -95,7 +95,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
   };
 
   const handleCreateNewInstance = () => {
-    let stats: Record<string, number> = {};
+    const stats: Record<string, number> = {};
     const statIds = session?.settings?.stats?.map((s: any) => s.id) || ['FOR', 'AGI', 'INT', 'CHA', 'PER'];
     statIds.forEach((id: string) => stats[id] = activeTab === 'mobs' ? 12 : activeTab === 'boss' ? 18 : 10);
 

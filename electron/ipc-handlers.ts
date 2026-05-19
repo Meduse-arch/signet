@@ -371,6 +371,46 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
 
   // --- HANDLERS MAPS (SESSION DB) ---
 
+  ipcMain.handle('items:getAll', (_, sessionId) => {
+    try {
+      const db = getSessionDb(sessionId);
+      const items = db.prepare('SELECT * FROM items').all() as any[];
+      return items.map(i => ({
+        ...i,
+        effects: i.effects ? JSON.parse(i.effects) : [],
+        stats: i.stats ? JSON.parse(i.stats) : []
+      }));
+    } catch (err) {
+      console.error('[DB] Erreur items:getAll:', err);
+      return [];
+    }
+  });
+
+  ipcMain.handle('items:add', (_, sessionId, item) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare(`
+        INSERT OR REPLACE INTO items (id, name, description, category, image_url, effects, stats)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(item.id, item.name, item.description, item.category, item.image_url, JSON.stringify(item.effects || []), JSON.stringify(item.stats || []));
+      return true;
+    } catch (err) {
+      console.error('[DB] Erreur items:add:', err);
+      return false;
+    }
+  });
+
+  ipcMain.handle('items:remove', (_, sessionId, id) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare('DELETE FROM items WHERE id = ?').run(id);
+      return true;
+    } catch (err) {
+      console.error('[DB] Erreur items:remove:', err);
+      return false;
+    }
+  });
+
   ipcMain.handle('maps:getAll', (_, sessionId) => {
     try {
       const db = getSessionDb(sessionId);

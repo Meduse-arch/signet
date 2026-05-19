@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { Plus } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';

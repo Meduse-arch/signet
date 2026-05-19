@@ -10,7 +10,8 @@ import { useSession } from '../../hooks/useSession';
 import { SecurityLevel, useAuthStore } from '../../store/auth';
 import { generateSessionKey } from '../../services/peer.service';
 import { Session } from '../../services/session.service';
-import { Search, ChevronDown, Check } from 'lucide-react';
+import { AdminItemsView } from '../../components/Admin/AdminItemsView';
+import { Search, ChevronDown, Check, Hammer } from 'lucide-react';
 
 interface HubPageProps {
   onEnterSession: (sessionId: string) => void;
@@ -208,51 +209,57 @@ export function HubPage({ onEnterSession }: HubPageProps) {
 
         <main className="flex-1 flex flex-col relative z-[5] overflow-hidden">
           <RuneCanvas />
-          
-          <header className="flex flex-col items-center justify-center px-8 py-12 relative z-10 shrink-0">
-            <div className="text-center space-y-2">
-              <h1 className="text-4xl font-black text-glow-gold text-gold-bright tracking-[0.3em] mb-2 uppercase">
-                Signet
-              </h1>
-              <div className="flex items-center justify-center gap-4">
-                <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
-                <span className="text-xs font-cinzel text-gold-DEFAULT drop-shadow-md tracking-[0.2em] uppercase italic">
-                  {filteredSessions.length} Archive{filteredSessions.length > 1 ? 's' : ''} Révélée{filteredSessions.length > 1 ? 's' : ''}
-                </span>
-                <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
-              </div>
-            </div>
-          </header>
 
-          <div className="flex-1 overflow-y-auto px-12 pb-12 relative z-10 custom-scrollbar">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full font-cinzel text-gold-DEFAULT drop-shadow-md animate-pulse tracking-widest text-[10px]">ÉVEIL DES ARCHIVES...</div>
-            ) : filteredSessions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-3xl rounded-full" />
-                  <Search className="w-16 h-16 text-gold-DEFAULT drop-shadow-md mb-4 relative z-10" />
-                </div>
-                <p className="font-serif italic text-xl text-gold-DEFAULT drop-shadow-md">Aucune rune ne correspond à votre recherche...</p>
-                <button onClick={() => {setSearchQuery(''); setActiveSystem(null); setActiveCategory('all');}} className="px-6 py-2 rounded-full border border-gold-DEFAULT/40 text-[9px] font-cinzel text-gold-bright hover:bg-gold-DEFAULT/5 tracking-[0.2em] uppercase transition-all">Retirez les filtres</button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 content-start animate-page-enter">
-                {filteredSessions.map(session => (
-                  <div key={session.id} ref={el => { if (el) sessionRefs.current.set(session.id, el); else sessionRefs.current.delete(session.id); }} className="transition-all duration-300">
-                    <SessionCard
-                      session={session}
-                      isActive={false}
-                      canEdit={isMJ && !session.isSummoned}
-                      onEdit={isMJ && !session.isSummoned ? () => setEditingSession(session) : undefined}
-                      onDelete={(isMJ && !session.isSummoned) || session.isSummoned ? () => handleDeleteSession(session) : undefined}
-                      onClick={() => onEnterSession(session.id)}
-                    />
+          {activeTab === 'forge' && isMJ ? (
+            <AdminItemsView sessionId="global" />
+          ) : (
+            <>
+              <header className="flex flex-col items-center justify-center px-8 py-12 relative z-10 shrink-0">
+                <div className="text-center space-y-2">
+                  <h1 className="text-4xl font-black text-glow-gold text-gold-bright tracking-[0.3em] mb-2 uppercase">
+                    Signet
+                  </h1>
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
+                    <span className="text-xs font-cinzel text-gold-DEFAULT drop-shadow-md tracking-[0.2em] uppercase italic">
+                      {filteredSessions.length} Archive{filteredSessions.length > 1 ? 's' : ''} Révélée{filteredSessions.length > 1 ? 's' : ''}
+                    </span>
+                    <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
                   </div>
-                ))}
+                </div>
+              </header>
+
+              <div className="flex-1 overflow-y-auto px-12 pb-12 relative z-10 custom-scrollbar">
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full font-cinzel text-gold-DEFAULT drop-shadow-md animate-pulse tracking-widest text-[10px]">ÉVEIL DES ARCHIVES...</div>
+                ) : filteredSessions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-3xl rounded-full" />
+                      <Search className="w-16 h-16 text-gold-DEFAULT drop-shadow-md mb-4 relative z-10" />
+                    </div>
+                    <p className="font-serif italic text-xl text-gold-DEFAULT drop-shadow-md">Aucune rune ne correspond à votre recherche...</p>
+                    <button onClick={() => {setSearchQuery(''); setActiveSystem(null); setActiveCategory('all');}} className="px-6 py-2 rounded-full border border-gold-DEFAULT/40 text-[9px] font-cinzel text-gold-bright hover:bg-gold-DEFAULT/5 tracking-[0.2em] uppercase transition-all">Retirez les filtres</button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 content-start animate-page-enter">
+                    {filteredSessions.map(session => (
+                      <div key={session.id} ref={el => { if (el) sessionRefs.current.set(session.id, el); else sessionRefs.current.delete(session.id); }} className="transition-all duration-300">
+                        <SessionCard
+                          session={session}
+                          isActive={false}
+                          canEdit={isMJ && !session.isSummoned}
+                          onEdit={isMJ && !session.isSummoned ? () => setEditingSession(session) : undefined}
+                          onDelete={(isMJ && !session.isSummoned) || session.isSummoned ? () => handleDeleteSession(session) : undefined}
+                          onClick={() => onEnterSession(session.id)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </main>
       </div>
 

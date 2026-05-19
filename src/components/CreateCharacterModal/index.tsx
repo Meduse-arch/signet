@@ -153,7 +153,7 @@ export function CreateCharacterModal({
         });
         
         // Évaluation sécurisée (limitée aux maths de base)
-        // eslint-disable-next-line no-eval
+         
         const val = eval(expr); 
         results[bar.id] = Math.floor(val);
         results[`max${bar.id.charAt(0).toUpperCase()}${bar.id.slice(1)}`] = Math.floor(val);

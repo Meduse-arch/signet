@@ -61,7 +61,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
 
         if (isDestroyed) {
           console.log('[useBoard] Init finished but already destroyed, cleaning up...');
-          app.destroy({ removeView: true, children: true });
+          app.destroy({ removeView: true });
           return;
         }
 
@@ -100,7 +100,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       isDestroyed = true;
       setIsReady(false);
       if (app && isInitialized) {
-        app.destroy({ removeView: true, children: true });
+        app.destroy({ removeView: true });
         app = null;
       }
       boardRef.current = null;
