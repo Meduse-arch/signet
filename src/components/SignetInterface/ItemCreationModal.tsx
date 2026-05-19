@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Hammer, Package, Plus, X, Minus } from 'lucide-react';
+import { Hammer, Package, Plus, X, Minus, Sparkles, Sword, Shield, Gem, FlaskConical, Save } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
 import { useItemsStore } from '../../store/items';
 import { useCharactersStore } from '../../store/characters';
@@ -14,7 +14,14 @@ interface ItemCreationModalProps {
   sessionId: string;
 }
 
-const CATEGORIES = ['Arme', 'Armure', 'Consommable', 'Artéfact', 'Divers'];
+const CATEGORIES = [
+  { id: 'Arme', icon: Sword },
+  { id: 'Armure', icon: Shield },
+  { id: 'Consommable', icon: FlaskConical },
+  { id: 'Artéfact', icon: Sparkles },
+  { id: 'Bijou', icon: Gem },
+  { id: 'Divers', icon: Package }
+];
 
 export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
   const { showCreateModal, itemCreationType, itemCreationCharacterId, setShowCreateModal } = useUIStore();
@@ -62,7 +69,6 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
     const updated = [...modifiers];
     updated[index] = { ...updated[index], ...updates } as ItemModifier;
     
-    // Default values when switching target
     if (updates.target === 'bar') {
       updated[index].targetId = barDefs[0]?.id || '';
       updated[index].targetProperty = 'max';
@@ -111,65 +117,102 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in zoom-in duration-200">
-      <div className="bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-xl p-5 w-full max-w-sm shadow-[0_0_50px_rgba(212,175,55,0.25)] flex flex-col gap-4">
-        <div className="flex justify-between items-center border-b border-white/10 pb-2">
-          <h3 className="text-xs font-cinzel font-bold text-gold-DEFAULT uppercase tracking-widest flex items-center gap-2">
-            {itemCreationType === 'forge' ? <><Hammer size={14} /> FORGER (ARCHIVES)</> : <><Package size={14} /> NOUVEL OBJET (INVENTAIRE)</>}
-          </h3>
-          <button onClick={handleClose} className="text-white/40 hover:text-white transition-colors">
-            <X size={16} />
+    <div className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="bg-[#0D0D0F] border border-gold-DEFAULT/40 rounded-2xl w-full max-w-lg shadow-[0_0_80px_rgba(212,175,55,0.15)] flex flex-col overflow-hidden">
+        
+        {/* Header Noble */}
+        <div className="bg-gradient-to-r from-gold-DEFAULT/20 to-transparent p-6 border-b border-white/5 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+              {itemCreationType === 'forge' ? <Hammer size={24} /> : <Package size={24} />}
+            </div>
+            <div>
+              <h3 className="text-xl font-cinzel font-black text-white uppercase tracking-widest leading-tight">
+                {itemCreationType === 'forge' ? "FORGER UNE RELIQUE" : "NOUVEL ARTEFACT"}
+              </h3>
+              <p className="text-[10px] font-cinzel text-gold-DEFAULT/60 uppercase tracking-[0.2em]">
+                {itemCreationType === 'forge' ? "Archives Éternelles" : "Inventaire du Voyageur"}
+              </p>
+            </div>
+          </div>
+          <button onClick={handleClose} className="p-2 rounded-full hover:bg-white/5 text-white/40 hover:text-white transition-all">
+            <X size={20} />
           </button>
         </div>
-        
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-2">
-            <input 
-              type="text" 
-              placeholder="Nom de l'objet" 
-              value={name} 
-              onChange={e => setName(e.target.value)} 
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 focus:border-gold-DEFAULT/50 outline-none" 
-              autoFocus 
-            />
-            <select 
-              value={category} 
-              onChange={e => setCategory(e.target.value)} 
-              className="w-1/3 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 outline-none"
-            >
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+
+        <div className="p-8 flex flex-col gap-6 overflow-y-auto custom-scrollbar max-h-[70vh]">
+          {/* Main Info */}
+          <div className="grid grid-cols-1 gap-6">
+            <div className="flex flex-col gap-2">
+              <label className="text-[9px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Dénomination</label>
+              <input 
+                type="text" 
+                placeholder="Nom de l'objet..." 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:border-gold-DEFAULT/50 focus:bg-white/10 outline-none transition-all shadow-inner" 
+                autoFocus 
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[9px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Nature de l'objet</label>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map(c => (
+                  <button 
+                    key={c.id} 
+                    onClick={() => setCategory(c.id)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border font-cinzel text-[10px] font-bold transition-all ${category === c.id ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT shadow-[0_0_10px_rgba(212,175,55,0.3)]' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white'}`}
+                  >
+                    <c.icon size={14} />
+                    {c.id.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[9px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Légende & Description</label>
+              <textarea 
+                placeholder="Racontez l'histoire de cet objet..." 
+                value={description} 
+                onChange={e => setDescription(e.target.value)} 
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/80 placeholder:text-white/20 focus:border-gold-DEFAULT/50 focus:bg-white/10 outline-none transition-all resize-none h-24 shadow-inner custom-scrollbar" 
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[9px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Apparence (URL Image)</label>
+              <input 
+                type="text" 
+                placeholder="https://..." 
+                value={imageUrl} 
+                onChange={e => setImageUrl(e.target.value)} 
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:border-gold-DEFAULT/50 focus:bg-white/10 outline-none transition-all shadow-inner" 
+              />
+            </div>
           </div>
-          <textarea 
-            placeholder="Description" 
-            value={description} 
-            onChange={e => setDescription(e.target.value)} 
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 focus:border-gold-DEFAULT/50 outline-none resize-none h-20" 
-          />
-          <input 
-            type="text" 
-            placeholder="URL de l'image (optionnel)" 
-            value={imageUrl} 
-            onChange={e => setImageUrl(e.target.value)} 
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 focus:border-gold-DEFAULT/50 outline-none" 
-          />
           
-          <div className="flex flex-col gap-2 mt-1">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-cinzel text-gold-DEFAULT/60 uppercase tracking-widest">Modificateurs</span>
-              <button onClick={addModifier} className="p-1 rounded bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20 transition-all">
-                <Plus size={12} />
+          {/* Modifiers Section */}
+          <div className="flex flex-col gap-4 mt-2">
+            <div className="flex justify-between items-center border-b border-gold-DEFAULT/20 pb-2">
+              <div className="flex flex-col">
+                <span className="text-xs font-cinzel font-black text-gold-DEFAULT uppercase tracking-widest">Enchantements</span>
+                <span className="text-[8px] font-cinzel text-white/30 uppercase">Propriétés magiques et bonus</span>
+              </div>
+              <button onClick={addModifier} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20 border border-gold-DEFAULT/30 transition-all font-cinzel text-[10px] font-black">
+                <Plus size={14} /> AJOUTER
               </button>
             </div>
             
-            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+            <div className="flex flex-col gap-3">
               {modifiers.map((m, i) => (
-                <div key={i} className="flex flex-col gap-2 p-2 bg-white/5 border border-white/10 rounded-lg animate-in slide-in-from-left-1 duration-200">
-                  <div className="flex gap-2">
+                <div key={i} className="flex flex-col gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl animate-in slide-in-from-left-2 duration-300 relative group">
+                  <div className="flex gap-3">
                     <select 
                       value={m.target} 
                       onChange={e => updateModifier(i, { target: e.target.value as any })}
-                      className="w-20 bg-black/40 border border-white/10 rounded px-2 py-1 text-[9px] text-gold-DEFAULT/80 outline-none"
+                      className="flex-1 bg-black/60 border border-gold-DEFAULT/30 rounded-xl px-3 py-2 text-[10px] text-gold-DEFAULT font-cinzel font-black outline-none appearance-none cursor-pointer text-center"
                     >
                       <option value="stat">ATTRIBUT</option>
                       <option value="bar">RESSOURCE</option>
@@ -178,74 +221,83 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                     <select 
                       value={m.targetId} 
                       onChange={e => updateModifier(i, { targetId: e.target.value })}
-                      className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-[9px] text-white/80 outline-none"
+                      className="flex-[2] bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] text-white/80 font-cinzel outline-none appearance-none cursor-pointer"
                     >
                       {m.target === 'stat' ? (
-                        statDefs.map(s => <option key={s.id} value={s.id}>{s.name}</option>)
+                        statDefs.map(s => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)
                       ) : (
-                        barDefs.map(b => <option key={b.id} value={b.id}>{b.name}</option>)
+                        barDefs.map(b => <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>)
                       )}
                     </select>
-                    
-                    <button onClick={() => removeModifier(i)} className="text-red-500/50 hover:text-red-500 transition-colors">
-                      <Minus size={14} />
-                    </button>
                   </div>
 
-                  <div className="flex gap-2 items-center">
+                  <div className="flex gap-3 items-center">
                     {m.target === 'bar' && (
                       <select 
                         value={m.targetProperty} 
                         onChange={e => updateModifier(i, { targetProperty: e.target.value as any })}
-                        className="w-16 bg-black/40 border border-white/10 rounded px-2 py-1 text-[9px] text-white/60 outline-none"
+                        className="flex-1 bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] text-white/50 font-cinzel outline-none appearance-none cursor-pointer text-center"
                       >
                         <option value="max">MAX</option>
-                        <option value="value">ACTU</option>
+                        <option value="value">ACTUEL</option>
                       </select>
                     )}
                     
                     <select 
                       value={m.mode} 
                       onChange={e => updateModifier(i, { mode: e.target.value as any })}
-                      className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-[9px] text-white/60 outline-none"
+                      className="flex-[2] bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] text-white/50 font-cinzel outline-none appearance-none cursor-pointer text-center"
                     >
                       <option value="flat">FIXE (+/-)</option>
                       <option value="percent">POURCENT (%)</option>
-                      <option value="dice">DÉ (À L'ÉQUIP.)</option>
+                      <option value="dice">JET DE DÉS</option>
                     </select>
 
-                    {m.mode === 'dice' ? (
-                      <input 
-                        type="text" 
-                        placeholder="1d6+2"
-                        value={m.formula || ''} 
-                        onChange={e => updateModifier(i, { formula: e.target.value })}
-                        className="w-20 bg-black/40 border border-white/10 rounded px-2 py-1 text-[9px] text-white text-center outline-none placeholder:text-white/20"
-                      />
-                    ) : (
-                      <input 
-                        type="number" 
-                        value={m.value} 
-                        onChange={e => updateModifier(i, { value: parseInt(e.target.value) || 0 })}
-                        className="w-16 bg-black/40 border border-white/10 rounded px-2 py-1 text-[9px] text-white text-center outline-none"
-                      />
-                    )}
+                    <div className="flex-1">
+                      {m.mode === 'dice' ? (
+                        <input 
+                          type="text" 
+                          placeholder="1d6+2"
+                          value={m.formula || ''} 
+                          onChange={e => updateModifier(i, { formula: e.target.value })}
+                          className="w-full bg-white/10 border border-gold-DEFAULT/30 rounded-xl px-2 py-2 text-[10px] text-white text-center font-mono outline-none focus:border-gold-DEFAULT"
+                        />
+                      ) : (
+                        <input 
+                          type="number" 
+                          value={m.value} 
+                          onChange={e => updateModifier(i, { value: parseInt(e.target.value) || 0 })}
+                          className="w-full bg-white/10 border border-gold-DEFAULT/30 rounded-xl px-2 py-2 text-[10px] text-white text-center font-mono outline-none focus:border-gold-DEFAULT"
+                        />
+                      )}
+                    </div>
                   </div>
+
+                  <button onClick={() => removeModifier(i)} className="absolute -top-2 -right-2 p-1.5 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X size={12} />
+                  </button>
                 </div>
               ))}
               {modifiers.length === 0 && (
-                <span className="text-[9px] text-white/20 italic text-center py-2">Aucun modificateur</span>
+                <div className="flex flex-col items-center justify-center py-8 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
+                  <span className="text-[10px] font-cinzel text-white/20 italic uppercase tracking-widest text-center px-8">Cet objet ne possède aucun enchantement particulier...</span>
+                </div>
               )}
             </div>
           </div>
         </div>
         
-        <button 
-          onClick={handleSubmit} 
-          className="w-full py-2.5 bg-gold-DEFAULT text-black text-[10px] font-cinzel font-bold tracking-widest rounded-lg hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all flex justify-center items-center gap-2 mt-2"
-        >
-          <Plus size={14} /> {itemCreationType === 'forge' ? "CRÉER DANS LES ARCHIVES" : "AJOUTER AU COFFRE"}
-        </button>
+        {/* Footer / Save Button */}
+        <div className="p-8 pt-4 border-t border-white/5 bg-black/40">
+          <button 
+            onClick={handleSubmit} 
+            disabled={!name.trim()}
+            className="w-full py-4 bg-gold-DEFAULT text-black text-xs font-cinzel font-black tracking-[0.3em] rounded-xl hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] disabled:opacity-20 disabled:grayscale transition-all flex justify-center items-center gap-3"
+          >
+            <Save size={18} />
+            {itemCreationType === 'forge' ? "INSCRIRE DANS LES ARCHIVES" : "LIER À L'INVENTAIRE"}
+          </button>
+        </div>
       </div>
     </div>
   );

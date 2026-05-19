@@ -7,3 +7,4 @@ export * from './BestiaryWindowContent';
 export { LancerDes as DiceWindowContent } from './DiceWindowContent';
 export * from './InventoryWindowContent';
 export * from './ItemCreationModal';
+export * from './ItemDetailModal';

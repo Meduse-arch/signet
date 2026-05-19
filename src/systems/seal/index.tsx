@@ -7,7 +7,8 @@ import {
   CharacterSheetContent,
   DiceWindowContent,
   InventoryWindowContent,
-  ItemCreationModal
+  ItemCreationModal,
+  ItemDetailModal
 } from '../../components/SignetInterface';
 import { BestiaryWindowContent } from '../../components/SignetInterface/BestiaryWindowContent';
 import { DiceRollModal } from '../../components/DiceRollModal';
@@ -365,6 +366,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
 
       <DiceRollModal />
       <ItemCreationModal sessionId={sessionId} />
+      <ItemDetailModal sessionId={sessionId} />
       </div>
       );
 }

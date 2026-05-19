@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SceneWindowContent, CharacterSheetContent, DiceWindowContent, BestiaryWindowContent, InventoryWindowContent, ItemCreationModal } from '../../components/SignetInterface';
+import { SceneWindowContent, CharacterSheetContent, DiceWindowContent, BestiaryWindowContent, InventoryWindowContent, ItemCreationModal, ItemDetailModal } from '../../components/SignetInterface';
 import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { usePeer } from '../../hooks/usePeer';
@@ -214,6 +214,7 @@ useEffect(() => {
        </div>
        <DiceRollModal />
        <ItemCreationModal sessionId={sessionId} />
+       <ItemDetailModal sessionId={sessionId} />
     </div>
   );
 }
