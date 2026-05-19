@@ -171,8 +171,8 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                       onChange={e => updateModifier(i, { target: e.target.value as any })}
                       className="w-20 bg-black/40 border border-white/10 rounded px-2 py-1 text-[9px] text-gold-DEFAULT/80 outline-none"
                     >
-                      <option value="stat">STAT</option>
-                      <option value="bar">JAUGÉ</option>
+                      <option value="stat">ATTRIBUT</option>
+                      <option value="bar">RESSOURCE</option>
                     </select>
                     
                     <select 

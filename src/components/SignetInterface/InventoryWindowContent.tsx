@@ -156,15 +156,6 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
             className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl py-2 pl-9 pr-4 text-[10px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-all"
           />
         </div>
-        {effectiveTab === 'inventory' && isMJ && (
-          <button 
-            onClick={openInventoryModal}
-            className="px-3 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center"
-            title="Créer un objet directement dans l'inventaire"
-          >
-            <Plus size={16} />
-          </button>
-        )}
         {effectiveTab === 'forge' && isMJ && (
           <button 
             onClick={openForgeModal}
