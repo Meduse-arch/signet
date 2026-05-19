@@ -6,6 +6,7 @@ import { usePeer } from '../../hooks/usePeer';
 import { Ghost, User, Plus, Search, Trash2, Shield, Heart, Zap, Settings, Sword, Skull, BookOpen, X, ChevronRight } from 'lucide-react';
 import { addSessionCharacter, updateSessionCharacter, removeSessionCharacter, Character } from '../../services/characters.service';
 import { CreateCharacterModal } from '../CreateCharacterModal';
+import { ManageCharacterModal } from './ManageCharacterModal';
 import { CharacterSheetContent } from './CharacterSheetContent';
 
 interface BestiaryWindowContentProps {
@@ -27,6 +28,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
   const [creationMode, setCreationMode] = useState<'manual' | 'roll'>('roll');
   const [tokenStatus, setTokenStatus] = useState<Record<string, boolean>>({});
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
+  const [managingCharId, setManagingCharId] = useState<string | null>(null);
 
   // Écouter le status des tokens depuis le Board
   useEffect(() => {
@@ -341,9 +343,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                     <button 
                       onClick={(e) => { 
                         e.stopPropagation();
-                        setEditingNPC(npc); 
-                        setCreationMode('manual');
-                        setShowCreateModal(true); 
+                        setManagingCharId(npc.id);
                       }}
                       className="p-2 rounded-lg bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 transition-colors shadow-lg"
                       title="Configurer"
@@ -453,6 +453,14 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
           initialMode={creationMode}
           title={editingNPC ? (editingNPC.is_template ? "Façonner le Modèle" : "Façonner l'Entité") : (activeTab === 'templates' ? "Éveiller un Nouveau Modèle" : "Éveiller une Entité")}
           settings={session?.settings}
+        />
+      )}
+
+      {managingCharId && (
+        <ManageCharacterModal 
+          sessionId={sessionId}
+          characterId={managingCharId}
+          onClose={() => setManagingCharId(null)}
         />
       )}
     </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
@@ -32,8 +33,8 @@ export function ItemDetailModal({ sessionId }: { sessionId: string }) {
     setSelectedItem({ ...selectedItem, equipped: !selectedItem.equipped });
   };
 
-  return (
-    <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-2xl w-full max-w-sm shadow-[0_0_50px_rgba(212,175,55,0.2)] overflow-hidden flex flex-col relative h-[70vh]">
         <button 
           onClick={() => setSelectedItem(null)} 
@@ -51,4 +52,6 @@ export function ItemDetailModal({ sessionId }: { sessionId: string }) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
