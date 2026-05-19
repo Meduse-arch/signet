@@ -22,6 +22,7 @@ import { Sparkles } from 'lucide-react';
 import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
+import { useItemsStore } from '../../store/items';
 import { getSessionCharacters, addSessionCharacter, Character } from '../../services/characters.service';
 import { getSessionMaps, addSessionMap, removeSessionMap } from '../../services/maps.service';
 
@@ -41,14 +42,16 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
   const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
   const setCharacters = useCharactersStore(state => state.setCharacters);
   const initChars = useCharactersStore(state => state.initialize);
+  const initItems = useItemsStore(state => state.initialize);
   
   const { broadcast, onData } = usePeer();
   const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
 
-  // Initialiser les personnages depuis le storage local (important pour les clients)
+  // Initialiser les personnages et objets depuis le storage local (important pour les clients)
   useEffect(() => {
     initChars(sessionId);
-  }, [sessionId, initChars]);
+    initItems(sessionId);
+  }, [sessionId, initChars, initItems]);
 
   // Charger les personnages initiaux (seulement si Hôte/Electron)
   useEffect(() => {
@@ -278,7 +281,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
           onPositionChange={(x, y) => updatePosition('bestiary', x, y)}
           zIndex={windows.bestiary.zIndex}
           defaultPosition={windows.bestiary.position}
-          className="w-[400px]"
+          variant="codex"
         >
           <BestiaryWindowContent sessionId={sessionId} />
         </DraggableWindow>
@@ -329,6 +332,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
           onPositionChange={(x, y) => updatePosition('assets', x, y)}
           zIndex={windows.assets.zIndex}
           defaultPosition={windows.assets.position}
+          variant="codex"
         >
           <InventoryWindowContent sessionId={sessionId} />
         </DraggableWindow>

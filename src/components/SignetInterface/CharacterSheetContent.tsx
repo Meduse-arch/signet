@@ -13,6 +13,7 @@ import { addSessionLog } from '../../services/db.service';
 interface CharacterSheetContentProps {
   sessionId: string;
   variant?: 'popup' | 'window';
+  forceCharacterId?: string;
 }
 
 // ─── Liquid Glass panel wrapper ───────────────────────────────────────────────
@@ -226,6 +227,7 @@ function SnapColumn({
 export function CharacterSheetContent({
   sessionId,
   variant = 'popup',
+  forceCharacterId,
 }: CharacterSheetContentProps) {
   const user = useAuthStore(state => state.user);
   const characters = useCharactersStore(state => state.characters);
@@ -253,11 +255,14 @@ export function CharacterSheetContent({
 
   const { controlledCharacterId } = useCharactersStore();
   const character = useMemo(() => {
+    if (forceCharacterId) {
+      return characters.find(c => c.id === forceCharacterId);
+    }
     if (controlledCharacterId) {
       return characters.find(c => c.id === controlledCharacterId);
     }
     return characters.find(c => c.user_id === user?.id);
-  }, [characters, controlledCharacterId, user?.id]);
+  }, [characters, controlledCharacterId, user?.id, forceCharacterId]);
 
   const handleAvatarClick = () => {
     if (!character) return;

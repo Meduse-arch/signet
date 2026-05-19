@@ -6,6 +6,7 @@ import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
+import { useItemsStore } from '../../store/items';
 import { getSessionPlayers } from '../../services/session.service';
 import { getSessionMaps, addSessionMap } from '../../services/maps.service';
 import { getSessionCharacters } from '../../services/characters.service';
@@ -23,6 +24,7 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
   const user = useAuthStore(state => state.user);
   const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
   const initChars = useCharactersStore(state => state.initialize);
+  const initItems = useItemsStore(state => state.initialize);
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   
   // Call useSession to make sure the session store is populated
@@ -32,10 +34,11 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
   const [maps, setMaps] = useState<MapItem[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('');
 
-  // Initialisation des données personnages depuis le storage
+  // Initialisation des données personnages et objets depuis le storage
   useEffect(() => {
     initChars(sessionId);
-  }, [sessionId, initChars]);
+    initItems(sessionId);
+  }, [sessionId, initChars, initItems]);
 
   // Initialisation P2P pour rester synchronisé
   useEffect(() => {

@@ -10,6 +10,7 @@ interface UIState {
   selectedItem: any | null;
   itemDetailOpen: boolean;
   searchQuery: string;
+  viewMode: 'grid' | 'codex';
   setSidebarOpen: (open: boolean) => void;
   setActiveTab: (tab: 'library' | 'search' | 'key' | 'forge') => void;
   setShowModal: (show: boolean) => void;
@@ -17,6 +18,7 @@ interface UIState {
   setSelectedItem: (item: any | null) => void;
   setItemDetailOpen: (open: boolean) => void;
   setSearchQuery: (query: string) => void;
+  setViewMode: (mode: 'grid' | 'codex') => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -29,6 +31,7 @@ export const useUIStore = create<UIState>((set) => ({
   selectedItem: null,
   itemDetailOpen: false,
   searchQuery: '',
+  viewMode: 'grid',
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setShowModal: (show) => set({ showModal: show }),
@@ -40,4 +43,5 @@ export const useUIStore = create<UIState>((set) => ({
   setSelectedItem: (item) => set({ selectedItem: item, itemDetailOpen: !!item }),
   setItemDetailOpen: (open) => set({ itemDetailOpen: open }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setViewMode: (mode) => set({ viewMode: mode }),
 }));
