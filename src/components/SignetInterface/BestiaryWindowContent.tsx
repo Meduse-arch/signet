@@ -264,19 +264,6 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                 {controlledCharacterId === npc.id && (
                   <div className="absolute inset-0 bg-gold-bright/20 animate-pulse" />
                 )}
-
-                {/* Token Toggle Button on Portrait */}
-                {isMJ && !npc.is_template && (
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleToggleToken(npc.id); }}
-                    className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-[#0D0D0F] shadow-sm transition-colors ${
-                        tokenStatus[npc.id]
-                          ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' 
-                          : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
-                      }`}
-                    title={tokenStatus[npc.id] ? "Retirer de la carte" : "Placer sur la carte"}
-                  />
-                )}
               </div>
 
               <div className="flex-1 min-w-0">
@@ -314,6 +301,19 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
               </div>
 
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                {isMJ && !npc.is_template && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleToggleToken(npc.id); }}
+                    className={`p-2 rounded-lg transition-all flex items-center justify-center ${
+                        tokenStatus[npc.id]
+                          ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
+                          : 'bg-white/5 text-white/20 hover:bg-white/10 hover:text-white/40'
+                      }`}
+                    title={tokenStatus[npc.id] ? "Bannir la figurine du plateau" : "Invoquer sur le plateau"}
+                  >
+                    <Plus size={14} className={`transition-transform duration-500 ${tokenStatus[npc.id] ? 'rotate-45' : ''}`} />
+                  </button>
+                )}
                 {!npc.is_template && (
                   <button 
                     onClick={() => setPnjControle(controlledCharacterId === npc.id ? null : npc.id)}

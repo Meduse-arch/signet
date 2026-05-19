@@ -523,9 +523,15 @@ export function CharacterSheetContent({
               </div>
               <button 
                 onClick={toggleTokenPlacement}
-                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-[#0D0D0F] shadow-sm transition-colors ${isTokenOnMap ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'}`}
+                className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all flex items-center justify-center ${
+                    isTokenOnMap 
+                        ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
+                        : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
+                }`}
                 title={isTokenOnMap ? "Retirer de la carte" : "Placer sur la carte"}
-              />
+              >
+                <Plus size={12} className={`transition-transform duration-500 ${isTokenOnMap ? 'rotate-45' : ''}`} />
+              </button>
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-[10px] font-cinzel font-black text-gold-bright truncate uppercase tracking-widest" title={name}>{name}</h2>

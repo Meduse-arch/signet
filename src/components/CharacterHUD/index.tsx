@@ -209,13 +209,15 @@ if (!myCharacter) {
         {isMJ && (
             <button 
                 onClick={handleToggleToken}
-                className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-sm transition-colors z-20 ${
+                className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
                     tokenStatus
-                    ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' 
-                    : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'
+                    ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
+                    : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
                 }`}
                 title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
-            />
+            >
+                <Plus size={12} className={`transition-transform duration-500 ${tokenStatus ? 'rotate-45' : ''}`} />
+            </button>
         )}
         
         {/* Open Sheet Button Overlay */}

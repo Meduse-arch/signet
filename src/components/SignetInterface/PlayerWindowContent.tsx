@@ -47,10 +47,16 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
         const { type, payload } = event.data;
         if (type === 'TOKEN_STATUS_RESPONSE') {
             setTokenStatus(prev => ({ ...prev, [payload.id]: payload.isOnMap }));
+        } else if (type === 'TOKEN_LIST_UPDATE') {
+            const newStatus: Record<string, boolean> = {};
+            characters.forEach(c => {
+                newStatus[c.id] = payload.tokens.includes(c.id);
+            });
+            setTokenStatus(newStatus);
         }
     };
 
-    const interval = setInterval(askStatus, 2000);
+    const interval = setInterval(askStatus, 5000);
 
     return () => {
         clearInterval(interval);
@@ -127,13 +133,15 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
                 {isMJ && char && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); handleToggleToken(char.id); }}
-                        className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-sm transition-colors ${
+                        className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all flex items-center justify-center ${
                             tokenStatus[char.id]
-                            ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' 
-                            : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'
+                            ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
+                            : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
                         }`}
-                        title={tokenStatus[char.id] ? "Retirer de la carte" : "Placer sur la carte"}
-                    />
+                        title={tokenStatus[char.id] ? "Bannir la figurine du plateau" : "Invoquer sur le plateau"}
+                    >
+                        <Plus size={12} className={`transition-transform duration-500 ${tokenStatus[char.id] ? 'rotate-45' : ''}`} />
+                    </button>
                 )}
             </div>
 
@@ -276,13 +284,15 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
                     {isMJ && char && (
                         <div 
                             onClick={(e) => { e.stopPropagation(); handleToggleToken(char.id); }}
-                            className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-[#0D0D0F] shadow-sm transition-colors ${
+                            className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all flex items-center justify-center ${
                                 tokenStatus[char.id]
-                                ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' 
-                                : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
+                                ? 'bg-gold-DEFAULT text-black shadow-[0_0_10px_rgba(212,175,55,0.4)]' 
+                                : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
                             }`}
-                            title={tokenStatus[char.id] ? "Retirer de la carte" : "Placer sur la carte"}
-                        />
+                            title={tokenStatus[char.id] ? "Bannir la figurine du plateau" : "Invoquer sur le plateau"}
+                        >
+                            <Plus size={8} className={`transition-transform duration-500 ${tokenStatus[char.id] ? 'rotate-45' : ''}`} />
+                        </div>
                     )}
                 </div>
                 <div className="flex flex-col min-w-0 flex-1">

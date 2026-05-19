@@ -2,6 +2,7 @@ import { usePeersStore } from '../../store/peers';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useCharactersStore } from '../../store/characters';
 import { useState, useEffect } from 'react';
+import { Plus } from 'lucide-react';
 
 interface Player {
   peer_id: string;
@@ -89,13 +90,15 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
           {isMJ && selfChar && (
             <button 
                 onClick={() => handleToggleToken(selfChar.id)}
-                className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border border-[#0D0D0F] shadow-sm transition-colors z-20 ${
+                className={`absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
                     tokenStatus[selfChar.id]
-                    ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' 
-                    : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
+                        ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
+                        : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
                 }`}
                 title={tokenStatus[selfChar.id] ? "Retirer votre figurine du plateau" : "Placer votre figurine sur la carte"}
-            />
+            >
+                <Plus size={10} className={`transition-transform duration-500 ${tokenStatus[selfChar.id] ? 'rotate-45' : ''}`} />
+            </button>
           )}
 
           {/* Online indicator (Bottom Right) - Restored */}
@@ -144,13 +147,15 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
                 {isMJ && char && (
                     <button 
                         onClick={() => handleToggleToken(char.id)}
-                        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border border-[#0D0D0F] shadow-sm transition-colors ${
+                        className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
                             tokenStatus[char.id]
-                            ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]' 
-                            : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]'
+                                ? 'bg-gold-DEFAULT text-black shadow-[0_0_10px_rgba(212,175,55,0.4)]' 
+                                : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
                         }`}
                         title={tokenStatus[char.id] ? "Retirer de la carte" : "Placer sur la carte"}
-                    />
+                    >
+                        <Plus size={8} className={`transition-transform duration-500 ${tokenStatus[char.id] ? 'rotate-45' : ''}`} />
+                    </button>
                 )}
 
                 {!isMJ && (
