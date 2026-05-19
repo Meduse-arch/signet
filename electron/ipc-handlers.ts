@@ -85,7 +85,7 @@ function getSessionDb(sessionId: string): Database.Database {
           category TEXT,
           image_url TEXT,
           effects TEXT,
-          stats TEXT
+          modifiers TEXT
         );
 
         CREATE TABLE IF NOT EXISTS maps (
@@ -141,6 +141,12 @@ function getSessionDb(sessionId: string): Database.Database {
       }
       if (!charTableInfo.some(col => col.name === 'is_template')) {
         db.exec('ALTER TABLE characters ADD COLUMN is_template INTEGER DEFAULT 0');
+      }
+
+      const itemTableInfo = db.prepare("PRAGMA table_info(items)").all() as any[];
+      if (!itemTableInfo.some(col => col.name === 'modifiers')) {
+        console.log(`[DB] Migration: Ajout de la colonne modifiers à la table items pour la session ${sessionId}`);
+        db.exec('ALTER TABLE items ADD COLUMN modifiers TEXT');
       }
       
       initializedDbs.add(dbPath);
@@ -378,7 +384,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       return items.map(i => ({
         ...i,
         effects: i.effects ? JSON.parse(i.effects) : [],
-        stats: i.stats ? JSON.parse(i.stats) : []
+        modifiers: i.modifiers ? JSON.parse(i.modifiers) : []
       }));
     } catch (err) {
       console.error('[DB] Erreur items:getAll:', err);
@@ -390,9 +396,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     try {
       const db = getSessionDb(sessionId);
       db.prepare(`
-        INSERT OR REPLACE INTO items (id, name, description, category, image_url, effects, stats)
+        INSERT OR REPLACE INTO items (id, name, description, category, image_url, effects, modifiers)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(item.id, item.name, item.description, item.category, item.image_url, JSON.stringify(item.effects || []), JSON.stringify(item.stats || []));
+      `).run(item.id, item.name, item.description, item.category, item.image_url, JSON.stringify(item.effects || []), JSON.stringify(item.modifiers || []));
       return true;
     } catch (err) {
       console.error('[DB] Erreur items:add:', err);

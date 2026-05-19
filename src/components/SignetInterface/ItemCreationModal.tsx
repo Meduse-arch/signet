@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Hammer, Package, Plus, X, Minus, Sparkles, Sword, Shield, Gem, FlaskConical, Save } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
 import { useItemsStore } from '../../store/items';
@@ -24,7 +24,7 @@ const CATEGORIES = [
 ];
 
 export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
-  const { showCreateModal, itemCreationType, itemCreationCharacterId, setShowCreateModal } = useUIStore();
+  const { showCreateModal, itemCreationType, itemCreationCharacterId, setShowCreateModal, itemToEdit } = useUIStore();
   const { addItem } = useItemsStore();
   const { characters, addOrUpdateCharacter } = useCharactersStore();
   const { user } = useAuthStore();
@@ -37,6 +37,18 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
   const [category, setCategory] = useState('Divers');
   const [imageUrl, setImageUrl] = useState('');
   const [modifiers, setModifiers] = useState<ItemModifier[]>([]);
+
+  useEffect(() => {
+    if (showCreateModal && itemToEdit) {
+      setName(itemToEdit.name || '');
+      setDescription(itemToEdit.description || '');
+      setCategory(itemToEdit.category || 'Divers');
+      setImageUrl(itemToEdit.image_url || '');
+      setModifiers(itemToEdit.modifiers || []);
+    } else if (showCreateModal) {
+      resetForm();
+    }
+  }, [showCreateModal, itemToEdit]);
 
   const statDefs = session?.settings?.stats || DEFAULT_STATS;
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
@@ -88,7 +100,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
     if (!name.trim()) return;
 
     const newItem: Item = {
-      id: crypto.randomUUID(),
+      id: itemToEdit?.id || crypto.randomUUID(),
       name,
       description: description || 'Un objet mystérieux...',
       category,
@@ -102,10 +114,20 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
     } else if (itemCreationType === 'inventory' && itemCreationCharacterId) {
       const character = characters.find(c => c.id === itemCreationCharacterId);
       if (character) {
-        const clonedItem = { ...newItem, instanceId: crypto.randomUUID(), equipped: false };
+        const itemInstanceId = itemToEdit?.instanceId || crypto.randomUUID();
+        const equipped = itemToEdit ? itemToEdit.equipped : false;
+        const clonedItem = { ...newItem, instanceId: itemInstanceId, equipped };
+        
+        let newInventory = [...(character.inventory || [])];
+        if (itemToEdit) {
+          newInventory = newInventory.map((i: any) => i.instanceId === itemInstanceId ? clonedItem : i);
+        } else {
+          newInventory.push(clonedItem);
+        }
+
         const updatedChar = {
           ...character,
-          inventory: [...(character.inventory || []), clonedItem]
+          inventory: newInventory
         };
         addOrUpdateCharacter(updatedChar);
         if (window.electronAPI) await addSessionCharacter(updatedChar);
@@ -197,8 +219,8 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
           <div className="flex flex-col gap-4 mt-2">
             <div className="flex justify-between items-center border-b border-gold-DEFAULT/20 pb-2">
               <div className="flex flex-col">
-                <span className="text-xs font-cinzel font-black text-gold-DEFAULT uppercase tracking-widest">Enchantements</span>
-                <span className="text-[8px] font-cinzel text-white/30 uppercase">Propriétés magiques et bonus</span>
+                <span className="text-xs font-cinzel font-black text-gold-DEFAULT uppercase tracking-widest">Modificateurs</span>
+                <span className="text-[8px] font-cinzel text-white/30 uppercase">Bonus d'attributs et de ressources</span>
               </div>
               <button onClick={addModifier} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20 border border-gold-DEFAULT/30 transition-all font-cinzel text-[10px] font-black">
                 <Plus size={14} /> AJOUTER

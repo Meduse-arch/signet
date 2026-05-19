@@ -38,17 +38,20 @@ export function ItemDetailContent({ item, character, onToggleEquip, isMJ }: Item
         }}
       >
         {item.image_url ? (
-          <img src={item.image_url} alt="" className="w-full h-full object-cover opacity-70" />
+          <>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-3xl" style={{ backgroundImage: `url(${item.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }} />
+            <img src={item.image_url} alt="" className="relative z-10 w-full h-full object-contain p-2 drop-shadow-2xl" />
+          </>
         ) : (
-          <Package size={60} className="text-gold-DEFAULT/10" />
+          <Package size={60} className="text-gold-DEFAULT/10 relative z-10" />
         )}
         
         {/* Shimmer sweep effect */}
-        <div className="absolute inset-0 pointer-events-none opacity-20 bg-gradient-to-tr from-white/10 via-transparent to-transparent" />
+        <div className="absolute inset-0 pointer-events-none opacity-20 bg-gradient-to-tr from-white/10 via-transparent to-transparent z-20" />
         
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0F] via-[#0D0D0F]/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0F] via-[#0D0D0F]/40 to-transparent z-20" />
         
-        <div className="absolute bottom-4 left-6 right-6">
+        <div className="absolute bottom-4 left-6 right-6 z-30">
            <div className="flex items-center gap-3 mb-1">
               <span className="px-2 py-0.5 rounded bg-gold-DEFAULT/20 text-gold-bright text-[8px] font-cinzel font-black tracking-widest uppercase border border-gold-DEFAULT/30 backdrop-blur-sm">
                 {item.category}
@@ -61,26 +64,26 @@ export function ItemDetailContent({ item, character, onToggleEquip, isMJ }: Item
         </div>
       </div>
 
-      <div className="p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar flex-1 min-h-0">
-        {/* Description */}
-        <div className="relative">
+      <div className="p-6 flex flex-col gap-6 flex-1 min-h-0">
+        {/* Description - Fixed height scrollable container */}
+        <div className="relative h-28 shrink-0 overflow-y-auto custom-scrollbar pr-2">
            <div className="absolute -left-3 top-0 bottom-0 w-0.5 bg-gold-DEFAULT/30" />
-           <p className="font-garamond italic text-base text-white/70 leading-relaxed pl-2">
+           <p className="font-garamond italic text-base text-white/70 leading-relaxed pl-2 whitespace-pre-wrap">
              "{item.description}"
            </p>
         </div>
 
-        {/* Modifiers - Showing ALL modifiers */}
+        {/* Modifiers - Flexible scrollable container */}
         {item.modifiers && item.modifiers.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <h4 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.2em] flex items-center gap-2">
+          <div className="flex flex-col gap-4 flex-1 min-h-0">
+            <h4 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.2em] flex items-center gap-2 shrink-0">
               <Zap size={12} className="text-gold-bright animate-pulse" /> PROPRIÉTÉS MAGIQUES
             </h4>
-            <div className="space-y-3">
+            <div className="space-y-3 overflow-y-auto custom-scrollbar pr-2 flex-1 min-h-0">
               {item.modifiers.map((m: any, i: number) => (
                 <div 
                   key={i} 
-                  className="relative group p-4 rounded-xl transition-all overflow-hidden"
+                  className="relative group p-4 rounded-xl transition-all overflow-hidden shrink-0"
                   style={{
                     background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(212,175,55,0.02) 100%)',
                     border: '1px solid rgba(212, 175, 55, 0.2)',
@@ -94,7 +97,7 @@ export function ItemDetailContent({ item, character, onToggleEquip, isMJ }: Item
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[10px] font-cinzel font-black text-white/80 uppercase tracking-widest">{getTargetName(m)}</span>
                       <span className="text-[8px] font-mono text-gold-DEFAULT/40 uppercase tracking-tighter">
-                        {m.targetProperty === 'max' ? 'Capacité Maximale' : 'Attribut de Base'}
+                        {m.target === 'stat' ? 'Attribut' : 'Ressource'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">

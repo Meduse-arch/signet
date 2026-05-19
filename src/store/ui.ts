@@ -7,6 +7,7 @@ interface UIState {
   showCreateModal: boolean;
   itemCreationType: 'forge' | 'inventory' | null;
   itemCreationCharacterId: string | null;
+  itemToEdit: any | null;
   selectedItem: any | null;
   itemDetailOpen: boolean;
   searchQuery: string;
@@ -14,8 +15,8 @@ interface UIState {
   setSidebarOpen: (open: boolean) => void;
   setActiveTab: (tab: 'library' | 'search' | 'key' | 'forge') => void;
   setShowModal: (show: boolean) => void;
-  setShowCreateModal: (show: boolean, type?: 'forge' | 'inventory', characterId?: string) => void;
-  setSelectedItem: (item: any | null) => void;
+  setShowCreateModal: (show: boolean, type?: 'forge' | 'inventory', characterId?: string, itemToEdit?: any | null) => void;
+  setSelectedItem: (item: any | null, openModal?: boolean) => void;
   setItemDetailOpen: (open: boolean) => void;
   setSearchQuery: (query: string) => void;
   setViewMode: (mode: 'grid' | 'codex') => void;
@@ -28,6 +29,7 @@ export const useUIStore = create<UIState>((set) => ({
   showCreateModal: false,
   itemCreationType: null,
   itemCreationCharacterId: null,
+  itemToEdit: null,
   selectedItem: null,
   itemDetailOpen: false,
   searchQuery: '',
@@ -35,12 +37,13 @@ export const useUIStore = create<UIState>((set) => ({
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setShowModal: (show) => set({ showModal: show }),
-  setShowCreateModal: (show, type = null, characterId = null) => set({ 
+  setShowCreateModal: (show, type = null, characterId = null, itemToEdit = null) => set({ 
     showCreateModal: show, 
     itemCreationType: type,
-    itemCreationCharacterId: characterId
+    itemCreationCharacterId: characterId,
+    itemToEdit
   }),
-  setSelectedItem: (item) => set({ selectedItem: item, itemDetailOpen: !!item }),
+  setSelectedItem: (item, openModal = true) => set({ selectedItem: item, itemDetailOpen: item ? openModal : false }),
   setItemDetailOpen: (open) => set({ itemDetailOpen: open }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setViewMode: (mode) => set({ viewMode: mode }),

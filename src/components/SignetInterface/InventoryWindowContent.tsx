@@ -4,7 +4,7 @@ import { useItemsStore } from '../../store/items';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
 import { usePeer } from '../../hooks/usePeer';
-import { Package, Plus, Trash2, Search, Hammer, User, Shield, Star, Sword, ShieldAlert, Sparkles, Gem, FlaskConical, ChevronRight } from 'lucide-react';
+import { Package, Plus, Trash2, Search, Hammer, User, Shield, Star, Sword, ShieldAlert, Sparkles, Gem, FlaskConical, ChevronRight, PenTool } from 'lucide-react';
 import { addSessionCharacter } from '../../services/characters.service';
 import { Item, ItemModifier } from '../../services/items.service';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
@@ -13,6 +13,7 @@ import { ItemDetailContent } from './ItemDetailContent';
 
 interface InventoryWindowContentProps {
   sessionId: string;
+  variant?: 'default' | 'codex';
 }
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -24,7 +25,7 @@ const CATEGORY_ICONS: Record<string, any> = {
   'Divers': Package
 };
 
-export function InventoryWindowContent({ sessionId }: InventoryWindowContentProps) {
+export function InventoryWindowContent({ sessionId, variant = 'default' }: InventoryWindowContentProps) {
   const user = useAuthStore(state => state.user);
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   const { characters, controlledCharacterId, addOrUpdateCharacter } = useCharactersStore();
@@ -34,6 +35,21 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
 
   const [activeTab, setActiveTab] = useState<'inventory' | 'forge'>('inventory');
   const [search, setSearch] = useState('');
+
+  // Responsive layout: auto-switch to codex side-panel if wide enough
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isWideView, setIsWideView] = useState(variant === 'codex');
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setIsWideView(entry.contentRect.width > 650);
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const character = useMemo(() => {
     if (controlledCharacterId) return characters.find(c => c.id === controlledCharacterId);
@@ -46,18 +62,23 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
     }
   }, [isMJ, character, activeTab]);
 
-  const handleToggleEquip = async () => {
-    if (!character || !selectedItem) return;
+  const handleToggleEquip = async (itemToToggle?: any) => {
+    const item = itemToToggle || selectedItem;
+    if (!character || !item) return;
     const updatedChar = {
       ...character,
       inventory: (character.inventory || []).map((i: any) => 
-        (i.instanceId === selectedItem.instanceId || i.id === selectedItem.id) ? { ...i, equipped: !i.equipped } : i
+        (i.instanceId === item.instanceId || i.id === item.id) ? { ...i, equipped: !i.equipped } : i
       )
     };
     addOrUpdateCharacter(updatedChar);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
-    setSelectedItem({ ...selectedItem, equipped: !selectedItem.equipped });
+    
+    // Update selected item if it's the one we're toggling
+    if (selectedItem && (selectedItem.instanceId === item.instanceId || selectedItem.id === item.id)) {
+      setSelectedItem({ ...selectedItem, equipped: !selectedItem.equipped }, !isWideView);
+    }
   };
 
   const handleGiveItemToCharacter = async (item: any) => {
@@ -90,9 +111,18 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
     await removeItem(sessionId, id);
   };
 
+  const handleEditForgeItem = (item: any) => {
+    setShowCreateModal(true, 'forge', undefined, item);
+  };
+
+  const getTargetName = (m: any) => {
+    if (m.target === 'stat') return DEFAULT_STATS.find(s => s.id === m.targetId)?.name || m.targetId;
+    return (DEFAULT_BARS.find(b => b.id === m.targetId)?.name || m.targetId) + (m.targetProperty === 'max' ? ' Max' : '');
+  };
+
   if (!character && !isMJ) {
     return (
-      <div className="flex flex-col items-center justify-center h-full opacity-20">
+      <div className="flex flex-col items-center justify-center h-full opacity-20 py-10">
         <Package size={40} className="mb-2" />
         <span className="text-[10px] font-cinzel">Aucun coffre lié</span>
       </div>
@@ -111,7 +141,7 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
   const getIcon = (cat: string) => CATEGORY_ICONS[cat] || Package;
 
   return (
-    <div className="flex flex-col lg:flex-row h-full gap-6 animate-in fade-in duration-500 relative bg-[#0D0D0F] min-h-[500px]">
+    <div ref={containerRef} className={`flex flex-col lg:flex-row h-full gap-6 animate-in fade-in duration-500 relative bg-[#0D0D0F] ${variant === 'codex' ? 'min-h-[500px]' : ''}`}>
       
       {/* LISTE CODEX */}
       <div className="flex-1 flex flex-col gap-4 h-full min-w-0">
@@ -171,7 +201,7 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
                 return (
                   <div 
                     key={item.instanceId || item.id || idx} 
-                    onClick={() => setSelectedItem(item)}
+                    onClick={() => setSelectedItem(item, !isWideView)}
                     className={`group relative rounded-xl p-3 transition-all cursor-pointer flex items-center gap-4 overflow-hidden ${
                       isActive ? 'border-gold-bright shadow-[0_0_20px_rgba(212,175,55,0.2)]' : 'border-white/[0.05] hover:border-gold-DEFAULT/40'
                     }`}
@@ -184,7 +214,7 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
                     }}
                   >
                     <div 
-                      className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all overflow-hidden relative ${item.equipped ? 'border-gold-DEFAULT/50 shadow-[0_0_10px_rgba(212,175,55,0.2)]' : 'group-hover:border-white/20'}`}
+                      className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all overflow-hidden relative shrink-0 ${item.equipped ? 'border-gold-DEFAULT/50 shadow-[0_0_10px_rgba(212,175,55,0.2)]' : 'group-hover:border-white/20'}`}
                       style={{
                         background: 'rgba(0, 0, 0, 0.4)',
                         border: '1px solid rgba(255, 255, 255, 0.05)',
@@ -192,7 +222,7 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
                       }}
                     >
                       {item.image_url ? (
-                        <img src={item.image_url} alt="" className={`w-full h-full object-cover ${item.equipped ? 'opacity-100' : 'opacity-40 group-hover:opacity-60 transition-opacity'}`} />
+                        <img src={item.image_url} alt="" className={`w-full h-full object-contain p-1 ${item.equipped ? 'opacity-100' : 'opacity-40 group-hover:opacity-60 transition-opacity'}`} />
                       ) : (
                         <Icon size={24} className={item.equipped ? 'text-gold-DEFAULT' : 'text-white/10 group-hover:text-white/20'} />
                       )}
@@ -201,26 +231,51 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
                     </div>
                     
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <h4 className={`text-xs font-cinzel font-black tracking-widest truncate uppercase ${item.equipped ? 'text-gold-bright' : (isActive ? 'text-gold-DEFAULT' : 'text-white/60 group-hover:text-white transition-colors')}`}>
                           {item.name}
                         </h4>
                         {item.equipped && <Star size={10} className="text-gold-bright animate-pulse shrink-0" />}
                       </div>
-                      <div className="flex items-center gap-2">
-                         <span className="text-[8px] font-cinzel text-white/20 uppercase tracking-widest">{item.category}</span>
-                         <div className="w-1 h-1 rounded-full bg-white/5" />
-                         <p className="text-[9px] font-garamond italic text-white/30 truncate group-hover:text-white/40 transition-colors">
-                           {item.description}
-                         </p>
-                      </div>
+                      
+                      {/* Modifier Preview */}
+                      {item.modifiers && item.modifiers.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {item.modifiers.slice(0, 2).map((m: any, i: number) => (
+                            <span key={i} className="text-[8px] font-cinzel font-black uppercase px-1.5 py-0.5 border bg-gold-DEFAULT/10 text-gold-bright border-gold-DEFAULT/20 rounded shadow-[0_0_8px_rgba(212,175,55,0.1)]">
+                              {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`} {getTargetName(m)}
+                            </span>
+                          ))}
+                          {item.modifiers.length > 2 && (
+                            <span className="text-[8px] font-cinzel opacity-40 uppercase px-1.5 py-0.5 border border-white/10 rounded">
+                              +{item.modifiers.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                           <span className="text-[8px] font-cinzel text-white/20 uppercase tracking-widest">{item.category}</span>
+                           <div className="w-1 h-1 rounded-full bg-white/5" />
+                           <p className="text-[9px] font-garamond italic text-white/30 truncate group-hover:text-white/40 transition-colors">
+                             {item.description}
+                           </p>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity pr-2 shrink-0">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleToggleEquip(item); }} 
+                        className={`p-1.5 rounded-lg transition-all ${item.equipped ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20'}`}
+                        title={item.equipped ? "Déséquiper" : "Équiper"}
+                      >
+                        <Shield size={14} />
+                      </button>
                       {isMJ && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRemoveFromInventory(item.instanceId || item.id); }} 
                           className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-500/40 hover:text-red-500 transition-all"
+                          title="Détruire"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -251,7 +306,7 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
                   return (
                     <div 
                       key={item.id} 
-                      onClick={() => setSelectedItem(item)}
+                      onClick={() => setSelectedItem(item, !isWideView)}
                       className={`group relative rounded-xl p-3 transition-all flex items-center gap-4 cursor-pointer ${
                         isActive ? 'border-gold-bright shadow-[0_0_20px_rgba(212,175,55,0.2)]' : 'border-white/[0.05] hover:border-gold-DEFAULT/30'
                       }`}
@@ -272,36 +327,63 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
                         }}
                       >
                         {item.image_url ? (
-                          <img src={item.image_url} alt="" className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" />
+                          <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-40 group-hover:opacity-60 transition-opacity" />
                         ) : (
                           <Icon size={24} className="text-white/10 group-hover:text-white/20" />
                         )}
                         <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 to-transparent opacity-30" />
                       </div>                      
                       <div className="flex-1 min-w-0">
-                         <div className="flex items-center justify-between gap-2">
+                         <div className="flex items-center justify-between gap-2 mb-1">
                           <h4 className={`text-xs font-cinzel font-black truncate uppercase tracking-widest transition-colors ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-gold-bright'}`}>{item.name}</h4>
                           <span className="text-[7px] border border-white/10 bg-black/40 px-2 py-0.5 rounded-lg text-white/30 uppercase shrink-0 font-cinzel tracking-widest">{item.category}</span>
                         </div>
-                        <p className="text-[9px] font-garamond italic text-white/20 line-clamp-1 mt-0.5">{item.description}</p>
+                        {/* Modifier Preview */}
+                        {item.modifiers && item.modifiers.length > 0 ? (
+                          <div className="flex items-center gap-1 mt-0.5 overflow-hidden">
+                            {item.modifiers.slice(0, 1).map((m: any, i: number) => (
+                              <span key={i} className="text-[8px] font-cinzel font-black uppercase px-1.5 py-0.5 border bg-gold-DEFAULT/10 text-gold-bright border-gold-DEFAULT/20 rounded shadow-[0_0_8px_rgba(212,175,55,0.1)] truncate max-w-[140px] shrink-0">
+                                {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`} {getTargetName(m)}
+                              </span>
+                            ))}
+                            {item.modifiers.length > 1 && (
+                              <span className="text-[8px] font-cinzel opacity-40 uppercase px-1.5 py-0.5 border border-white/10 rounded shrink-0">
+                                +{item.modifiers.length - 1}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[9px] font-garamond italic text-white/20 line-clamp-1 mt-0.5">{item.description}</p>
+                        )}
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         {character && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleGiveItemToCharacter(item); }} 
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-cinzel font-black hover:bg-green-500/20 transition-all uppercase tracking-widest shadow-lg"
+                            className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all shadow-lg"
+                            title="Offrir à l'inventaire actif"
                           >
-                            <Plus size={12} /> OFFRIR
+                            <Plus size={14} />
                           </button>
                         )}
                         {isMJ && (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); handleDeleteForgeItem(item.id); }} 
-                            className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500/40 hover:text-red-500 transition-all shadow-lg"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleEditForgeItem(item); }} 
+                              className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all shadow-lg"
+                              title="Modifier"
+                            >
+                              <PenTool size={14} />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleDeleteForgeItem(item.id); }} 
+                              className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500/40 hover:text-red-500 transition-all shadow-lg"
+                              title="Détruire"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -321,14 +403,16 @@ export function InventoryWindowContent({ sessionId }: InventoryWindowContentProp
       </div>
 
       {/* PANNEAU DE DETAIL CODEX */}
-      <div className="hidden lg:flex flex-col w-[350px] shrink-0 border border-gold-DEFAULT/10 bg-black/40 backdrop-blur-md rounded-2xl h-full shadow-2xl relative overflow-hidden">
-        <ItemDetailContent 
-          item={selectedItem}
-          character={character}
-          onToggleEquip={handleToggleEquip}
-          isMJ={isMJ}
-        />
-      </div>
+      {isWideView && (
+        <div className="flex flex-col w-[350px] shrink-0 border border-gold-DEFAULT/10 bg-black/40 backdrop-blur-md rounded-2xl h-full shadow-2xl relative overflow-hidden">
+          <ItemDetailContent 
+            item={selectedItem}
+            character={character}
+            onToggleEquip={handleToggleEquip}
+            isMJ={isMJ}
+          />
+        </div>
+      )}
     </div>
   );
 }

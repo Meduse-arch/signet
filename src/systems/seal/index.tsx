@@ -332,7 +332,6 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
           onPositionChange={(x, y) => updatePosition('assets', x, y)}
           zIndex={windows.assets.zIndex}
           defaultPosition={windows.assets.position}
-          variant="codex"
         >
           <InventoryWindowContent sessionId={sessionId} />
         </DraggableWindow>
