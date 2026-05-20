@@ -45,8 +45,12 @@ export const useSignetStore = create<SignetInterfaceState>((set, get) => ({
   maxZIndex: 50,
 
   initialize: (sessionId: string) => {
-    const storageKey = `signet_windows_${sessionId}`;
+    // Si sessionId est vide, on tente de le récupérer depuis l'URL (pour les rechargements)
+    const effectiveSessionId = sessionId || window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    const storageKey = `signet_windows_${effectiveSessionId}`;
     const saved = localStorage.getItem(storageKey);
+    console.log(`[DEBUG] Initializing signet store for session: ${effectiveSessionId}`, { hasSaved: !!saved });
+    
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -57,13 +61,14 @@ export const useSignetStore = create<SignetInterfaceState>((set, get) => ({
             // Check if saved position is way off screen, if so, reset it
             let pos = parsed[k].position;
             if (typeof window !== 'undefined' && pos) {
-              if (pos.y > window.innerHeight - 50 || pos.x > window.innerWidth - 50 || pos.y < -50 || pos.x < -50) {
+              const isInvalidNumber = typeof pos.x !== 'number' || typeof pos.y !== 'number' || isNaN(pos.x) || isNaN(pos.y);
+              if (isInvalidNumber || pos.y > window.innerHeight - 50 || pos.x > window.innerWidth - 50 || pos.y < -50 || pos.x < -50) {
                  pos = getCenterPosition();
               }
             }
             closedWindows[k] = { 
               ...parsed[k], 
-              isOpen: false,
+              isOpen: false, // On reset à fermé par défaut au chargement
               position: pos || getCenterPosition()
             };
           }
@@ -87,7 +92,8 @@ export const useSignetStore = create<SignetInterfaceState>((set, get) => ({
     
     // Fallback recentering if the window is off-screen
     if (typeof window !== 'undefined') {
-       if (targetPos.y > window.innerHeight - 100 || targetPos.x > window.innerWidth - 100) {
+       const isInvalidNumber = !targetPos || typeof targetPos.x !== 'number' || typeof targetPos.y !== 'number' || isNaN(targetPos.x) || isNaN(targetPos.y);
+       if (isInvalidNumber || targetPos.y > window.innerHeight - 50 || targetPos.x > window.innerWidth - 50 || targetPos.y < -50 || targetPos.x < -50) {
            targetPos = getCenterPosition();
        }
     }
@@ -98,10 +104,8 @@ export const useSignetStore = create<SignetInterfaceState>((set, get) => ({
     };
     set({ windows: newWindows, maxZIndex: newMaxZ });
     
-    const sessionId = window.location.hash.split('/').pop()?.split('?')[0];
-    if (sessionId) {
-      localStorage.setItem(`signet_windows_${sessionId}`, JSON.stringify(newWindows));
-    }
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    localStorage.setItem(`signet_windows_${sessionId}`, JSON.stringify(newWindows));
   },
 
   closeWindow: (type) => {
@@ -112,10 +116,8 @@ export const useSignetStore = create<SignetInterfaceState>((set, get) => ({
     };
     set({ windows: newWindows });
     
-    const sessionId = window.location.hash.split('/').pop()?.split('?')[0];
-    if (sessionId) {
-      localStorage.setItem(`signet_windows_${sessionId}`, JSON.stringify(newWindows));
-    }
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    localStorage.setItem(`signet_windows_${sessionId}`, JSON.stringify(newWindows));
   },
 
   focusWindow: (type) => {
@@ -127,10 +129,8 @@ export const useSignetStore = create<SignetInterfaceState>((set, get) => ({
     };
     set({ windows: newWindows, maxZIndex: newMaxZ });
     
-    const sessionId = window.location.hash.split('/').pop()?.split('?')[0];
-    if (sessionId) {
-      localStorage.setItem(`signet_windows_${sessionId}`, JSON.stringify(newWindows));
-    }
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    localStorage.setItem(`signet_windows_${sessionId}`, JSON.stringify(newWindows));
   },
 
   updatePosition: (type, x, y) => {
@@ -141,9 +141,7 @@ export const useSignetStore = create<SignetInterfaceState>((set, get) => ({
     };
     set({ windows: newWindows });
     
-    const sessionId = window.location.hash.split('/').pop()?.split('?')[0];
-    if (sessionId) {
-      localStorage.setItem(`signet_windows_${sessionId}`, JSON.stringify(newWindows));
-    }
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    localStorage.setItem(`signet_windows_${sessionId}`, JSON.stringify(newWindows));
   },
 }));

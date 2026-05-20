@@ -22,7 +22,7 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { PlayerHUD } from '../../components/PlayerHUD';
 import { CharacterHUD } from '../../components/CharacterHUD';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Pause } from 'lucide-react';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
@@ -32,12 +32,14 @@ import { useUIStore } from '../../store/ui';
 
 interface SealEngineProps {
   sessionId: string;
+  onPause?: () => void;
+  players?: { peer_id: string; pseudo: string; role?: number }[];
 }
 
-export default function SealEngine({ sessionId }: SealEngineProps) {
+export default function SealEngine({ sessionId, onPause, players = [] }: SealEngineProps) {
   const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
   const { characterManagementId, setCharacterManagement } = useUIStore();
-  const { peers } = usePeersStore();
+  const { peerId, connections } = usePeersStore();
   const { user } = useAuthStore();
   const { broadcast, onData } = usePeer();
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
@@ -47,11 +49,24 @@ export default function SealEngine({ sessionId }: SealEngineProps) {
   const initSkills = useSkillsStore(state => state.initialize);
   const initTags = useTagsStore(state => state.initialize);
   
-  const isMJ = !!user && user.role >= SecurityLevel.MJ;
+  const isMJ = !!user && (user.role === SecurityLevel.MJ || user.role === SecurityLevel.ADMIN || Number(user.role) >= 1);
   const isHost = session?.hostPeerId === user?.id;
 
   const [maps, setMaps] = useState<MapItem[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('');
+
+  // On utilise les joueurs passés en prop s'ils sont dispo, sinon fallback
+  const playersList = players.length > 0 ? players : [
+    ...(user ? [{ peer_id: user.id, pseudo: user.pseudo, role: user.role }] : []),
+    ...connections.map(connId => {
+      const char = characters.find(c => c.user_id === connId);
+      return {
+        peer_id: connId,
+        pseudo: char ? char.name : 'Voyageur',
+        role: 0
+      };
+    })
+  ].filter((v, i, a) => a.findIndex(t => t.peer_id === v.peer_id) === i);
 
   useEffect(() => {
     initItems(sessionId);
@@ -126,120 +141,182 @@ export default function SealEngine({ sessionId }: SealEngineProps) {
 
   const currentMap = maps.find(m => m.id === currentMapId);
 
+  const handlePopOut = (type: string) => {
+    if (window.electronAPI) {
+      window.electronAPI.openExternalWindow(type, sessionId);
+      closeWindow(type as any);
+    }
+  };
+
+  // Écouter les demandes de réintégration des fenêtres externes
+  useEffect(() => {
+    if (!sessionId) return;
+    
+    const channel = new BroadcastChannel(`signet_window_manager_${sessionId}`);
+    console.log(`[DEBUG] Window Manager listener active for session: ${sessionId}`);
+    
+    channel.onmessage = (event) => {
+      console.log('[DEBUG] Received window manager message:', event.data);
+      if (event.data.type === 'REINTEGRATE_WINDOW') {
+        const { windowType } = event.data.payload;
+        console.log(`[DEBUG] Reintegrating window: ${windowType}`);
+        openWindow(windowType as any);
+      }
+    };
+    
+    return () => {
+        console.log(`[DEBUG] Closing Window Manager listener for session: ${sessionId}`);
+        channel.close();
+    };
+  }, [sessionId, openWindow]);
+
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#050507]">
       <BoardCanvas 
         sessionId={sessionId}
-        currentMap={currentMap}
+        maps={maps}
+        currentMapId={currentMapId}
+        characters={characters}
       />
 
-      <SignetLauncher sessionId={sessionId} />
+      {/* PAUSE BUTTON (MJ ONLY) */}
+      {isMJ && onPause && (
+        <button
+          onClick={onPause}
+          className="fixed top-8 right-8 z-[150] group flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 text-gold-DEFAULT hover:text-gold-bright hover:border-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all active:scale-95"
+          title="Mettre la session en pause"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+            <Pause size={18} className="relative z-10" />
+          </div>
+          <span className="text-[10px] font-cinzel font-black tracking-[0.2em] uppercase">Mettre en Pause</span>
+        </button>
+      )}
 
-      <PlayerHUD sessionId={sessionId} />
+      <SignetLauncher 
+        sessionId={sessionId} 
+        onOpenWindow={openWindow}
+        securityLevel={user?.role}
+      />
+
+      <PlayerHUD players={playersList} sessionId={sessionId} />
       <CharacterHUD sessionId={sessionId} />
 
-      {windows.scenes.isOpen && (
-        <DraggableWindow
-          id="scenes"
-          title="Scènes & Lieux"
-          onClose={() => closeWindow('scenes')}
-          position={windows.scenes.position}
-          onPositionChange={(pos) => updatePosition('scenes', pos)}
-          zIndex={windows.scenes.zIndex}
-          onFocus={() => focusWindow('scenes')}
-        >
-          <SceneWindowContent 
-            scenes={maps}
-            currentSceneId={currentMapId}
-            onSelectScene={handleSelectMap}
-            onAddScene={handleAddMap}
-          />
-        </DraggableWindow>
-      )}
+      {/* WINDOWS LAYER */}
+      <div className="absolute inset-0 pointer-events-none z-[200]">
+        {windows.scenes.isOpen && (
+          <DraggableWindow
+            id="scenes"
+            title="Scènes & Lieux"
+            onClose={() => closeWindow('scenes')}
+            onPopOut={() => handlePopOut('scenes')}
+            defaultPosition={windows.scenes.position}
+            onPositionChange={(x, y) => updatePosition('scenes', x, y)}
+            zIndex={windows.scenes.zIndex + 200}
+            onFocus={() => focusWindow('scenes')}
+          >
+            <SceneWindowContent 
+              scenes={maps}
+              currentSceneId={currentMapId}
+              onSelectScene={handleSelectMap}
+              onAddScene={handleAddMap}
+            />
+          </DraggableWindow>
+        )}
 
-      {windows.players.isOpen && (
-        <DraggableWindow
-          id="players"
-          title="Le Cercle des Voyageurs"
-          onClose={() => closeWindow('players')}
-          position={windows.players.position}
-          onPositionChange={(pos) => updatePosition('players', pos)}
-          zIndex={windows.players.zIndex}
-          onFocus={() => focusWindow('players')}
-        >
-          <PlayerWindowContent players={peers} sessionId={sessionId} />
-        </DraggableWindow>
-      )}
+        {windows.players.isOpen && (
+          <DraggableWindow
+            id="players"
+            title="Le Cercle des Voyageurs"
+            onClose={() => closeWindow('players')}
+            onPopOut={() => handlePopOut('players')}
+            defaultPosition={windows.players.position}
+            onPositionChange={(x, y) => updatePosition('players', x, y)}
+            zIndex={windows.players.zIndex + 200}
+            onFocus={() => focusWindow('players')}
+          >
+            <PlayerWindowContent players={playersList} sessionId={sessionId} />
+          </DraggableWindow>
+        )}
 
-      {windows.assets.isOpen && (
-        <DraggableWindow
-          id="assets"
-          title="Le Coffre de l'Archive"
-          onClose={() => closeWindow('assets')}
-          position={windows.assets.position}
-          onPositionChange={(pos) => updatePosition('assets', pos)}
-          zIndex={windows.assets.zIndex}
-          onFocus={() => focusWindow('assets')}
-        >
-          <InventoryWindowContent sessionId={sessionId} />
-        </DraggableWindow>
-      )}
+        {windows.assets.isOpen && (
+          <DraggableWindow
+            id="assets"
+            title="Le Coffre de l'Archive"
+            onClose={() => closeWindow('assets')}
+            onPopOut={() => handlePopOut('assets')}
+            defaultPosition={windows.assets.position}
+            onPositionChange={(x, y) => updatePosition('assets', x, y)}
+            zIndex={windows.assets.zIndex + 200}
+            onFocus={() => focusWindow('assets')}
+          >
+            <InventoryWindowContent sessionId={sessionId} />
+          </DraggableWindow>
+        )}
 
-      {windows.bestiary.isOpen && (
-        <DraggableWindow
-          id="bestiary"
-          title="Bestiaire Occulte"
-          onClose={() => closeWindow('bestiary')}
-          position={windows.bestiary.position}
-          onPositionChange={(pos) => updatePosition('bestiary', pos)}
-          zIndex={windows.bestiary.zIndex}
-          onFocus={() => focusWindow('bestiary')}
-        >
-          <BestiaryWindowContent sessionId={sessionId} />
-        </DraggableWindow>
-      )}
+        {windows.bestiary.isOpen && (
+          <DraggableWindow
+            id="bestiary"
+            title="Bestiaire Occulte"
+            variant="codex"
+            onClose={() => closeWindow('bestiary')}
+            onPopOut={() => handlePopOut('bestiary')}
+            defaultPosition={windows.bestiary.position}
+            onPositionChange={(x, y) => updatePosition('bestiary', x, y)}
+            zIndex={windows.bestiary.zIndex + 200}
+            onFocus={() => focusWindow('bestiary')}
+          >
+            <BestiaryWindowContent sessionId={sessionId} />
+          </DraggableWindow>
+        )}
 
-      {windows.dice.isOpen && (
-        <DraggableWindow
-          id="dice"
-          title="Le Sort du Destin"
-          onClose={() => closeWindow('dice')}
-          position={windows.dice.position}
-          onPositionChange={(pos) => updatePosition('dice', pos)}
-          zIndex={windows.dice.zIndex}
-          onFocus={() => focusWindow('dice')}
-        >
-          <DiceWindowContent sessionId={sessionId} />
-        </DraggableWindow>
-      )}
+        {windows.dice.isOpen && (
+          <DraggableWindow
+            id="dice"
+            title="Le Sort du Destin"
+            onClose={() => closeWindow('dice')}
+            onPopOut={() => handlePopOut('dice')}
+            defaultPosition={windows.dice.position}
+            onPositionChange={(x, y) => updatePosition('dice', x, y)}
+            zIndex={windows.dice.zIndex + 200}
+            onFocus={() => focusWindow('dice')}
+          >
+            <DiceWindowContent sessionId={sessionId} />
+          </DraggableWindow>
+        )}
 
-      {windows.story.isOpen && (
-        <DraggableWindow
-          id="story"
-          title="Codex des Maîtrises"
-          onClose={() => closeWindow('story')}
-          position={windows.story.position}
-          onPositionChange={(pos) => updatePosition('story', pos)}
-          zIndex={windows.story.zIndex}
-          onFocus={() => focusWindow('story')}
-        >
-          <SkillsWindowContent sessionId={sessionId} />
-        </DraggableWindow>
-      )}
+        {windows.story.isOpen && (
+          <DraggableWindow
+            id="story"
+            title="Codex des Maîtrises"
+            variant="codex"
+            onClose={() => closeWindow('story')}
+            onPopOut={() => handlePopOut('story')}
+            defaultPosition={windows.story.position}
+            onPositionChange={(x, y) => updatePosition('story', x, y)}
+            zIndex={windows.story.zIndex + 200}
+            onFocus={() => focusWindow('story')}
+          >
+            <SkillsWindowContent sessionId={sessionId} />
+          </DraggableWindow>
+        )}
 
-      {windows.character.isOpen && (
-        <DraggableWindow
-          id="character"
-          title="Écho de l'Âme"
-          onClose={() => closeWindow('character')}
-          position={windows.character.position}
-          onPositionChange={(pos) => updatePosition('character', pos)}
-          zIndex={windows.character.zIndex}
-          onFocus={() => focusWindow('character')}
-        >
-          <CharacterSheetContent sessionId={sessionId} variant="window" />
-        </DraggableWindow>
-      )}
+        {windows.character.isOpen && (
+          <DraggableWindow
+            id="character"
+            title="Écho de l'Âme"
+            onClose={() => closeWindow('character')}
+            onPopOut={() => handlePopOut('character')}
+            defaultPosition={windows.character.position}
+            onPositionChange={(x, y) => updatePosition('character', x, y)}
+            zIndex={windows.character.zIndex + 200}
+            onFocus={() => focusWindow('character')}
+          >
+            <CharacterSheetContent sessionId={sessionId} variant="window" />
+          </DraggableWindow>
+        )}
+      </div>
 
       <DiceRollModal />
       <ItemCreationModal sessionId={sessionId} />

@@ -22,11 +22,12 @@ interface AuthState {
 
 function mapRoleToLevel(role: string | number): SecurityLevel {
   if (typeof role === 'number') return role as SecurityLevel;
-  switch (role) {
-    case 'admin': return SecurityLevel.ADMIN;
-    case 'mj': return SecurityLevel.MJ;
-    default: return SecurityLevel.PLAYER;
+  if (typeof role === 'string') {
+    const lowerRole = role.toLowerCase();
+    if (lowerRole === 'admin' || lowerRole === '2') return SecurityLevel.ADMIN;
+    if (lowerRole === 'mj' || lowerRole === '1') return SecurityLevel.MJ;
   }
+  return SecurityLevel.PLAYER;
 }
 
 // Récupérer l'utilisateur initial s'il a été mémorisé

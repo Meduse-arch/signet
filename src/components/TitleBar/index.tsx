@@ -77,7 +77,30 @@ export function TitleBar() {
   // mais sans les boutons de contrôle de fenêtre.
   if (isFullscreen) return null;
 
-    return (
+    const handleReintegrate = () => {
+    if (!externalInfo) return;
+    
+    // Signal local via BroadcastChannel pour l'app principale
+    const channel = new BroadcastChannel(`signet_window_manager_${externalInfo.sessionId}`);
+    channel.postMessage({ 
+      type: 'REINTEGRATE_WINDOW', 
+      payload: { windowType: externalInfo.type, timestamp: Date.now() } 
+    });
+    
+    // Appel API Electron original
+    if (isElectron) {
+      window.electronAPI.reDock(externalInfo.type, externalInfo.sessionId);
+    }
+    
+    setTimeout(() => {
+        channel.close();
+        // window.close() est généralement géré par reDock dans Electron, 
+        // mais on le met en sécurité pour le mode web
+        if (!isElectron) window.close();
+    }, 100);
+  };
+
+  return (
     <div className="relative flex items-center justify-between h-8 bg-[#0D0D0F] border-b border-gold-DEFAULT/30 select-none z-[9999] overflow-hidden shrink-0" style={{ WebkitAppRegion: 'drag' } as any}>
       {/* Effet lumineux de ligne façon Jarvis */}
       <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />      <div className="flex items-center gap-2 px-3 relative z-10">
@@ -90,9 +113,9 @@ export function TitleBar() {
       <div className="flex h-full relative z-10" style={{ WebkitAppRegion: 'no-drag' } as any}>
         {externalInfo && (
           <button 
-            onClick={() => window.electronAPI.reDock(externalInfo.type, externalInfo.sessionId)} 
+            onClick={handleReintegrate} 
             className="px-4 hover:bg-gold-DEFAULT/20 text-gold-DEFAULT hover:text-gold-bright transition-all flex items-center justify-center gap-2 text-[8px] font-cinzel font-bold border-r border-gold-DEFAULT/20 drop-shadow-md"
-            title="Réintégrer l'application"
+            title="Réintégrer dans l'application principale"
           >
             <LogIn size={12} className="rotate-180" />
             <span className="tracking-[0.2em] uppercase pt-0.5">Réintégrer</span>

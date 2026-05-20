@@ -28,8 +28,8 @@ export function KeyModal({ isOpen, onClose, onJoin }: KeyModalProps) {
         <input
           type="text"
           value={keyInput}
-          onChange={(e) => setKeyInput(e.target.value.toUpperCase())}
-          placeholder="SIGNET-XXXX-YYYY"
+          onChange={(e) => setKeyInput(e.target.value)}
+          placeholder="Code à 6 chiffres"
           className="w-full bg-surface-sidebar border border-border-dark rounded-lg py-2 px-3 text-sm text-[#e8d5a0] mb-4 focus:outline-none focus:ring-1 focus:ring-gold-DEFAULT focus:border-gold-DEFAULT placeholder:text-gold-DEFAULT drop-shadow-md/50 uppercase tracking-widest text-center"
         />
 

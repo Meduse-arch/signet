@@ -41,9 +41,10 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const [isGameStarted, setIsGameStarted] = useState(false);
 
   const getRoleLabel = (role?: number) => {
-    if (role === SecurityLevel.ADMIN) return 'ADMINISTRATEUR';
-    if (role === SecurityLevel.MJ) return 'MAÎTRE DE JEU';
-    return 'INITIÉ';
+    const level = role ?? 0;
+    if (level === SecurityLevel.ADMIN) return `ADMINISTRATEUR [${level}]`;
+    if (level === SecurityLevel.MJ) return `MAÎTRE DE JEU [${level}]`;
+    return `INITIÉ [${level}]`;
   };
   
   // ✅ État local pour les métadonnées (au cas où le joueur n'ait pas la session en DB)
@@ -51,7 +52,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
   // ✅ Stabiliser les refs pour les callbacks asynchrones
   const currentUser = useAuthStore(state => state.user);
-  const isMJ = !!currentUser && currentUser.role >= SecurityLevel.MJ && !sessionId.startsWith('SIGNET-');
+  const isMJ = !!currentUser && currentUser.role >= SecurityLevel.MJ;
+  const isHost = !sessionId.startsWith('SIGNET-');
 
   // ✅ Initialiser le store des personnages
   useEffect(() => {
@@ -63,13 +65,14 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const sessionDataFromStore = sessions.find(s => s.id === sessionId);
   
   // Priorité aux métadonnées reçues par P2P pour le joueur (données fraîches du MJ)
-  const sessionData = isMJ 
+  const sessionData = isHost 
     ? sessionDataFromStore 
     : (localMetadata || sessionDataFromStore);
     
   const sessionImage = sessionData?.imageUrl;
 
   const isMJRef = useRef(isMJ);
+  const isHostRef = useRef(isHost);
   const sessionIdRef = useRef(sessionId);
   const broadcastRef = useRef(broadcast);
   const initRef = useRef(init);
@@ -77,6 +80,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const onLeaveRef = useRef(onLeave);
 
   useEffect(() => { isMJRef.current = isMJ; }, [isMJ]);
+  useEffect(() => { isHostRef.current = isHost; }, [isHost]);
   useEffect(() => { broadcastRef.current = broadcast; }, [broadcast]);
   useEffect(() => { initRef.current = init; }, [init]);
   useEffect(() => { statusRef.current = status; }, [status]);
@@ -87,7 +91,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
     try {
       const list = await getSessionPlayers(sessionIdRef.current);
       setPlayers(list);
-      if (isMJRef.current) {
+      if (isHostRef.current) {
         broadcastRef.current({ type: 'PLAYER_LIST', payload: list });
       }
     } catch (e) {
@@ -108,7 +112,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       }
       
       // Pour le joueur : Confirme que la connexion P2P avec l'hôte est ouverte
-      else if (data.type === 'CONN_READY' && !isMJRef.current) {
+      else if (data.type === 'CONN_READY' && !isHostRef.current) {
         if (statusRef.current === 'connected') return;
 
         // ✅ Utiliser peerId directement du hook s'il est dispo, sinon fallback sur le store
@@ -131,7 +135,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       }
 
       // Pour le MJ : Gère les nouvelles arrivées
-      if (data.type === 'PLAYER_JOIN' && isMJRef.current) {
+      if (data.type === 'PLAYER_JOIN' && isHostRef.current) {
         const newPeerId = data.payload.peer_id || fromPeerId;
         const pseudo = data.payload.pseudo;
         const userId = data.payload.userId;
@@ -187,7 +191,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       } 
       
       // Pour le JOUEUR : Reçoit les métadonnées et les stocke
-      else if (data.type === 'SESSION_METADATA' && !isMJRef.current) {
+      else if (data.type === 'SESSION_METADATA' && !isHostRef.current) {
         console.log(`[LobbyPage] Métadonnées reçues:`, data.payload);
         setLocalMetadata(data.payload);
         
@@ -262,13 +266,13 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
     const setupPeer = async () => {
       try {
         const sessionData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
-        const hostPeerId = isMJRef.current 
+        const hostPeerId = isHostRef.current 
           ? sessionData?.hostPeerId 
           : (sessionIdRef.current.startsWith('SIGNET-') ? sessionIdRef.current : sessionData?.hostPeerId);
 
         if (!hostPeerId) throw new Error("Impossible de déterminer l'identifiant de session");
 
-        if (isMJRef.current) {
+        if (isHostRef.current) {
           if (mounted) setStatus('initializing');
           const myId = await initRef.current(true, hostPeerId);
           if (!mounted) return;
@@ -293,16 +297,16 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
     setupPeer();
     return () => { mounted = false; };
-  }, [sessionId, isMJ, currentUser?.pseudo, refreshPlayers]);
+  }, [sessionId, isHost, currentUser?.pseudo, refreshPlayers]);
 
   // Nettoyage à la sortie
   useEffect(() => {
     const bc = broadcastRef.current;
-    const mj = isMJRef.current;
+    const host = isHostRef.current;
     return () => { 
       const currentPeerId = usePeersStore.getState().peerId;
       if (currentPeerId) {
-        if (mj) {
+        if (host) {
           console.log('[LobbyPage] Hôte quitte : envoi SESSION_CLOSED');
           bc({ type: 'SESSION_CLOSED', payload: {} });
         } else {
@@ -327,7 +331,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   };
 
   const copyId = () => {
-    const idToCopy = isMJ ? peerId : players.find(p => p.pseudo === 'MJ')?.peer_id;
+    const idToCopy = isHost ? peerId : players.find(p => p.pseudo === 'MJ')?.peer_id;
     if (idToCopy) {
       navigator.clipboard.writeText(idToCopy);
       setCopied(true);
@@ -401,7 +405,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          {isMJ && (
+          {isHost && (
             <button 
               onClick={copyId}
               className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/5 hover:bg-gold-DEFAULT/10 text-[10px] font-cinzel font-bold text-gold-bright transition-all border border-gold-DEFAULT/40 hover:border-gold-DEFAULT/50"
@@ -486,7 +490,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                   </div>
                 </div>
 
-                {isMJ ? (
+                {isHost ? (
                   <button
                     onClick={handleLaunchSession}
                     className="w-full p-6 rounded-3xl bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 flex items-center justify-center gap-5 relative overflow-hidden group shadow-[0_4px_30px_rgba(212,175,55,0.15)] hover:border-gold-DEFAULT/80 hover:shadow-[0_4px_50px_rgba(212,175,55,0.4)] transition-all active:scale-95"

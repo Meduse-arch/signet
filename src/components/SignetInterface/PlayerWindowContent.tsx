@@ -136,6 +136,9 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
                     <span className={`font-cinzel font-black text-sm uppercase tracking-widest ${isSelf ? 'text-gold-bright' : 'text-white/80'}`}>
                       {player.pseudo}
                     </span>
+                    <span className="text-[8px] px-1.5 py-0.5 rounded border border-white/20 text-white/40 font-black uppercase tracking-tighter">
+                      SEC: {player.role ?? 0}
+                    </span>
                     {isSelf && <span className="text-[8px] px-1.5 py-0.5 rounded bg-gold-DEFAULT text-black font-black uppercase tracking-tighter">Moi</span>}
                   </div>
                   <span className="text-[10px] font-mono text-white/30 uppercase tracking-tighter">

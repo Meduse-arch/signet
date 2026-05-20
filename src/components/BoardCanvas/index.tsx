@@ -16,7 +16,6 @@ interface BoardCanvasProps {
   imageUrl?: string;
   maps: MapItem[];
   currentMapId: string;
-  onSelectMap: (map: MapItem) => void;
   characters: Character[];
 }
 

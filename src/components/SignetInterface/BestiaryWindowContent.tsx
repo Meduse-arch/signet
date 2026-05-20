@@ -17,7 +17,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
   const { characters, controlledCharacterId, setPnjControle, removeCharacter, addOrUpdateCharacter } = useCharactersStore();
   const { user } = useAuthStore();
   const { setCharacterManagement } = useUIStore();
-  const isMJ = !!user && user.role >= SecurityLevel.MJ;
+  const isMJ = !!user && Number(user.role) >= SecurityLevel.MJ;
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const { broadcast } = usePeer();
   

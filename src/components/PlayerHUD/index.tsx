@@ -7,6 +7,7 @@ import { Plus } from 'lucide-react';
 interface Player {
   peer_id: string;
   pseudo: string;
+  role?: number;
 }
 
 interface PlayerHUDProps {
@@ -116,7 +117,7 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
           <div className="flex items-center gap-2 mt-0.5">
             <div className="h-[1px] w-8 bg-gold-DEFAULT/50" />
             <span className="text-[10px] text-white/70 font-sans tracking-widest drop-shadow-md">
-              ID: {peerId?.split('-').slice(-1)[0] || 'INIT'}
+              ID: {peerId?.split('-').slice(-1)[0] || 'INIT'} • SEC: {user?.role ?? 0}
             </span>
           </div>
         </div>
@@ -149,7 +150,7 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
                         onClick={() => handleToggleToken(char.id)}
                         className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
                             tokenStatus[char.id]
-                                ? 'bg-gold-DEFAULT text-black shadow-[0_0_10px_rgba(212,175,55,0.4)]' 
+                                ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
                                 : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
                         }`}
                         title={tokenStatus[char.id] ? "Retirer de la carte" : "Placer sur la carte"}
@@ -167,8 +168,10 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-white/90 font-cinzel tracking-wider group-hover:text-white transition-colors drop-shadow-md">{p.pseudo}</span>
-                  {p.pseudo === 'MJ' && (
-                    <span className="text-[8px] border border-white/30 text-white/80 px-1 py-0.5 rounded-sm font-black uppercase drop-shadow-md">MJ</span>
+                  {(p.role !== undefined || p.pseudo === 'MJ') && (
+                    <span className="text-[8px] border border-white/30 text-white/80 px-1 py-0.5 rounded-sm font-black uppercase drop-shadow-md">
+                        {p.role !== undefined ? `SEC: ${p.role}` : 'MJ'}
+                    </span>
                   )}
                 </div>
               </div>

@@ -40,8 +40,8 @@ export function ExternalWindowPage() {
   const { characterManagementId, setCharacterManagement } = useUIStore();
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   
-  // Call useSession to make sure the session store is populated
-  const { sessions } = useSession();
+  // Important: charge les sessions pour trouver le Host Peer ID
+  const { sessions, isLoading: sessionsLoading } = useSession();
   
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string }[]>([]);
   const [maps, setMaps] = useState<MapItem[]>([]);
@@ -57,26 +57,28 @@ export function ExternalWindowPage() {
     }
   }, [sessionId, initChars, initItems, initSkills, initTags]);
 
-  // Initialisation P2P pour rester synchronisé
+  // Initialisation P2P pour rester synchronisé (Live Sync)
   useEffect(() => {
     const setup = async () => {
-      if (!sessionId || !type) return;
-      const session = useSessionStore.getState().sessions.find(s => s.id === sessionId);
-      const hostId = sessionId.startsWith('SIGNET-') ? sessionId : session?.hostPeerId;
+      if (!sessionId || !type || sessionsLoading) return;
+      
+      const session = sessions.find(s => s.id === sessionId);
+      const hostId = session?.hostPeerId;
+      
       if (hostId) {
+        console.log('[ExternalWindow] Syncing with host:', hostId);
         // Toujours se connecter comme client (false) pour les fenêtres externes
         await init(false, hostId, `ext-${type}-${Math.random().toString(36).substr(2, 5)}`);
       }
     };
     setup();
-  }, [sessionId, type, init, sessions]);
+  }, [sessionId, type, init, sessions, sessionsLoading]);
 
-  // Chargement initial des données (Scènes, Joueurs, Personnages)
+  // Chargement initial des données statiques
   useEffect(() => {
     const loadData = async () => {
       if (!sessionId) return;
 
-      // Chargement des cartes et personnages
       if (window.electronAPI) {
         try {
           const dbMaps = await getSessionMaps(sessionId);
@@ -87,13 +89,11 @@ export function ExternalWindowPage() {
             if (savedMaps) setMaps(JSON.parse(savedMaps));
           }
 
-          // Personnages
           const dbChars = await getSessionCharacters(sessionId);
           if (dbChars.length > 0) {
             useCharactersStore.getState().setCharacters(dbChars);
           }
         } catch (e) {
-          console.error('[ExternalWindow] Error loading data from DB:', e);
           const savedMaps = localStorage.getItem(`maps_${sessionId}`);
           if (savedMaps) setMaps(JSON.parse(savedMaps));
         }
@@ -102,18 +102,16 @@ export function ExternalWindowPage() {
         if (savedMaps) setMaps(JSON.parse(savedMaps));
       }
 
-      // Map active
       const lastActive = localStorage.getItem(`active_map_${sessionId}`);
       if (lastActive) setCurrentMapId(lastActive);
 
-      // Joueurs
       const list = await getSessionPlayers(sessionId);
       setPlayers(list);
     };
     loadData();
   }, [sessionId]);
 
-  // Écoute des mises à jour
+  // Écoute des mises à jour temps réel (via P2P)
   useEffect(() => {
     const unsub = onData((data) => {
       if (data.type === 'PLAYER_LIST') {
@@ -121,7 +119,6 @@ export function ExternalWindowPage() {
       } else if (data.type === 'MAP_CHANGE') {
         const targetUrl = data.payload.url;
         const map = maps.find((m: MapItem) => m.url === targetUrl);
-        
         if (map) {
           setCurrentMapId(map.id);
           if (sessionId) localStorage.setItem(`active_map_${sessionId}`, map.id);
@@ -140,7 +137,6 @@ export function ExternalWindowPage() {
     setCurrentMapId(map.id);
     localStorage.setItem(`active_map_${sessionId}`, map.id);
 
-    // Sync local via BroadcastChannel
     const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
     channel.postMessage({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
     channel.close();
@@ -162,7 +158,6 @@ export function ExternalWindowPage() {
       localStorage.setItem(`maps_${sessionId}`, JSON.stringify(updatedMaps));
     }
 
-    // Sync local via BroadcastChannel
     const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
     channel.postMessage({ type: 'MAP_UPDATE', payload: updatedMaps });
     channel.close();
@@ -172,33 +167,31 @@ export function ExternalWindowPage() {
     }
   };
 
-// Écoute BroadcastChannel pour recevoir les mises à jour de l'app principale
-useEffect(() => {
-  if (!sessionId) return;
-  const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
-  channel.onmessage = (event) => {
-    const { type, payload } = event.data;
-    if (type === 'MAP_CHANGE') {
-      const map = maps.find((m: MapItem) => m.url === payload.url);
-      if (map) {
-        setCurrentMapId(map.id);
+  // Sync avec l'app principale via BroadcastChannel
+  useEffect(() => {
+    if (!sessionId) return;
+    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    channel.onmessage = (event) => {
+      const { type, payload } = event.data;
+      if (type === 'MAP_CHANGE') {
+        const map = maps.find((m: MapItem) => m.url === payload.url);
+        if (map) setCurrentMapId(map.id);
+      } else if (type === 'MAP_UPDATE') {
+        setMaps(payload);
       }
-    } else if (type === 'MAP_UPDATE') {
-      setMaps(payload);
-    }
-  };
-  return () => channel.close();
-}, [sessionId, maps]);
+    };
+    return () => channel.close();
+  }, [sessionId, maps]);
 
   if (!sessionId || !type) return null;
 
   return (
-    <div className="w-full h-screen bg-[#0D0D0F]/80 p-0 overflow-hidden flex flex-col relative">
+    <div className="w-full h-full bg-transparent text-[#e8d5a0] p-4 overflow-hidden flex flex-col relative">
        {/* Golden Corners */}
        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-gold-DEFAULT/50 pointer-events-none z-10" />
        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-gold-DEFAULT/50 pointer-events-none z-10" />
 
-       <div className="flex-1 p-4 custom-scrollbar overflow-y-auto flex flex-col">
+       <div className="flex-1 custom-scrollbar overflow-y-auto flex flex-col">
           {type === 'scenes' && (
             <SceneWindowContent 
               scenes={maps}
@@ -232,6 +225,7 @@ useEffect(() => {
              <BestiaryWindowContent sessionId={sessionId} />
           )}
        </div>
+
        <DiceRollModal />
        <ItemCreationModal sessionId={sessionId} />
        <ItemDetailModal sessionId={sessionId} />
