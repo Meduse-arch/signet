@@ -9,7 +9,9 @@ import {
   ItemCreationModal, 
   ItemDetailModal,
   ManageCharacterModal,
-  PlayerWindowContent
+  PlayerWindowContent,
+  SkillsWindowContent,
+  SkillCreationModal
 } from '../../components/SignetInterface';
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { usePeer } from '../../hooks/usePeer';
@@ -17,6 +19,8 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
+import { useSkillsStore } from '../../store/skills';
+import { useTagsStore } from '../../store/tags';
 import { useUIStore } from '../../store/ui';
 import { getSessionPlayers } from '../../services/session.service';
 import { getSessionMaps, addSessionMap } from '../../services/maps.service';
@@ -31,6 +35,8 @@ export function ExternalWindowPage() {
   const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
   const initChars = useCharactersStore(state => state.initialize);
   const initItems = useItemsStore(state => state.initialize);
+  const initSkills = useSkillsStore(state => state.initialize);
+  const initTags = useTagsStore(state => state.initialize);
   const { characterManagementId, setCharacterManagement } = useUIStore();
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   
@@ -46,8 +52,10 @@ export function ExternalWindowPage() {
     if (sessionId) {
       initChars(sessionId);
       initItems(sessionId);
+      initSkills(sessionId);
+      initTags(sessionId);
     }
-  }, [sessionId, initChars, initItems]);
+  }, [sessionId, initChars, initItems, initSkills, initTags]);
 
   // Initialisation P2P pour rester synchronisé
   useEffect(() => {
@@ -213,9 +221,7 @@ useEffect(() => {
           )}
 
           {type === 'story' && (
-             <p className="text-xs font-serif italic text-gold-DEFAULT drop-shadow-md/70 leading-relaxed text-center py-20">
-                Le grimoire externe est en attente d'écriture...
-             </p>
+             <SkillsWindowContent sessionId={sessionId} />
           )}
 
           {type === 'assets' && (
@@ -229,6 +235,7 @@ useEffect(() => {
        <DiceRollModal />
        <ItemCreationModal sessionId={sessionId} />
        <ItemDetailModal sessionId={sessionId} />
+       <SkillCreationModal sessionId={sessionId} />
        {characterManagementId && (
          <ManageCharacterModal 
            sessionId={sessionId} 

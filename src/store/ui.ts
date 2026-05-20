@@ -13,6 +13,13 @@ interface UIState {
   characterManagementId: string | null;
   searchQuery: string;
   viewMode: 'grid' | 'codex';
+  
+  // Skills specific UI state
+  showSkillCreateModal: boolean;
+  skillToEdit: any | null;
+  selectedSkill: any | null;
+  skillDetailOpen: boolean;
+
   setSidebarOpen: (open: boolean) => void;
   setActiveTab: (tab: 'library' | 'search' | 'key' | 'forge') => void;
   setShowModal: (show: boolean) => void;
@@ -22,6 +29,11 @@ interface UIState {
   setCharacterManagement: (id: string | null) => void;
   setSearchQuery: (query: string) => void;
   setViewMode: (mode: 'grid' | 'codex') => void;
+
+  // Skills actions
+  setShowSkillCreateModal: (show: boolean, skillToEdit?: any | null) => void;
+  setSelectedSkill: (skill: any | null, openModal?: boolean) => void;
+  setSkillDetailOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -37,6 +49,12 @@ export const useUIStore = create<UIState>((set) => ({
   characterManagementId: null,
   searchQuery: '',
   viewMode: 'grid',
+
+  showSkillCreateModal: false,
+  skillToEdit: null,
+  selectedSkill: null,
+  skillDetailOpen: false,
+
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setShowModal: (show) => set({ showModal: show }),
@@ -51,4 +69,8 @@ export const useUIStore = create<UIState>((set) => ({
   setCharacterManagement: (id) => set({ characterManagementId: id }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setViewMode: (mode) => set({ viewMode: mode }),
+
+  setShowSkillCreateModal: (show, skillToEdit = null) => set({ showSkillCreateModal: show, skillToEdit }),
+  setSelectedSkill: (skill, openModal = true) => set({ selectedSkill: skill, skillDetailOpen: skill ? openModal : false }),
+  setSkillDetailOpen: (open) => set({ skillDetailOpen: open }),
 }));

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, User, Sword, Heart, Package, BookOpen, Save, Trash2, ScrollText, Image as ImageIcon, Search, Hammer, Plus, ArrowLeft, ChevronRight, ChevronDown, ShieldAlert, Skull } from 'lucide-react';
+import { X, User, Sword, Heart, Package, Save, Trash2, Search, Hammer, Plus, ArrowLeft, Zap } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
+import { useSkillsStore } from '../../store/skills';
 import { useSessionStore } from '../../store/session';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
-import { useUIStore } from '../../store/ui';
 import { usePeer } from '../../hooks/usePeer';
 import { updateSessionCharacter } from '../../services/characters.service';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
@@ -19,14 +19,15 @@ type Tab = 'profil' | 'stats' | 'ressources' | 'inventaire' | 'competences' | 'q
 
 const ENTITY_TYPES = [
   { id: 'Joueur', label: 'Joueur', icon: User, color: 'text-blue-400' },
-  { id: 'PNJ', label: 'PNJ', icon: ScrollText, color: 'text-green-400' },
-  { id: 'Monstre', label: 'Monstre', icon: Skull, color: 'text-orange-400' },
-  { id: 'Boss', label: 'Boss', icon: ShieldAlert, color: 'text-red-400' },
+  { id: 'PNJ', label: 'PNJ', icon: Zap, color: 'text-green-400' },
+  { id: 'Monstre', label: 'Monstre', icon: Zap, color: 'text-orange-400' },
+  { id: 'Boss', label: 'Boss', icon: Zap, color: 'text-red-400' },
 ];
 
 export function ManageCharacterModal({ sessionId, characterId, onClose }: ManageCharacterModalProps) {
   const { characters, addOrUpdateCharacter } = useCharactersStore();
   const { items } = useItemsStore();
+  const { skills } = useSkillsStore();
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const { broadcast } = usePeer();
   const { user } = useAuthStore();
@@ -36,7 +37,9 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
   const [editedChar, setEditedChar] = useState<any>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [showForge, setShowForge] = useState(false);
+  const [showSkillArchive, setShowSkillArchive] = useState(false);
   const [searchForge, setSearchForge] = useState('');
+  const [searchSkillArchive, setSearchSkillArchive] = useState('');
   const [forgeQuantities, setForgeQuantities] = useState<Record<string, number>>({});
   const [addedFeedback, setAddedFeedback] = useState<string | null>(null);
 
@@ -54,130 +57,42 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
     );
   }, [items, searchForge]);
 
-  // Grouped inventory: items with same ID are grouped if NOT equipped
+  const filteredArchiveSkills = useMemo(() => {
+    return skills.filter(skill => 
+      skill.name.toLowerCase().includes(searchSkillArchive.toLowerCase()) ||
+      skill.description.toLowerCase().includes(searchSkillArchive.toLowerCase())
+    );
+  }, [skills, searchSkillArchive]);
+
   const groupedInventory = useMemo(() => {
-    if (!editedChar?.inventory) return [];
-    
+    if (!editedChar) return [];
+    const inv = editedChar.inventory || [];
     const groups: any[] = [];
     const unequippedStacks: Record<string, any> = {};
 
-    editedChar.inventory.forEach((item: any) => {
+    inv.forEach((item: any) => {
       if (item.equipped) {
-        // Equipped items are always shown individually
         groups.push({ ...item, quantity: 1, isStack: false });
       } else {
-        const itemId = item.id;
-        if (!unequippedStacks[itemId]) {
-          unequippedStacks[itemId] = { ...item, quantity: 0, isStack: true, instances: [] };
-          groups.push(unequippedStacks[itemId]);
+        if (!unequippedStacks[item.id]) {
+          unequippedStacks[item.id] = { ...item, quantity: 0, isStack: true, instances: [] };
+          groups.push(unequippedStacks[item.id]);
         }
-        unequippedStacks[itemId].quantity += 1;
-        unequippedStacks[itemId].instances.push(item.instanceId);
+        unequippedStacks[item.id].quantity += 1;
+        unequippedStacks[item.id].instances.push(item.instanceId);
       }
     });
 
     return groups;
-  }, [editedChar?.inventory]);
+  }, [editedChar]);
 
-  if (!editedChar || !isMJ) return null;
-
-  const statDefs = session?.settings?.stats || DEFAULT_STATS;
-  const barDefs = session?.settings?.bars || DEFAULT_BARS;
-
-  const updateField = (field: string, value: any) => {
-    setEditedChar((prev: any) => ({ ...prev, [field]: value }));
-    setHasChanges(true);
-  };
-
-  const updateStat = (statId: string, value: number) => {
-    setEditedChar((prev: any) => ({
-      ...prev,
-      stats: { ...prev.stats, [statId]: value }
-    }));
-    setHasChanges(true);
-  };
-
-  const updateBar = (barId: string, value: number) => {
-    setEditedChar((prev: any) => ({
-      ...prev,
-      bars: { ...prev.bars, [barId]: value }
-    }));
-    setHasChanges(true);
-  };
-
-  const handleAddItem = (item: any) => {
-    const qty = forgeQuantities[item.id] || 1;
-    const newInstances = Array.from({ length: qty }).map(() => ({
-      ...item,
-      instanceId: crypto.randomUUID(),
-      equipped: false
-    }));
-    
-    setEditedChar((prev: any) => {
-      const newInventory = [...(prev.inventory || []), ...newInstances];
-      return { ...prev, inventory: newInventory };
-    });
-    setHasChanges(true);
-
-    // Visual feedback
-    setAddedFeedback(item.id);
-    setTimeout(() => setAddedFeedback(null), 1000);
-  };
-
-  const handleUpdateQuantity = (itemId: string, newQty: number, currentQty: number) => {
-    if (newQty < 0) return;
-    
-    setEditedChar((prev: any) => {
-      let inventory = [...(prev.inventory || [])];
-      
-      if (newQty > currentQty) {
-        // Add more
-        const itemTemplate = items.find(i => i.id === itemId);
-        if (!itemTemplate) return prev;
-        const toAdd = newQty - currentQty;
-        const newInstances = Array.from({ length: toAdd }).map(() => ({
-          ...itemTemplate,
-          instanceId: crypto.randomUUID(),
-          equipped: false
-        }));
-        inventory = [...inventory, ...newInstances];
-      } else if (newQty < currentQty) {
-        // Remove some (prefer unequipped)
-        let toRemove = currentQty - newQty;
-        const resultInv = [];
-        // We process backwards to remove recently added unequipped items first
-        for (let i = inventory.length - 1; i >= 0; i--) {
-          const item = inventory[i];
-          if (item.id === itemId && !item.equipped && toRemove > 0) {
-            toRemove--;
-            continue;
-          }
-          resultInv.unshift(item);
-        }
-        inventory = resultInv;
-      }
-      return { ...prev, inventory };
-    });
-    setHasChanges(true);
-  };
-
-  const handleRemoveStack = (itemId: string) => {
-    setEditedChar((prev: any) => {
-      const newInventory = prev.inventory.filter((i: any) => i.id !== itemId || i.equipped);
-      return { ...prev, inventory: newInventory };
-    });
-    setHasChanges(true);
-  };
-
-  const handleRemoveInstance = (instanceId: string) => {
-    setEditedChar((prev: any) => {
-      const newInventory = prev.inventory.filter((i: any) => i.instanceId !== instanceId);
-      return { ...prev, inventory: newInventory };
-    });
-    setHasChanges(true);
-  };
+  if (!editedChar) return null;
 
   const handleSave = async () => {
+    if (!editedChar) return;
+    
+    addOrUpdateCharacter(editedChar);
+    
     if (window.electronAPI) {
       await updateSessionCharacter(
         editedChar.id,
@@ -192,161 +107,231 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
         editedChar.is_template
       );
     }
-    addOrUpdateCharacter(editedChar);
+    
     broadcast({ type: 'CHAR_UPDATE', payload: editedChar });
     setHasChanges(false);
+    onClose();
   };
 
-  const tabs = [
-    { id: 'profil', label: 'Profil', icon: User },
-    { id: 'stats', label: 'Attributs', icon: Sword },
-    { id: 'ressources', label: 'Ressources', icon: Heart },
-    { id: 'inventaire', label: 'Inventaire', icon: Package },
-    { id: 'competences', label: 'Compétences', icon: BookOpen },
-    { id: 'quetes', label: 'Quêtes', icon: ScrollText },
-  ] as const;
+  const updateStat = (id: string, val: number) => {
+    setEditedChar((prev: any) => ({
+      ...prev,
+      stats: { ...prev.stats, [id]: Math.max(0, val) }
+    }));
+    setHasChanges(true);
+  };
+
+  const updateBar = (id: string, val: number) => {
+    setEditedChar((prev: any) => ({
+      ...prev,
+      bars: { ...prev.bars, [id]: Math.max(0, val) }
+    }));
+    setHasChanges(true);
+  };
+
+  const handleAddFromForge = (item: any) => {
+    const qty = forgeQuantities[item.id] || 1;
+    const newInstances = Array.from({ length: qty }).map(() => ({
+      ...item,
+      instanceId: crypto.randomUUID(),
+      equipped: false
+    }));
+
+    setEditedChar((prev: any) => ({
+      ...prev,
+      inventory: [...(prev.inventory || []), ...newInstances]
+    }));
+    setHasChanges(true);
+    setAddedFeedback(item.id);
+    setTimeout(() => setAddedFeedback(null), 1000);
+  };
+
+  const handleAddSkillFromArchive = (skill: any) => {
+    setEditedChar((prev: any) => ({
+      ...prev,
+      custom_skills: [...(prev.custom_skills || []), { ...skill, id: crypto.randomUUID(), level: 20 }]
+    }));
+    setHasChanges(true);
+    setAddedFeedback(skill.id);
+    setTimeout(() => setAddedFeedback(null), 1000);
+  };
+
+  const handleRemoveInstance = (instanceId: string) => {
+    setEditedChar((prev: any) => ({
+      ...prev,
+      inventory: prev.inventory.filter((i: any) => i.instanceId !== instanceId)
+    }));
+    setHasChanges(true);
+  };
+
+  const handleRemoveStack = (itemId: string) => {
+    setEditedChar((prev: any) => ({
+      ...prev,
+      inventory: prev.inventory.filter((i: any) => i.id !== itemId || i.equipped)
+    }));
+    setHasChanges(true);
+  };
+
+  const handleRemoveSkill = (skillId: string) => {
+    setEditedChar((prev: any) => ({
+      ...prev,
+      custom_skills: (prev.custom_skills || []).filter((s: any) => s.id !== skillId)
+    }));
+    setHasChanges(true);
+  };
+
+  const handleUpdateQuantity = (itemId: string, newQty: number) => {
+    if (newQty < 0) return;
+    
+    setEditedChar((prev: any) => {
+      const otherItems = prev.inventory.filter((i: any) => i.id !== itemId || i.equipped);
+      const itemToClone = prev.inventory.find((i: any) => i.id === itemId && !i.equipped);
+      
+      if (!itemToClone && newQty > 0) return prev;
+
+      const newInstances = Array.from({ length: newQty }).map(() => ({
+        ...itemToClone,
+        instanceId: crypto.randomUUID()
+      }));
+
+      return {
+        ...prev,
+        inventory: [...otherItems, ...newInstances]
+      };
+    });
+    setHasChanges(true);
+  };
+
+  const statDefs = session?.settings?.stats || DEFAULT_STATS;
+  const barDefs = session?.settings?.bars || DEFAULT_BARS;
 
   return (
-    <div className="fixed inset-0 z-[150] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
-      <div className="bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-2xl w-full max-w-4xl h-[85vh] shadow-[0_0_80px_rgba(212,175,55,0.15)] flex flex-col overflow-hidden relative">
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 sm:p-6 animate-in fade-in duration-300">
+      <div className="relative w-full max-w-4xl bg-[#0D0D0F]/95 border border-gold-DEFAULT/30 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-gold-DEFAULT/50 rounded-tl-[2rem] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-gold-DEFAULT/50 rounded-br-[2rem] pointer-events-none" />
         
-        {/* Header */}
-        <div className="shrink-0 border-b border-white/10 bg-black/40 flex items-center justify-between p-4 pl-6 relative">
-          <div className="absolute top-0 left-0 w-1 h-full bg-gold-DEFAULT" />
+        <header className="flex items-center justify-between p-6 border-b border-gold-DEFAULT/10 shrink-0">
           <div className="flex items-center gap-4">
-             <div className="w-10 h-10 rounded-lg bg-black border border-gold-DEFAULT/30 flex items-center justify-center overflow-hidden">
-               {editedChar.image_url ? (
-                 <img src={editedChar.image_url} alt="" className="w-full h-full object-cover opacity-80" />
-               ) : (
-                 <User className="text-gold-DEFAULT/40" size={20} />
-               )}
-             </div>
-             <div className="flex flex-col">
-               <h2 className="font-cinzel font-black text-xl tracking-widest uppercase text-white leading-none">
-                 GÉRER L'ENTITÉ
-               </h2>
-               <span className="font-mono text-[10px] text-gold-DEFAULT/60">{editedChar.name}</span>
-             </div>
+            <div className="w-12 h-12 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 flex items-center justify-center overflow-hidden shadow-lg">
+              {editedChar.image_url ? (
+                <img src={editedChar.image_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <User size={24} className="text-gold-bright" />
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-cinzel font-black text-gold-bright tracking-[0.2em] uppercase">
+                {editedChar.name}
+              </h2>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[10px] font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase">GÉRER L'ENTITÉ</span>
+                <div className="w-1 h-1 rounded-full bg-gold-DEFAULT/20" />
+                <span className="text-[10px] font-mono text-white/20 uppercase tracking-tighter">{editedChar.id}</span>
+              </div>
+            </div>
           </div>
-          
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors">
-            <X size={20} />
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-gold-dim hover:text-gold-bright transition-colors">
+            <X size={24} />
           </button>
-        </div>
+        </header>
 
-        {/* Content Area */}
         <div className="flex-1 flex overflow-hidden">
-          
-          {/* Sidebar Tabs */}
-          <div className="w-48 shrink-0 border-r border-white/5 bg-black/20 flex flex-col py-4 gap-1">
-            {tabs.map(tab => (
+          <aside className="w-48 border-r border-white/5 bg-black/20 p-4 flex flex-col gap-1 shrink-0">
+            {[
+              { id: 'profil', label: 'PROFIL', icon: User },
+              { id: 'stats', label: 'ATTRIBUTS', icon: Sword },
+              { id: 'ressources', label: 'VITALITÉS', icon: Heart },
+              { id: 'inventaire', label: 'INVENTAIRE', icon: Package },
+              { id: 'competences', label: 'MAÎTRISES', icon: Zap },
+            ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-6 py-3 font-cinzel font-black text-[10px] tracking-widest uppercase transition-all relative ${
-                  activeTab === tab.id 
-                  ? 'text-gold-bright bg-gold-DEFAULT/10' 
-                  : 'text-white/40 hover:text-white/80 hover:bg-white/5'
-                }`}
+                onClick={() => { setActiveTab(tab.id as Tab); setShowForge(false); setShowSkillArchive(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-cinzel text-[10px] font-black tracking-widest transition-all ${activeTab === tab.id ? 'bg-gold-DEFAULT text-black shadow-lg translate-x-1' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
               >
-                {activeTab === tab.id && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gold-DEFAULT shadow-[0_0_10px_rgba(212,175,55,1)]" />}
-                <tab.icon size={16} className={activeTab === tab.id ? 'text-gold-DEFAULT' : ''} />
+                <tab.icon size={14} />
                 {tab.label}
               </button>
             ))}
-          </div>
+          </aside>
 
-          {/* Main Panel */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-8 bg-gradient-to-br from-transparent to-black/40">
+          <main className="flex-1 p-8 overflow-y-auto custom-scrollbar bg-black/40">
             {activeTab === 'profil' && (
-              <div className="flex flex-col gap-6 max-w-xl">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Dénomination</label>
-                  <input 
-                    type="text" 
-                    value={editedChar.name} 
-                    onChange={e => updateField('name', e.target.value)} 
-                    className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-gold-DEFAULT/50 outline-none transition-all shadow-inner" 
-                  />
-                </div>
-                
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Type d'entité</label>
-                  <div className="flex gap-2">
-                    {['PNJ', 'Monstre', 'Boss', 'Joueur'].map(type => (
-                      <button
-                        key={type}
-                        onClick={() => updateField('type', type)}
-                        className={`px-4 py-2 rounded-lg font-cinzel text-[10px] font-black uppercase tracking-widest transition-all ${
-                          editedChar.type === type 
-                          ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.3)]' 
-                          : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10'
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                     <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Appellation de l'Entité</label>
+                     <input 
+                       type="text" 
+                       value={editedChar.name} 
+                       onChange={e => { setEditedChar((prev: any) => ({ ...prev, name: e.target.value })); setHasChanges(true); }}
+                       className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-lg shadow-inner"
+                     />
+                  </div>
+                  <div className="space-y-4">
+                     <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Type d'Existence</label>
+                     <div className="grid grid-cols-2 gap-2">
+                        {ENTITY_TYPES.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => { setEditedChar((p: any) => ({ ...p, type: t.id })); setHasChanges(true); }}
+                            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-[9px] font-cinzel font-black uppercase transition-all ${editedChar.type === t.id ? 'bg-gold-DEFAULT/10 border-gold-DEFAULT text-gold-bright shadow-lg' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30'}`}
+                          >
+                            <t.icon size={12} className={t.color} />
+                            {t.label}
+                          </button>
+                        ))}
+                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Portrait (URL)</label>
-                  <div className="flex gap-3 items-center">
-                    <div className="w-16 h-16 shrink-0 rounded-lg bg-black border border-white/10 flex items-center justify-center overflow-hidden">
-                      {editedChar.image_url ? (
-                        <img src={editedChar.image_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <ImageIcon className="text-white/20" size={24} />
-                      )}
-                    </div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Illustration (URL)</label>
+                  <div className="flex gap-4">
                     <input 
                       type="text" 
                       value={editedChar.image_url || ''} 
-                      onChange={e => updateField('image_url', e.target.value)} 
+                      onChange={e => { setEditedChar((p: any) => ({ ...p, image_url: e.target.value })); setHasChanges(true); }}
                       placeholder="https://..."
-                      className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-gold-DEFAULT/50 outline-none transition-all shadow-inner" 
+                      className="flex-1 bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono shadow-inner"
                     />
+                    {editedChar.image_url && (
+                      <div className="w-10 h-10 rounded-lg border border-gold-DEFAULT/30 overflow-hidden shrink-0 shadow-lg">
+                        <img src={editedChar.image_url} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    )}
                   </div>
-                </div>
-
-                <div className="flex items-center gap-3 mt-4 p-4 rounded-xl border border-purple-500/20 bg-purple-500/5">
-                  <input 
-                    type="checkbox" 
-                    id="is_template"
-                    checked={editedChar.is_template}
-                    onChange={e => updateField('is_template', e.target.checked)}
-                    className="w-4 h-4 accent-purple-500 rounded cursor-pointer"
-                  />
-                  <label htmlFor="is_template" className="font-cinzel text-xs text-purple-400 uppercase tracking-widest cursor-pointer select-none">
-                    Définir comme modèle réutilisable
-                  </label>
                 </div>
               </div>
             )}
 
             {activeTab === 'stats' && (
-              <div className="grid grid-cols-2 gap-4 max-w-2xl">
-                {statDefs.map(stat => (
-                  <div key={stat.id} className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/[0.02]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {statDefs.map((stat: any) => (
+                  <div key={stat.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-gold-DEFAULT/20 transition-all group">
                     <div className="flex flex-col">
-                      <span className="font-cinzel font-black uppercase text-[11px] text-white/80 tracking-widest">{stat.name}</span>
-                      <span className="font-mono text-[9px] text-white/30 uppercase">{stat.id}</span>
+                      <span className="font-cinzel font-black uppercase text-[10px] text-white/60 tracking-widest group-hover:text-gold-DEFAULT transition-colors">{stat.name}</span>
                     </div>
-                    <input 
-                      type="number" 
-                      value={editedChar.stats?.[stat.id] || 0} 
-                      onChange={e => updateStat(stat.id, parseInt(e.target.value) || 0)}
-                      className="w-20 bg-black/60 border border-gold-DEFAULT/30 rounded-lg px-3 py-2 text-center font-mono text-gold-bright text-lg outline-none focus:border-gold-DEFAULT transition-all shadow-inner"
-                    />
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => updateStat(stat.id, (editedChar.stats?.[stat.id] || 0) - 1)} className="w-8 h-8 rounded-lg border border-white/20 hover:bg-white/10 text-white/60 transition-colors flex items-center justify-center font-bold">-</button>
+                      <input 
+                        type="number" 
+                        value={editedChar.stats?.[stat.id] || 0} 
+                        onChange={e => updateStat(stat.id, parseInt(e.target.value) || 0)}
+                        className="w-16 bg-black/60 border border-white/20 rounded-lg px-3 py-2 text-center font-mono text-lg text-gold-bright outline-none focus:border-gold-DEFAULT transition-all shadow-inner"
+                      />
+                      <button onClick={() => updateStat(stat.id, (editedChar.stats?.[stat.id] || 0) + 1)} className="w-8 h-8 rounded-lg border border-white/20 hover:bg-white/10 text-white/60 transition-colors flex items-center justify-center font-bold">+</button>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
 
             {activeTab === 'ressources' && (
-              <div className="grid grid-cols-1 gap-4 max-w-xl">
-                {barDefs.map(bar => (
-                  <div key={bar.id} className="flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {barDefs.map((bar: any) => (
+                  <div key={bar.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-gold-DEFAULT/20 transition-all">
                     <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center shrink-0 shadow-inner" style={{ backgroundColor: bar.color + '20' }}>
                       <Heart size={16} style={{ color: bar.color }} />
                     </div>
@@ -360,13 +345,11 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                         value={editedChar.bars?.[bar.id] || 0} 
                         onChange={e => updateBar(bar.id, parseInt(e.target.value) || 0)}
                         className="w-16 bg-black/60 border border-white/20 rounded-lg px-3 py-2 text-center font-mono text-white outline-none focus:border-gold-DEFAULT transition-all shadow-inner"
-                        placeholder="0"
                       />
                       <button onClick={() => updateBar(bar.id, (editedChar.bars?.[bar.id] || 0) + 1)} className="w-8 h-8 rounded-lg border border-white/20 hover:bg-white/10 text-white/60 transition-colors flex items-center justify-center font-bold">+</button>
                     </div>
                   </div>
                 ))}
-                <p className="text-[10px] font-garamond italic text-white/40 mt-4">Astuce : Ces valeurs modifient les ressources directes du personnage.</p>
               </div>
             )}
 
@@ -417,11 +400,10 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                             </div>
 
                             <div className="flex items-center gap-4">
-                              {/* Quantity Controls for Stacks */}
                               {item.isStack && (
                                 <div className="flex items-center gap-2 bg-black/40 rounded-lg border border-white/10 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button 
-                                    onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(item.id, item.quantity - 1, item.quantity); }}
+                                    onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(item.id, item.quantity - 1); }}
                                     className="w-6 h-6 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
                                   >
                                     -
@@ -429,11 +411,11 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                   <input 
                                     type="number" 
                                     value={item.quantity} 
-                                    onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value) || 0, item.quantity)}
+                                    onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value) || 0)}
                                     className="w-8 bg-transparent text-center font-mono text-[10px] text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   />
                                   <button 
-                                    onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(item.id, item.quantity + 1, item.quantity); }}
+                                    onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(item.id, item.quantity + 1); }}
                                     className="w-6 h-6 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
                                   >
                                     +
@@ -448,9 +430,8 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                   else handleRemoveInstance(item.instanceId);
                                 }}
                                 className="p-2 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100"
-                                title="Retirer de l'inventaire"
                               >
-                                <Trash2 size={16} />
+                                <Trash2 size={14} />
                               </button>
                             </div>
                           </div>
@@ -459,130 +440,201 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-col gap-4 animate-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col gap-6 animate-in slide-in-from-right-4 duration-500">
+                    <div className="flex items-center justify-between">
                       <button 
                         onClick={() => setShowForge(false)}
-                        className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                        className="flex items-center gap-2 text-white/40 hover:text-gold-bright transition-colors text-[10px] font-cinzel font-black uppercase tracking-widest"
                       >
-                        <ArrowLeft size={16} />
+                        <ArrowLeft size={14} /> Retour à l'Inventaire
                       </button>
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gold-DEFAULT/40" />
+                      <div className="relative w-48">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-DEFAULT/40" />
                         <input 
                           type="text" 
-                          placeholder="RECHERCHER DANS LES ARCHIVES..."
                           value={searchForge}
-                          onChange={(e) => setSearchForge(e.target.value)}
-                          className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl py-2 pl-10 pr-4 text-[10px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-all uppercase tracking-widest"
-                          autoFocus
+                          onChange={e => setSearchForge(e.target.value)}
+                          placeholder="Rechercher..."
+                          className="w-full bg-black/60 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-[10px] text-white focus:border-gold-DEFAULT/50 outline-none"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-2">
-                      {filteredForgeItems.map((item: any) => (
-                        <div key={item.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all group ${addedFeedback === item.id ? 'border-green-500/50 bg-green-500/10' : 'border-white/5 bg-white/[0.01] hover:bg-white/[0.03]'}`}>
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center overflow-hidden shrink-0">
-                              {item.image_url ? (
-                                <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-40 group-hover:opacity-60 transition-opacity" />
-                              ) : (
-                                <Package size={16} className="text-white/10 group-hover:text-white/20" />
-                              )}
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="font-cinzel font-black text-[11px] uppercase tracking-widest text-white/60 group-hover:text-white/90">{item.name}</span>
-                              <span className="text-[8px] font-mono text-white/20 uppercase">{item.category}</span>
-                            </div>
+                      {filteredForgeItems.map(item => (
+                        <div key={item.id} className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/[0.02] group hover:border-gold-DEFAULT/20 transition-all">
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                             <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                {item.image_url ? (
+                                  <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-60" />
+                                ) : (
+                                  <Package size={16} className="text-white/20" />
+                                )}
+                             </div>
+                             <div className="flex flex-col min-w-0">
+                                <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{item.name}</span>
+                                <span className="text-[9px] font-mono text-white/30 uppercase">{item.category}</span>
+                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 bg-black/40 rounded-lg border border-white/10 p-1">
-                              <button 
-                                onClick={() => setForgeQuantities(prev => ({ ...prev, [item.id]: Math.max(1, (prev[item.id] || 1) - 1) }))}
-                                className="w-6 h-6 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
-                              >
-                                -
-                              </button>
-                              <input 
-                                type="number" 
-                                value={forgeQuantities[item.id] || 1} 
-                                onChange={(e) => setForgeQuantities(prev => ({ ...prev, [item.id]: Math.max(1, parseInt(e.target.value) || 1) }))}
-                                className="w-8 bg-transparent text-center font-mono text-[10px] text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              />
-                              <button 
-                                onClick={() => setForgeQuantities(prev => ({ ...prev, [item.id]: (prev[item.id] || 1) + 1 }))}
-                                className="w-6 h-6 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
-                              >
-                                +
-                              </button>
-                            </div>
-
-                            <button 
-                              onClick={() => handleAddItem(item)}
-                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all font-cinzel text-[9px] font-black uppercase tracking-widest ${addedFeedback === item.id ? 'bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20'}`}
-                            >
-                              {addedFeedback === item.id ? <Package size={12} className="animate-bounce" /> : <Plus size={12} />}
-                              {addedFeedback === item.id ? 'Ajouté !' : 'Ajouter'}
-                            </button>
-
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); setSelectedItem(item, true); }}
-                              className="p-2 rounded-lg hover:bg-white/10 text-gold-DEFAULT/40 hover:text-gold-bright transition-all opacity-0 group-hover:opacity-100"
-                              title="Détails"
-                            >
-                              <ChevronRight size={18} />
-                            </button>
+                             <input 
+                               type="number" 
+                               min="1" 
+                               max="99" 
+                               value={forgeQuantities[item.id] || 1}
+                               onChange={e => setForgeQuantities(prev => ({ ...prev, [item.id]: Math.max(1, parseInt(e.target.value) || 1) }))}
+                               className="w-10 bg-black/40 border border-white/10 rounded-lg py-1 text-center font-mono text-[10px] text-white"
+                             />
+                             <button 
+                               onClick={() => handleAddFromForge(item)}
+                               className={`p-2 rounded-lg transition-all ${addedFeedback === item.id ? 'bg-green-500 text-white' : 'bg-gold-DEFAULT text-black hover:scale-105'}`}
+                             >
+                               {addedFeedback === item.id ? <Plus size={14} className="animate-ping" /> : <Plus size={14} />}
+                             </button>
                           </div>
                         </div>
                       ))}
-
-                      {filteredForgeItems.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-20 opacity-20">
-                          <Search size={40} className="mb-4 text-gold-DEFAULT" />
-                          <span className="font-cinzel text-[10px] uppercase tracking-widest text-center">AUCUN OBJET TROUVÉ</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {(activeTab === 'competences' || activeTab === 'quetes') && (
-              <div className="flex flex-col items-center justify-center h-full opacity-30 py-20 grayscale">
-                {activeTab === 'competences' ? <BookOpen size={64} className="mb-6 text-gold-DEFAULT" /> : <ScrollText size={64} className="mb-6 text-gold-DEFAULT" />}
-                <h3 className="font-cinzel font-black text-xl uppercase tracking-widest mb-2">En développement</h3>
-                <p className="text-xs font-garamond italic text-center max-w-sm">Le système de gestion avancée des {activeTab === 'competences' ? 'compétences' : 'quêtes'} sera bientôt tissé dans la trame de Sigil.</p>
+            {activeTab === 'competences' && (
+              <div className="flex flex-col gap-4">
+                {!showSkillArchive ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Maîtrises du Codex</h3>
+                      <button 
+                        onClick={() => setShowSkillArchive(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest group shadow-lg"
+                      >
+                        <Zap size={14} className="group-hover:scale-110 transition-transform" />
+                        Ouvrir le Codex
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      {(editedChar.custom_skills || []).length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 opacity-20">
+                          <Zap size={48} className="mb-4 text-gold-DEFAULT" />
+                          <span className="font-cinzel text-[10px] uppercase tracking-widest">AUCUNE MAÎTRISE</span>
+                        </div>
+                      ) : (
+                        editedChar.custom_skills.map((skill: any) => (
+                          <div key={skill.id} className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/[0.02] group hover:border-gold-DEFAULT/20 transition-all">
+                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                              <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                {skill.image_url ? (
+                                  <img src={skill.image_url} alt="" className="w-full h-full object-cover opacity-60" />
+                                ) : (
+                                  <Zap size={18} className="text-gold-DEFAULT/40" />
+                                )}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{skill.name}</span>
+                                <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">Maîtrise Occulte</span>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => handleRemoveSkill(skill.id)}
+                              className="p-2 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-6 animate-in slide-in-from-right-4 duration-500">
+                    <div className="flex items-center justify-between">
+                      <button 
+                        onClick={() => setShowSkillArchive(false)}
+                        className="flex items-center gap-2 text-white/40 hover:text-gold-bright transition-colors text-[10px] font-cinzel font-black uppercase tracking-widest"
+                      >
+                        <ArrowLeft size={14} /> Retour au Codex
+                      </button>
+                      <div className="relative w-48">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-DEFAULT/40" />
+                        <input 
+                          type="text" 
+                          value={searchSkillArchive}
+                          onChange={e => setSearchSkillArchive(e.target.value)}
+                          placeholder="Rechercher..."
+                          className="w-full bg-black/60 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-[10px] text-white focus:border-gold-DEFAULT/50 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                      {filteredArchiveSkills.map(skill => (
+                        <div key={skill.id} className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/[0.02] group hover:border-gold-DEFAULT/20 transition-all">
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                             <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                {skill.image_url ? (
+                                  <img src={skill.image_url} alt="" className="w-full h-full object-cover opacity-60" />
+                                ) : (
+                                  <Zap size={18} className="text-gold-DEFAULT/40" />
+                                )}
+                             </div>
+                             <div className="flex flex-col min-w-0">
+                                <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{skill.name}</span>
+                                <span className="text-[9px] font-mono text-white/30 uppercase">{skill.type}</span>
+                             </div>
+                          </div>
+
+                          <button 
+                            onClick={() => handleAddSkillFromArchive(skill)}
+                            className={`p-2 rounded-lg transition-all ${addedFeedback === skill.id ? 'bg-green-500 text-white' : 'bg-gold-DEFAULT text-black hover:scale-105'}`}
+                          >
+                            {addedFeedback === skill.id ? <Plus size={14} className="animate-ping" /> : <Plus size={14} />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-          </div>
+            {activeTab === 'quetes' && (
+              <div className="flex flex-col items-center justify-center py-20 opacity-20 bg-black/20 rounded-3xl border border-dashed border-white/5">
+                <Plus size={64} className="mb-4 text-gold-DEFAULT" />
+                <span className="font-cinzel text-xs uppercase tracking-widest">GRIMOIRE DES QUÊTES BIENTÔT DISPONIBLE</span>
+              </div>
+            )}
+          </main>
         </div>
 
-        {/* Footer Actions */}
-        <div className="shrink-0 p-4 border-t border-white/10 bg-black/40 flex justify-end gap-4">
-           {hasChanges && (
-             <span className="flex items-center text-xs font-cinzel text-gold-bright mr-auto ml-4 animate-pulse">
-               Modifications non sauvegardées...
-             </span>
-           )}
-           <button 
-             onClick={onClose}
-             className="px-6 py-2.5 rounded-xl border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-all font-cinzel text-[10px] font-black uppercase tracking-widest"
-           >
-             Annuler
-           </button>
-           <button 
-             onClick={handleSave}
-             disabled={!hasChanges}
-             className="px-8 py-2.5 rounded-xl border border-gold-DEFAULT bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.1)] hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]"
-           >
-             <Save size={14} />
-             Appliquer
-           </button>
-        </div>
+        <footer className="p-6 border-t border-gold-DEFAULT/10 flex justify-between items-center bg-black/40 shrink-0">
+          <div className="flex items-center gap-4">
+             {hasChanges && (
+               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 animate-pulse">
+                  <div className="w-1.5 h-1.5 rounded-full bg-gold-DEFAULT" />
+                  <span className="text-[8px] font-cinzel font-black text-gold-bright uppercase tracking-widest">Changements non gravés</span>
+               </div>
+             )}
+          </div>
+          <div className="flex gap-4">
+             <button 
+               onClick={onClose}
+               className="px-8 py-3 rounded-full text-[10px] font-cinzel font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+             >
+               Renoncer
+             </button>
+             <button 
+               onClick={handleSave}
+               className="flex items-center gap-3 px-12 py-3 rounded-full bg-gold-DEFAULT text-black hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-105 transition-all group font-cinzel font-black text-[10px] uppercase tracking-[0.2em]"
+             >
+               <Save size={14} className="group-hover:rotate-12 transition-transform" />
+               Graver dans l'Archive
+             </button>
+          </div>
+        </footer>
       </div>
     </div>
   );

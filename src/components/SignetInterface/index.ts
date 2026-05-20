@@ -9,3 +9,6 @@ export * from './InventoryWindowContent';
 export * from './ItemCreationModal';
 export * from './ItemDetailModal';
 export * from './ManageCharacterModal';
+export * from './SkillsWindowContent';
+export * from './SkillCreationModal';
+export * from './TagManagementModal';

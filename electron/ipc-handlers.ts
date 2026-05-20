@@ -88,6 +88,27 @@ function getSessionDb(sessionId: string): Database.Database {
           modifiers TEXT
         );
 
+        CREATE TABLE IF NOT EXISTS skills (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          description TEXT,
+          type TEXT,
+          image_url TEXT,
+          tags TEXT,
+          modifiers TEXT,
+          effects TEXT,
+          cost TEXT,
+          condition_type TEXT,
+          condition_tags TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS tags (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          color TEXT,
+          category TEXT
+        );
+
         CREATE TABLE IF NOT EXISTS maps (
           id TEXT PRIMARY KEY,
           name TEXT,
@@ -372,6 +393,100 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       }
     } catch (e) {
       console.error('[DB] characters:updateBars error', e);
+    }
+  });
+
+  // --- HANDLERS SKILLS (SESSION DB) ---
+
+  ipcMain.handle('skills:getAll', (_, sessionId) => {
+    try {
+      const db = getSessionDb(sessionId);
+      const skills = db.prepare('SELECT * FROM skills').all() as any[];
+      return skills.map(s => ({
+        ...s,
+        tags: s.tags ? JSON.parse(s.tags) : [],
+        modifiers: s.modifiers ? JSON.parse(s.modifiers) : [],
+        effects: s.effects ? JSON.parse(s.effects) : [],
+        cost: s.cost ? JSON.parse(s.cost) : null,
+        condition_tags: s.condition_tags ? JSON.parse(s.condition_tags) : []
+      }));
+    } catch (err) {
+      console.error('[DB] Erreur skills:getAll:', err);
+      return [];
+    }
+  });
+
+  ipcMain.handle('skills:add', (_, sessionId, skill) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare(`
+        INSERT OR REPLACE INTO skills (id, name, description, type, image_url, tags, modifiers, effects, cost, condition_type, condition_tags)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        skill.id, 
+        skill.name, 
+        skill.description, 
+        skill.type, 
+        skill.image_url || null, 
+        JSON.stringify(skill.tags || []), 
+        JSON.stringify(skill.modifiers || []), 
+        JSON.stringify(skill.effects || []), 
+        JSON.stringify(skill.cost || null), 
+        skill.condition_type || null, 
+        JSON.stringify(skill.condition_tags || [])
+      );
+      return true;
+    } catch (err) {
+      console.error('[DB] Erreur skills:add:', err);
+      return false;
+    }
+  });
+
+  ipcMain.handle('skills:remove', (_, sessionId, id) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare('DELETE FROM skills WHERE id = ?').run(id);
+      return true;
+    } catch (err) {
+      console.error('[DB] Erreur skills:remove:', err);
+      return false;
+    }
+  });
+
+  // --- HANDLERS TAGS (SESSION DB) ---
+
+  ipcMain.handle('tags:getAll', (_, sessionId) => {
+    try {
+      const db = getSessionDb(sessionId);
+      return db.prepare('SELECT * FROM tags').all();
+    } catch (err) {
+      console.error('[DB] Erreur tags:getAll:', err);
+      return [];
+    }
+  });
+
+  ipcMain.handle('tags:add', (_, sessionId, tag) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare(`
+        INSERT OR REPLACE INTO tags (id, name, color, category)
+        VALUES (?, ?, ?, ?)
+      `).run(tag.id, tag.name, tag.color, tag.category || null);
+      return true;
+    } catch (err) {
+      console.error('[DB] Erreur tags:add:', err);
+      return false;
+    }
+  });
+
+  ipcMain.handle('tags:remove', (_, sessionId, id) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare('DELETE FROM tags WHERE id = ?').run(id);
+      return true;
+    } catch (err) {
+      console.error('[DB] Erreur tags:remove:', err);
+      return false;
     }
   });
 
