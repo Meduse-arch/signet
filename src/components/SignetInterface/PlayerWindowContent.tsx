@@ -3,9 +3,10 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useCharactersStore } from '../../store/characters';
 import { useSessionStore } from '../../store/session';
 import { usePeer } from '../../hooks/usePeer';
-import { Shield, User, ChevronRight, Ghost, Settings, Plus } from 'lucide-react';
+import { Shield, User, ChevronRight, Ghost, Settings, Plus, Package } from 'lucide-react';
 import { Character, updateSessionCharacter } from '../../services/characters.service';
 import { CreateCharacterModal } from '../CreateCharacterModal';
+import { ManageCharacterModal } from './ManageCharacterModal';
 
 interface Player {
   peer_id: string;
@@ -211,28 +212,42 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
         {/* Section Infos */}
         <div className="p-4 rounded-xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/20 min-h-[100px]">
           <p className="text-[10px] font-cinzel text-gold-DEFAULT/60 uppercase tracking-widest mb-2">Inventaire</p>
-          <div className="grid grid-cols-4 gap-2">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="aspect-square rounded-lg bg-black/40 border border-white/5 flex items-center justify-center opacity-20">
-                <Shield size={16} />
-              </div>
-            ))}
+          <div className="flex flex-wrap gap-2">
+            {char?.inventory && char.inventory.length > 0 ? (
+                char.inventory.slice(0, 8).map((item: any, i: number) => (
+                    <div key={item.instanceId || i} className="w-10 h-10 rounded-lg bg-black/40 border border-gold-DEFAULT/20 flex items-center justify-center overflow-hidden" title={item.name}>
+                        {item.image_url ? (
+                            <img src={item.image_url} alt="" className="w-full h-full object-contain p-1" />
+                        ) : (
+                            <Package size={16} className="text-gold-DEFAULT/40" />
+                        )}
+                    </div>
+                ))
+            ) : (
+                [1, 2, 3, 4].map(i => (
+                <div key={i} className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center opacity-20">
+                    <Shield size={16} />
+                </div>
+                ))
+            )}
+            {char?.inventory && char.inventory.length > 8 && (
+                <div className="w-10 h-10 rounded-lg bg-black/40 border border-gold-DEFAULT/20 flex items-center justify-center">
+                    <span className="text-[10px] font-cinzel text-gold-DEFAULT">+{char.inventory.length - 8}</span>
+                </div>
+            )}
           </div>
-          <p className="text-[8px] text-center text-gold-DEFAULT/30 font-serif italic mt-4">
-            Système d'inventaire en cours d'éveil...
-          </p>
+          {(!char?.inventory || char.inventory.length === 0) && (
+            <p className="text-[8px] text-center text-gold-DEFAULT/30 font-serif italic mt-4">
+                L'inventaire est actuellement vide...
+            </p>
+          )}
         </div>
         
         {isEditing && char && (
-          <CreateCharacterModal 
+          <ManageCharacterModal 
+            sessionId={sessionId}
+            characterId={char.id}
             onClose={() => setIsEditing(false)}
-            onSave={handleSavePlayer}
-            initialName={char.name}
-            initialImageUrl={char.image_url}
-            initialStats={char.stats}
-            initialSkills={char.skills}
-            title={`Gérer ${char.name}`}
-            settings={session?.settings}
           />
         )}
       </div>

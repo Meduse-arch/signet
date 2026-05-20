@@ -28,7 +28,7 @@ export interface DiceResult {
 
 export function parseAndRoll(formula: string): number {
   try {
-    const match = formula.match(/^(\d+)?d(\d+)([\+\-]\d+)?$/i);
+    const match = formula.match(/^(\d+)?d(\d+)([+-]\d+)?$/i);
     if (!match) return 0;
     
     const nb = parseInt(match[1]) || 1;

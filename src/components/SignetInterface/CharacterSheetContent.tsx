@@ -339,20 +339,7 @@ export function CharacterSheetContent({
     channel.close();
   };
 
-  if (!character) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-        <p
-          className="font-cinzel text-sm uppercase tracking-widest"
-          style={{ color: 'rgba(212,175,55,0.5)' }}
-        >
-          Aucun personnage lié à cette session
-        </p>
-      </div>
-    );
-  }
-
-  const { name = 'Inconnu', stats = {}, skills = {}, bars = {}, image_url, inventory = [] } = character;
+  const { name = 'Inconnu', stats = {}, skills = {}, bars = {}, image_url, inventory = [] } = character || {};
   const statDefs = session?.settings?.stats || DEFAULT_STATS;
   const skillDefs = session?.settings?.skills || DEFAULT_SKILLS;
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
@@ -363,6 +350,8 @@ export function CharacterSheetContent({
     const statsPercent: Record<string, number> = {};
     const barsFlat: Record<string, { value: number; max: number }> = {};
     
+    if (!character) return { stats: {}, bars: {} };
+
     inventory.forEach((item: any) => {
       if (item.equipped && item.modifiers) {
         item.modifiers.forEach((m: any, idx: number) => {
@@ -375,6 +364,9 @@ export function CharacterSheetContent({
               statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
             }
           } else if (m.target === 'bar') {
+            // LES ARMES NE COMPTENT PAS DANS LES RESSOURCES
+            if (item.category === 'Arme') return;
+
             if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
             const prop = m.targetProperty || 'max';
             if (m.mode === 'dice') {
@@ -397,7 +389,20 @@ export function CharacterSheetContent({
     });
 
     return { stats: statsFinal, bars: barsFlat };
-  }, [inventory, stats, statDefs]);
+  }, [character, inventory, stats, statDefs]);
+
+  if (!character) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+        <p
+          className="font-cinzel text-sm uppercase tracking-widest"
+          style={{ color: 'rgba(212,175,55,0.5)' }}
+        >
+          Aucun personnage lié à cette session
+        </p>
+      </div>
+    );
+  }
 
   const CustomAvatarPrompt = () => {
     if (!showAvatarPrompt) return null;
@@ -436,15 +441,16 @@ export function CharacterSheetContent({
     );
   };
 
-  const handleRollStat = async (statName: string, faces: number, statId: string) => {
+  const handleRollStat = async (statName: string, baseFaces: number, statId: string) => {
     if (!character) return;
     
     const nb = Math.max(1, nbDice);
-    const itemMod = itemModifiers[statId] || 0;
-    const mod = modifier + itemMod;
-    const res = lancerDes(nb, faces, mod);
+    const itemMod = itemModifiers.stats[statId] || 0;
+    const finalFaces = baseFaces + itemMod;
+    const mod = modifier; // Seul le modificateur global s'ajoute au résultat
+    const res = lancerDes(nb, finalFaces, mod);
     
-    const labelPart = `(${statName}=${faces})`;
+    const labelPart = `(${statName}=${finalFaces})`;
     const modStr = mod !== 0 ? (mod > 0 ? '+' : '') + mod : '';
     const diceString = `${nb}d${labelPart}${modStr}`;
     
@@ -487,6 +493,7 @@ export function CharacterSheetContent({
     const s = stat as { id: string; name: string };
     const val = stats[s.id] || 20;
     const itemMod = itemModifiers.stats[s.id] || 0;
+    const finalVal = val + itemMod;
 
     return (
       <div
@@ -518,12 +525,12 @@ export function CharacterSheetContent({
           </span>
           {itemMod !== 0 && (
             <span className="text-[7px] font-bold text-gold-DEFAULT/60">
-              MOD: {itemMod > 0 ? '+' : ''}{itemMod}
+              BASE: {val}
             </span>
           )}
         </div>
         <span className="font-cinzel font-black" style={{ fontSize: isPopup ? '10px' : '13px', color: '#d4af37' }}>
-          D{val}
+          D{finalVal}
         </span>
       </div>
     );

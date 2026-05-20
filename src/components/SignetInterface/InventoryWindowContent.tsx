@@ -29,6 +29,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
   const user = useAuthStore(state => state.user);
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   const { characters, controlledCharacterId, addOrUpdateCharacter } = useCharactersStore();
+  const character = characters.find(c => controlledCharacterId ? c.id === controlledCharacterId : c.user_id === user?.id);
   const { items, removeItem } = useItemsStore();
   const { setShowCreateModal, setSelectedItem, selectedItem } = useUIStore();
   const { broadcast } = usePeer();
@@ -51,10 +52,31 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     return () => observer.disconnect();
   }, []);
 
-  const character = useMemo(() => {
-    if (controlledCharacterId) return characters.find(c => c.id === controlledCharacterId);
-    return characters.find(c => c.user_id === user?.id);
-  }, [characters, controlledCharacterId, user?.id]);
+  const filteredInventory = useMemo(() => {
+    const inv = character?.inventory || [];
+    return inv.filter((i: any) => i.name.toLowerCase().includes(search.toLowerCase()));
+  }, [character?.inventory, search]);
+
+  const groupedInventory = useMemo(() => {
+    const groups: any[] = [];
+    const unequippedStacks: Record<string, any> = {};
+
+    filteredInventory.forEach((item: any) => {
+      if (item.equipped) {
+        groups.push({ ...item, quantity: 1, isStack: false });
+      } else {
+        const itemId = item.id;
+        if (!unequippedStacks[itemId]) {
+          unequippedStacks[itemId] = { ...item, quantity: 0, isStack: true, instances: [] };
+          groups.push(unequippedStacks[itemId]);
+        }
+        unequippedStacks[itemId].quantity += 1;
+        unequippedStacks[itemId].instances.push(item.instanceId);
+      }
+    });
+
+    return groups;
+  }, [filteredInventory]);
 
   useEffect(() => {
     if (isMJ && !character && activeTab === 'inventory') {
@@ -65,19 +87,48 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
   const handleToggleEquip = async (itemToToggle?: any) => {
     const item = itemToToggle || selectedItem;
     if (!character || !item) return;
+
+    // Use specific instanceId if provided, otherwise first instance of stack
+    const targetInstanceId = item.instanceId || (item.isStack ? item.instances[0] : null);
+    if (!targetInstanceId) return;
+
     const updatedChar = {
       ...character,
       inventory: (character.inventory || []).map((i: any) => 
-        (i.instanceId === item.instanceId || i.id === item.id) ? { ...i, equipped: !i.equipped } : i
+        (i.instanceId === targetInstanceId) ? { ...i, equipped: !i.equipped } : i
       )
     };
     addOrUpdateCharacter(updatedChar);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
     
-    // Update selected item if it's the one we're toggling
-    if (selectedItem && (selectedItem.instanceId === item.instanceId || selectedItem.id === item.id)) {
-      setSelectedItem({ ...selectedItem, equipped: !selectedItem.equipped }, !isWideView);
+    // Update selected item state to reflect equip status
+    const updatedItem = updatedChar.inventory.find((i: any) => i.instanceId === targetInstanceId);
+    if (updatedItem) {
+      setSelectedItem(updatedItem, false); // Don't force modal open on toggle
+    }
+  };
+
+  const handleUseItem = async (itemToUse?: any) => {
+    const item = itemToUse || selectedItem;
+    if (!character || !item) return;
+
+    const targetInstanceId = item.instanceId || (item.isStack ? item.instances[0] : null);
+    if (!targetInstanceId) return;
+
+    // Consuming an item = removing one instance from inventory
+    const updatedChar = {
+      ...character,
+      inventory: (character.inventory || []).filter((i: any) => i.instanceId !== targetInstanceId)
+    };
+
+    addOrUpdateCharacter(updatedChar);
+    if (window.electronAPI) await addSessionCharacter(updatedChar);
+    broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+
+    // Deselect if it was the last instance
+    if (selectedItem?.instanceId === targetInstanceId) {
+      setSelectedItem(null);
     }
   };
 
@@ -93,17 +144,22 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
   };
 
-  const handleRemoveFromInventory = async (instanceId: string) => {
-    if (!character || !isMJ || !window.confirm("Détruire cet artefact de l'inventaire ?")) return;
+  const handleRemoveFromInventory = async (item: any) => {
+    if (!character || !isMJ || !window.confirm(`Détruire ${item.isStack ? 'tous les exemplaires de ' : ''}${item.name} ?`)) return;
 
     const updatedChar = {
       ...character,
-      inventory: (character.inventory || []).filter((i: any) => i.instanceId !== instanceId && i.id !== instanceId)
+      inventory: (character.inventory || []).filter((i: any) => 
+        item.isStack ? i.id !== item.id || i.equipped : i.instanceId !== item.instanceId
+      )
     };
 
     addOrUpdateCharacter(updatedChar);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+    if (selectedItem?.instanceId === item.instanceId || (item.isStack && selectedItem?.id === item.id)) {
+      setSelectedItem(null);
+    }
   };
 
   const handleDeleteForgeItem = async (id: string) => {
@@ -130,8 +186,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
   }
 
   const effectiveTab = (!character && isMJ) ? 'forge' : activeTab;
-  const inventory = character?.inventory || [];
-  const filteredInventory = inventory.filter((i: any) => i.name.toLowerCase().includes(search.toLowerCase()));
   const filteredForgeItems = items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
 
   const openForgeModal = () => {
@@ -195,12 +249,12 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1.5 pb-4 min-h-0">
           {effectiveTab === 'inventory' ? (
             <>
-              {filteredInventory.map((item: any, idx: number) => {
+              {groupedInventory.map((item: any, idx: number) => {
                 const Icon = getIcon(item.category);
-                const isActive = selectedItem?.instanceId === item.instanceId || selectedItem?.id === item.id;
+                const isActive = selectedItem?.instanceId === item.instanceId || (item.isStack && selectedItem?.id === item.id && !selectedItem.equipped);
                 return (
                   <div 
-                    key={item.instanceId || item.id || idx} 
+                    key={item.instanceId || `stack-${item.id}-${idx}`} 
                     onClick={() => setSelectedItem(item, !isWideView)}
                     className={`group relative rounded-xl p-3 transition-all cursor-pointer flex items-center gap-4 overflow-hidden ${
                       isActive ? 'border-gold-bright shadow-[0_0_20px_rgba(212,175,55,0.2)]' : 'border-white/[0.05] hover:border-gold-DEFAULT/40'
@@ -226,6 +280,9 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                       ) : (
                         <Icon size={24} className={item.equipped ? 'text-gold-DEFAULT' : 'text-white/10 group-hover:text-white/20'} />
                       )}
+                      <div className={`absolute bottom-0 right-0 ${item.equipped ? 'bg-gold-DEFAULT text-black' : 'bg-white/10 text-white/70'} text-[8px] font-black px-1.5 py-0.5 rounded-tl-lg shadow-lg border-t border-l border-white/10 z-20`}>
+                        x{item.quantity || 1}
+                      </div>
                       {/* Subtil glass shine on icon */}
                       <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 to-transparent opacity-30" />
                     </div>
@@ -273,7 +330,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                       </button>
                       {isMJ && (
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleRemoveFromInventory(item.instanceId || item.id); }} 
+                          onClick={(e) => { e.stopPropagation(); handleRemoveFromInventory(item); }} 
                           className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-500/40 hover:text-red-500 transition-all"
                           title="Détruire"
                         >
@@ -290,7 +347,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                 );
               })}
 
-              {filteredInventory.length === 0 && (
+              {groupedInventory.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-20 opacity-10 grayscale">
                   <Package size={48} className="mb-4" />
                   <span className="text-xs font-cinzel font-black tracking-[0.3em] italic">LE COFFRE EST VIDE...</span>
@@ -408,7 +465,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
           <ItemDetailContent 
             item={selectedItem}
             character={character}
-            onToggleEquip={handleToggleEquip}
+            onToggleEquip={effectiveTab === 'inventory' ? handleToggleEquip : undefined}
             isMJ={isMJ}
           />
         </div>
