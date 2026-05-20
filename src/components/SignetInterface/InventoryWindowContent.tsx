@@ -111,8 +111,41 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     const targetInstanceId = item.instanceId || (item.isStack ? item.instances[0] : null);
     if (!targetInstanceId) return;
 
+    // --- APPLY EFFECTS ---
+    const updatedBars = { ...(character.bars || {}) };
+    let hasEffect = false;
+
+    if (item.modifiers) {
+      item.modifiers.forEach((m: any) => {
+        if (m.target === 'bar') {
+          const barId = m.targetId;
+          const currentVal = updatedBars[barId] || 0;
+          const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
+          const maxVal = updatedBars[maxKey] || currentVal || 100;
+          
+          let bonus = 0;
+          if (m.mode === 'dice' && item.rolledValues) {
+            // Find index of this modifier to get its rolled value
+            const modIdx = item.modifiers.indexOf(m);
+            bonus = item.rolledValues[modIdx] || 0;
+          } else {
+            bonus = m.value || 0;
+          }
+
+          if (m.mode === 'percent') {
+            bonus = Math.round(maxVal * (bonus / 100));
+          }
+
+          updatedBars[barId] = Math.min(maxVal, currentVal + bonus);
+          hasEffect = true;
+        }
+      });
+    }
+
+    // --- CONSUME ITEM ---
     const updatedChar = {
       ...character,
+      bars: updatedBars,
       inventory: (character.inventory || []).filter((i: any) => i.instanceId !== targetInstanceId)
     };
 
@@ -122,6 +155,10 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
 
     if (selectedItem?.instanceId === targetInstanceId) {
       setSelectedItem(null);
+    }
+
+    if (hasEffect) {
+      console.log(`[Inventory] Used ${item.name}, effects applied to bars.`);
     }
   };
 

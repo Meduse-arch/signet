@@ -8,7 +8,8 @@ import {
   DiceWindowContent,
   InventoryWindowContent,
   ItemCreationModal,
-  ItemDetailModal
+  ItemDetailModal,
+  ManageCharacterModal
 } from '../../components/SignetInterface';
 import { BestiaryWindowContent } from '../../components/SignetInterface/BestiaryWindowContent';
 import { DiceRollModal } from '../../components/DiceRollModal';
@@ -23,6 +24,7 @@ import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWind
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
+import { useUIStore } from '../../store/ui';
 import { getSessionCharacters, addSessionCharacter, Character } from '../../services/characters.service';
 import { getSessionMaps, addSessionMap, removeSessionMap } from '../../services/maps.service';
 
@@ -46,6 +48,7 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
   
   const { broadcast, onData } = usePeer();
   const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
+  const { characterManagementId, setCharacterManagement } = useUIStore();
 
   // Initialiser les personnages et objets depuis le storage local (important pour les clients)
   useEffect(() => {
@@ -370,6 +373,13 @@ export default function SealEngine({ sessionId, imageUrl, players }: SealEngineP
       <DiceRollModal />
       <ItemCreationModal sessionId={sessionId} />
       <ItemDetailModal sessionId={sessionId} />
+      {characterManagementId && (
+        <ManageCharacterModal 
+          sessionId={sessionId} 
+          characterId={characterManagementId} 
+          onClose={() => setCharacterManagement(null)} 
+        />
+      )}
       </div>
       );
 }

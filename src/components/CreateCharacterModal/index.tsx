@@ -45,7 +45,7 @@ export function CreateCharacterModal({
   initialType,
   initialIsTemplate = false,
   initialMode,
-  title = "Éveiller un Voyageur",
+  title = "Éveiller un Joueur",
   settings 
 }: CreateCharacterModalProps) {
   const { user } = useAuthStore();
@@ -175,7 +175,8 @@ export function CreateCharacterModal({
       skills: {}, // On vide les compétences car elles ne sont plus utilisées
       bars: derivedBars,
       type,
-      is_template: isTemplate
+      is_template: isTemplate,
+      quantity
     });
   };
 
@@ -282,7 +283,7 @@ export function CreateCharacterModal({
             <div className="space-y-6 flex flex-col">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Nom du Personnage</label>
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Nom de l'Entité</label>
                   <div className="flex gap-2">
                     <input 
                       type="text" 
@@ -307,7 +308,7 @@ export function CreateCharacterModal({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Image du Voyageur (URL)</label>
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Image de l'Entité (URL)</label>
                   <input 
                     type="text" 
                     value={imageUrl}
@@ -405,7 +406,7 @@ export function CreateCharacterModal({
             className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-3 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/40 text-gold-bright hover:bg-gold-DEFAULT/20 hover:border-gold-DEFAULT disabled:opacity-30 disabled:pointer-events-none transition-all shadow-[0_0_30px_rgba(212,175,55,0.1)] hover:shadow-[0_0_40px_rgba(212,175,55,0.3)] group"
           >
             <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-cinzel font-black uppercase tracking-[0.2em] pt-0.5">Sceau du Destin</span>
+            <span className="text-[10px] font-cinzel font-black uppercase tracking-[0.2em] pt-0.5">Graver dans le Destin</span>
           </button>
         </footer>
       </div>

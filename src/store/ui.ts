@@ -10,6 +10,7 @@ interface UIState {
   itemToEdit: any | null;
   selectedItem: any | null;
   itemDetailOpen: boolean;
+  characterManagementId: string | null;
   searchQuery: string;
   viewMode: 'grid' | 'codex';
   setSidebarOpen: (open: boolean) => void;
@@ -18,6 +19,7 @@ interface UIState {
   setShowCreateModal: (show: boolean, type?: 'forge' | 'inventory', characterId?: string, itemToEdit?: any | null) => void;
   setSelectedItem: (item: any | null, openModal?: boolean) => void;
   setItemDetailOpen: (open: boolean) => void;
+  setCharacterManagement: (id: string | null) => void;
   setSearchQuery: (query: string) => void;
   setViewMode: (mode: 'grid' | 'codex') => void;
 }
@@ -32,6 +34,7 @@ export const useUIStore = create<UIState>((set) => ({
   itemToEdit: null,
   selectedItem: null,
   itemDetailOpen: false,
+  characterManagementId: null,
   searchQuery: '',
   viewMode: 'grid',
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -45,6 +48,7 @@ export const useUIStore = create<UIState>((set) => ({
   }),
   setSelectedItem: (item, openModal = true) => set({ selectedItem: item, itemDetailOpen: item ? openModal : false }),
   setItemDetailOpen: (open) => set({ itemDetailOpen: open }),
+  setCharacterManagement: (id) => set({ characterManagementId: id }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setViewMode: (mode) => set({ viewMode: mode }),
 }));

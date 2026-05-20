@@ -76,7 +76,8 @@ const myCharacter = useMemo(() => {
     image_url?: string;
     stats: Record<string, number>; 
     skills: Record<string, number>;
-    bars: Record<string, number> 
+    bars: Record<string, number>;
+    type?: 'Joueur' | 'PNJ' | 'Monstre' | 'Boss';
   }) => {
     const newChar: Character = {
       id: myCharacter?.id || crypto.randomUUID(),
@@ -86,7 +87,8 @@ const myCharacter = useMemo(() => {
       image_url: data.image_url,
       stats: data.stats,
       skills: data.skills,
-      bars: data.bars
+      bars: data.bars,
+      type: data.type
     };
 
     // Persistence locale (si Electron et MJ)

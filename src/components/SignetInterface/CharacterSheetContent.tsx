@@ -1,9 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Settings } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { useDiceStore } from '../../store/dice';
+import { useUIStore } from '../../store/ui';
 import { DEFAULT_STATS, DEFAULT_BARS, DEFAULT_SKILLS } from '../../systems/seal/constants';
 import { usePeer } from '../../hooks/usePeer';
 import { addSessionCharacter, removeSessionCharacter } from '../../services/characters.service';
@@ -238,6 +239,7 @@ export function CharacterSheetContent({
   );
   const { broadcast, onData } = usePeer();
   const { nbDice, modifier, setDiceResult, diceSharingEnabled } = useDiceStore();
+  const { setCharacterManagement } = useUIStore();
 
   const isPopup = variant === 'popup';
 
@@ -360,9 +362,8 @@ export function CharacterSheetContent({
     channel.close();
   };
 
-  const { name = 'Inconnu', stats = {}, skills = {}, bars = {}, image_url, inventory = [] } = character || {};
+  const { name = 'Inconnu', stats = {}, bars = {}, image_url, inventory = [] } = character || {};
   const statDefs = session?.settings?.stats || DEFAULT_STATS;
-  const skillDefs = session?.settings?.skills || DEFAULT_SKILLS;
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
 
   // Calculer les modificateurs d'équipement complexes
@@ -509,6 +510,21 @@ export function CharacterSheetContent({
     }
   };
 
+  const handleManualBarUpdate = async (barId: string, diff: number) => {
+    if (!character) return;
+    const updatedBars = { ...(character.bars || {}) };
+    const currentVal = updatedBars[barId] || 0;
+    const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
+    const maxVal = updatedBars[maxKey] || currentVal || 100;
+    
+    updatedBars[barId] = Math.max(0, Math.min(maxVal, currentVal + diff));
+    
+    const updatedChar = { ...character, bars: updatedBars };
+    addOrUpdateCharacter(updatedChar, false);
+    if (window.electronAPI) await addSessionCharacter(updatedChar);
+    broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+  };
+
   // ── renderers ──────────────────────────────────
   const renderStat = (stat: unknown) => {
     const s = stat as { id: string; name: string };
@@ -592,7 +608,21 @@ export function CharacterSheetContent({
               </span>
             )}
           </div>
-          <span className="font-mono font-black text-[8px] sm:text-[10px] truncate shrink-0 max-w-[50%]" title={`${Math.floor(currentVal)}/${Math.floor(maxVal)}`} style={{ color: b.color }}>{Math.floor(currentVal)}/{Math.floor(maxVal)}</span>
+          <div className="flex items-center gap-1 shrink-0">
+             {(isMJ || isOwner) && (
+               <button 
+                 onClick={() => handleManualBarUpdate(b.id, -1)}
+                 className="w-4 h-4 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-[10px] text-white/40 hover:text-white"
+               >-</button>
+             )}
+             <span className="font-mono font-black text-[8px] sm:text-[10px] truncate" title={`${Math.floor(currentVal)}/${Math.floor(maxVal)}`} style={{ color: b.color }}>{Math.floor(currentVal)}/{Math.floor(maxVal)}</span>
+             {(isMJ || isOwner) && (
+               <button 
+                 onClick={() => handleManualBarUpdate(b.id, 1)}
+                 className="w-4 h-4 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-[10px] text-white/40 hover:text-white"
+               >+</button>
+             )}
+          </div>
         </div>
         <LiquidBar percent={percent} color={b.color} height={isPopup ? 4 : 6} />
       </div>
@@ -637,15 +667,26 @@ export function CharacterSheetContent({
             <div className="flex-1 min-w-0">
               <h2 className="text-[10px] font-cinzel font-black text-gold-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
             </div>
-            {(isMJ || isOwner) && (
-              <button 
-                onClick={handleDelete}
-                className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-all ml-auto"
-                title="Supprimer la fiche"
-              >
-                <Trash2 size={12} />
-              </button>
-            )}
+            <div className="flex items-center gap-1 ml-auto">
+              {(isMJ || isOwner) && (
+                <button 
+                  onClick={() => setCharacterManagement(character.id)}
+                  className="p-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-DEFAULT hover:text-gold-bright hover:bg-gold-DEFAULT/20 transition-all"
+                  title="Gérer la fiche"
+                >
+                  <Settings size={12} />
+                </button>
+              )}
+              {(isMJ || isOwner) && (
+                <button 
+                  onClick={handleDelete}
+                  className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-all"
+                  title="Supprimer la fiche"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-2 p-2 h-[160px]">
@@ -688,16 +729,28 @@ export function CharacterSheetContent({
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-cinzel font-black text-gold-bright uppercase tracking-[0.2em] truncate" title={name}>{name}</h1>
           </div>
-          {(isMJ || isOwner) && (
-            <button 
-              onClick={handleDelete}
-              className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500/60 hover:text-red-500 hover:bg-red-500/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
-              title="Supprimer la fiche"
-            >
-              <Trash2 size={14} />
-              Bannir l'Entité
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {(isMJ || isOwner) && (
+              <button 
+                onClick={() => setCharacterManagement(character.id)}
+                className="px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-DEFAULT hover:text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                title="Gérer la fiche"
+              >
+                <Settings size={14} />
+                Configurer
+              </button>
+            )}
+            {(isMJ || isOwner) && (
+              <button 
+                onClick={handleDelete}
+                className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500/60 hover:text-red-500 hover:bg-red-500/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                title="Supprimer la fiche"
+              >
+                <Trash2 size={14} />
+                Bannir l'Entité
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 flex gap-4 min-h-0">

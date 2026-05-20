@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useCharactersStore } from '../../store/characters';
 import { useSessionStore } from '../../store/session';
+import { useUIStore } from '../../store/ui';
 import { usePeer } from '../../hooks/usePeer';
 import { Shield, User, ChevronRight, Ghost, Settings, Plus, Package } from 'lucide-react';
 import { Character, updateSessionCharacter } from '../../services/characters.service';
 import { CreateCharacterModal } from '../CreateCharacterModal';
-import { ManageCharacterModal } from './ManageCharacterModal';
 
 interface Player {
   peer_id: string;
@@ -21,23 +21,26 @@ interface PlayerWindowContentProps {
 
 export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentProps) {
   const { user } = useAuthStore();
-  const isMJ = !!user && user.role >= SecurityLevel.MJ;
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const { characters, controlledCharacterId, setPnjControle, addOrUpdateCharacter } = useCharactersStore();
+  const { setCharacterManagement } = useUIStore();
+  const characters = useCharactersStore(state => state.characters);
+  const { addOrUpdateCharacter } = useCharactersStore();
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const { broadcast } = usePeer();
-  const [isEditing, setIsEditing] = useState(false);
+
   const [tokenStatus, setTokenStatus] = useState<Record<string, boolean>>({});
 
-  // Écouter le status des tokens depuis le Board
+  const isMJ = !!user && user.role >= SecurityLevel.MJ;
+
+  // Sync token status
   useEffect(() => {
     if (!isMJ) return;
     const channel = new BroadcastChannel(`board_actions_${sessionId}`);
     
     const askStatus = () => {
-        characters.forEach(c => {
-            if (!c.is_template) {
-                channel.postMessage({ type: 'GET_TOKEN_STATUS', payload: { id: c.id } });
+        players.forEach(p => {
+            const char = characters.find(c => c.user_id === p.peer_id);
+            if (char) {
+                channel.postMessage({ type: 'GET_TOKEN_STATUS', payload: { id: char.id } });
             }
         });
     };
@@ -50,20 +53,20 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
             setTokenStatus(prev => ({ ...prev, [payload.id]: payload.isOnMap }));
         } else if (type === 'TOKEN_LIST_UPDATE') {
             const newStatus: Record<string, boolean> = {};
-            characters.forEach(c => {
-                newStatus[c.id] = payload.tokens.includes(c.id);
+            players.forEach(p => {
+                const char = characters.find(c => c.user_id === p.peer_id);
+                if (char) newStatus[char.id] = payload.tokens.includes(char.id);
             });
             setTokenStatus(newStatus);
         }
     };
 
     const interval = setInterval(askStatus, 5000);
-
     return () => {
         clearInterval(interval);
         channel.close();
     };
-  }, [sessionId, isMJ, characters]);
+  }, [sessionId, isMJ, players, characters]);
 
   const handleToggleToken = (charId: string) => {
     const channel = new BroadcastChannel(`board_actions_${sessionId}`);
@@ -72,255 +75,117 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
     channel.close();
   };
 
-  const getRoleLabel = (role?: number) => {
-    if (role === SecurityLevel.ADMIN) return 'ADMINISTRATEUR';
-    if (role === SecurityLevel.MJ) return 'MAÎTRE DE JEU';
-    return 'INITIÉ';
-  };
-
-  const handleSavePlayer = async (data: {
-    name: string;
-    image_url?: string;
-    stats: Record<string, number>;
-    skills: Record<string, number>;
-    bars: Record<string, number>;
-  }) => {
-    const char = characters.find(c => selectedPlayer ? c.user_id === players.find(p => p.pseudo === selectedPlayer.pseudo)?.peer_id : c.user_id === user?.id);
-    if (!char) return;
-
-    const updatedChar: Character = {
-      ...char,
+  const handleCreateSave = async (data: any) => {
+    const newChar: Character = {
+      id: crypto.randomUUID(),
+      session_id: sessionId,
+      user_id: user?.id,
       name: data.name,
       image_url: data.image_url,
       stats: data.stats,
       skills: data.skills,
-      bars: data.bars
+      bars: data.bars,
+      type: 'Joueur'
     };
 
     if (window.electronAPI) {
-      await updateSessionCharacter(updatedChar.id, updatedChar.name, updatedChar.stats, updatedChar.skills, updatedChar.bars, updatedChar.image_url);
+      await updateSessionCharacter(
+        newChar.id,
+        newChar.name,
+        newChar.stats,
+        newChar.skills,
+        newChar.bars,
+        newChar.image_url,
+        [],
+        [],
+        'Joueur'
+      );
     }
-
-    addOrUpdateCharacter(updatedChar);
-    broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
-    
-    setIsEditing(false);
+    addOrUpdateCharacter(newChar);
+    broadcast({ type: 'CHAR_UPDATE', payload: newChar });
   };
 
-  // Vue Fiche de Personnage
-  const renderCharacterSheet = (player: Player | null) => {
-    const pseudo = player ? player.pseudo : user?.pseudo || 'Inconnu';
-    const isMe = !player || player.pseudo === user?.pseudo;
-    
-    const char = characters.find(c => player ? c.user_id === players.find(p => p.pseudo === player.pseudo)?.peer_id : c.user_id === user?.id);
-    const isPossessed = char && controlledCharacterId === char.id;
-
-    return (
-      <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-300">
-        {/* Header Fiche */}
-        <div className="flex items-center justify-between border-b border-gold-DEFAULT/20 pb-4">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-                <div className="w-14 h-14 rounded-full bg-black/60 border border-gold-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)] overflow-hidden">
-                {char?.image_url ? (
-                    <img src={char.image_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                    <span className="text-2xl font-cinzel text-gold-bright drop-shadow-md">
-                    {pseudo.substring(0, 1).toUpperCase()}
-                    </span>
-                )}
-                </div>
-                {/* Token Toggle Button on Portrait */}
-                {isMJ && char && (
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); handleToggleToken(char.id); }}
-                        className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all flex items-center justify-center ${
-                            tokenStatus[char.id]
-                            ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
-                            : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
-                        }`}
-                        title={tokenStatus[char.id] ? "Bannir la figurine du plateau" : "Invoquer sur le plateau"}
-                    >
-                        <Plus size={12} className={`transition-transform duration-500 ${tokenStatus[char.id] ? 'rotate-45' : ''}`} />
-                    </button>
-                )}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-cinzel font-black text-gold-DEFAULT tracking-widest drop-shadow-md uppercase truncate" title={pseudo}>
-                {pseudo}
-              </h2>
-              <p className="text-[10px] text-white/50 font-serif italic truncate">
-                {isMe ? "Votre personnage" : "Voyageur de l'Archive"}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {isMJ && char && (
-              <>
-                <button 
-                  onClick={() => setIsEditing(true)}
-                  className="p-3 rounded-xl bg-gold-DEFAULT/10 text-gold-DEFAULT border border-gold-DEFAULT/30 hover:bg-gold-DEFAULT/20 transition-all"
-                  title="Gérer le voyageur"
-                >
-                  <Settings size={20} />
-                </button>
-                <button 
-                  onClick={() => setPnjControle(isPossessed ? null : char.id)}
-                  className={`p-3 rounded-xl transition-all ${
-                    isPossessed 
-                      ? 'bg-gold-DEFAULT text-black shadow-[0_0_20px_rgba(212,175,55,0.4)]' 
-                      : 'bg-gold-DEFAULT/10 text-gold-DEFAULT border border-gold-DEFAULT/30 hover:bg-gold-DEFAULT/20'
-                  }`}
-                  title={isPossessed ? "Relâcher la possession" : "Posséder ce voyageur"}
-                >
-                  <Ghost size={20} className={isPossessed ? 'animate-pulse' : ''} />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Stats de base */}
-        <div className="space-y-4">
-          {char ? (
-            Object.entries(char.bars).map(([key, val]) => {
-              if (key.startsWith('max')) return null;
-              const max = char.bars[`max${key.charAt(0).toUpperCase()}${key.slice(1)}`] || val;
-              const percent = (val / max) * 100;
-              return (
-                <div key={key} className="space-y-1">
-                  <div className="flex justify-between text-[10px] font-mono text-white/70">
-                    <span className="uppercase">{key}</span>
-                    <span>{val} / {max}</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/5">
-                    <div 
-                      className="h-full bg-gold-DEFAULT transition-all duration-500" 
-                      style={{ width: `${percent}%`, filter: 'drop-shadow(0 0 5px var(--color-gold))' }} 
-                    />
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <p className="text-xs text-center text-white/30 italic">Aucune donnée occulte trouvée...</p>
-          )}
-        </div>
-
-        {/* Section Infos */}
-        <div className="p-4 rounded-xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/20 min-h-[100px]">
-          <p className="text-[10px] font-cinzel text-gold-DEFAULT/60 uppercase tracking-widest mb-2">Inventaire</p>
-          <div className="flex flex-wrap gap-2">
-            {char?.inventory && char.inventory.length > 0 ? (
-                char.inventory.slice(0, 8).map((item: any, i: number) => (
-                    <div key={item.instanceId || i} className="w-10 h-10 rounded-lg bg-black/40 border border-gold-DEFAULT/20 flex items-center justify-center overflow-hidden" title={item.name}>
-                        {item.image_url ? (
-                            <img src={item.image_url} alt="" className="w-full h-full object-contain p-1" />
-                        ) : (
-                            <Package size={16} className="text-gold-DEFAULT/40" />
-                        )}
-                    </div>
-                ))
-            ) : (
-                [1, 2, 3, 4].map(i => (
-                <div key={i} className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center opacity-20">
-                    <Shield size={16} />
-                </div>
-                ))
-            )}
-            {char?.inventory && char.inventory.length > 8 && (
-                <div className="w-10 h-10 rounded-lg bg-black/40 border border-gold-DEFAULT/20 flex items-center justify-center">
-                    <span className="text-[10px] font-cinzel text-gold-DEFAULT">+{char.inventory.length - 8}</span>
-                </div>
-            )}
-          </div>
-          {(!char?.inventory || char.inventory.length === 0) && (
-            <p className="text-[8px] text-center text-gold-DEFAULT/30 font-serif italic mt-4">
-                L'inventaire est actuellement vide...
-            </p>
-          )}
-        </div>
-        
-        {isEditing && char && (
-          <ManageCharacterModal 
-            sessionId={sessionId}
-            characterId={char.id}
-            onClose={() => setIsEditing(false)}
-          />
-        )}
-      </div>
-    );
-  };
-
-  // Si on est joueur, on voit direct sa propre fiche
-  if (!isMJ) {
-    return renderCharacterSheet(null);
-  }
-
-  // Si on est MJ et qu'on a cliqué sur un joueur
-  if (isMJ && selectedPlayer) {
-    return (
-      <div className="flex flex-col h-full">
-        <button 
-          onClick={() => setSelectedPlayer(null)}
-          className="self-start mb-4 text-[10px] font-cinzel text-gold-DEFAULT hover:text-gold-bright transition-colors uppercase tracking-widest flex items-center"
-        >
-          <ChevronRight className="w-3 h-3 rotate-180" />
-          Retour à la liste
-        </button>
-        {renderCharacterSheet(selectedPlayer)}
-      </div>
-    );
-  }
-
-  // Si on est MJ et qu'on regarde la liste
   return (
-    <div className="flex flex-col gap-2">
-      {players.map((p) => {
-        const char = characters.find(c => c.user_id === p.peer_id);
+    <div className="flex flex-col gap-4">
+      {players.map((player) => {
+        const char = characters.find(c => c.user_id === player.peer_id);
+        const isSelf = player.peer_id === user?.id;
+        const playerIsMJ = player.role === SecurityLevel.MJ;
+
         return (
-            <button
-            key={p.peer_id}
-            onClick={() => setSelectedPlayer(p)}
-            className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-gold-DEFAULT/20 hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/40 transition-all group text-left min-w-0"
-            >
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div key={player.peer_id} className={`group relative p-4 rounded-2xl border transition-all duration-300 ${isSelf ? 'bg-gold-DEFAULT/5 border-gold-DEFAULT/30 shadow-[0_0_20px_rgba(212,175,55,0.1)]' : 'bg-black/40 border-white/5 hover:border-white/10'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
                 <div className="relative">
-                    <div className="w-8 h-8 shrink-0 rounded-full bg-black/60 border border-gold-DEFAULT/30 flex items-center justify-center group-hover:border-gold-bright transition-colors">
-                        {char?.image_url ? (
-                            <img src={char.image_url} alt="" className="w-full h-full object-cover rounded-full" />
-                        ) : (
-                            <User className="w-4 h-4 text-gold-DEFAULT group-hover:text-gold-bright" />
-                        )}
-                    </div>
-                    {/* Token Toggle Button on Portrait in List */}
-                    {isMJ && char && (
-                        <div 
-                            onClick={(e) => { e.stopPropagation(); handleToggleToken(char.id); }}
-                            className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all flex items-center justify-center ${
-                                tokenStatus[char.id]
-                                ? 'bg-gold-DEFAULT text-black shadow-[0_0_10px_rgba(212,175,55,0.4)]' 
-                                : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
-                            }`}
-                            title={tokenStatus[char.id] ? "Bannir la figurine du plateau" : "Invoquer sur le plateau"}
-                        >
-                            <Plus size={8} className={`transition-transform duration-500 ${tokenStatus[char.id] ? 'rotate-45' : ''}`} />
-                        </div>
+                  <div className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center overflow-hidden bg-black transition-colors ${isSelf ? 'border-gold-DEFAULT' : 'border-white/10 group-hover:border-gold-DEFAULT/40'}`}>
+                    {char?.image_url ? (
+                      <img src={char.image_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className={isSelf ? 'text-gold-DEFAULT' : 'text-white/20'} size={24} />
                     )}
+                  </div>
+                  {playerIsMJ && (
+                    <div className="absolute -top-1 -right-1 p-1 rounded-lg bg-gold-DEFAULT text-black border-2 border-[#0D0D0F]">
+                      <Shield size={10} />
+                    </div>
+                  )}
                 </div>
-                <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-sm font-cinzel font-bold text-white/90 group-hover:text-white drop-shadow-md truncate" title={p.pseudo}>
-                    {p.pseudo}
-                </span>
-                <span className="text-[9px] text-white/40 font-mono truncate">
-                    {getRoleLabel(p.role)}
-                </span>
+
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-cinzel font-black text-sm uppercase tracking-widest ${isSelf ? 'text-gold-bright' : 'text-white/80'}`}>
+                      {player.pseudo}
+                    </span>
+                    {isSelf && <span className="text-[8px] px-1.5 py-0.5 rounded bg-gold-DEFAULT text-black font-black uppercase tracking-tighter">Moi</span>}
+                  </div>
+                  <span className="text-[10px] font-mono text-white/30 uppercase tracking-tighter">
+                    {char ? char.name : 'En attente d\'incarnation...'}
+                  </span>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {isMJ && char && (
+                  <>
+                    <button 
+                      onClick={() => handleToggleToken(char.id)}
+                      className={`p-3 rounded-xl transition-all ${tokenStatus[char.id] ? 'bg-gold-DEFAULT text-black' : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white'}`}
+                      title={tokenStatus[char.id] ? "Retirer de la carte" : "Placer sur la carte"}
+                    >
+                      <Plus size={20} className={`transition-transform duration-500 ${tokenStatus[char.id] ? 'rotate-45' : ''}`} />
+                    </button>
+                    <button 
+                      onClick={() => setCharacterManagement(char.id)}
+                      className="p-3 rounded-xl bg-gold-DEFAULT/10 text-gold-DEFAULT border border-gold-DEFAULT/30 hover:bg-gold-DEFAULT/20 transition-all"
+                      title="Gérer le voyageur"
+                    >
+                      <Settings size={20} />
+                    </button>
+                  </>
+                )}
+                {char && (
+                  <div className="flex items-center gap-4 px-6 py-2 rounded-xl bg-black/40 border border-white/5 group-hover:border-gold-DEFAULT/20 transition-colors">
+                    {Object.entries(char.bars).filter(([key]) => !key.startsWith('max')).map(([key, val]) => {
+                      const barDef = session?.settings?.bars?.find(b => b.id === key) || { color: '#fff' };
+                      return (
+                        <div key={key} className="flex flex-col items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: barDef.color, color: barDef.color }} />
+                          <span className="text-[10px] font-mono text-white/60">{val}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {!char && isSelf && (
+                  <CreateCharacterModal 
+                    onClose={() => {}} 
+                    onSave={handleCreateSave} 
+                    settings={session?.settings}
+                  />
+                )}
+              </div>
             </div>
-            <ChevronRight className="w-4 h-4 shrink-0 text-gold-DEFAULT/50 group-hover:text-gold-bright transition-colors ml-2" />
-            </button>
+          </div>
         );
       })}
       {players.length === 0 && (

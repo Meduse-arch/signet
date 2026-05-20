@@ -1,30 +1,37 @@
 import { useEffect, useState } from 'react';
-import { SceneWindowContent, CharacterSheetContent, DiceWindowContent, BestiaryWindowContent, InventoryWindowContent, ItemCreationModal, ItemDetailModal } from '../../components/SignetInterface';
-import { PlayerWindowContent } from '../../components/SignetInterface/PlayerWindowContent';
+import { useParams } from 'react-router-dom';
+import { 
+  SceneWindowContent, 
+  CharacterSheetContent, 
+  DiceWindowContent, 
+  BestiaryWindowContent, 
+  InventoryWindowContent, 
+  ItemCreationModal, 
+  ItemDetailModal,
+  ManageCharacterModal,
+  PlayerWindowContent
+} from '../../components/SignetInterface';
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
+import { useUIStore } from '../../store/ui';
 import { getSessionPlayers } from '../../services/session.service';
 import { getSessionMaps, addSessionMap } from '../../services/maps.service';
 import { getSessionCharacters } from '../../services/characters.service';
 import { MapItem } from '../../components/BoardCanvas';
 import { useSession } from '../../hooks/useSession';
-import { Sparkles } from 'lucide-react';
 
-interface ExternalWindowPageProps {
-  type: string;
-  sessionId: string;
-}
-
-export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps) {
+export function ExternalWindowPage() {
+  const { type, sessionId } = useParams<{ type: string; sessionId: string }>();
   const { onData, broadcast, init } = usePeer();
   const user = useAuthStore(state => state.user);
   const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
   const initChars = useCharactersStore(state => state.initialize);
   const initItems = useItemsStore(state => state.initialize);
+  const { characterManagementId, setCharacterManagement } = useUIStore();
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   
   // Call useSession to make sure the session store is populated
@@ -36,13 +43,16 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
 
   // Initialisation des données personnages et objets depuis le storage
   useEffect(() => {
-    initChars(sessionId);
-    initItems(sessionId);
+    if (sessionId) {
+      initChars(sessionId);
+      initItems(sessionId);
+    }
   }, [sessionId, initChars, initItems]);
 
   // Initialisation P2P pour rester synchronisé
   useEffect(() => {
     const setup = async () => {
+      if (!sessionId || !type) return;
       const session = useSessionStore.getState().sessions.find(s => s.id === sessionId);
       const hostId = sessionId.startsWith('SIGNET-') ? sessionId : session?.hostPeerId;
       if (hostId) {
@@ -51,11 +61,13 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
       }
     };
     setup();
-  }, [sessionId, type, init, sessions]); // Also depend on sessions so it re-runs when they are loaded
+  }, [sessionId, type, init, sessions]);
 
   // Chargement initial des données (Scènes, Joueurs, Personnages)
   useEffect(() => {
     const loadData = async () => {
+      if (!sessionId) return;
+
       // Chargement des cartes et personnages
       if (window.electronAPI) {
         try {
@@ -104,7 +116,7 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
         
         if (map) {
           setCurrentMapId(map.id);
-          localStorage.setItem(`active_map_${sessionId}`, map.id);
+          if (sessionId) localStorage.setItem(`active_map_${sessionId}`, map.id);
         }
       } else if (data.type === 'MAP_UPDATE') {
         setMaps(data.payload);
@@ -116,6 +128,7 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
   }, [onData, sessionId, maps, addOrUpdateCharacter]);
 
   const handleSelectMap = (map: MapItem) => {
+    if (!sessionId) return;
     setCurrentMapId(map.id);
     localStorage.setItem(`active_map_${sessionId}`, map.id);
 
@@ -130,6 +143,7 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
   };
 
   const handleAddMap = async (name: string, url: string) => {
+    if (!sessionId) return;
     const newMap = { id: Math.random().toString(36).substring(2, 9), name, url };
     const updatedMaps = [...maps, newMap];
     setMaps(updatedMaps);
@@ -152,6 +166,7 @@ export function ExternalWindowPage({ type, sessionId }: ExternalWindowPageProps)
 
 // Écoute BroadcastChannel pour recevoir les mises à jour de l'app principale
 useEffect(() => {
+  if (!sessionId) return;
   const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
   channel.onmessage = (event) => {
     const { type, payload } = event.data;
@@ -167,11 +182,7 @@ useEffect(() => {
   return () => channel.close();
 }, [sessionId, maps]);
 
-  const handleReDock = () => {
-    if (window.electronAPI) {
-      window.electronAPI.reDock(type, sessionId);
-    }
-  };
+  if (!sessionId || !type) return null;
 
   return (
     <div className="w-full h-screen bg-[#0D0D0F]/80 p-0 overflow-hidden flex flex-col relative">
@@ -218,6 +229,13 @@ useEffect(() => {
        <DiceRollModal />
        <ItemCreationModal sessionId={sessionId} />
        <ItemDetailModal sessionId={sessionId} />
+       {characterManagementId && (
+         <ManageCharacterModal 
+           sessionId={sessionId} 
+           characterId={characterManagementId} 
+           onClose={() => setCharacterManagement(null)} 
+         />
+       )}
     </div>
   );
 }
