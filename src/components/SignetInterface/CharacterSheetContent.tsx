@@ -1,12 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { useDiceStore } from '../../store/dice';
 import { DEFAULT_STATS, DEFAULT_BARS, DEFAULT_SKILLS } from '../../systems/seal/constants';
 import { usePeer } from '../../hooks/usePeer';
-import { addSessionCharacter } from '../../services/characters.service';
+import { addSessionCharacter, removeSessionCharacter } from '../../services/characters.service';
 import { lancerDes } from '../../services/des.service';
 import { addSessionLog } from '../../services/db.service';
 
@@ -232,6 +232,7 @@ export function CharacterSheetContent({
   const user = useAuthStore(state => state.user);
   const characters = useCharactersStore(state => state.characters);
   const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
+  const { removeCharacter, controlledCharacterId, setPnjControle } = useCharactersStore();
   const session = useSessionStore(state =>
     state.sessions.find(s => s.id === sessionId)
   );
@@ -253,7 +254,6 @@ export function CharacterSheetContent({
     }
   }, [isPopup]);
 
-  const { controlledCharacterId } = useCharactersStore();
   const character = useMemo(() => {
     if (forceCharacterId) {
       return characters.find(c => c.id === forceCharacterId);
@@ -263,6 +263,27 @@ export function CharacterSheetContent({
     }
     return characters.find(c => c.user_id === user?.id);
   }, [characters, controlledCharacterId, user?.id, forceCharacterId]);
+
+  const isMJ = !!user && user.role >= SecurityLevel.MJ;
+  const isOwner = character?.user_id === user?.id;
+
+  const handleDelete = async () => {
+    if (!character) return;
+    if (!isMJ && !isOwner) return;
+    
+    if (!confirm(`Souhaitez-vous vraiment bannir ${character.name} de l'Archive ?`)) return;
+
+    if (window.electronAPI) {
+      await removeSessionCharacter(character.id);
+    }
+    
+    if (controlledCharacterId === character.id) {
+        setPnjControle(null);
+    }
+
+    removeCharacter(character.id);
+    broadcast({ type: 'CHAR_DELETE', payload: { id: character.id } });
+  };
 
   const handleAvatarClick = () => {
     if (!character) return;
@@ -616,6 +637,15 @@ export function CharacterSheetContent({
             <div className="flex-1 min-w-0">
               <h2 className="text-[10px] font-cinzel font-black text-gold-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
             </div>
+            {(isMJ || isOwner) && (
+              <button 
+                onClick={handleDelete}
+                className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-all ml-auto"
+                title="Supprimer la fiche"
+              >
+                <Trash2 size={12} />
+              </button>
+            )}
           </div>
 
           <div className="flex gap-2 p-2 h-[160px]">
@@ -658,6 +688,16 @@ export function CharacterSheetContent({
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-cinzel font-black text-gold-bright uppercase tracking-[0.2em] truncate" title={name}>{name}</h1>
           </div>
+          {(isMJ || isOwner) && (
+            <button 
+              onClick={handleDelete}
+              className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500/60 hover:text-red-500 hover:bg-red-500/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+              title="Supprimer la fiche"
+            >
+              <Trash2 size={14} />
+              Bannir l'Entité
+            </button>
+          )}
         </div>
 
         <div className="flex-1 flex gap-4 min-h-0">

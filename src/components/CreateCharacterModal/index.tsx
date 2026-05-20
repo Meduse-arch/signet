@@ -42,7 +42,7 @@ export function CreateCharacterModal({
   initialSkills,
   initialName = '',
   initialImageUrl = '',
-  initialType = 'PNJ',
+  initialType,
   initialIsTemplate = false,
   initialMode,
   title = "Éveiller un Voyageur",
@@ -53,7 +53,7 @@ export function CreateCharacterModal({
 
   const [name, setName] = useState(initialName);
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
-  const [type, setType] = useState<'Joueur' | 'PNJ' | 'Monstre' | 'Boss'>(initialType);
+  const [type, setType] = useState<'Joueur' | 'PNJ' | 'Monstre' | 'Boss'>(initialType || (isMJ ? 'PNJ' : 'Joueur'));
   const [isTemplate, setIsTemplate] = useState(initialIsTemplate);
   const [quantity, setQuantity] = useState(1);
   const isEditing = !!initialStats;

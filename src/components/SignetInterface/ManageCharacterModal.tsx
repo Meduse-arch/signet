@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, User, Sword, Heart, Package, BookOpen, Save, Trash2, ScrollText, Image as ImageIcon, Search, Hammer, Plus, ArrowLeft } from 'lucide-react';
+import { X, User, Sword, Heart, Package, BookOpen, Save, Trash2, ScrollText, Image as ImageIcon, Search, Hammer, Plus, ArrowLeft, ChevronRight, ChevronDown, ShieldAlert, Skull } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
 import { useSessionStore } from '../../store/session';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
+import { useUIStore } from '../../store/ui';
 import { usePeer } from '../../hooks/usePeer';
 import { updateSessionCharacter } from '../../services/characters.service';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
@@ -15,6 +16,13 @@ interface ManageCharacterModalProps {
 }
 
 type Tab = 'profil' | 'stats' | 'ressources' | 'inventaire' | 'competences' | 'quetes';
+
+const ENTITY_TYPES = [
+  { id: 'Joueur', label: 'Joueur', icon: User, color: 'text-blue-400' },
+  { id: 'PNJ', label: 'PNJ', icon: ScrollText, color: 'text-green-400' },
+  { id: 'Monstre', label: 'Monstre', icon: Skull, color: 'text-orange-400' },
+  { id: 'Boss', label: 'Boss', icon: ShieldAlert, color: 'text-red-400' },
+];
 
 export function ManageCharacterModal({ sessionId, characterId, onClose }: ManageCharacterModalProps) {
   const { characters, addOrUpdateCharacter } = useCharactersStore();
@@ -517,6 +525,14 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                             >
                               {addedFeedback === item.id ? <Package size={12} className="animate-bounce" /> : <Plus size={12} />}
                               {addedFeedback === item.id ? 'Ajouté !' : 'Ajouter'}
+                            </button>
+
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setSelectedItem(item, true); }}
+                              className="p-2 rounded-lg hover:bg-white/10 text-gold-DEFAULT/40 hover:text-gold-bright transition-all opacity-0 group-hover:opacity-100"
+                              title="Détails"
+                            >
+                              <ChevronRight size={18} />
                             </button>
                           </div>
                         </div>

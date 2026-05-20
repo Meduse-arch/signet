@@ -20,7 +20,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const { broadcast } = usePeer();
   
-  const [activeTab, setActiveTab] = useState<'pnj' | 'mobs' | 'boss' | 'templates'>('pnj');
+  const [activeTab, setActiveTab] = useState<'pnj' | 'mobs' | 'boss' | 'models' | 'players'>('pnj');
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
@@ -176,13 +176,14 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
       const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
       if (!matchesSearch) return false;
 
-      // Filter by user_id to exclude player characters from Bestiary
-      if (c.user_id && c.type === 'Joueur') return false;
+      // Filter by tab
+      if (activeTab === 'models') return c.is_template;
+      if (c.is_template) return false; // Non-template tabs shouldn't show templates
 
-      if (activeTab === 'templates') return c.is_template;
-      if (c.is_template) return false;
+      if (activeTab === 'players') return c.type === 'Joueur';
+      if (c.type === 'Joueur') return false; // Non-player tabs shouldn't show players
 
-      if (activeTab === 'pnj') return c.type === 'PNJ' || (!c.type && !c.is_template);
+      if (activeTab === 'pnj') return c.type === 'PNJ' || !c.type;
       if (activeTab === 'mobs') return c.type === 'Monstre';
       if (activeTab === 'boss') return c.type === 'Boss';
 
@@ -201,7 +202,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
       <div className="flex-1 flex flex-col gap-6 h-full min-w-0">
         {/* Tabs */}
         <div className="flex gap-2 p-1 bg-black/40 border border-gold-DEFAULT/20 rounded-xl shrink-0 overflow-x-auto custom-scrollbar">
-          {(['pnj', 'mobs', 'boss', 'templates'] as const).map(tab => (
+          {(['pnj', 'mobs', 'boss', 'models', 'players'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -211,7 +212,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                   : 'text-gold-DEFAULT/40 hover:text-gold-DEFAULT hover:bg-white/5'
               }`}
             >
-              {tab === 'pnj' ? 'PNJ' : tab === 'mobs' ? 'MONSTRES' : tab === 'boss' ? 'BOSS' : 'BESTIAIRE'}
+              {tab === 'pnj' ? 'PNJ' : tab === 'mobs' ? 'MONSTRES' : tab === 'boss' ? 'BOSS' : tab === 'models' ? 'MODÈLES' : 'JOUEURS'}
             </button>
           ))}
         </div>
@@ -223,7 +224,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gold-DEFAULT/40" />
               <input 
                 type="text" 
-                placeholder={activeTab === 'templates' ? "RECHERCHER MODÈLE..." : "RECHERCHER ENTITÉ..."}
+                placeholder={activeTab === 'models' ? "RECHERCHER MODÈLE..." : "RECHERCHER ENTITÉ..."}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl py-2 pl-9 pr-4 text-[10px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-all shadow-inner uppercase tracking-widest"
@@ -231,7 +232,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
             </div>
           </div>
 
-          {activeTab === 'templates' ? (
+          {activeTab === 'models' ? (
             <button 
               onClick={handleCreateNewTemplate}
               className="flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all shadow-[0_0_15px_rgba(212,175,55,0.1)] group"
@@ -239,7 +240,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
               <Plus size={14} className="group-hover:scale-110 transition-transform" />
               <span className="text-[9px] font-cinzel font-black tracking-widest uppercase">ÉVEILLER UN MODÈLE</span>
             </button>
-          ) : (
+          ) : activeTab !== 'players' ? (
             <div className="flex gap-2">
               <button 
                 onClick={() => setShowTemplateSelector(true)}
@@ -256,10 +257,11 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                 <span className="text-[9px] font-cinzel font-black tracking-widest uppercase text-center">CRÉER ENTITÉ</span>
               </button>
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-2 snap-y snap-mandatory min-h-0">
+          {/* ... list content ... */}
           {filteredCharacters.map((npc) => {
             const isActive = selectedCharId === npc.id;
             return (
@@ -275,7 +277,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                     {npc.image_url ? (
                       <img src={npc.image_url} alt={npc.name} className="w-full h-full object-cover" />
                     ) : (
-                      <Ghost className="w-6 h-6 text-gold-DEFAULT/20" />
+                      npc.type === 'Joueur' ? <User className="w-6 h-6 text-blue-400/20" /> : <Ghost className="w-6 h-6 text-gold-DEFAULT/20" />
                     )}
                     {(controlledCharacterId === npc.id || isActive) && (
                       <div className="absolute inset-0 bg-gold-bright/10 animate-pulse" />
@@ -289,6 +291,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                         npc.is_template ? 'border-purple-500/30 bg-purple-500/10 text-purple-400' :
                         npc.type === 'Boss' ? 'border-red-500/30 bg-red-500/10 text-red-400' :
                         npc.type === 'Monstre' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' :
+                        npc.type === 'Joueur' ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' :
                         'border-blue-500/30 bg-blue-500/10 text-blue-400'
                       }`}>
                         {npc.is_template ? 'Modèle' : (npc.type || 'PNJ')}
@@ -369,7 +372,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
             <div className="flex flex-col items-center justify-center py-20 opacity-20">
               <Ghost className="w-12 h-12 text-gold-DEFAULT mb-4" />
               <p className="text-[10px] font-cinzel italic tracking-widest text-center">
-                {activeTab === 'templates' ? "AUCUN MODÈLE DANS LES ARCHIVES..." : "AUCUNE ENTITÉ N'A ÉTÉ ÉVEILLÉE..."}
+                {activeTab === 'models' ? "AUCUN MODÈLE DANS LES ARCHIVES..." : "AUCUNE ENTITÉ N'A ÉTÉ ÉVEILLÉE..."}
               </p>
             </div>
           )}

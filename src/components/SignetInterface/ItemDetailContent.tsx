@@ -159,4 +159,3 @@ export function ItemDetailContent({ item, character, onToggleEquip, onUse, isMJ 
     </div>
   );
 }
-}

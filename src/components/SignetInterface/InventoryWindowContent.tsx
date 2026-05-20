@@ -4,12 +4,10 @@ import { useItemsStore } from '../../store/items';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
 import { usePeer } from '../../hooks/usePeer';
-import { Package, Plus, Trash2, Search, Hammer, User, Shield, Star, Sword, ShieldAlert, Sparkles, Gem, FlaskConical, ChevronRight, PenTool } from 'lucide-react';
+import { Package, Plus, Trash2, Search, Hammer, User, Shield, Star, Sword, Sparkles, Gem, FlaskConical, ChevronRight, PenTool, Zap } from 'lucide-react';
 import { addSessionCharacter } from '../../services/characters.service';
-import { Item, ItemModifier } from '../../services/items.service';
-import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
-import { parseAndRoll } from '../../services/des.service';
 import { ItemDetailContent } from './ItemDetailContent';
+import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 
 interface InventoryWindowContentProps {
   sessionId: string;
@@ -37,7 +35,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
   const [activeTab, setActiveTab] = useState<'inventory' | 'forge'>('inventory');
   const [search, setSearch] = useState('');
 
-  // Responsive layout: auto-switch to codex side-panel if wide enough
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [isWideView, setIsWideView] = useState(variant === 'codex');
 
@@ -88,7 +85,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     const item = itemToToggle || selectedItem;
     if (!character || !item) return;
 
-    // Use specific instanceId if provided, otherwise first instance of stack
     const targetInstanceId = item.instanceId || (item.isStack ? item.instances[0] : null);
     if (!targetInstanceId) return;
 
@@ -98,14 +94,13 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
         (i.instanceId === targetInstanceId) ? { ...i, equipped: !i.equipped } : i
       )
     };
-    addOrUpdateCharacter(updatedChar);
+    addOrUpdateCharacter(updatedChar, false);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
     
-    // Update selected item state to reflect equip status
     const updatedItem = updatedChar.inventory.find((i: any) => i.instanceId === targetInstanceId);
     if (updatedItem) {
-      setSelectedItem(updatedItem, false); // Don't force modal open on toggle
+      setSelectedItem(updatedItem, false);
     }
   };
 
@@ -116,17 +111,15 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     const targetInstanceId = item.instanceId || (item.isStack ? item.instances[0] : null);
     if (!targetInstanceId) return;
 
-    // Consuming an item = removing one instance from inventory
     const updatedChar = {
       ...character,
       inventory: (character.inventory || []).filter((i: any) => i.instanceId !== targetInstanceId)
     };
 
-    addOrUpdateCharacter(updatedChar);
+    addOrUpdateCharacter(updatedChar, false);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
 
-    // Deselect if it was the last instance
     if (selectedItem?.instanceId === targetInstanceId) {
       setSelectedItem(null);
     }
@@ -139,7 +132,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
       ...character,
       inventory: [...(character.inventory || []), clonedItem]
     };
-    addOrUpdateCharacter(updatedChar);
+    addOrUpdateCharacter(updatedChar, false);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
   };
@@ -154,7 +147,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
       )
     };
 
-    addOrUpdateCharacter(updatedChar);
+    addOrUpdateCharacter(updatedChar, false);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
     if (selectedItem?.instanceId === item.instanceId || (item.isStack && selectedItem?.id === item.id)) {
@@ -197,7 +190,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
   return (
     <div ref={containerRef} className={`flex flex-col lg:flex-row h-full gap-6 animate-in fade-in duration-500 relative bg-[#0D0D0F] ${variant === 'codex' ? 'min-h-[500px]' : ''}`}>
       
-      {/* LISTE CODEX */}
       <div className="flex-1 flex flex-col gap-4 h-full min-w-0">
         {isMJ && character && (
           <div className="flex gap-2 mb-2 bg-black/40 p-1.5 rounded-2xl border border-white/5 shrink-0 shadow-inner">
@@ -255,7 +247,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                 return (
                   <div 
                     key={item.instanceId || `stack-${item.id}-${idx}`} 
-                    onClick={() => setSelectedItem(item, !isWideView)}
+                    onClick={() => setSelectedItem(item, false)}
                     className={`group relative rounded-xl p-3 transition-all cursor-pointer flex items-center gap-4 overflow-hidden ${
                       isActive ? 'border-gold-bright shadow-[0_0_20px_rgba(212,175,55,0.2)]' : 'border-white/[0.05] hover:border-gold-DEFAULT/40'
                     }`}
@@ -283,7 +275,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                       <div className={`absolute bottom-0 right-0 ${item.equipped ? 'bg-gold-DEFAULT text-black' : 'bg-white/10 text-white/70'} text-[8px] font-black px-1.5 py-0.5 rounded-tl-lg shadow-lg border-t border-l border-white/10 z-20`}>
                         x{item.quantity || 1}
                       </div>
-                      {/* Subtil glass shine on icon */}
                       <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 to-transparent opacity-30" />
                     </div>
                     
@@ -295,7 +286,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                         {item.equipped && <Star size={10} className="text-gold-bright animate-pulse shrink-0" />}
                       </div>
                       
-                      {/* Modifier Preview */}
                       {item.modifiers && item.modifiers.length > 0 ? (
                         <div className="flex flex-wrap gap-1 mt-0.5">
                           {item.modifiers.slice(0, 2).map((m: any, i: number) => (
@@ -321,13 +311,23 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                     </div>
 
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity pr-2 shrink-0">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleToggleEquip(item); }} 
-                        className={`p-1.5 rounded-lg transition-all ${item.equipped ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20'}`}
-                        title={item.equipped ? "Déséquiper" : "Équiper"}
-                      >
-                        <Shield size={14} />
-                      </button>
+                      {item.category === 'Consommable' ? (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleUseItem(item); }} 
+                          className="p-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20"
+                          title="Utiliser"
+                        >
+                          <Zap size={14} />
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleToggleEquip(item); }} 
+                          className={`p-1.5 rounded-lg transition-all ${item.equipped ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20'}`}
+                          title={item.equipped ? "Déséquiper" : "Équiper"}
+                        >
+                          <Shield size={14} />
+                        </button>
+                      )}
                       {isMJ && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRemoveFromInventory(item); }} 
@@ -337,7 +337,13 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                           <Trash2 size={14} />
                         </button>
                       )}
-                      <ChevronRight size={16} className="text-gold-DEFAULT/30" />
+                      <div 
+                        onClick={(e) => { e.stopPropagation(); setSelectedItem(item, true); }}
+                        className="p-1 hover:bg-white/10 rounded transition-colors"
+                        title="Détails"
+                      >
+                        <ChevronRight size={16} className="text-gold-DEFAULT/30" />
+                      </div>
                     </div>
 
                     {item.equipped && (
@@ -355,117 +361,120 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
               )}
             </>
           ) : (
-            <>
-              <div className="grid grid-cols-1 gap-2">
-                {filteredForgeItems.map((item) => {
-                  const Icon = getIcon(item.category);
-                  const isActive = selectedItem?.id === item.id;
-                  return (
+            <div className="grid grid-cols-1 gap-2">
+              {filteredForgeItems.map((item) => {
+                const Icon = getIcon(item.category);
+                const isActive = selectedItem?.id === item.id;
+                return (
+                  <div 
+                    key={item.id} 
+                    onClick={() => isWideView && setSelectedItem(item, false)}
+                    className={`group relative rounded-xl p-3 transition-all flex items-center gap-4 ${isWideView ? 'cursor-pointer' : ''} ${
+                      isActive ? 'border-gold-bright shadow-[0_0_20px_rgba(212,175,55,0.2)]' : 'border-white/[0.05] hover:border-gold-DEFAULT/30'
+                    }`}
+                    style={{
+                      background: isActive ? 'rgba(212, 175, 55, 0.1)' : 'rgba(255, 255, 255, 0.02)',
+                      backdropFilter: 'blur(8px)',
+                      borderTop: isActive ? '1px solid rgba(212, 175, 55, 0.5)' : '1px solid rgba(255, 255, 255, 0.05)',
+                      borderLeft: isActive ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(255, 255, 255, 0.03)',
+                      boxShadow: isActive ? 'inset 0 1px 0 rgba(255,215,0,0.1), 0 8px 16px rgba(0,0,0,0.4)' : 'inset 0 1px 0 rgba(255,255,255,0.02)',
+                    }}
+                  >
                     <div 
-                      key={item.id} 
-                      onClick={() => setSelectedItem(item, !isWideView)}
-                      className={`group relative rounded-xl p-3 transition-all flex items-center gap-4 cursor-pointer ${
-                        isActive ? 'border-gold-bright shadow-[0_0_20px_rgba(212,175,55,0.2)]' : 'border-white/[0.05] hover:border-gold-DEFAULT/30'
-                      }`}
+                      className="w-12 h-12 shrink-0 rounded-lg flex items-center justify-center relative overflow-hidden transition-all group-hover:border-white/20"
                       style={{
-                        background: isActive ? 'rgba(212, 175, 55, 0.1)' : 'rgba(255, 255, 255, 0.02)',
-                        backdropFilter: 'blur(8px)',
-                        borderTop: isActive ? '1px solid rgba(212, 175, 55, 0.5)' : '1px solid rgba(255, 255, 255, 0.05)',
-                        borderLeft: isActive ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(255, 255, 255, 0.03)',
-                        boxShadow: isActive ? 'inset 0 1px 0 rgba(255,215,0,0.1), 0 8px 16px rgba(0,0,0,0.4)' : 'inset 0 1px 0 rgba(255,255,255,0.02)',
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
                       }}
                     >
-                      <div 
-                        className="w-12 h-12 shrink-0 rounded-lg flex items-center justify-center relative overflow-hidden transition-all group-hover:border-white/20"
-                        style={{
-                          background: 'rgba(0, 0, 0, 0.4)',
-                          border: '1px solid rgba(255, 255, 255, 0.05)',
-                          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
-                        }}
-                      >
-                        {item.image_url ? (
-                          <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-40 group-hover:opacity-60 transition-opacity" />
-                        ) : (
-                          <Icon size={24} className="text-white/10 group-hover:text-white/20" />
-                        )}
-                        <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 to-transparent opacity-30" />
-                      </div>                      
-                      <div className="flex-1 min-w-0">
-                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <h4 className={`text-xs font-cinzel font-black truncate uppercase tracking-widest transition-colors ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-gold-bright'}`}>{item.name}</h4>
-                          <span className="text-[7px] border border-white/10 bg-black/40 px-2 py-0.5 rounded-lg text-white/30 uppercase shrink-0 font-cinzel tracking-widest">{item.category}</span>
-                        </div>
-                        {/* Modifier Preview */}
-                        {item.modifiers && item.modifiers.length > 0 ? (
-                          <div className="flex items-center gap-1 mt-0.5 overflow-hidden">
-                            {item.modifiers.slice(0, 1).map((m: any, i: number) => (
-                              <span key={i} className="text-[8px] font-cinzel font-black uppercase px-1.5 py-0.5 border bg-gold-DEFAULT/10 text-gold-bright border-gold-DEFAULT/20 rounded shadow-[0_0_8px_rgba(212,175,55,0.1)] truncate max-w-[140px] shrink-0">
-                                {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`} {getTargetName(m)}
-                              </span>
-                            ))}
-                            {item.modifiers.length > 1 && (
-                              <span className="text-[8px] font-cinzel opacity-40 uppercase px-1.5 py-0.5 border border-white/10 rounded shrink-0">
-                                +{item.modifiers.length - 1}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-[9px] font-garamond italic text-white/20 line-clamp-1 mt-0.5">{item.description}</p>
-                        )}
+                      {item.image_url ? (
+                        <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-40 group-hover:opacity-60 transition-opacity" />
+                      ) : (
+                        <Icon size={24} className="text-white/10 group-hover:text-white/20" />
+                      )}
+                      <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 to-transparent opacity-30" />
+                    </div>                      
+                    <div className="flex-1 min-w-0">
+                       <div className="flex items-center justify-between gap-2 mb-1">
+                        <h4 className={`text-xs font-cinzel font-black truncate uppercase tracking-widest transition-colors ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-gold-bright'}`}>{item.name}</h4>
+                        <span className="text-[7px] border border-white/10 bg-black/40 px-2 py-0.5 rounded-lg text-white/30 uppercase shrink-0 font-cinzel tracking-widest">{item.category}</span>
                       </div>
-                      
-                      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        {character && (
+                      {item.modifiers && item.modifiers.length > 0 ? (
+                        <div className="flex items-center gap-1 mt-0.5 overflow-hidden">
+                          {item.modifiers.slice(0, 1).map((m: any, i: number) => (
+                            <span key={i} className="text-[8px] font-cinzel font-black uppercase px-1.5 py-0.5 border bg-gold-DEFAULT/10 text-gold-bright border-gold-DEFAULT/20 rounded shadow-[0_0_8px_rgba(212,175,55,0.1)] truncate max-w-[140px] shrink-0">
+                              {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`} {getTargetName(m)}
+                            </span>
+                          ))}
+                          {item.modifiers.length > 1 && (
+                            <span className="text-[8px] font-cinzel opacity-40 uppercase px-1.5 py-0.5 border border-white/10 rounded shrink-0">
+                              +{item.modifiers.length - 1}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[9px] font-garamond italic text-white/20 line-clamp-1 mt-0.5">{item.description}</p>
+                      )}
+                    </div>
+                    
+                    <div className={`flex gap-1.5 ${isWideView ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'} transition-opacity shrink-0`}>
+                      {character && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleGiveItemToCharacter(item); }} 
+                          className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all shadow-lg"
+                          title="Offrir à l'inventaire actif"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      )}
+                      {isMJ && (
+                        <>
                           <button 
-                            onClick={(e) => { e.stopPropagation(); handleGiveItemToCharacter(item); }} 
-                            className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all shadow-lg"
-                            title="Offrir à l'inventaire actif"
+                            onClick={(e) => { e.stopPropagation(); handleEditForgeItem(item); }} 
+                            className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all shadow-lg"
+                            title="Modifier"
                           >
-                            <Plus size={14} />
+                            <PenTool size={14} />
                           </button>
-                        )}
-                        {isMJ && (
-                          <>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleEditForgeItem(item); }} 
-                              className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all shadow-lg"
-                              title="Modifier"
-                            >
-                              <PenTool size={14} />
-                            </button>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleDeleteForgeItem(item.id); }} 
-                              className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500/40 hover:text-red-500 transition-all shadow-lg"
-                              title="Détruire"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </>
-                        )}
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleDeleteForgeItem(item.id); }} 
+                            className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500/40 hover:text-red-500 transition-all shadow-lg"
+                            title="Détruire"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
+                      <div 
+                        onClick={(e) => { e.stopPropagation(); setSelectedItem(item, true); }}
+                        className="p-1 hover:bg-white/10 rounded transition-colors"
+                        title="Détails"
+                      >
+                        <ChevronRight size={16} className="text-gold-DEFAULT/30" />
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-
+                  </div>
+                );
+              })}
               {filteredForgeItems.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-20 opacity-10 grayscale">
                   <Hammer size={48} className="mb-4" />
                   <span className="text-xs font-cinzel font-black tracking-[0.3em] italic">LES ARCHIVES SONT VIDES...</span>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
 
-      {/* PANNEAU DE DETAIL CODEX */}
       {isWideView && (
         <div className="flex flex-col w-[350px] shrink-0 border border-gold-DEFAULT/10 bg-black/40 backdrop-blur-md rounded-2xl h-full shadow-2xl relative overflow-hidden">
           <ItemDetailContent 
             item={selectedItem}
             character={character}
             onToggleEquip={effectiveTab === 'inventory' ? handleToggleEquip : undefined}
+            onUse={effectiveTab === 'inventory' ? handleUseItem : undefined}
             isMJ={isMJ}
           />
         </div>
