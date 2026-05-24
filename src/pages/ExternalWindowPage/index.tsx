@@ -214,6 +214,12 @@ export function ExternalWindowPage() {
           )}
 
           {type === 'story' && (
+             <div className="p-4 text-gray-400 font-cinzel text-center mt-10">
+               Les chroniques de ce monde s'écriront bientôt...
+             </div>
+          )}
+
+          {type === 'skills' && (
              <SkillsWindowContent sessionId={sessionId} />
           )}
 

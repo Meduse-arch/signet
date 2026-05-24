@@ -75,11 +75,9 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
   };
 
   const effectiveTab = (!character && isMJ) ? 'archives' : activeTab;
-  const skillDefs = session?.settings?.skills || DEFAULT_SKILLS;
   const customSkills = character?.custom_skills || [];
   
   const characterSkills = [
-    ...skillDefs.map((s: any) => ({ ...s, value: character?.skills?.[s.id] || 20, isDefault: true })),
     ...customSkills.map((s: any) => ({ ...s, value: s.level || 20, isDefault: false }))
   ];
 
@@ -178,7 +176,7 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
                       <button className="p-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20 transition-all">
                         <Dices size={14} />
                       </button>
-                      {isMJ && !skill.isDefault && (
+                      {isMJ && (
                         <button onClick={() => handleRemoveFromCharacter(skill.id)} className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-all">
                           <Trash2 size={14} />
                         </button>

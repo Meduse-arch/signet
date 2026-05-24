@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Zap, Plus, X, Save, BarChart2, Droplets, BookOpen, Shuffle, Backpack } from 'lucide-react';
+import { Sparkles, Zap, Plus, X, Save, BarChart2, BookOpen, Shuffle, Backpack, ChevronDown } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
 import { useSkillsStore } from '../../store/skills';
 import { useTagsStore } from '../../store/tags';
@@ -10,6 +10,78 @@ import { Skill, SkillModifier, SkillEffect } from '../../services/skills.service
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { useSessionStore } from '../../store/session';
 import { TagManagementModal } from './TagManagementModal';
+
+// --- Composant Select Personnalisé ---
+const CustomSelect = ({ value, options, onChange, placeholder }: { value: string, options: {value: string, label: string}[], onChange: (v: string) => void, placeholder?: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selected = options.find(o => o.value === value);
+
+  return (
+    <div className="relative w-full" ref={ref}>
+      <div 
+        className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white cursor-pointer hover:border-gold-DEFAULT/50 flex justify-between items-center font-cinzel tracking-widest uppercase transition-colors shadow-inner"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="truncate">{selected ? selected.label : placeholder || 'Choisir...'}</span>
+        <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} text-white/40 ml-2`} />
+      </div>
+      {isOpen && (
+        <div className="absolute top-full left-0 w-full mt-1 bg-[#1a1a1d] border border-gold-DEFAULT/30 rounded-lg shadow-2xl z-[400] max-h-48 overflow-y-auto custom-scrollbar">
+          {options.map(o => (
+            <div 
+              key={o.value} 
+              className={`px-3 py-2.5 text-[10px] font-cinzel tracking-widest uppercase cursor-pointer transition-colors ${value === o.value ? 'bg-gold-DEFAULT/20 text-gold-bright' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+              onClick={() => { onChange(o.value); setIsOpen(false); }}
+            >
+              {o.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- Modèles de données unifiés pour l'UI ---
+type UnifiedEntry = {
+  _uid: string;
+  nature: 'classique' | 'buff' | 'debuff';
+  targetType: 'attribut' | 'ressource';
+  targetId: string;
+  mode: 'flat' | 'percent' | 'dice';
+  value: number;
+  formula: string;
+  description: string;
+};
+
+const NATURE_OPTIONS = [
+  { value: 'classique', label: 'Classique (Dégâts, Soins...)' },
+  { value: 'buff', label: 'Buff (Bonus)' },
+  { value: 'debuff', label: 'Debuff (Malus)' }
+];
+
+const TARGET_TYPE_OPTIONS = [
+  { value: 'attribut', label: 'Attribut (Stats)' },
+  { value: 'ressource', label: 'Ressource (Jauges)' }
+];
+
+const MODE_OPTIONS = [
+  { value: 'flat', label: 'Valeur Fixe' },
+  { value: 'percent', label: 'Pourcentage (%)' },
+  { value: 'dice', label: 'Jet de Dé / Formule' }
+];
 
 interface SkillCreationModalProps {
   sessionId: string;
@@ -28,10 +100,10 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
   const [description, setDescription] = useState('');
   const [type, setType] = useState<'active' | 'passive_auto' | 'passive_toggle'>('active');
   const [imageUrl, setImageUrl] = useState('');
-  const [modifiers, setModifiers] = useState<SkillModifier[]>([]);
-  const [effects, setEffects] = useState<SkillEffect[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [onglet, setOnglet] = useState<'stats' | 'ressources' | 'condition'>('stats');
+  const [onglet, setOnglet] = useState<'arcanes' | 'condition'>('arcanes');
+
+  const [unifiedEntries, setUnifiedEntries] = useState<UnifiedEntry[]>([]);
 
   const [conditionType, setConditionType] = useState<'item' | 'skill' | 'les_deux' | null>(null);
   const [conditionTags, setConditionTags] = useState<string[]>([]);
@@ -46,18 +118,56 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
       setDescription(skillToEdit.description);
       setType(skillToEdit.type);
       setImageUrl(skillToEdit.image_url || '');
-      setModifiers(skillToEdit.modifiers || []);
-      setEffects(skillToEdit.effects || []);
       setSelectedTags(skillToEdit.tags || []);
       setConditionType(skillToEdit.condition_type || null);
       setConditionTags(skillToEdit.condition_tags || []);
+
+      const initialUnified: UnifiedEntry[] = [];
+      skillToEdit.modifiers?.forEach((m: any) => {
+        const isNegative = m.value < 0 || (m.formula && m.formula.startsWith('-'));
+        initialUnified.push({
+          _uid: crypto.randomUUID(),
+          nature: isNegative ? 'debuff' : 'buff',
+          targetType: m.target === 'stat' ? 'attribut' : 'ressource',
+          targetId: m.targetId,
+          mode: m.mode || 'flat',
+          value: Math.abs(m.value || 0),
+          formula: m.formula ? m.formula.replace(/^-/, '') : '',
+          description: ''
+        });
+      });
+      skillToEdit.effects?.forEach((e: any) => {
+        if (e.type === 'buff' || e.type === 'debuff') {
+          initialUnified.push({
+            _uid: crypto.randomUUID(),
+            nature: e.type,
+            targetType: 'ressource',
+            targetId: e.cible_jauge || availableBars[0]?.id || '',
+            mode: e.mode || 'flat',
+            value: Math.abs(e.valeur || 0),
+            formula: e.formula ? e.formula.replace(/^-/, '') : '',
+            description: e.description || ''
+          });
+        } else {
+          initialUnified.push({
+            _uid: crypto.randomUUID(),
+            nature: 'classique',
+            targetType: 'attribut',
+            targetId: '',
+            mode: e.mode || 'flat',
+            value: e.valeur || 0,
+            formula: e.formula || '',
+            description: e.description || ''
+          });
+        }
+      });
+      setUnifiedEntries(initialUnified);
     } else {
       setName('');
       setDescription('');
       setType('active');
       setImageUrl('');
-      setModifiers([]);
-      setEffects([]);
+      setUnifiedEntries([]);
       setSelectedTags([]);
       setConditionType(null);
       setConditionTags([]);
@@ -68,6 +178,38 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
 
   const handleSave = async () => {
     if (!name.trim()) return;
+
+    const modifiers: SkillModifier[] = [];
+    const effects: SkillEffect[] = [];
+
+    unifiedEntries.forEach(entry => {
+      if (entry.nature === 'buff' || entry.nature === 'debuff') {
+        const isDebuff = entry.nature === 'debuff';
+        const finalValue = isDebuff ? -Math.abs(entry.value) : Math.abs(entry.value);
+        let finalFormula = entry.formula;
+        if (isDebuff && finalFormula && !finalFormula.startsWith('-')) {
+            finalFormula = '-' + finalFormula;
+        }
+
+        modifiers.push({
+          target: entry.targetType === 'attribut' ? 'stat' : 'bar',
+          targetId: entry.targetId,
+          mode: entry.mode,
+          value: finalValue,
+          formula: finalFormula
+        });
+      } else if (entry.nature === 'classique') {
+        effects.push({
+          id: crypto.randomUUID(),
+          type: 'utility', 
+          target: 'target', 
+          valeur: entry.value,
+          mode: entry.mode,
+          formula: entry.formula,
+          description: entry.description
+        });
+      }
+    });
 
     const skill: Skill = {
       id: skillToEdit?.id || crypto.randomUUID(),
@@ -87,28 +229,25 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
     setShowSkillCreateModal(false);
   };
 
-  const addModifier = () => {
-    setModifiers([...modifiers, { target: 'stat', targetId: availableStats[0]?.id || '', mode: 'flat', value: 0 }]);
+  const addEntry = () => {
+    setUnifiedEntries([...unifiedEntries, {
+      _uid: crypto.randomUUID(),
+      nature: 'classique',
+      targetType: 'attribut',
+      targetId: availableStats[0]?.id || '',
+      mode: 'dice',
+      value: 0,
+      formula: '',
+      description: ''
+    }]);
   };
 
-  const removeModifier = (idx: number) => {
-    setModifiers(modifiers.filter((_, i) => i !== idx));
+  const removeEntry = (idx: number) => {
+    setUnifiedEntries(unifiedEntries.filter((_, i) => i !== idx));
   };
 
-  const updateModifier = (idx: number, updates: Partial<SkillModifier>) => {
-    setModifiers(modifiers.map((m, i) => i === idx ? { ...m, ...updates } : m));
-  };
-
-  const addEffect = () => {
-    setEffects([...effects, { id: crypto.randomUUID(), type: 'damage', target: 'target', mode: 'flat', valeur: 0, description: '' }]);
-  };
-
-  const removeEffect = (idx: number) => {
-    setEffects(effects.filter((_, i) => i !== idx));
-  };
-
-  const updateEffect = (idx: number, updates: Partial<SkillEffect>) => {
-    setEffects(effects.map((e, i) => i === idx ? { ...e, ...updates } : e));
+  const updateEntry = (idx: number, updates: Partial<UnifiedEntry>) => {
+    setUnifiedEntries(unifiedEntries.map((e, i) => i === idx ? { ...e, ...updates } : e));
   };
 
   const toggleTag = (tagId: string) => {
@@ -158,7 +297,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder="Ex: Tempête de Givre"
-                    className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-lg shadow-inner"
+                    className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-lg shadow-inner"
                   />
                 </div>
 
@@ -169,7 +308,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                     value={imageUrl}
                     onChange={e => setImageUrl(e.target.value)}
                     placeholder="https://..."
-                    className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono"
+                    className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono shadow-inner"
                   />
                 </div>
 
@@ -200,7 +339,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                     value={description}
                     onChange={e => setDescription(e.target.value)}
                     placeholder="Décrivez les arcanes de cette technique..."
-                    className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm resize-none h-32 shadow-inner"
+                    className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm resize-none h-32 shadow-inner"
                   />
                 </div>
               </section>
@@ -239,8 +378,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
 
                 <div className="flex gap-1 bg-black/40 p-1.5 rounded-2xl border border-white/5 shrink-0 shadow-inner">
                   {[
-                    { id: 'stats', label: 'Stats', icon: BarChart2 },
-                    { id: 'ressources', label: 'Effets', icon: Droplets },
+                    { id: 'arcanes', label: 'Effets & Modificateurs', icon: BarChart2 },
                     { id: 'condition', label: 'Condition', icon: BookOpen, hidden: type !== 'passive_auto' }
                   ].filter(t => !t.hidden).map(tab => (
                     <button
@@ -255,114 +393,97 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                 </div>
 
                 <div className="flex-1 flex flex-col gap-4">
-                  {onglet === 'stats' && (
+                  {onglet === 'arcanes' && (
                     <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-500">
-                      {modifiers.map((m, idx) => (
-                        <div key={idx} className="bg-black/60 p-5 rounded-2xl border border-white/5 relative group hover:border-gold-DEFAULT/20 transition-all">
-                          <button onClick={() => removeModifier(idx)} className="absolute top-2 right-2 text-white/10 hover:text-red-500 transition-colors p-2">
+                      {unifiedEntries.map((entry, idx) => (
+                        <div key={entry._uid} className="bg-black/60 p-5 rounded-2xl border border-white/5 relative group hover:border-gold-DEFAULT/20 transition-all">
+                          <button onClick={() => removeEntry(idx)} className="absolute top-2 right-2 text-white/10 hover:text-red-500 transition-colors p-2 z-10">
                             <X size={14} />
                           </button>
-                          
+
                           <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Cible</label>
-                              <select 
-                                value={m.targetId} 
-                                onChange={e => updateModifier(idx, { targetId: e.target.value })}
-                                className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50"
-                              >
-                                {availableStats.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                {availableBars.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                              </select>
+                            {/* Choix Principal : Nature de l'effet */}
+                            <div className="space-y-1 col-span-2 sm:col-span-1">
+                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Type d'Effet</label>
+                              <CustomSelect 
+                                value={entry.nature} 
+                                options={NATURE_OPTIONS} 
+                                onChange={val => updateEntry(idx, { nature: val as any })} 
+                              />
                             </div>
-                            <div className="space-y-1">
-                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Mode</label>
-                              <select 
-                                value={m.mode} 
-                                onChange={e => updateModifier(idx, { mode: e.target.value as any })}
-                                className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50"
-                              >
-                                <option value="flat">Fixe</option>
-                                <option value="percent">Pourcentage</option>
-                                <option value="dice">Jet de Dés</option>
-                              </select>
+
+                            {/* Si Buff ou Debuff -> Choix de la Cible (Attribut ou Ressource) */}
+                            {(entry.nature === 'buff' || entry.nature === 'debuff') && (
+                              <>
+                                <div className="space-y-1 col-span-2 sm:col-span-1">
+                                  <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Élément Impacté</label>
+                                  <CustomSelect 
+                                    value={entry.targetType} 
+                                    options={TARGET_TYPE_OPTIONS} 
+                                    onChange={val => updateEntry(idx, { targetType: val as any, targetId: val === 'attribut' ? availableStats[0]?.id : availableBars[0]?.id })} 
+                                  />
+                                </div>
+                                <div className="space-y-1 col-span-2 sm:col-span-1">
+                                  <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Sélection précise</label>
+                                  <CustomSelect 
+                                    value={entry.targetId} 
+                                    options={entry.targetType === 'attribut' 
+                                      ? availableStats.map(s => ({ value: s.id, label: s.name }))
+                                      : availableBars.map(b => ({ value: b.id, label: b.name }))} 
+                                    onChange={val => updateEntry(idx, { targetId: val })} 
+                                  />
+                                </div>
+                              </>
+                            )}
+
+                            {/* Options communes (Mode + Valeur/Formule) */}
+                            <div className="space-y-1 col-span-2 sm:col-span-1">
+                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Mode de Calcul</label>
+                              <CustomSelect 
+                                value={entry.mode} 
+                                options={MODE_OPTIONS} 
+                                onChange={val => updateEntry(idx, { mode: val as any })} 
+                              />
                             </div>
-                            <div className="col-span-2 space-y-1">
-                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">{m.mode === 'dice' ? 'Formule (ex: 1d6+2)' : 'Valeur'}</label>
-                              {m.mode === 'dice' ? (
+                            <div className="space-y-1 col-span-2 sm:col-span-1">
+                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">
+                                {entry.mode === 'dice' ? 'Formule (ex: 1d6+2)' : 'Valeur'}
+                              </label>
+                              {entry.mode === 'dice' ? (
                                 <input 
                                   type="text" 
-                                  value={m.formula || ''} 
-                                  onChange={e => updateModifier(idx, { formula: e.target.value })}
-                                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono"
+                                  value={entry.formula} 
+                                  onChange={e => updateEntry(idx, { formula: e.target.value })}
+                                  placeholder="ex: 2d10 + Force"
+                                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono shadow-inner"
                                 />
                               ) : (
                                 <input 
                                   type="number" 
-                                  value={m.value} 
-                                  onChange={e => updateModifier(idx, { value: parseInt(e.target.value) || 0 })}
-                                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono"
+                                  value={entry.value} 
+                                  onChange={e => updateEntry(idx, { value: parseInt(e.target.value) || 0 })}
+                                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono shadow-inner"
                                 />
                               )}
                             </div>
+
+                            {/* Si Classique -> Description Custom */}
+                            {entry.nature === 'classique' && (
+                              <div className="col-span-2 space-y-1">
+                                <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Description (ex: Dégâts de givre)</label>
+                                <input 
+                                  type="text" 
+                                  value={entry.description} 
+                                  onChange={e => updateEntry(idx, { description: e.target.value })}
+                                  placeholder="Décrivez l'effet..."
+                                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono shadow-inner"
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
-                      <button onClick={addModifier} className="w-full py-4 border-2 border-dashed border-white/5 rounded-2xl font-cinzel text-[10px] font-black tracking-[0.2em] text-white/20 hover:text-gold-bright hover:border-gold-DEFAULT/20 hover:bg-gold-DEFAULT/5 transition-all">
-                        + AJOUTER UN MODIFICATEUR
-                      </button>
-                    </div>
-                  )}
-
-                  {onglet === 'ressources' && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-500">
-                      {effects.map((e, idx) => (
-                        <div key={idx} className="bg-black/60 p-5 rounded-2xl border border-white/5 relative group hover:border-gold-DEFAULT/20 transition-all">
-                          <button onClick={() => removeEffect(idx)} className="absolute top-2 right-2 text-white/10 hover:text-red-500 transition-colors p-2">
-                            <X size={14} />
-                          </button>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Nature</label>
-                              <select 
-                                value={e.type} 
-                                onChange={ev => updateEffect(idx, { type: ev.target.value as any })}
-                                className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50"
-                              >
-                                <option value="damage">Dégâts</option>
-                                <option value="heal">Soin</option>
-                                <option value="buff">Buff</option>
-                                <option value="debuff">Debuff</option>
-                                <option value="utility">Utilitaire</option>
-                              </select>
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Cible</label>
-                              <select 
-                                value={e.target} 
-                                onChange={ev => updateEffect(idx, { target: ev.target.value as any })}
-                                className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50"
-                              >
-                                <option value="self">Soi-même</option>
-                                <option value="target">Cible unique</option>
-                                <option value="area">Zone d'effet</option>
-                              </select>
-                            </div>
-                            <div className="col-span-2 space-y-1">
-                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Description Courte</label>
-                              <input 
-                                type="text" 
-                                value={e.description} 
-                                onChange={ev => updateEffect(idx, { description: ev.target.value })}
-                                placeholder="Inflige 2d10 dégâts de givre..."
-                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      <button onClick={addEffect} className="w-full py-4 border-2 border-dashed border-white/5 rounded-2xl font-cinzel text-[10px] font-black tracking-[0.2em] text-white/20 hover:text-gold-bright hover:border-gold-DEFAULT/20 hover:bg-gold-DEFAULT/5 transition-all">
+                      <button onClick={addEntry} className="w-full py-4 border-2 border-dashed border-white/5 rounded-2xl font-cinzel text-[10px] font-black tracking-[0.2em] text-white/20 hover:text-gold-bright hover:border-gold-DEFAULT/20 hover:bg-gold-DEFAULT/5 transition-all">
                         + AJOUTER UN EFFET
                       </button>
                     </div>

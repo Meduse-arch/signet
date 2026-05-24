@@ -289,7 +289,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
         {windows.story.isOpen && (
           <DraggableWindow
             id="story"
-            title="Codex des Maîtrises"
+            title="Histoire & Lore"
             variant="codex"
             onClose={() => closeWindow('story')}
             onPopOut={() => handlePopOut('story')}
@@ -297,6 +297,24 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
             onPositionChange={(x, y) => updatePosition('story', x, y)}
             zIndex={windows.story.zIndex + 200}
             onFocus={() => focusWindow('story')}
+          >
+            <div className="p-4 text-gray-400 font-cinzel text-center mt-10">
+              Les chroniques de ce monde s'écriront bientôt...
+            </div>
+          </DraggableWindow>
+        )}
+
+        {windows.skills.isOpen && (
+          <DraggableWindow
+            id="skills"
+            title="Codex des Maîtrises"
+            variant="codex"
+            onClose={() => closeWindow('skills')}
+            onPopOut={() => handlePopOut('skills')}
+            defaultPosition={windows.skills.position}
+            onPositionChange={(x, y) => updatePosition('skills', x, y)}
+            zIndex={windows.skills.zIndex + 200}
+            onFocus={() => focusWindow('skills')}
           >
             <SkillsWindowContent sessionId={sessionId} />
           </DraggableWindow>
