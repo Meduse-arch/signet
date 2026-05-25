@@ -366,14 +366,15 @@ export function CharacterSheetContent({
   const statDefs = session?.settings?.stats || DEFAULT_STATS;
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
 
-  // Calculer les modificateurs d'équipement complexes
-  const itemModifiers = useMemo(() => {
+  // Calculer les modificateurs d'équipement et de compétences complexes
+  const calculatedModifiers = useMemo(() => {
     const statsFlat: Record<string, number> = {};
     const statsPercent: Record<string, number> = {};
     const barsFlat: Record<string, { value: number; max: number }> = {};
     
     if (!character) return { stats: {}, bars: {} };
 
+    // 1. Modificateurs d'objets (Inventaire)
     inventory.forEach((item: any) => {
       if (item.equipped && item.modifiers) {
         item.modifiers.forEach((m: any, idx: number) => {
@@ -386,9 +387,7 @@ export function CharacterSheetContent({
               statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
             }
           } else if (m.target === 'bar') {
-            // LES ARMES NE COMPTENT PAS DANS LES RESSOURCES
             if (item.category === 'Arme') return;
-
             if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
             const prop = m.targetProperty || 'max';
             if (m.mode === 'dice') {
@@ -396,6 +395,30 @@ export function CharacterSheetContent({
             } else {
                barsFlat[m.targetId][prop] += m.value;
             }
+          }
+        });
+      }
+    });
+
+    // 2. Modificateurs de compétences (Custom Skills)
+    const customSkills = character.custom_skills || [];
+    customSkills.forEach((skill: any) => {
+      // Les passifs auto s'appliquent toujours, les passifs toggle seulement si actifs
+      const isAuto = skill.type === 'passive_auto';
+      const isToggleActive = skill.type === 'passive_toggle' && skill.is_active;
+      
+      if ((isAuto || isToggleActive) && skill.modifiers) {
+        skill.modifiers.forEach((m: any) => {
+          if (m.target === 'stat') {
+            if (m.mode === 'percent') {
+              statsPercent[m.targetId] = (statsPercent[m.targetId] || 0) + m.value;
+            } else {
+              statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
+            }
+          } else if (m.target === 'bar') {
+            if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
+            const prop = m.targetProperty || 'max';
+            barsFlat[m.targetId][prop] += m.value;
           }
         });
       }
@@ -467,7 +490,7 @@ export function CharacterSheetContent({
     if (!character) return;
     
     const nb = Math.max(1, nbDice);
-    const itemMod = itemModifiers.stats[statId] || 0;
+    const itemMod = calculatedModifiers.stats[statId] || 0;
     const finalFaces = baseFaces + itemMod;
     const mod = modifier; // Seul le modificateur global s'ajoute au résultat
     const res = lancerDes(nb, finalFaces, mod);
@@ -482,6 +505,7 @@ export function CharacterSheetContent({
       bonus: mod,
       diceString,
       label: statName,
+      groups: [{ nb, faces: finalFaces, label: statName, rolls: res.rolls }],
       color: '#d4af37',
       secret: !diceSharingEnabled,
       timestamp: Date.now(),
@@ -525,11 +549,165 @@ export function CharacterSheetContent({
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
   };
 
+  const handleToggleSkill = async (skillId: string) => {
+    if (!character) return;
+
+    // 1. Collecter les valeurs des attributs pour le remplacement
+    const statValues: Record<string, number> = {};
+    statDefs.forEach(s => {
+      const val = (character.stats || {})[s.id] || 20;
+      const itemMod = calculatedModifiers.stats[s.id] || 0;
+      statValues[s.name.toLowerCase()] = val + itemMod;
+    });
+
+    const updatedSkills = (character.custom_skills || []).map((s: any) => {
+      if (s.id === skillId) {
+        const isActive = !s.is_active;
+        let updatedModifiers = s.modifiers;
+        
+        // Si on active l'aura, on roll les modificateurs de type 'dice'
+        if (isActive && updatedModifiers) {
+          updatedModifiers = updatedModifiers.map((m: any) => {
+            if (m.mode === 'dice' && m.formula) {
+              let formula = m.formula;
+              const sortedStats = Object.entries(statValues).sort((a, b) => b[0].length - a[0].length);
+              sortedStats.forEach(([name, val]) => {
+                const regex = new RegExp(`(?<=\\b|d)${name}\\b`, 'gi');
+                formula = formula.replace(regex, `(${name.charAt(0).toUpperCase() + name.slice(1)}=${val})`);
+              });
+
+              const rollRes = parseAndRoll(formula);
+              return { ...m, value: rollRes.total }; // on fige le résultat dans value
+            }
+            return m;
+          });
+        }
+        
+        return { ...s, is_active: isActive, modifiers: updatedModifiers };
+      }
+      return s;
+    });
+    const updatedChar = { ...character, custom_skills: updatedSkills };
+    addOrUpdateCharacter(updatedChar);
+    if (window.electronAPI) await addSessionCharacter(updatedChar);
+    broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+  };
+
+  const handleUseSkill = async (skill: any) => {
+    if (!character) return;
+    const diceResults: any[] = [];
+    
+    // 1. Collecter les valeurs des attributs pour le remplacement
+    const statValues: Record<string, number> = {};
+    statDefs.forEach(s => {
+      const val = stats[s.id] || 20;
+      const itemMod = calculatedModifiers.stats[s.id] || 0;
+      statValues[s.name.toLowerCase()] = val + itemMod;
+    });
+
+    // 2. Traiter chaque effet configuré
+    if (skill.effects && skill.effects.length > 0) {
+      skill.effects.forEach((eff: any) => {
+        let label = eff.description || skill.name;
+        const mode = eff.mode || 'dice';
+        const formulaStr = eff.formula || '';
+        
+        if (mode === 'dice' && formulaStr) {
+          let formula = formulaStr;
+          // Trier les stats par longueur décroissante pour éviter que "FOR" ne remplace "FORCE" partiellement
+          const sortedStats = Object.entries(statValues).sort((a, b) => b[0].length - a[0].length);
+          
+          sortedStats.forEach(([name, val]) => {
+            // Expression régulière stricte : le nom de la stat, insensible à la casse,
+            // pouvant être précédé par un 'd' (pour 1dForce) mais pas par une autre lettre.
+            const regex = new RegExp(`(?<=\\b|d)${name}\\b`, 'gi');
+            // On utilise le format (Nom=Valeur) pour que parseAndRoll puisse extraire le label
+            formula = formula.replace(regex, `(${name.charAt(0).toUpperCase() + name.slice(1)}=${val})`);
+          });
+
+          const rollRes = parseAndRoll(formula);
+          const finalTotal = (rollRes.total || 0) + modifier;
+          const modStr = modifier !== 0 ? (modifier > 0 ? `+${modifier}` : modifier) : '';
+          
+          diceResults.push({
+            rolls: rollRes.rolls || [],
+            total: finalTotal,
+            bonus: modifier,
+            diceString: `${formulaStr}${modStr}`,
+            label: label,
+            groups: rollRes.groups,
+            color: '#d4af37',
+            secret: !diceSharingEnabled,
+            timestamp: Date.now(),
+            sender_id: user?.id,
+            sender_name: character.name
+          });
+        } else if (eff.valeur !== undefined) {
+          diceResults.push({
+            rolls: [eff.valeur],
+            total: eff.valeur,
+            bonus: 0,
+            diceString: `Effet fixe`,
+            label: label,
+            color: '#d4af37',
+            secret: !diceSharingEnabled,
+            timestamp: Date.now(),
+            sender_id: user?.id,
+            sender_name: character.name
+          });
+        } else if (eff.description) {
+           // Effet purement narratif
+           diceResults.push({
+            rolls: [],
+            total: 0,
+            bonus: 0,
+            diceString: 'Narratif',
+            label: label,
+            color: '#d4af37',
+            secret: !diceSharingEnabled,
+            timestamp: Date.now(),
+            sender_id: user?.id,
+            sender_name: character.name
+          });
+        }
+      });
+    }
+
+    // 3. Envoyer les résultats (Si aucun effet technique, on envoie au moins le nom du skill)
+    const finalResults = diceResults.length > 0 ? diceResults : [{
+      rolls: [],
+      total: 0,
+      bonus: 0,
+      diceString: 'Utilisation',
+      label: skill.name,
+      color: '#d4af37',
+      secret: !diceSharingEnabled,
+      timestamp: Date.now(),
+      sender_id: user?.id,
+      sender_name: character.name
+    }];
+
+    setDiceResult(finalResults);
+    
+    const logEntry = {
+      id: crypto.randomUUID(),
+      type: 'competence',
+      action: `Invoque ${skill.name}`,
+      details: { results: finalResults },
+      timestamp: Date.now(),
+      character_id: character.id,
+      character_name: character.name
+    };
+
+    if (window.electronAPI) await addSessionLog(sessionId, logEntry as any);
+    if (diceSharingEnabled) finalResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+  };
+
   // ── renderers ──────────────────────────────────
   const renderStat = (stat: unknown) => {
     const s = stat as { id: string; name: string };
     const val = stats[s.id] || 20;
-    const itemMod = itemModifiers.stats[s.id] || 0;
+    const itemMod = calculatedModifiers.stats[s.id] || 0;
     const finalVal = val + itemMod;
 
     return (
@@ -562,7 +740,7 @@ export function CharacterSheetContent({
           </span>
           {itemMod !== 0 && (
             <span className="text-[7px] font-bold text-gold-DEFAULT/60">
-              BASE: {val}
+              BONUS: {itemMod > 0 ? '+' : ''}{itemMod}
             </span>
           )}
         </div>
@@ -576,7 +754,7 @@ export function CharacterSheetContent({
   const renderBar = (bar: unknown) => {
     const b = bar as { id: string; name: string; color: string };
     const maxKey = `max${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}`;
-    const itemMod = itemModifiers.bars[b.id] || { value: 0, max: 0 };
+    const itemMod = calculatedModifiers.bars[b.id] || { value: 0, max: 0 };
     
     const baseMaxVal = (bars as Record<string, number>)[maxKey] || (bars as Record<string, number>)[b.id] || 1;
     const baseCurrentVal = (bars as Record<string, number>)[b.id] || 0;
@@ -625,6 +803,53 @@ export function CharacterSheetContent({
           </div>
         </div>
         <LiquidBar percent={percent} color={b.color} height={isPopup ? 4 : 6} />
+      </div>
+    );
+  };
+
+  const renderSkill = (skill: unknown) => {
+    const s = skill as any;
+    return (
+      <div
+        key={s.id}
+        className="flex items-center justify-between flex-shrink-0 rounded-lg"
+        style={{
+          padding: isPopup ? '4px 6px' : '6px 10px',
+          background: s.is_active ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.04)',
+          border: s.is_active ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.07)',
+          transition: 'all 0.2s',
+        }}
+      >
+        <div className="flex flex-col flex-1 min-w-0">
+          <span
+            className="font-cinzel uppercase tracking-widest truncate text-white/80"
+            style={{ fontSize: isPopup ? '8px' : '9px' }}
+            title={s.name}
+          >
+            {s.name}
+          </span>
+          <span className="text-[7px] font-mono text-gold-DEFAULT/40 uppercase">
+            {s.type === 'active' ? 'Actif' : s.type === 'passive_auto' ? 'Passif' : 'Aura'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 ml-2">
+           {s.type === 'active' && (
+             <button 
+               onClick={() => handleUseSkill(s)}
+               className="p-1 rounded bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20 transition-all"
+             >
+               <Plus size={10} />
+             </button>
+           )}
+           {s.type === 'passive_toggle' && (
+             <button 
+               onClick={() => handleToggleSkill(s.id)}
+               className={`p-1 rounded transition-all ${s.is_active ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/40 hover:text-white'}`}
+             >
+               <Settings size={10} />
+             </button>
+           )}
+        </div>
       </div>
     );
   };

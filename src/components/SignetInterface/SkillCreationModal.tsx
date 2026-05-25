@@ -250,7 +250,24 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
     setUnifiedEntries(unifiedEntries.map((e, i) => i === idx ? { ...e, ...updates } : e));
   };
 
-  const toggleTag = (tagId: string) => {
+  const StatHelper = ({ onSelect }: { onSelect: (statName: string) => void }) => (
+    <div className="flex flex-wrap gap-1.5 mt-2 p-2 bg-black/40 rounded-xl border border-white/5 shadow-inner">
+      <span className="text-[7px] font-cinzel font-black text-white/30 uppercase tracking-widest w-full mb-1">Insérer un attribut :</span>
+      {availableStats.map(s => (
+        <button
+          key={s.id}
+          type="button"
+          onClick={() => onSelect(s.name)}
+          className="px-2 py-1 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/20 text-[8px] font-cinzel font-bold text-gold-DEFAULT hover:bg-gold-DEFAULT/20 hover:border-gold-DEFAULT/40 transition-all uppercase tracking-wider"
+        >
+          {s.name}
+        </button>
+      ))}
+    </div>
+  );
+
+  const removeEntry = (idx: number) => {
+
     setSelectedTags(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]);
   };
 
@@ -450,13 +467,20 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                 {entry.mode === 'dice' ? 'Formule (ex: 1d6+2)' : 'Valeur'}
                               </label>
                               {entry.mode === 'dice' ? (
-                                <input 
-                                  type="text" 
-                                  value={entry.formula} 
-                                  onChange={e => updateEntry(idx, { formula: e.target.value })}
-                                  placeholder="ex: 2d10 + Force"
-                                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono shadow-inner"
-                                />
+                                <>
+                                  <input 
+                                    type="text" 
+                                    value={entry.formula} 
+                                    onChange={e => updateEntry(idx, { formula: e.target.value })}
+                                    placeholder="ex: 2d10 + Force"
+                                    className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono shadow-inner"
+                                  />
+                                  <StatHelper onSelect={(statName) => {
+                                    const current = entry.formula || '';
+                                    const newVal = current + (current && !current.endsWith(' ') ? ' ' : '') + statName;
+                                    updateEntry(idx, { formula: newVal });
+                                  }} />
+                                </>
                               ) : (
                                 <input 
                                   type="number" 

@@ -65,27 +65,27 @@ export const DiceRollModal: React.FC = () => {
     let totalNb = 0;
 
     diceResult.forEach((res) => {
-      const match = res.diceString.match(/(\d+)d\(?([^=)]+)=?(\d+)?\)?/);
-      const nb = match ? parseInt(match[1]) : 1;
-      let faces = 20;
-      if (match) {
-        const val = match[3] || match[2];
-        faces = parseInt(val) || 20;
+      if (res.groups && res.groups.length > 0) {
+        res.groups.forEach(group => {
+          totalRoll += group.rolls.reduce((a, b) => a + b, 0);
+          totalMaxPossible += group.nb * group.faces;
+          totalNb += group.nb;
+        });
+      } else {
+        // Fallback pour les anciens jets ou jets simples
+        const match = res.diceString.match(/(\d+)d\(?([^=)]+)=?(\d+)?\)?/);
+        const nb = match ? parseInt(match[1]) : 1;
+        let faces = 20;
+        if (match) {
+          const val = match[3] || match[2];
+          faces = parseInt(val) || 20;
+        }
+        totalRoll += res.rolls.reduce((a: number, b: number) => a + b, 0);
+        totalMaxPossible += nb * faces;
+        totalNb += res.rolls.length;
       }
-      totalRoll += res.rolls.reduce((a: number, b: number) => a + b, 0);
-      totalMaxPossible += nb * faces;
-      totalNb += res.rolls.length;
     });
 
-    if (totalNb === 1 && diceResult[0]) {
-      const match = diceResult[0].diceString.match(/(\d+)d\(?([^=)]+)=?(\d+)?\)?/);
-      let faces = 20;
-      if (match) {
-        const val = match[3] || match[2];
-        faces = parseInt(val) || 20;
-      }
-      return getDestiny(totalRoll, faces, true, 1);
-    }
     return getDestiny(totalRoll, totalMaxPossible, true, totalNb);
   }, [diceResult]);
 
@@ -143,6 +143,22 @@ export const DiceRollModal: React.FC = () => {
               <div className="animate-in fade-in duration-500 w-full flex flex-col gap-6 mt-4">
                 <div className="flex flex-row flex-wrap justify-center gap-4 w-full px-4">
                   {diceResult.map((res, i: number) => {
+                    if (res.groups && res.groups.length > 0) {
+                      return res.groups.map((group, groupIdx) => 
+                        group.rolls.map((val, rollIdx) => {
+                          const label = group.label ? getAbbreviatedLabel(group.label) : `D${group.faces}`;
+                          return (
+                            <div key={`${i}-${groupIdx}-${rollIdx}`} className="flex flex-col items-center gap-1 min-w-[30px]">
+                              <DiceShape faces={group.faces} className="w-5 h-5 opacity-40" />
+                              <span className="font-cinzel text-[8px] text-gold-DEFAULT opacity-40 uppercase text-center">{label}</span>
+                              <span className="font-cinzel font-black text-sm text-gold-bright">{val}</span>
+                            </div>
+                          );
+                        })
+                      );
+                    }
+                    
+                    // Fallback pour compatibilité
                     const match = res.diceString.match(/(\d+)d\(?([^=)]+)=?(\d+)?\)?/);
                     const rawLabel = match && match[2] && isNaN(parseInt(match[2])) ? match[2] : null;
                     const label = rawLabel ? getAbbreviatedLabel(rawLabel) : `D${match ? (match[3] || match[2]) : 20}`;

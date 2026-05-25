@@ -35,6 +35,28 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
       let newSkills;
       if (existing) {
         newSkills = state.skills.map(s => s.id === skill.id ? skill : s);
+        
+        // --- MISE À JOUR SYNCHRONE DES PERSONNAGES ---
+        const { useCharactersStore } = await import('./characters');
+        const charStore = useCharactersStore.getState();
+        const affectedChars = charStore.characters.filter(c => 
+          c.custom_skills?.some((s: any) => s.id === skill.id)
+        );
+
+        if (affectedChars.length > 0) {
+          affectedChars.forEach(char => {
+            const updatedCustomSkills = char.custom_skills.map((s: any) => 
+              s.id === skill.id ? { ...skill, is_active: s.is_active } : s
+            );
+            const updatedChar = { ...char, custom_skills: updatedCustomSkills };
+            charStore.addOrUpdateCharacter(updatedChar);
+            
+            // On informe les autres via le canal de broadcast global des persos
+            const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
+            channel.postMessage({ type: 'CHAR_UPDATE', payload: updatedChar });
+            channel.close();
+          });
+        }
       } else {
         newSkills = [...state.skills, skill];
       }
