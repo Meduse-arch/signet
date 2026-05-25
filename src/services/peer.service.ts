@@ -247,6 +247,9 @@ class PeerService {
 export const peerService = new PeerService();
 
 export function generateSessionKey(): string {
-  const digits = Math.floor(100000 + Math.random() * 900000);
-  return `${digits}`;
+  const digits = Math.floor(1000 + Math.random() * 9000).toString();
+  const letters = Array.from({ length: 4 }, () => 
+    String.fromCharCode(65 + Math.floor(Math.random() * 26))
+  ).join('');
+  return `SIGNET-${digits}-${letters}`;
 }

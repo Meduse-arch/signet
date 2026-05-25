@@ -12,27 +12,21 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   const cachedMapBuffer = useRef<{ buffer: ArrayBuffer; type: string } | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  const loadMap = useCallback(async (url: string, format?: string) => {
+  const loadMap = useCallback(async (url: string, format?: string, gridSize: number = 50) => {
     if (!boardRef.current) {
       console.warn('[useBoard] Attempted to load map before board is ready');
       return;
     }
     
-    console.log('[useBoard] Loading map:', url);
-    await boardRef.current.loadMap(url, format);
+    console.log('[useBoard] Loading map:', url, 'with grid size:', gridSize);
+    await boardRef.current.loadMap(url, format, gridSize);
+  }, []);
 
-    if (isHost && !url.startsWith('blob:')) {
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const buffer = await blob.arrayBuffer();
-        cachedMapBuffer.current = { buffer, type: blob.type };
-        broadcast({ type: 'MAP_READY', payload: {} });
-      } catch (e) {
-        console.error('Erreur MJ lors de la mise en cache de la map:', e);
-      }
+  const setGridSize = useCallback((size: number) => {
+    if (boardRef.current) {
+        boardRef.current.setGridSize(size);
     }
-  }, [isHost, broadcast]);
+  }, []);
 
   // 1. Initialisation de Pixi (Une seule fois)
   useEffect(() => {
@@ -160,13 +154,13 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       } else if (data.type === 'MAP_IMAGE_DATA' && !isHost) {
         // Le joueur reçoit les données binaires de l'image
         console.log('[Player] Map reçue en P2P, chargement...');
-        const { buffer, type } = data.payload;
+        const { buffer, type, gridSize } = data.payload;
         const format = type?.split('/')[1] || 'png';
         
         const blob = new Blob([buffer], { type });
         const objectUrl = URL.createObjectURL(blob);
         
-        boardRef.current.loadMap(objectUrl, format).then(() => {
+        boardRef.current.loadMap(objectUrl, format, gridSize || 50).then(() => {
           URL.revokeObjectURL(objectUrl);
         }).catch(err => {
           console.error('[Player] Error loading P2P map:', err);
@@ -210,5 +204,5 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     return boardRef.current.toLocal({ x: centerX, y: centerY });
   }, [containerRef]);
 
-  return { addToken, removeToken, loadMap, clearTokens, isReady, getCenterView };
+  return { addToken, removeToken, loadMap, setGridSize, clearTokens, isReady, getCenterView };
 }

@@ -10,6 +10,8 @@ import { usePeer } from '../../hooks/usePeer';
 import { addSessionCharacter, removeSessionCharacter } from '../../services/characters.service';
 import { lancerDes } from '../../services/des.service';
 import { addSessionLog } from '../../services/db.service';
+import { useMapStore } from '../../store/map';
+import { MapItem } from '../BoardCanvas';
 
 interface CharacterSheetContentProps {
   sessionId: string;
@@ -317,49 +319,28 @@ export function CharacterSheetContent({
   };
 
   // ── MAP TOKENS SYNC ──────────────────────────────
-  const [isTokenOnMap, setIsTokenOnMap] = useState(false);
+  const tokenStatuses = useMapStore(state => state.tokenStatuses);
+  const setStoreTokenStatus = useMapStore(state => state.setTokenStatus);
 
-  useEffect(() => {
-    if (!character) return;
-    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
-    
-    const askStatus = () => {
-        channel.postMessage({ type: 'GET_TOKEN_STATUS', payload: { id: character.id } });
-    };
-
-    askStatus();
-
-    channel.onmessage = (event) => {
-        const { type, payload } = event.data;
-        if (type === 'TOKEN_STATUS_RESPONSE' && payload.id === character.id) {
-            setIsTokenOnMap(payload.isOnMap);
-        } else if (type === 'TOKEN_LIST_UPDATE') {
-            setIsTokenOnMap(payload.tokens.includes(character.id));
-        }
-    };
-
-    // We also need to listen to P2P token events to update the UI
-    const unsub = onData((data: any) => {
-       if (data.type === 'TOKEN_ADD' && data.payload.id === character.id) setIsTokenOnMap(true);
-       if (data.type === 'TOKEN_REMOVE' && data.payload.id === character.id) setIsTokenOnMap(false);
-    });
-
-    const interval = setInterval(askStatus, 5000);
-
-    return () => { 
-        if (unsub) unsub(); 
-        clearInterval(interval);
-        channel.close();
-    };
-  }, [character, sessionId, onData]);
+  const isTokenOnMap = useMemo(() => {
+    return character ? !!tokenStatuses[character.id] : false;
+  }, [character, tokenStatuses]);
 
   const toggleTokenPlacement = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!character) return;
     
-    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
-    channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: character.id } });
-    channel.close();
+    // Si on est le host (MJ), on peut déclencher directement en local
+    if (isMJ) {
+        const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+        channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: character.id } });
+        channel.close();
+    }
+    
+    // On envoie la requête P2P au host
+    broadcast({ type: 'TOGGLE_TOKEN_REQUEST', payload: { id: character.id } });
+    // Optimistic update
+    setStoreTokenStatus(character.id, !isTokenOnMap);
   };
 
   const { name = 'Inconnu', stats = {}, bars = {}, image_url, inventory = [] } = character || {};
@@ -975,26 +956,6 @@ export function CharacterSheetContent({
             <div className="flex-1 min-w-0">
               <h2 className="text-[10px] font-cinzel font-black text-gold-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
             </div>
-            <div className="flex items-center gap-1 ml-auto">
-              {(isMJ || isOwner) && (
-                <button 
-                  onClick={() => setCharacterManagement(character.id)}
-                  className="p-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-DEFAULT hover:text-gold-bright hover:bg-gold-DEFAULT/20 transition-all"
-                  title="Gérer la fiche"
-                >
-                  <Settings size={12} />
-                </button>
-              )}
-              {(isMJ || isOwner) && (
-                <button 
-                  onClick={handleDelete}
-                  className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-all"
-                  title="Supprimer la fiche"
-                >
-                  <Trash2 size={12} />
-                </button>
-              )}
-            </div>
           </div>
 
           <div className="flex gap-2 p-2 h-[160px]">
@@ -1036,28 +997,6 @@ export function CharacterSheetContent({
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-cinzel font-black text-gold-bright uppercase tracking-[0.2em] truncate" title={name}>{name}</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {(isMJ || isOwner) && (
-              <button 
-                onClick={() => setCharacterManagement(character.id)}
-                className="px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-DEFAULT hover:text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
-                title="Gérer la fiche"
-              >
-                <Settings size={14} />
-                Configurer
-              </button>
-            )}
-            {(isMJ || isOwner) && (
-              <button 
-                onClick={handleDelete}
-                className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500/60 hover:text-red-500 hover:bg-red-500/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
-                title="Supprimer la fiche"
-              >
-                <Trash2 size={14} />
-                Bannir l'Entité
-              </button>
-            )}
           </div>
         </div>
 

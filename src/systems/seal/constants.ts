@@ -29,7 +29,7 @@ export const DEFAULT_SKILLS: SkillDefinition[] = [];
 
 export const DEFAULT_BARS: BarDefinition[] = [
   { id: 'hp', name: 'Vitalité', color: '#ef4444', formula: 'constitution * 4' },
-  { id: 'mana', name: 'Ether', color: '#3b82f6', formula: '(intelligence + wisdom) / 2 * 10' },
+  { id: 'mana', name: 'Mana', color: '#3b82f6', formula: '(intelligence + wisdom) / 2 * 10' },
   { id: 'stam', name: 'Endurance', color: '#22c55e', formula: '(force + dexterity + constitution) / 3 * 10' },
 ];
 

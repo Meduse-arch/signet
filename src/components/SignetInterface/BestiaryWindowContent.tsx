@@ -161,10 +161,14 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
     if (!confirm(`Dissoudre définitivement ${npc.name} ?`)) return;
 
     if (window.electronAPI) {
-      await removeSessionCharacter(npc.id);
+      await removeSessionCharacter(sessionId, npc.id);
     }
-    removeCharacter(npc.id);
+    removeCharacter(sessionId, npc.id);
     broadcast({ type: 'CHAR_DELETE', payload: { id: npc.id } });
+  };
+
+  const handlePossess = (charId: string | null) => {
+    setPnjControle(sessionId, charId);
   };
 
   const filteredPNJs = useMemo(() => {

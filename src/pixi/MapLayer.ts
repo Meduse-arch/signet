@@ -11,14 +11,13 @@ export class MapLayer extends Container {
     this.addChild(this.gridGraphics);
   }
 
-  private drawDynamicGrid() {
+  private drawDynamicGrid(step: number = 50) {
     this.gridGraphics.clear();
     
     if (!this.mapSprite) return;
 
     const imgWidth = this.mapSprite.width;
     const imgHeight = this.mapSprite.height;
-    const step = 50; // Taille d'une case
 
     // --- GRILLE (5% plus grand que l'image) ---
     const gridPaddingX = imgWidth * 0.05;
@@ -27,7 +26,6 @@ export class MapLayer extends Container {
     const gridTotalHeight = imgHeight + gridPaddingY;
 
     // Pour que la grille soit centrée avec l'image, on calcule les limites
-    // On s'arrange pour que le point 0,0 (centre de l'image) soit une intersection de la grille
     const minX = Math.floor((-gridTotalWidth / 2) / step) * step;
     const maxX = Math.ceil((gridTotalWidth / 2) / step) * step;
     const minY = Math.floor((-gridTotalHeight / 2) / step) * step;
@@ -48,7 +46,11 @@ export class MapLayer extends Container {
     this.gridGraphics.stroke();
   }
 
-  async loadMap(url: string, format?: string): Promise<void> {
+  setGridSize(size: number) {
+    this.drawDynamicGrid(size);
+  }
+
+  async loadMap(url: string, format?: string, gridSize: number = 50): Promise<void> {
     try {
       // Pour les Blob URLs (P2P), PixiJS v8 a besoin d'un indice sur le format car l'URL n'a pas d'extension
       const loadOptions = (url.startsWith('blob:') || format) 
@@ -62,7 +64,7 @@ export class MapLayer extends Container {
       
       this.addChildAt(this.mapSprite, 0); 
       
-      this.drawDynamicGrid();
+      this.drawDynamicGrid(gridSize);
     } catch (e) {
       console.error('Failed to load map texture:', e);
     }

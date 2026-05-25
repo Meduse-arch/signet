@@ -14,10 +14,11 @@ export const useTagsStore = create<TagsState>((set, get) => ({
   setTags: (tags) => set({ tags }),
   
   initialize: async (sessionId: string) => {
+    set({ tags: [] });
     const tags = await tagsService.getTags(sessionId);
     set({ tags });
 
-    const syncChannel = new BroadcastChannel(`sigil_tags_store_sync_${sessionId}`);
+    const syncChannel = new BroadcastChannel(`signet_tags_store_sync_${sessionId}`);
     syncChannel.onmessage = async (event) => {
       const { type } = event.data;
       if (type === 'TAGS_UPDATE_INTERNAL') {
@@ -41,7 +42,7 @@ export const useTagsStore = create<TagsState>((set, get) => ({
       set({ tags: newTags });
 
       if (!skipSync) {
-        const syncChannel = new BroadcastChannel(`sigil_tags_store_sync_${sessionId}`);
+        const syncChannel = new BroadcastChannel(`signet_tags_store_sync_${sessionId}`);
         syncChannel.postMessage({ type: 'TAGS_UPDATE_INTERNAL', payload: tag });
       }
     }
@@ -54,7 +55,7 @@ export const useTagsStore = create<TagsState>((set, get) => ({
       set({ tags: state.tags.filter(t => t.id !== id) });
 
       if (!skipSync) {
-        const syncChannel = new BroadcastChannel(`sigil_tags_store_sync_${sessionId}`);
+        const syncChannel = new BroadcastChannel(`signet_tags_store_sync_${sessionId}`);
         syncChannel.postMessage({ type: 'TAGS_UPDATE_INTERNAL', payload: { id, deleted: true } });
       }
     }

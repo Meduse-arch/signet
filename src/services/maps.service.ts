@@ -2,6 +2,7 @@ export interface MapItem {
   id: string;
   name: string;
   url: string;
+  is_hidden?: boolean;
 }
 
 export async function getSessionMaps(sessionId: string): Promise<MapItem[]> {

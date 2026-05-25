@@ -14,10 +14,11 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
   setSkills: (skills) => set({ skills }),
   
   initialize: async (sessionId: string) => {
+    set({ skills: [] });
     const skills = await skillsService.getSkills(sessionId);
     set({ skills });
 
-    const syncChannel = new BroadcastChannel(`sigil_skills_store_sync_${sessionId}`);
+    const syncChannel = new BroadcastChannel(`signet_skills_store_sync_${sessionId}`);
     syncChannel.onmessage = async (event) => {
       const { type } = event.data;
       if (type === 'SKILLS_UPDATE_INTERNAL') {
@@ -53,6 +54,7 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
             
             // On informe les autres via le canal de broadcast global des persos
             const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
+
             channel.postMessage({ type: 'CHAR_UPDATE', payload: updatedChar });
             channel.close();
           });
@@ -63,7 +65,7 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
       set({ skills: newSkills });
 
       if (!skipSync) {
-        const syncChannel = new BroadcastChannel(`sigil_skills_store_sync_${sessionId}`);
+        const syncChannel = new BroadcastChannel(`signet_skills_store_sync_${sessionId}`);
         syncChannel.postMessage({ type: 'SKILLS_UPDATE_INTERNAL', payload: skill });
       }
     }
@@ -76,7 +78,7 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
       set({ skills: state.skills.filter(s => s.id !== id) });
 
       if (!skipSync) {
-        const syncChannel = new BroadcastChannel(`sigil_skills_store_sync_${sessionId}`);
+        const syncChannel = new BroadcastChannel(`signet_skills_store_sync_${sessionId}`);
         syncChannel.postMessage({ type: 'SKILLS_UPDATE_INTERNAL', payload: { id, deleted: true } });
       }
     }

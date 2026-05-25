@@ -24,11 +24,12 @@ export async function getSessionCharacters(sessionId: string): Promise<Character
 export async function addSessionCharacter(character: Character): Promise<void> {
   if (window.electronAPI) {
     console.log(`[CharactersService] Adding character to DB: ${character.name}`);
-    await window.electronAPI.addCharacter(character);
+    await window.electronAPI.addCharacter(character.session_id, character);
   }
 }
 
 export async function updateSessionCharacter(
+  sessionId: string,
   id: string, 
   name: string, 
   stats: Record<string, number>, 
@@ -42,18 +43,18 @@ export async function updateSessionCharacter(
 ): Promise<void> {
   if (window.electronAPI) {
     console.log(`[CharactersService] Updating character in DB: ${name}`);
-    await window.electronAPI.updateCharacter(id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template);
+    await window.electronAPI.updateCharacter(sessionId, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template);
   }
 }
 
-export async function updateCharacterBars(id: string, bars: Record<string, number>): Promise<void> {
+export async function updateCharacterBars(sessionId: string, id: string, bars: Record<string, number>): Promise<void> {
   if (window.electronAPI) {
-    await window.electronAPI.updateCharacterBars(id, bars);
+    await window.electronAPI.updateCharacterBars(sessionId, id, bars);
   }
 }
 
-export async function removeSessionCharacter(id: string): Promise<void> {
+export async function removeSessionCharacter(sessionId: string, id: string): Promise<void> {
   if (window.electronAPI) {
-    await window.electronAPI.removeCharacter(id);
+    await window.electronAPI.removeCharacter(sessionId, id);
   }
 }

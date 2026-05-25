@@ -37,9 +37,10 @@ interface SealEngineProps {
   sessionId: string;
   onPause?: () => void;
   players?: { peer_id: string; pseudo: string; role?: number }[];
+  imageUrl?: string;
 }
 
-export default function SealEngine({ sessionId, onPause, players = [] }: SealEngineProps) {
+export default function SealEngine({ sessionId, onPause, players = [], imageUrl: propImageUrl }: SealEngineProps) {
   const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
   const { characterManagementId, setCharacterManagement } = useUIStore();
   const { peerId, connections } = usePeersStore();
@@ -52,6 +53,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
   const initSkills = useSkillsStore(state => state.initialize);
   const initTags = useTagsStore(state => state.initialize);
   const initQuests = useQuestsStore(state => state.initialize);
+  const initChars = useCharactersStore(state => state.initialize);
   
   const isMJ = !!user && (user.role === SecurityLevel.MJ || user.role === SecurityLevel.ADMIN || Number(user.role) >= 1);
   const isHost = session?.hostPeerId === user?.id;
@@ -77,31 +79,83 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
     initSkills(sessionId);
     initTags(sessionId);
     initQuests(sessionId);
-  }, [sessionId]);
+    initChars(sessionId);
+  }, [sessionId, initItems, initSkills, initTags, initQuests, initChars]);
 
   useEffect(() => {
-    if (window.electronAPI) {
-      window.electronAPI.getMaps(sessionId).then(setMaps);
+    async function loadMaps() {
+      if (window.electronAPI) {
+        const dbMaps = await window.electronAPI.getMaps(sessionId);
+        
+        // Si aucune map et que la session a une image de fond -> Créer la map initiale
+        if (dbMaps.length === 0 && session?.imageUrl) {
+          const defaultMap = {
+            id: 'initial-scene', // ID fixe pour éviter les doublons
+            name: 'Scène Initiale',
+            url: session.imageUrl,
+            is_hidden: false,
+            grid_size: 50
+          };
+          await window.electronAPI.addMap(sessionId, defaultMap);
+          const updatedMaps = [defaultMap];
+          setMaps(updatedMaps);
+          setCurrentMapId(defaultMap.id);
+          localStorage.setItem(`active_map_${sessionId}`, defaultMap.id);
+        } else {
+          setMaps(dbMaps);
+          // Par défaut, on se connecte sur la première map (souvent l'initiale)
+          // sauf si on a déjà une map active en mémoire
+          const lastActive = localStorage.getItem(`active_map_${sessionId}`);
+          if (lastActive && dbMaps.find(m => m.id === lastActive)) {
+            setCurrentMapId(lastActive);
+          } else if (dbMaps.length > 0) {
+            setCurrentMapId(dbMaps[0].id);
+          }
+        }
+      }
     }
-    const lastActive = localStorage.getItem(`active_map_${sessionId}`);
-    if (lastActive) setCurrentMapId(lastActive);
-  }, [sessionId]);
+    loadMaps();
+  }, [sessionId, session?.imageUrl]);
 
   useEffect(() => {
-    const unsub = onData((data) => {
+    if (!isHost && peerId) {
+      console.log('[Player] Demande de synchronisation initiale au MJ...');
+      broadcast({ type: 'INITIAL_SYNC_REQUEST', payload: { peerId } });
+    }
+  }, [isHost, peerId, broadcast, sessionId]);
+
+  useEffect(() => {
+    const unsub = onData((data, fromPeerId) => {
       const { type, payload } = data;
       if (type === 'CHAR_UPDATE') {
         addOrUpdateCharacter(payload);
       } else if (type === 'CHAR_DELETE') {
         removeCharacter(payload.id);
-      } else if (type === 'MAP_CHANGE') {
-        const map = maps.find(m => m.url === payload.url);
-        if (map) {
-          setCurrentMapId(map.id);
-          localStorage.setItem(`active_map_${sessionId}`, map.id);
+      } else if (type === 'MAP_CHANGE' && !isHost) {
+        // Un changement de scène GLOBAL ordonné par le MJ
+        // On ne change QUE le visuel (ID et URL), pas les tokens qui sont liés à la map
+        if (payload.id) {
+            setCurrentMapId(payload.id);
+            localStorage.setItem(`active_map_${sessionId}`, payload.id);
         }
       } else if (type === 'MAP_UPDATE') {
         setMaps(payload);
+      } else if (type === 'INITIAL_SYNC_REQUEST' && isHost) {
+        // MJ envoie l'état actuel au nouveau joueur
+        sendTo(fromPeerId, { type: 'MAP_UPDATE', payload: maps });
+        // On force le joueur sur la map actuellement affichée par le MJ (ou la première)
+        const current = maps.find(m => m.id === currentMapId) || maps[0];
+        if (current) {
+            sendTo(fromPeerId, { 
+                type: 'MAP_CHANGE', 
+                payload: { 
+                    url: current.url, 
+                    name: current.name, 
+                    id: current.id,
+                    grid_size: current.grid_size 
+                } 
+            });
+        }
       } else if (type === 'QUEST_UPDATE') {
         useQuestsStore.getState().addQuest(sessionId, payload, true);
       } else if (type === 'QUEST_DELETE') {
@@ -128,16 +182,60 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
     };
   }, [onData, maps, addOrUpdateCharacter, removeCharacter, sessionId]);
 
-  const handleSelectMap = (map: MapItem) => {
+  const handleSelectMap = (map: MapItem, global: boolean = false) => {
     setCurrentMapId(map.id);
     localStorage.setItem(`active_map_${sessionId}`, map.id);
-    if (isHost) {
+    
+    // Si c'est un MJ et qu'il demande un changement global (double-clic)
+    if (global && isMJ) {
+      console.log('[MJ] Changement de map GLOBAL vers:', map.name);
       broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
     }
   };
 
+  const handleToggleHideMap = async (id: string, hidden: boolean) => {
+    if (!isMJ) return;
+    
+    const updatedMaps = maps.map(m => m.id === id ? { ...m, is_hidden: hidden } : m);
+    setMaps(updatedMaps);
+    
+    if (window.electronAPI) {
+      await window.electronAPI.addMap(sessionId, updatedMaps.find(m => m.id === id)!);
+    }
+    
+    if (isHost) {
+      broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+    }
+  };
+
+  const handleUpdateMap = async (id: string, updates: Partial<MapItem>) => {
+    if (!isMJ) return;
+    
+    const updatedMaps = maps.map(m => m.id === id ? { ...m, ...updates } : m);
+    setMaps(updatedMaps);
+    
+    const updatedMap = updatedMaps.find(m => m.id === id);
+    if (updatedMap && window.electronAPI) {
+      await window.electronAPI.addMap(sessionId, updatedMap);
+    }
+    
+    if (isHost) {
+      broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+      // Si on modifie la map actuelle, on force le changement visuel
+      if (id === currentMapId && updates.url) {
+        broadcast({ type: 'MAP_CHANGE', payload: { url: updates.url, name: updates.name || updatedMap?.name } });
+      }
+    }
+  };
+
   const handleAddMap = async (name: string, url: string) => {
-    const newMap = { id: Math.random().toString(36).substring(2, 9), name, url };
+    const newMap: MapItem = { 
+      id: Math.random().toString(36).substring(2, 9), 
+      name, 
+      url,
+      is_hidden: false,
+      grid_size: 50
+    };
     const updatedMaps = [...maps, newMap];
     setMaps(updatedMaps);
     if (window.electronAPI) {
@@ -183,6 +281,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
     <div className="w-full h-full relative overflow-hidden bg-[#050507]">
       <BoardCanvas 
         sessionId={sessionId}
+        imageUrl={propImageUrl}
         maps={maps}
         currentMapId={currentMapId}
         characters={characters}
@@ -230,6 +329,8 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
               currentSceneId={currentMapId}
               onSelectScene={handleSelectMap}
               onAddScene={handleAddMap}
+              onUpdateScene={handleUpdateMap}
+              onToggleHide={handleToggleHideMap}
             />
           </DraggableWindow>
         )}

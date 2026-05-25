@@ -123,8 +123,12 @@ export class BoardScene extends Container {
     }
   }
 
-  async loadMap(url: string, format?: string) {
-    await this.mapLayer.loadMap(url, format);
+  setGridSize(size: number) {
+    this.mapLayer.setGridSize(size);
+  }
+
+  async loadMap(url: string, format?: string, gridSize: number = 50) {
+    await this.mapLayer.loadMap(url, format, gridSize);
     
     // Auto-fit or center
     const imgBounds = this.mapLayer.getImageBounds();
@@ -152,7 +156,7 @@ export class BoardScene extends Container {
         return;
     }
     console.log('[BoardScene] Adding token:', data.name, 'at', data.x, data.y);
-    const token = new TokenSprite(data, (x, y) => {
+    const token = new TokenSprite(data, this.app, (x, y) => {
       if (this.onTokenMove) this.onTokenMove(data.id, x, y);
     });
     this.tokens.set(data.id, token);

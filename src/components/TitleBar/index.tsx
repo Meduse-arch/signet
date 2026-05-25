@@ -5,7 +5,7 @@ import logo from '../../assets/logo.png';
 export function TitleBar() {
   const isElectron = !!window.electronAPI;
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [title, setTitle] = useState("SIGIL VTT");
+  const [title, setTitle] = useState("SIGNET");
   const [externalInfo, setExternalInfo] = useState<{ type: string, sessionId: string } | null>(null);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export function TitleBar() {
                                type === 'dice' ? 'DÉS' : 
                                type === 'assets' ? 'INVENTAIRE' : 
                                type === 'players' ? 'JOUEURS' : type.toUpperCase();
-        setTitle(`SIGIL - ${translatedType}`);
+        setTitle(`SIGNET - ${translatedType}`);
       }
     }
 
@@ -105,7 +105,7 @@ export function TitleBar() {
     <div className="relative flex items-center justify-between h-8 bg-[#0D0D0F] border-b border-gold-DEFAULT/30 select-none z-[9999] overflow-hidden shrink-0" style={{ WebkitAppRegion: 'drag' } as any}>
       {/* Effet lumineux de ligne façon Jarvis */}
       <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />      <div className="flex items-center gap-2 px-3 relative z-10">
-        <img src={logo} alt="Sigil" className="w-4 h-4 object-contain" />
+        <img src={logo} alt="Signet" className="w-4 h-4 object-contain" />
         <span className="text-[10px] font-cinzel font-black tracking-widest text-gold-DEFAULT drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]">
           {title}
         </span>

@@ -34,6 +34,7 @@ export interface MapItem {
   id: string;
   name: string;
   url: string;
+  is_hidden?: boolean;
 }
 
 export interface ElectronAPI {
@@ -46,10 +47,10 @@ export interface ElectronAPI {
   removePlayer: (sessionId: string, peerId: string) => Promise<void>;
   clearPlayers: (sessionId: string) => Promise<void>;
   getCharacters: (sessionId: string) => Promise<Character[]>;
-  addCharacter: (character: Character) => Promise<void>;
-  removeCharacter: (id: string) => Promise<void>;
-  updateCharacter: (id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => Promise<void>;
-  updateCharacterBars: (id: string, bars: Record<string, number>) => Promise<void>;
+  addCharacter: (sessionId: string, character: Character) => Promise<void>;
+  removeCharacter: (sessionId: string, id: string) => Promise<void>;
+  updateCharacter: (sessionId: string, id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => Promise<void>;
+  updateCharacterBars: (sessionId: string, id: string, bars: Record<string, number>) => Promise<void>;
   getItems: (sessionId: string) => Promise<any[]>;
   addItem: (sessionId: string, item: any) => Promise<boolean>;
   removeItem: (sessionId: string, id: string) => Promise<boolean>;
@@ -67,6 +68,9 @@ export interface ElectronAPI {
   getQuests: (sessionId: string) => Promise<any[]>;
   addQuest: (sessionId: string, quest: any) => Promise<boolean>;
   removeQuest: (sessionId: string, id: string) => Promise<boolean>;
+  getMapTokens: (sessionId: string, mapId: string) => Promise<any[]>;
+  updateMapToken: (sessionId: string, mapId: string, characterId: string, x: number, y: number) => Promise<void>;
+  removeMapToken: (sessionId: string, mapId: string, characterId: string) => Promise<void>;
   openExternalWindow: (type: string, sessionId: string) => Promise<void>;
   reDock: (type: string, sessionId: string) => Promise<void>;
   onReDock: (callback: (type: string) => void) => (() => void);
@@ -87,10 +91,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removePlayer: (sessionId: string, peerId: string) => ipcRenderer.invoke('players:remove', sessionId, peerId),
   clearPlayers: (sessionId: string) => ipcRenderer.invoke('players:clear', sessionId),
   getCharacters: (sessionId: string) => ipcRenderer.invoke('characters:getAll', sessionId),
-  addCharacter: (character: Character) => ipcRenderer.invoke('characters:add', character),
-  removeCharacter: (id: string) => ipcRenderer.invoke('characters:remove', id),
-  updateCharacter: (id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => ipcRenderer.invoke('characters:update', id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template),
-  updateCharacterBars: (id: string, bars: Record<string, number>) => ipcRenderer.invoke('characters:updateBars', id, bars),
+  addCharacter: (sessionId: string, character: Character) => ipcRenderer.invoke('characters:add', sessionId, character),
+  removeCharacter: (sessionId: string, id: string) => ipcRenderer.invoke('characters:remove', sessionId, id),
+  updateCharacter: (sessionId: string, id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => ipcRenderer.invoke('characters:update', sessionId, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template),
+  updateCharacterBars: (sessionId: string, id: string, bars: Record<string, number>) => ipcRenderer.invoke('characters:updateBars', sessionId, id, bars),
   getItems: (sessionId: string) => ipcRenderer.invoke('items:getAll', sessionId),
   addItem: (sessionId: string, item: any) => ipcRenderer.invoke('items:add', sessionId, item),
   removeItem: (sessionId: string, id: string) => ipcRenderer.invoke('items:remove', sessionId, id),

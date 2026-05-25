@@ -14,7 +14,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
-    title: "Sigil VTT",
+    title: "Signet",
     backgroundColor: '#0D0D0F',
     frame: false,
     webPreferences: {

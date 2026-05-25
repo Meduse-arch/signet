@@ -16,7 +16,7 @@ export function SystemRouter({ system, isMJ, onPause, sessionId, imageUrl, playe
 
   const renderSystem = () => {
     if (safeSystem === 'seal') {
-      return <SealEngine sessionId={sessionId} onPause={onPause} players={players} />;
+      return <SealEngine sessionId={sessionId} onPause={onPause} players={players} imageUrl={imageUrl} />;
     }
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-black text-gold-bright font-cinzel">

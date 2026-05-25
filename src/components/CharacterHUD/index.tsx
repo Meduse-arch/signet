@@ -9,6 +9,7 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { addSessionCharacter, Character } from '../../services/characters.service';
 import { DEFAULT_BARS } from '../../systems/seal/constants';
 import { useSignetStore } from '../../store/signet';
+import { useMapStore } from '../../store/map';
 
 interface CharacterHUDProps {
   sessionId: string;
@@ -20,9 +21,12 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
   const { characters, controlledCharacterId } = useCharactersStore();
   const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
-  const { broadcast } = usePeer();
+  const { broadcast, onData } = usePeer();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tokenStatus, setTokenStatus] = useState(false);
+  
+  const tokenStatuses = useMapStore(state => state.tokenStatuses);
+  const setStoreTokenStatus = useMapStore(state => state.setTokenStatus);
+
   const openWindow = useSignetStore(state => state.openWindow);
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
 
@@ -35,40 +39,40 @@ const myCharacter = useMemo(() => {
   return characters.find(c => c.user_id === user?.id);
 }, [characters, controlledCharacterId, user?.id]);
 
-  // Sync token status
+  const tokenStatus = useMemo(() => {
+    return myCharacter ? !!tokenStatuses[myCharacter.id] : false;
+  }, [myCharacter, tokenStatuses]);
+
+  // Sync token status via network and store
   useEffect(() => {
-    if (!isMJ || !myCharacter) return;
-    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
-    
-    const askStatus = () => {
-        channel.postMessage({ type: 'GET_TOKEN_STATUS', payload: { id: myCharacter.id } });
-    };
+    if (!myCharacter) return;
 
-    askStatus();
-
-    channel.onmessage = (event) => {
-        const { type, payload } = event.data;
-        if (type === 'TOKEN_STATUS_RESPONSE' && payload.id === myCharacter.id) {
-            setTokenStatus(payload.isOnMap);
-        } else if (type === 'TOKEN_LIST_UPDATE') {
-            setTokenStatus(payload.tokens.includes(myCharacter.id));
+    // Mise à jour initiale du store si besoin (la source de vérité est dans BoardCanvas)
+    const unsub = onData((data: any) => {
+        if (data.type === 'TOKEN_ADD' && data.payload.id === myCharacter.id) {
+            setStoreTokenStatus(myCharacter.id, true);
         }
-    };
+        if (data.type === 'TOKEN_REMOVE' && data.payload.id === myCharacter.id) {
+            setStoreTokenStatus(myCharacter.id, false);
+        }
+    });
 
-    const interval = setInterval(askStatus, 5000);
-    return () => {
-        clearInterval(interval);
-        channel.close();
-    };
-  }, [sessionId, isMJ, myCharacter]);
+    return () => unsub();
+  }, [myCharacter, onData, setStoreTokenStatus]);
 
   const handleToggleToken = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!myCharacter) return;
-    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
-    channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: myCharacter.id } });
-    setTokenStatus(!tokenStatus);
-    channel.close();
+    
+    if (isMJ) {
+        const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+        channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: myCharacter.id } });
+        channel.close();
+    } 
+    
+    broadcast({ type: 'TOGGLE_TOKEN_REQUEST', payload: { id: myCharacter.id } });
+    // Optimistic update
+    setStoreTokenStatus(myCharacter.id, !tokenStatus);
   };
 
   const handleCreateSave = async (data: { 
@@ -139,8 +143,8 @@ if (!myCharacter) {
              )}
            </div>
            
-           {/* Token Toggle Button for controlled character (MJ Only) */}
-           {isMJ && controlledCharacterId && (
+           {/* Token Toggle Button for controlled character */}
+           {controlledCharacterId && (
                 <button 
                     onClick={handleToggleToken}
                     className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-sm transition-colors z-20 ${
@@ -207,20 +211,18 @@ if (!myCharacter) {
           )}
         </div>
 
-        {/* Token Toggle Button (MJ Only) */}
-        {isMJ && (
-            <button 
-                onClick={handleToggleToken}
-                className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
-                    tokenStatus
-                    ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
-                    : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
-                }`}
-                title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
-            >
-                <Plus size={12} className={`transition-transform duration-500 ${tokenStatus ? 'rotate-45' : ''}`} />
-            </button>
-        )}
+        {/* Token Toggle Button */}
+        <button 
+            onClick={handleToggleToken}
+            className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
+                tokenStatus
+                ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
+                : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
+            }`}
+            title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
+        >
+            <Plus size={12} className={`transition-transform duration-500 ${tokenStatus ? 'rotate-45' : ''}`} />
+        </button>
         
         {/* Open Sheet Button Overlay */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full transition-opacity">

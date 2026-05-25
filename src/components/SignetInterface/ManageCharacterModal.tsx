@@ -95,6 +95,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
     
     if (window.electronAPI) {
       await updateSessionCharacter(
+        sessionId,
         editedChar.id,
         editedChar.name,
         editedChar.stats,

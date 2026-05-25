@@ -13,10 +13,12 @@ export const useQuestsStore = create<QuestsState>((set, get) => ({
   quests: [],
 
   initialize: async (sessionId: string) => {
+    set({ quests: [] });
     const quests = await questsService.getQuests(sessionId);
     set({ quests });
 
-    const syncChannel = new BroadcastChannel(`sigil_quests_store_sync_${sessionId}`);
+    const syncChannel = new BroadcastChannel(`signet_quests_store_sync_${sessionId}`);
+
     syncChannel.onmessage = async (event) => {
       const { type } = event.data;
       if (type === 'QUESTS_UPDATE_INTERNAL') {
@@ -40,7 +42,8 @@ export const useQuestsStore = create<QuestsState>((set, get) => ({
       set({ quests: newQuests });
 
       if (!skipSync) {
-        const syncChannel = new BroadcastChannel(`sigil_quests_store_sync_${sessionId}`);
+        const syncChannel = new BroadcastChannel(`signet_quests_store_sync_${sessionId}`);
+
         syncChannel.postMessage({ type: 'QUESTS_UPDATE_INTERNAL', payload: quest });
       }
     }
@@ -53,11 +56,13 @@ export const useQuestsStore = create<QuestsState>((set, get) => ({
       set({ quests: state.quests.filter(q => q.id !== id) });
 
       if (!skipSync) {
-        const syncChannel = new BroadcastChannel(`sigil_quests_store_sync_${sessionId}`);
+        const syncChannel = new BroadcastChannel(`signet_quests_store_sync_${sessionId}`);
+
         syncChannel.postMessage({ type: 'QUESTS_UPDATE_INTERNAL', payload: { id, deleted: true } });
       }
     }
-  },
+  }
+,
 
   updateQuestStatus: async (sessionId, id, status) => {
     const state = get();

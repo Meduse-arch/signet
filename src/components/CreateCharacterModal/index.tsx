@@ -66,6 +66,21 @@ export function CreateCharacterModal({
   const [stats, setStats] = useState<Record<string, number>>(() => {
     if (initialStats) return initialStats;
     const initial: Record<string, number> = {};
+    const currentMode = initialMode || settings?.sheetMode || 'roll';
+    
+    // Si on est en mode tirage, on pré-génère les stats aléatoirement dès l'initialisation
+    if (currentMode === 'roll' && !isEditing && settings?.rollFormula) {
+      const { diceCount, diceSides } = settings.rollFormula;
+      availableStats.forEach(s => {
+        let roll = 0;
+        for (let i = 0; i < diceCount; i++) {
+          roll += Math.floor(Math.random() * diceSides) + 1;
+        }
+        initial[s.id] = roll;
+      });
+      return initial;
+    }
+
     availableStats.forEach(s => {
       initial[s.id] = 0;
     });
@@ -74,7 +89,11 @@ export function CreateCharacterModal({
 
   const [pointsLeft, setPointsLeft] = useState(settings?.manualPoints || 0);
   const [rerollsLeft, setRerollsLeft] = useState(settings?.rollFormula?.rerolls || 0);
-  const [hasInitialRoll, setHasInitialRoll] = useState(false);
+  // On considère qu'on a déjà fait le jet initial si on a pré-rempli dans le useState
+  const [hasInitialRoll, setHasInitialRoll] = useState(() => {
+    const currentMode = initialMode || settings?.sheetMode || 'roll';
+    return currentMode === 'roll' && !isEditing;
+  });
 
   // Auto-roll une fois si on est en mode roll et pas en édition
   useEffect(() => {

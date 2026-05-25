@@ -15,57 +15,43 @@ let mainWin: BrowserWindow | null = null;
 function getSessionDb(sessionId: string): Database.Database {
   if (sessionDbs.has(sessionId)) return sessionDbs.get(sessionId)!;
 
-  // 1. Chercher la session dans la Master DB
-  let session = masterDb.prepare('SELECT id, hostPeerId FROM sessions WHERE id = ? OR hostPeerId = ?').get(sessionId, sessionId) as any;
+  // On utilise l'ID fourni comme nom de dossier. 
+  // Cela garantit une isolation physique par dossier.
+  const folderName = sessionId;
   
-  if (!session) {
-    console.warn(`[DB] Session ${sessionId} introuvable. Création d'une entrée temporaire ou erreur ?`);
-    // Si c'est un joueur qui rejoint via une clé SIGNET, on peut créer le dossier si nécessaire
-    if (sessionId.startsWith('SIGNET-')) {
-      session = { id: sessionId, hostPeerId: sessionId };
-    } else {
-      throw new Error(`Session ${sessionId} introuvable dans la base maître`);
-    }
-  }
-
-  const hostPeerId = session.hostPeerId;
-  
-  // ✅ On utilise le dossier AppData pour les bases de données (conforme aux standards OS)
   const baseDir = app.getPath('userData');
   const sessionsDir = path.join(baseDir, 'data', 'sessions');
   
   if (!fs.existsSync(sessionsDir)) {
-    console.log(`[DB] Création du répertoire des sessions : ${sessionsDir}`);
     fs.mkdirSync(sessionsDir, { recursive: true });
   }
 
-  const sessionFolder = path.join(sessionsDir, hostPeerId);
+  const sessionFolder = path.join(sessionsDir, folderName);
   if (!fs.existsSync(sessionFolder)) {
-    console.log(`[DB] Création du dossier session : ${sessionFolder}`);
     fs.mkdirSync(sessionFolder, { recursive: true });
   }
 
-  const dbPath = path.join(sessionFolder, `${hostPeerId}.db`);
-  console.log(`[DB] Ouverture de la base session : ${dbPath}`);
+  const dbPath = path.join(sessionFolder, `session.db`);
+  console.log(`[DB] Ouverture de la base session [${folderName}] : ${dbPath}`);
   
-  // ✅ On ajoute un timeout pour éviter les erreurs SQLITE_BUSY lors de micro-conflits
   const db = new Database(dbPath, { timeout: 5000 });
   
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
 
-  // ✅ On n'exécute le script d'initialisation qu'une seule fois par session de l'app
   if (!initializedDbs.has(dbPath)) {
     try {
       db.exec(`
         CREATE TABLE IF NOT EXISTS players (
           peer_id TEXT PRIMARY KEY,
+          session_id TEXT,
           pseudo TEXT,
           role INTEGER DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS characters (
           id TEXT PRIMARY KEY,
+          session_id TEXT,
           user_id TEXT,
           name TEXT,
           stats TEXT,
@@ -80,6 +66,7 @@ function getSessionDb(sessionId: string): Database.Database {
 
         CREATE TABLE IF NOT EXISTS items (
           id TEXT PRIMARY KEY,
+          session_id TEXT,
           name TEXT,
           description TEXT,
           category TEXT,
@@ -90,6 +77,7 @@ function getSessionDb(sessionId: string): Database.Database {
 
         CREATE TABLE IF NOT EXISTS skills (
           id TEXT PRIMARY KEY,
+          session_id TEXT,
           name TEXT,
           description TEXT,
           type TEXT,
@@ -104,6 +92,7 @@ function getSessionDb(sessionId: string): Database.Database {
 
         CREATE TABLE IF NOT EXISTS tags (
           id TEXT PRIMARY KEY,
+          session_id TEXT,
           name TEXT,
           color TEXT,
           category TEXT
@@ -111,12 +100,16 @@ function getSessionDb(sessionId: string): Database.Database {
 
         CREATE TABLE IF NOT EXISTS maps (
           id TEXT PRIMARY KEY,
+          session_id TEXT,
           name TEXT,
-          url TEXT
+          url TEXT,
+          is_hidden INTEGER DEFAULT 0,
+          grid_size INTEGER DEFAULT 50
         );
 
         CREATE TABLE IF NOT EXISTS map_tokens (
           id TEXT PRIMARY KEY,
+          session_id TEXT,
           map_id TEXT NOT NULL,
           character_id TEXT NOT NULL,
           x REAL NOT NULL DEFAULT 0,
@@ -126,6 +119,7 @@ function getSessionDb(sessionId: string): Database.Database {
 
         CREATE TABLE IF NOT EXISTS logs (
           id TEXT PRIMARY KEY,
+          session_id TEXT,
           type TEXT,
           action TEXT,
           details TEXT,
@@ -136,6 +130,7 @@ function getSessionDb(sessionId: string): Database.Database {
 
         CREATE TABLE IF NOT EXISTS quests (
           id TEXT PRIMARY KEY,
+          session_id TEXT,
           title TEXT,
           description TEXT,
           status TEXT,
@@ -145,6 +140,15 @@ function getSessionDb(sessionId: string): Database.Database {
           created_at TEXT
         );
       `);
+
+      // Migration: Ajouter session_id si nécessaire (pour les bases existantes)
+      const tables = ['players', 'characters', 'items', 'skills', 'tags', 'maps', 'map_tokens', 'logs', 'quests'];
+      tables.forEach(t => {
+        const info = db.prepare(`PRAGMA table_info(${t})`).all() as any[];
+        if (!info.some(col => col.name === 'session_id')) {
+          db.exec(`ALTER TABLE ${t} ADD COLUMN session_id TEXT`);
+        }
+      });
 
       // Migration: Ajouter les colonnes manquantes si nécessaire
       const playerTableInfo = db.prepare("PRAGMA table_info(players)").all() as any[];
@@ -203,13 +207,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
   // ✅ On utilise le dossier AppData pour les bases de données (conforme aux standards OS)
   const baseDir = app.getPath('userData');
   const dataDir = path.join(baseDir, 'data');
-  const masterDbPath = path.join(dataDir, 'sigil-vtt.db');
+  const masterDbPath = path.join(dataDir, 'signet.db');
   const sessionsDir = path.join(dataDir, 'sessions');
   
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
   if (!fs.existsSync(sessionsDir)) fs.mkdirSync(sessionsDir, { recursive: true });
 
-  console.log('--- SIGIL VTT DATABASE INFO ---');
+  console.log('--- SIGNET DATABASE INFO ---');
   console.log('Base Directory:', baseDir);
   console.log('Data Directory:', dataDir);
   console.log('Master DB Path:', masterDbPath);
@@ -271,7 +275,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
 
   ipcMain.handle('sessions:remove', (_, id) => {
     // Récupérer hostPeerId avant suppression pour nettoyer les fichiers
-    const session = masterDb.prepare('SELECT hostPeerId FROM sessions WHERE id = ?').get(id) as any;
+    const session = masterDb.prepare('SELECT id, hostPeerId FROM sessions WHERE id = ?').get(id) as any;
     
     removeSessionStmt.run(id);
     
@@ -283,13 +287,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
         sessionDbs.delete(id);
       }
       
-      // Supprimer le dossier de la session
+      // Supprimer le dossier de la session (identifié par l'UUID de la session)
       const baseDir = app.getPath('userData');
-      const sessionFolder = path.join(baseDir, 'data', 'sessions', session.hostPeerId);
+      const sessionFolder = path.join(baseDir, 'data', 'sessions', session.id);
       if (fs.existsSync(sessionFolder)) {
         try {
           fs.rmSync(sessionFolder, { recursive: true, force: true });
-          console.log(`[DB] Session cleaned: ${session.hostPeerId}`);
+          console.log(`[DB] Session cleaned: ${session.id}`);
         } catch (e) {
           console.error(`[DB] Failed to clean session folder: ${sessionFolder}`, e);
         }
@@ -362,9 +366,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     }
   });
 
-  ipcMain.handle('characters:add', (_, c) => {
+  ipcMain.handle('characters:add', (_, sessionId, c) => {
     try {
-      const db = getSessionDb(c.session_id);
+      const db = getSessionDb(sessionId);
       db.prepare('INSERT OR REPLACE INTO characters (id, user_id, name, stats, skills, bars, image_url, inventory, custom_skills, type, is_template) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         .run(c.id, c.user_id || null, c.name, JSON.stringify(c.stats), JSON.stringify(c.skills || {}), JSON.stringify(c.bars), c.image_url || null, JSON.stringify(c.inventory || []), JSON.stringify(c.custom_skills || []), c.type || null, c.is_template ? 1 : 0);
     } catch (e) {
@@ -372,36 +376,30 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     }
   });
 
-  ipcMain.handle('characters:remove', (_, id) => {
+  ipcMain.handle('characters:remove', (_, sessionId, id) => {
     try {
-      for (const db of sessionDbs.values()) {
-        const result = db.prepare('DELETE FROM characters WHERE id = ?').run(id);
-        if (result.changes > 0) break;
-      }
+      const db = getSessionDb(sessionId);
+      db.prepare('DELETE FROM characters WHERE id = ?').run(id);
     } catch (e) {
       console.error('[DB] characters:remove error', e);
     }
   });
 
-  ipcMain.handle('characters:update', (_, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template) => {
+  ipcMain.handle('characters:update', (_, sessionId, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template) => {
     try {
-      for (const db of sessionDbs.values()) {
-        const result = db.prepare('UPDATE characters SET name = ?, stats = ?, skills = ?, bars = ?, image_url = ?, inventory = ?, custom_skills = ?, type = ?, is_template = ? WHERE id = ?')
-          .run(name, JSON.stringify(stats), JSON.stringify(skills || {}), JSON.stringify(bars), imageUrl || null, JSON.stringify(inventory || []), JSON.stringify(custom_skills || []), type || null, is_template ? 1 : 0, id);
-        if (result.changes > 0) break;
-      }
+      const db = getSessionDb(sessionId);
+      db.prepare('UPDATE characters SET name = ?, stats = ?, skills = ?, bars = ?, image_url = ?, inventory = ?, custom_skills = ?, type = ?, is_template = ? WHERE id = ?')
+        .run(name, JSON.stringify(stats), JSON.stringify(skills || {}), JSON.stringify(bars), imageUrl || null, JSON.stringify(inventory || []), JSON.stringify(custom_skills || []), type || null, is_template ? 1 : 0, id);
     } catch (e) {
       console.error('[DB] characters:update error', e);
     }
   });
 
-  ipcMain.handle('characters:updateBars', (_, id, bars) => {
+  ipcMain.handle('characters:updateBars', (_, sessionId, id, bars) => {
     try {
-      for (const db of sessionDbs.values()) {
-        const result = db.prepare('UPDATE characters SET bars = ? WHERE id = ?')
-          .run(JSON.stringify(bars), id);
-        if (result.changes > 0) break;
-      }
+      const db = getSessionDb(sessionId);
+      db.prepare('UPDATE characters SET bars = ? WHERE id = ?')
+        .run(JSON.stringify(bars), id);
     } catch (e) {
       console.error('[DB] characters:updateBars error', e);
     }
@@ -546,7 +544,11 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
   ipcMain.handle('maps:getAll', (_, sessionId) => {
     try {
       const db = getSessionDb(sessionId);
-      return db.prepare('SELECT * FROM maps').all();
+      const maps = db.prepare('SELECT * FROM maps').all() as any[];
+      return maps.map(m => ({
+        ...m,
+        is_hidden: m.is_hidden === 1
+      }));
     } catch (e) {
       console.error('[DB] maps:getAll error', e);
       return [];
@@ -556,8 +558,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
   ipcMain.handle('maps:add', (_, sessionId, map) => {
     try {
       const db = getSessionDb(sessionId);
-      db.prepare('INSERT OR REPLACE INTO maps (id, name, url) VALUES (?, ?, ?)')
-        .run(map.id, map.name, map.url);
+      db.prepare('INSERT OR REPLACE INTO maps (id, name, url, is_hidden) VALUES (?, ?, ?, ?)')
+        .run(map.id, map.name, map.url, map.is_hidden ? 1 : 0);
     } catch (e) {
       console.error('[DB] maps:add error', e);
     }
@@ -732,7 +734,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     const win = new BrowserWindow({
       width: 400,
       height: 600,
-      title: `Sigil - ${type.toUpperCase()}`,
+      title: `Signet - ${type.toUpperCase()}`,
       backgroundColor: '#0D0D0F',
       frame: false,
       webPreferences: {

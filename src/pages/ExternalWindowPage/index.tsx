@@ -57,8 +57,9 @@ export function ExternalWindowPage() {
       initItems(sessionId);
       initSkills(sessionId);
       initTags(sessionId);
+      initQuests(sessionId);
     }
-  }, [sessionId, initChars, initItems, initSkills, initTags]);
+  }, [sessionId, initChars, initItems, initSkills, initTags, initQuests]);
 
   // Initialisation P2P pour rester synchronisé (Live Sync)
   useEffect(() => {

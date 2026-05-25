@@ -1,54 +1,62 @@
 import { create } from 'zustand';
-import { Character } from '../services/characters.service';
+import { Character, getSessionCharacters } from '../services/characters.service';
 
 interface CharactersState {
   characters: Character[];
   controlledCharacterId: string | null;
   setCharacters: (characters: Character[]) => void;
   addOrUpdateCharacter: (character: Character, skipSync?: boolean) => void;
-  removeCharacter: (id: string) => void;
-  setPnjControle: (id: string | null) => void;
-  initialize: (sessionId: string) => void;
+  removeCharacter: (sessionId: string, id: string) => void;
+  setPnjControle: (sessionId: string, id: string | null) => void;
+  initialize: (sessionId: string) => Promise<void>;
 }
 
 export const useCharactersStore = create<CharactersState>((set, get) => ({
   characters: [],
   controlledCharacterId: null,
-  setCharacters: (characters) => set((state) => {
-    if (characters.length > 0) {
-      localStorage.setItem(`sigil_chars_${characters[0].session_id}`, JSON.stringify(characters));
-    }
-    return { characters };
-  }),
   
-  initialize: (sessionId: string) => {
+  setCharacters: (characters) => {
+    set({ characters });
+  },
+  
+  initialize: async (sessionId: string) => {
     console.log(`[CharactersStore] Initializing for session: ${sessionId}`);
-    const saved = localStorage.getItem(`sigil_chars_${sessionId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        console.log(`[CharactersStore] Loaded ${parsed.length} characters from localStorage:`, parsed.map((p: any) => p.name));
-        set({ characters: parsed });
-      } catch (e) {
-        console.error('[CharactersStore] Failed to parse localStorage', e);
+    // Toujours reset pour éviter les fuites de données entre sessions
+    set({ characters: [], controlledCharacterId: null });
+    
+    // 1. Charger depuis la base de données (Source de vérité)
+    const dbChars = await getSessionCharacters(sessionId);
+    if (dbChars && dbChars.length > 0) {
+      console.log(`[CharactersStore] Loaded ${dbChars.length} characters from DB`);
+      set({ characters: dbChars });
+    } else {
+      // 2. Fallback localStorage (Compatibilité ou offline)
+      const saved = localStorage.getItem(`signet_chars_${sessionId}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          console.log(`[CharactersStore] Fallback: Loaded ${parsed.length} characters from localStorage`);
+          set({ characters: parsed });
+        } catch (e) {
+          console.error('[CharactersStore] Failed to parse localStorage', e);
+        }
       }
     }
 
-    const savedPnj = localStorage.getItem(`sigil_pnj_control_${sessionId}`);
+    const savedPnj = localStorage.getItem(`signet_pnj_control_${sessionId}`);
     if (savedPnj) set({ controlledCharacterId: savedPnj });
 
     // Listen for updates from other windows/stores
-    const syncChannel = new BroadcastChannel(`sigil_char_store_sync_${sessionId}`);
+    const syncChannel = new BroadcastChannel(`signet_char_store_sync_${sessionId}`);
     syncChannel.onmessage = (event) => {
       const { type, payload } = event.data;
       if (type === 'CHAR_UPDATE_INTERNAL') {
-        console.log(`[CharactersStore] Internal sync received for ${payload.name}`);
         const state = get();
         const existing = state.characters.find(c => c.id === payload.id);
+        if (existing && JSON.stringify(existing) === JSON.stringify(payload)) return;
+        
         let newChars;
         if (existing) {
-          // Si les données sont identiques, on évite l'update pour stopper les loops
-          if (JSON.stringify(existing) === JSON.stringify(payload)) return;
           newChars = state.characters.map(c => c.id === payload.id ? payload : c);
         } else {
           newChars = [...state.characters, payload];
@@ -60,20 +68,24 @@ export const useCharactersStore = create<CharactersState>((set, get) => ({
     };
   },
 
-  setPnjControle: (id) => set((state) => {
-    const sessionId = state.characters[0]?.session_id;
-    if (sessionId) {
-      if (id) localStorage.setItem(`sigil_pnj_control_${sessionId}`, id);
-      else localStorage.removeItem(`sigil_pnj_control_${sessionId}`);
+  setPnjControle: (sessionId, id) => {
+    if (id) localStorage.setItem(`signet_pnj_control_${sessionId}`, id);
+    else localStorage.removeItem(`signet_pnj_control_${sessionId}`);
 
-      const syncChannel = new BroadcastChannel(`sigil_char_store_sync_${sessionId}`);
-      syncChannel.postMessage({ type: 'PNJ_CONTROL_INTERNAL', payload: id });
+    const syncChannel = new BroadcastChannel(`signet_char_store_sync_${sessionId}`);
+    syncChannel.postMessage({ type: 'PNJ_CONTROL_INTERNAL', payload: id });
+    
+    set({ controlledCharacterId: id });
+  },
+
+  addOrUpdateCharacter: (character, skipSync = false) => {
+    const sessionId = character.session_id;
+    if (!sessionId) {
+        console.error('[CharactersStore] character.session_id is missing!');
+        return;
     }
-    return { controlledCharacterId: id };
-  }),
 
-  addOrUpdateCharacter: (character, skipSync = false) => set((state) => {
-    console.log(`[CharactersStore] Add/Update character: ${character.name}`, { id: character.id, user_id: character.user_id });
+    const state = get();
     const existing = state.characters.find(c => c.id === character.id);
     let newChars;
     if (existing) {
@@ -82,25 +94,25 @@ export const useCharactersStore = create<CharactersState>((set, get) => ({
       newChars = [...state.characters, character];
     }
     
-    // Auto save
-    localStorage.setItem(`sigil_chars_${character.session_id}`, JSON.stringify(newChars));
+    // Save to State and LocalStorage (namespaced by session)
+    set({ characters: newChars });
+    localStorage.setItem(`signet_chars_${sessionId}`, JSON.stringify(newChars));
 
     // Sync with other local windows
     if (!skipSync) {
-      console.log(`[CharactersStore] Broadcasting internal update for ${character.name}`);
-      const syncChannel = new BroadcastChannel(`sigil_char_store_sync_${character.session_id}`);
+      const syncChannel = new BroadcastChannel(`signet_char_store_sync_${sessionId}`);
       syncChannel.postMessage({ type: 'CHAR_UPDATE_INTERNAL', payload: character });
     }
+  },
 
-    return { characters: newChars };
-  }),
-
-  removeCharacter: (id) => set((state) => {
+  removeCharacter: (sessionId, id) => {
+    const state = get();
     const newChars = state.characters.filter(c => c.id !== id);
-    const char = state.characters.find(c => c.id === id);
-    if (char) {
-      localStorage.setItem(`sigil_chars_${char.session_id}`, JSON.stringify(newChars));
-    }
-    return { characters: newChars };
-  }),
+    
+    set({ characters: newChars });
+    localStorage.setItem(`signet_chars_${sessionId}`, JSON.stringify(newChars));
+
+    const syncChannel = new BroadcastChannel(`signet_char_store_sync_${sessionId}`);
+    syncChannel.postMessage({ type: 'CHAR_DELETE_INTERNAL', payload: { id } });
+  },
 }));
