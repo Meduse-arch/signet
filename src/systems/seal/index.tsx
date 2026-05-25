@@ -24,12 +24,12 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { PlayerHUD } from '../../components/PlayerHUD';
 import { CharacterHUD } from '../../components/CharacterHUD';
-import { Sparkles, Pause } from 'lucide-react';
+import { Pause } from 'lucide-react';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
-import { useSkillsStore } from '../../store/skills';
 import { useQuestsStore } from '../../store/quests';
+import { useSkillsStore } from '../../store/skills';
 import { useTagsStore } from '../../store/tags';
 import { useUIStore } from '../../store/ui';
 
@@ -49,6 +49,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const characters = useCharactersStore(state => state.characters);
   const { addOrUpdateCharacter, removeCharacter } = useCharactersStore();
+  
   const initItems = useItemsStore(state => state.initialize);
   const initSkills = useSkillsStore(state => state.initialize);
   const initTags = useTagsStore(state => state.initialize);
@@ -58,13 +59,11 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   const isMJ = !!user && (user.role === SecurityLevel.MJ || user.role === SecurityLevel.ADMIN || Number(user.role) >= 1);
   const isHost = session?.hostPeerId === user?.id;
 
-  // ✅ Initialiser avec les maps déjà reçues dans le store session si on est joueur
   const [maps, setMaps] = useState<MapItem[]>(() => {
     return (session as any)?.maps || [];
   });
   const [currentMapId, setCurrentMapId] = useState<string>('');
 
-  // On utilise les joueurs passés en prop s'ils sont dispo, sinon fallback
   const playersList = players.length > 0 ? players : [
     ...(user ? [{ peer_id: user.id, pseudo: user.pseudo, role: user.role }] : []),
     ...connections.map(connId => {
@@ -78,24 +77,26 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   ].filter((v, i, a) => a.findIndex(t => t.peer_id === v.peer_id) === i);
 
   useEffect(() => {
-    initItems(sessionId);
-    initSkills(sessionId);
-    initTags(sessionId);
-    initQuests(sessionId);
-    initChars(sessionId);
-    
-    // ✅ Si on est joueur et qu'on a déjà des maps dans la session, on met à jour l'état local
+    if (sessionId) {
+        initItems(sessionId);
+        initSkills(sessionId);
+        initTags(sessionId);
+        initQuests(sessionId);
+        initChars(sessionId);
+    }
+  }, [sessionId, initItems, initSkills, initTags, initQuests, initChars]);
+
+  useEffect(() => {
     if (!isHost && (session as any)?.maps) {
         setMaps((session as any).maps);
     }
-  }, [sessionId, initItems, initSkills, initTags, initQuests, initChars, session, isHost]);
+  }, [session, isHost]);
 
   useEffect(() => {
     async function loadMaps() {
-      if (window.electronAPI) {
+      if (window.electronAPI && sessionId) {
         const dbMaps = await window.electronAPI.getMaps(sessionId);
 
-        // Si aucune map et que la session a une image de fond -> Créer la map initiale
         if (dbMaps.length === 0 && session?.imageUrl) {
           const defaultMap = {
             id: 'initial-scene',
@@ -109,16 +110,12 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
           setMaps(updatedMaps);
           setCurrentMapId(defaultMap.id);
           localStorage.setItem(`active_map_${sessionId}`, defaultMap.id);
-
-          // ✅ Diffuser immédiatement la nouvelle liste
           broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
         } else {
           setMaps(dbMaps);
-          // ✅ Diffuser la liste aux joueurs déjà là
           if (isHost && dbMaps.length > 0) {
             broadcast({ type: 'MAP_UPDATE', payload: dbMaps });
           }
-
           const lastActive = localStorage.getItem(`active_map_${sessionId}`);
           if (lastActive && dbMaps.find(m => m.id === lastActive)) {
             setCurrentMapId(lastActive);
@@ -129,21 +126,20 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       }
     }
     loadMaps();
-  }, [sessionId, session?.imageUrl, isHost]);
+  }, [sessionId, session?.imageUrl, isHost, broadcast]);
 
-  // ✅ CRITIQUE : Envoyer la liste des maps à CHAQUE nouvelle connexion de joueur
   useEffect(() => {
     if (isHost && maps.length > 0 && connections.length > 0) {
         broadcast({ type: 'MAP_UPDATE', payload: maps });
     }
-  }, [connections.length, maps, isHost]);
+  }, [connections.length, maps, isHost, broadcast]);
 
   useEffect(() => {
     if (!isHost && peerId) {
       console.log('[Player] Demande de synchronisation initiale...');
       broadcast({ type: 'INITIAL_SYNC_REQUEST', payload: { peerId } });
     }
-  }, [isHost, peerId, broadcast, sessionId]);
+  }, [isHost, peerId, broadcast]);
 
   useEffect(() => {
     const unsub = onData((data, fromPeerId) => {
@@ -153,46 +149,31 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       } else if (type === 'CHAR_DELETE') {
         removeCharacter(payload.id);
       } else if (type === 'MAP_CHANGE' && !isHost) {
-        // MJ change la map pour TOUT LE MONDE
         if (payload.id) {
             setCurrentMapId(payload.id);
             localStorage.setItem(`active_map_${sessionId}`, payload.id);
         }
       } else if (type === 'CHARACTER_LIST' && !isHost) {
-        console.log(`[Player] ${payload.length} personnages synchronisés depuis l'hôte.`);
+        console.log(`[Player] ${payload.length} personnages synchronisés.`);
         payload.forEach((char: any) => {
             addOrUpdateCharacter(char, true);
-            // ✅ CRITIQUE : Informer le board que des données fraîches sont là pour les tokens
             const channel = new BroadcastChannel(`board_actions_${sessionId}`);
             channel.postMessage({ type: 'REFRESH_TOKEN_DATA', payload: char });
             channel.close();
         });
       } else if (type === 'MAP_UPDATE') {
-        console.log('[Player] Liste des scènes reçue:', payload.length);
         setMaps(payload);
         if (!currentMapId && payload.length > 0) {
             setCurrentMapId(payload[0].id);
         }
       } else if (type === 'INITIAL_SYNC_REQUEST' && isHost) {
-        // MJ répond à un nouveau joueur
-        console.log(`[Host] Réponse synchro pour ${fromPeerId}`);
         sendTo(fromPeerId, { type: 'CHARACTER_LIST', payload: characters });
         sendTo(fromPeerId, { type: 'MAP_UPDATE', payload: maps });
-        
         const current = maps.find(m => m.id === currentMapId) || maps[0];
         if (current) {
-            sendTo(fromPeerId, { 
-                type: 'MAP_CHANGE', 
-                payload: { 
-                    url: current.url, 
-                    name: current.name, 
-                    id: current.id,
-                    grid_size: current.grid_size 
-                } 
-            });
+            sendTo(fromPeerId, { type: 'MAP_CHANGE', payload: { url: current.url, name: current.name, id: current.id, grid_size: current.grid_size } });
         }
-      }
- else if (type === 'QUEST_UPDATE') {
+      } else if (type === 'QUEST_UPDATE') {
         useQuestsStore.getState().addQuest(sessionId, payload, true);
       } else if (type === 'QUEST_DELETE') {
         useQuestsStore.getState().removeQuest(sessionId, payload.id, true);
@@ -204,9 +185,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       const { type, payload } = event.data;
       if (type === 'MAP_CHANGE') {
         const map = maps.find(m => m.url === payload.url);
-        if (map) {
-          setCurrentMapId(map.id);
-        }
+        if (map) setCurrentMapId(map.id);
       } else if (type === 'MAP_UPDATE') {
         setMaps(payload);
       }
@@ -216,73 +195,45 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       unsub();
       channel.close();
     };
-  }, [onData, maps, addOrUpdateCharacter, removeCharacter, sessionId]);
+  }, [onData, maps, addOrUpdateCharacter, removeCharacter, sessionId, characters, currentMapId, isHost, sendTo]);
 
   const handleSelectMap = (map: MapItem, global: boolean = false) => {
     setCurrentMapId(map.id);
     localStorage.setItem(`active_map_${sessionId}`, map.id);
-    
-    // Si c'est un MJ et qu'il demande un changement global (double-clic)
     if (global && isMJ) {
-      console.log('[MJ] Changement de map GLOBAL vers:', map.name);
-      broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
+      broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name, id: map.id, grid_size: map.grid_size } });
     }
   };
 
   const handleToggleHideMap = async (id: string, hidden: boolean) => {
     if (!isMJ) return;
-    
     const updatedMaps = maps.map(m => m.id === id ? { ...m, is_hidden: hidden } : m);
     setMaps(updatedMaps);
-    
-    if (window.electronAPI) {
-      await window.electronAPI.addMap(sessionId, updatedMaps.find(m => m.id === id)!);
-    }
-    
-    if (isHost) {
-      broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
-    }
+    if (window.electronAPI) await window.electronAPI.addMap(sessionId, updatedMaps.find(m => m.id === id)!);
+    if (isHost) broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
   };
 
   const handleUpdateMap = async (id: string, updates: Partial<MapItem>) => {
     if (!isMJ) return;
-    
     const updatedMaps = maps.map(m => m.id === id ? { ...m, ...updates } : m);
     setMaps(updatedMaps);
-    
     const updatedMap = updatedMaps.find(m => m.id === id);
-    if (updatedMap && window.electronAPI) {
-      await window.electronAPI.addMap(sessionId, updatedMap);
-    }
-    
+    if (updatedMap && window.electronAPI) await window.electronAPI.addMap(sessionId, updatedMap);
     if (isHost) {
       broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
-      // Si on modifie la map actuelle, on force le changement visuel
       if (id === currentMapId && updates.url) {
-        broadcast({ type: 'MAP_CHANGE', payload: { url: updates.url, name: updates.name || updatedMap?.name } });
+        broadcast({ type: 'MAP_CHANGE', payload: { url: updates.url, name: updates.name || updatedMap?.name, id: updatedMap?.id, grid_size: updatedMap?.grid_size } });
       }
     }
   };
 
   const handleAddMap = async (name: string, url: string) => {
-    const newMap: MapItem = { 
-      id: Math.random().toString(36).substring(2, 9), 
-      name, 
-      url,
-      is_hidden: false,
-      grid_size: 50
-    };
+    const newMap: MapItem = { id: Math.random().toString(36).substring(2, 9), name, url, is_hidden: false, grid_size: 50 };
     const updatedMaps = [...maps, newMap];
     setMaps(updatedMaps);
-    if (window.electronAPI) {
-      await window.electronAPI.addMap(sessionId, newMap);
-    }
-    if (isHost) {
-      broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
-    }
+    if (window.electronAPI) await window.electronAPI.addMap(sessionId, newMap);
+    if (isHost) broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
   };
-
-  const currentMap = maps.find(m => m.id === currentMapId);
 
   const handlePopOut = (type: string) => {
     if (window.electronAPI) {
@@ -291,207 +242,57 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
     }
   };
 
-  // Écouter les demandes de réintégration des fenêtres externes
   useEffect(() => {
     if (!sessionId) return;
-    
     const channel = new BroadcastChannel(`signet_window_manager_${sessionId}`);
-    console.log(`[DEBUG] Window Manager listener active for session: ${sessionId}`);
-    
     channel.onmessage = (event) => {
-      console.log('[DEBUG] Received window manager message:', event.data);
       if (event.data.type === 'REINTEGRATE_WINDOW') {
-        const { windowType } = event.data.payload;
-        console.log(`[DEBUG] Reintegrating window: ${windowType}`);
-        openWindow(windowType as any);
+        openWindow(event.data.payload.windowType as any);
       }
     };
-    
-    return () => {
-        console.log(`[DEBUG] Closing Window Manager listener for session: ${sessionId}`);
-        channel.close();
-    };
+    return () => channel.close();
   }, [sessionId, openWindow]);
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#050507]">
-      <BoardCanvas 
-        sessionId={sessionId}
-        imageUrl={propImageUrl}
-        maps={maps}
-        currentMapId={currentMapId}
-        characters={characters}
-      />
-
-      {/* PAUSE BUTTON (MJ ONLY) */}
+      <BoardCanvas sessionId={sessionId} imageUrl={propImageUrl} maps={maps} currentMapId={currentMapId} characters={characters} />
       {isMJ && onPause && (
-        <button
-          onClick={onPause}
-          className="fixed top-8 right-8 z-[150] group flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 text-gold-DEFAULT hover:text-gold-bright hover:border-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all active:scale-95"
-          title="Mettre la session en pause"
-        >
-          <div className="relative">
-            <div className="absolute inset-0 bg-gold-DEFAULT/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
-            <Pause size={18} className="relative z-10" />
-          </div>
-          <span className="text-[10px] font-cinzel font-black tracking-[0.2em] uppercase">Mettre en Pause</span>
+        <button onClick={onPause} className="fixed top-8 right-8 z-[150] group flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 text-gold-DEFAULT hover:text-gold-bright transition-all active:scale-95">
+          <Pause size={18} />
+          <span className="text-[10px] font-cinzel font-black tracking-[0.2em] uppercase">Pause</span>
         </button>
       )}
-
-      <SignetLauncher 
-        sessionId={sessionId} 
-        onOpenWindow={openWindow}
-        securityLevel={user?.role}
-      />
-
+      <SignetLauncher sessionId={sessionId} onOpenWindow={openWindow} securityLevel={user?.role} />
       <PlayerHUD players={playersList} sessionId={sessionId} />
       <CharacterHUD sessionId={sessionId} />
-
-      {/* WINDOWS LAYER */}
       <div className="absolute inset-0 pointer-events-none z-[200]">
-        {windows.scenes.isOpen && (
+        {Object.entries(windows).map(([id, win]) => win.isOpen && (
           <DraggableWindow
-            id="scenes"
-            title="Scènes & Lieux"
-            onClose={() => closeWindow('scenes')}
-            onPopOut={() => handlePopOut('scenes')}
-            defaultPosition={windows.scenes.position}
-            onPositionChange={(x, y) => updatePosition('scenes', x, y)}
-            zIndex={windows.scenes.zIndex + 200}
-            onFocus={() => focusWindow('scenes')}
+            key={id} id={id} title={win.id} 
+            onClose={() => closeWindow(id as any)} 
+            onPopOut={() => handlePopOut(id)}
+            defaultPosition={win.position} 
+            onPositionChange={(x, y) => updatePosition(id as any, x, y)}
+            zIndex={win.zIndex + 200} 
+            onFocus={() => focusWindow(id as any)}
           >
-            <SceneWindowContent 
-              scenes={maps}
-              currentSceneId={currentMapId}
-              onSelectScene={handleSelectMap}
-              onAddScene={handleAddMap}
-              onUpdateScene={handleUpdateMap}
-              onToggleHide={handleToggleHideMap}
-            />
+             {id === 'scenes' && <SceneWindowContent scenes={maps} currentSceneId={currentMapId} onSelectScene={handleSelectMap} onAddScene={handleAddMap} onUpdateScene={handleUpdateMap} onToggleHide={handleToggleHideMap} />}
+             {id === 'players' && <PlayerWindowContent players={playersList} sessionId={sessionId} />}
+             {id === 'assets' && <InventoryWindowContent sessionId={sessionId} />}
+             {id === 'bestiary' && <BestiaryWindowContent sessionId={sessionId} />}
+             {id === 'dice' && <DiceWindowContent sessionId={sessionId} />}
+             {id === 'quests' && <QuestsWindowContent sessionId={sessionId} />}
+             {id === 'skills' && <SkillsWindowContent sessionId={sessionId} />}
+             {id === 'character' && <CharacterSheetContent sessionId={sessionId} variant="window" />}
           </DraggableWindow>
-        )}
-
-        {windows.players.isOpen && (
-          <DraggableWindow
-            id="players"
-            title="Joueurs"
-            onClose={() => closeWindow('players')}
-            onPopOut={() => handlePopOut('players')}
-            defaultPosition={windows.players.position}
-            onPositionChange={(x, y) => updatePosition('players', x, y)}
-            zIndex={windows.players.zIndex + 200}
-            onFocus={() => focusWindow('players')}
-          >
-            <PlayerWindowContent players={playersList} sessionId={sessionId} />
-          </DraggableWindow>
-        )}
-
-        {windows.assets.isOpen && (
-          <DraggableWindow
-            id="assets"
-            title="Inventaire & Objets"
-            onClose={() => closeWindow('assets')}
-            onPopOut={() => handlePopOut('assets')}
-            defaultPosition={windows.assets.position}
-            onPositionChange={(x, y) => updatePosition('assets', x, y)}
-            zIndex={windows.assets.zIndex + 200}
-            onFocus={() => focusWindow('assets')}
-          >
-            <InventoryWindowContent sessionId={sessionId} />
-          </DraggableWindow>
-        )}
-
-        {windows.bestiary.isOpen && (
-          <DraggableWindow
-            id="bestiary"
-            title="Bestiaire"
-            variant="codex"
-            onClose={() => closeWindow('bestiary')}
-            onPopOut={() => handlePopOut('bestiary')}
-            defaultPosition={windows.bestiary.position}
-            onPositionChange={(x, y) => updatePosition('bestiary', x, y)}
-            zIndex={windows.bestiary.zIndex + 200}
-            onFocus={() => focusWindow('bestiary')}
-          >
-            <BestiaryWindowContent sessionId={sessionId} />
-          </DraggableWindow>
-        )}
-
-        {windows.dice.isOpen && (
-          <DraggableWindow
-            id="dice"
-            title="Dés"
-            onClose={() => closeWindow('dice')}
-            onPopOut={() => handlePopOut('dice')}
-            defaultPosition={windows.dice.position}
-            onPositionChange={(x, y) => updatePosition('dice', x, y)}
-            zIndex={windows.dice.zIndex + 200}
-            onFocus={() => focusWindow('dice')}
-          >
-            <DiceWindowContent sessionId={sessionId} />
-          </DraggableWindow>
-        )}
-
-        {windows.quests.isOpen && (
-          <DraggableWindow
-            id="quests"
-            title="Quêtes & Récits"
-            variant="codex"
-            onClose={() => closeWindow('quests')}
-            onPopOut={() => handlePopOut('quests')}
-            defaultPosition={windows.quests.position}
-            onPositionChange={(x, y) => updatePosition('quests', x, y)}
-            zIndex={windows.quests.zIndex + 200}
-            onFocus={() => focusWindow('quests')}
-          >
-            <QuestsWindowContent sessionId={sessionId} />
-          </DraggableWindow>
-        )}
-
-        {windows.skills.isOpen && (
-          <DraggableWindow
-            id="skills"
-            title="Compétences"
-            variant="codex"
-            onClose={() => closeWindow('skills')}
-            onPopOut={() => handlePopOut('skills')}
-            defaultPosition={windows.skills.position}
-            onPositionChange={(x, y) => updatePosition('skills', x, y)}
-            zIndex={windows.skills.zIndex + 200}
-            onFocus={() => focusWindow('skills')}
-          >
-            <SkillsWindowContent sessionId={sessionId} />
-          </DraggableWindow>
-        )}
-
-        {windows.character.isOpen && (
-          <DraggableWindow
-            id="character"
-            title="Personnage"
-            onClose={() => closeWindow('character')}
-            onPopOut={() => handlePopOut('character')}
-            defaultPosition={windows.character.position}
-            onPositionChange={(x, y) => updatePosition('character', x, y)}
-            zIndex={windows.character.zIndex + 200}
-            onFocus={() => focusWindow('character')}
-          >
-            <CharacterSheetContent sessionId={sessionId} variant="window" />
-          </DraggableWindow>
-        )}
+        ))}
       </div>
-
       <DiceRollModal />
       <ItemCreationModal sessionId={sessionId} />
       <ItemDetailModal sessionId={sessionId} />
       <SkillCreationModal sessionId={sessionId} />
       <QuestCreationModal sessionId={sessionId} />
-      {characterManagementId && (
-        <ManageCharacterModal 
-          sessionId={sessionId} 
-          characterId={characterManagementId} 
-          onClose={() => setCharacterManagement(null)} 
-        />
-      )}
+      {characterManagementId && <ManageCharacterModal sessionId={sessionId} characterId={characterManagementId} onClose={() => setCharacterManagement(null)} />}
     </div>
   );
 }

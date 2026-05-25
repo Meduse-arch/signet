@@ -83,11 +83,15 @@ export class TokenSprite extends Container {
 
       // Bypass total des Pixi Workers pour éviter les erreurs CORS WebGL/Bitmap
       const img = new Image();
-      img.crossOrigin = "anonymous";
+      
+      // ✅ Sécurité : crossOrigin uniquement pour les URLs distantes réelles
+      if (!finalUrl.startsWith('blob:') && !finalUrl.startsWith('data:')) {
+          img.crossOrigin = "anonymous";
+      }
       
       await new Promise((resolve, reject) => {
         img.onload = resolve;
-        img.onerror = () => reject(new Error("DOM Image load failed"));
+        img.onerror = (e) => reject(new Error(`DOM Image load failed for ${finalUrl.substring(0, 30)}...`));
         img.src = finalUrl;
       });
 

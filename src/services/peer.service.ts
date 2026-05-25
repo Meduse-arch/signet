@@ -16,7 +16,6 @@ class PeerService {
   private isDestroying = false;
 
   async init(isHost: boolean, hostPeerId: string, myPeerId?: string): Promise<string> {
-    console.log(`[PeerService] Initialisation (Host: ${isHost}) pour ${hostPeerId}`);
     this.performDestroy(); 
     this.isHost = isHost;
     this.isDestroying = false;
@@ -32,7 +31,7 @@ class PeerService {
     return new Promise((resolve, reject) => {
       if (this.isDestroying) return;
 
-      // Nettoyage total du peer précédent pour éviter les conflits d'écouteurs
+      // Nettoyage TOTAL avant de recréer
       if (this.peer) {
           this.peer.off('open');
           this.peer.off('error');
@@ -49,15 +48,13 @@ class PeerService {
       this.peer.on('open', (id) => {
         console.log(`[PeerService] ONLINE (HOST): ${id}`);
         
-        // On ne branche les écouteurs de vie qu'une fois ouvert
         this.peer?.on('connection', (conn) => {
-          console.log(`[PeerService] Connexion entrante: ${conn.peer}`);
           this.setupConnection(conn);
         });
 
         this.peer?.on('disconnected', () => {
           if (!this.isDestroying) {
-            console.warn('[PeerService] Perte de signal, reconnexion...');
+            console.warn('[PeerService] Déconnecté du serveur, tentative reconnexion...');
             this.peer?.reconnect();
           }
         });
@@ -69,17 +66,18 @@ class PeerService {
         if (this.isDestroying) return;
 
         if (err.type === 'unavailable-id') {
-            console.warn(`[PeerService] ID ${hostId} occupé (stale). Nouveau test dans quelques secondes...`);
+            console.warn(`[PeerService] ID ${hostId} occupé (ghost), patience...`);
             
-            // On désactive tout avant de détruire
+            // On désactive tout pour empêcher PeerJS de boucler en interne
             if (this.peer) {
-                this.peer.off('disconnected'); 
+                this.peer.off('disconnected');
                 this.peer.destroy();
                 this.peer = null;
             }
 
             if (retryCount < 10) {
-                const delay = 3000;
+                // Délai croissant pour laisser le serveur respirer
+                const delay = 3000 + (retryCount * 1000);
                 setTimeout(() => {
                     if (!this.isDestroying) {
                         this.initAsHost(hostId, retryCount + 1).then(resolve).catch(reject);
@@ -87,7 +85,7 @@ class PeerService {
                 }, delay);
                 return;
             }
-            reject(new Error("L'identifiant est bloqué. Patientez 30s ou changez de code."));
+            reject(new Error("Identifiant bloqué. Réessayez dans 1 minute."));
             return;
         }
 
@@ -138,7 +136,7 @@ class PeerService {
           if (attempts < maxAttempts) {
             setTimeout(tryConnect, 2000);
           } else {
-            reject(new Error("Hôte injoignable. Vérifiez le code."));
+            reject(new Error("Hôte injoignable."));
           }
         }
       }, 6000);

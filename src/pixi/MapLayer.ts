@@ -76,7 +76,11 @@ export class MapLayer extends Container {
 
       // 2. Bypass total des Pixi Workers pour les images (évite loadImageBitmap crash)
       const img = new Image();
-      img.crossOrigin = "anonymous";
+      
+      // ✅ Sécurité : crossOrigin uniquement pour les URLs distantes
+      if (!finalUrl.startsWith('blob:') && !finalUrl.startsWith('data:')) {
+          img.crossOrigin = "anonymous";
+      }
       
       await new Promise((resolve, reject) => {
           img.onload = resolve;
