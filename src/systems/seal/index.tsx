@@ -158,21 +158,26 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
             setCurrentMapId(payload.id);
             localStorage.setItem(`active_map_${sessionId}`, payload.id);
         }
+      } else if (type === 'CHARACTER_LIST' && !isHost) {
+        console.log(`[Player] ${payload.length} personnages synchronisés depuis l'hôte.`);
+        payload.forEach((char: any) => {
+            addOrUpdateCharacter(char, true);
+            // ✅ CRITIQUE : Informer le board que des données fraîches sont là pour les tokens
+            const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+            channel.postMessage({ type: 'REFRESH_TOKEN_DATA', payload: char });
+            channel.close();
+        });
       } else if (type === 'MAP_UPDATE') {
         console.log('[Player] Liste des scènes reçue:', payload.length);
         setMaps(payload);
-        // Si on n'a pas de map active, on prend la première de la liste
         if (!currentMapId && payload.length > 0) {
             setCurrentMapId(payload[0].id);
         }
-      } else if (type === 'CHARACTER_LIST' && !isHost) {
-        console.log('[Player] Liste des personnages reçue:', payload.length);
-        payload.forEach((char: any) => addOrUpdateCharacter(char));
       } else if (type === 'INITIAL_SYNC_REQUEST' && isHost) {
         // MJ répond à un nouveau joueur
         console.log(`[Host] Réponse synchro pour ${fromPeerId}`);
-        sendTo(fromPeerId, { type: 'MAP_UPDATE', payload: maps });
         sendTo(fromPeerId, { type: 'CHARACTER_LIST', payload: characters });
+        sendTo(fromPeerId, { type: 'MAP_UPDATE', payload: maps });
         
         const current = maps.find(m => m.id === currentMapId) || maps[0];
         if (current) {

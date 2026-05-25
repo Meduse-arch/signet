@@ -154,7 +154,10 @@ export class BoardScene extends Container {
     const existing = this.tokens.get(data.id);
     if (existing) {
         console.log('[BoardScene] Updating existing token:', data.name);
-        existing.moveTo(data.x, data.y);
+        existing.updateData(data); // Met à jour l'image si elle vient d'arriver
+        if (!isNaN(data.x) && !isNaN(data.y)) {
+            existing.moveTo(data.x, data.y);
+        }
         return;
     }
 

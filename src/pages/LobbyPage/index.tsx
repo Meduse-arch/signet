@@ -49,12 +49,19 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   };
   
   // ✅ État local pour les métadonnées (au cas où le joueur n'ait pas la session en DB)
-  const [localMetadata, setLocalMetadata] = useState<{name?: string, imageUrl?: string, system?: string, hostPeerId?: string, settings?: any} | null>(null);
+  const [localMetadata, setLocalMetadata] = useState<{name?: string, id?: string, imageUrl?: string, system?: string, hostPeerId?: string, settings?: any} | null>(null);
 
   // ✅ Stabiliser les refs pour les callbacks asynchrones
   const currentUser = useAuthStore(state => state.user);
   const isMJ = !!currentUser && currentUser.role >= SecurityLevel.MJ;
-  const isHost = !sessionId.startsWith('SIGNET-');
+  
+  // ✅ Identifier si on est Hôte ou Joueur de manière robuste
+  const { sessions, addSession: addSessionToStore } = useSessionStore();
+  const sessionDataFromStore = sessions.find(s => s.id === sessionId);
+  
+  // Si c'est un code SIGNET-xxx, on est forcément joueur. 
+  // Sinon on regarde en base : si isSummoned est vrai, on est forcément joueur.
+  const isHost = !sessionId.startsWith('SIGNET-') && (!sessionDataFromStore || !sessionDataFromStore.isSummoned);
 
   // ✅ Initialiser le store des personnages
   useEffect(() => {
@@ -64,10 +71,6 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
     }
   }, [sessionId]);
 
-  // ✅ Récupérer les infos de la session
-  const { sessions, addSession: addSessionToStore } = useSessionStore();
-  const sessionDataFromStore = sessions.find(s => s.id === sessionId);
-  
   // Priorité aux métadonnées reçues par P2P pour le joueur (données fraîches du MJ)
   const sessionData = isHost 
     ? sessionDataFromStore 
@@ -206,14 +209,17 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         console.log(`[LobbyPage] Métadonnées reçues:`, data.payload);
         setLocalMetadata(data.payload);
 
-        // ✅ IMPORTANT : Si on reçoit un ID réel (UUID), on réinitialise tous les stores avec cet ID
+        // ✅ IMPORTANT : Si on reçoit un ID réel (UUID), on réinitialise les stores avec cet ID
         const realSessionId = data.payload.id;
         if (realSessionId && realSessionId !== sessionIdRef.current) {
-            console.log(`[LobbyPage] Passage sur l'ID réel de session : ${realSessionId}`);
-            useCharactersStore.getState().initialize(realSessionId);
-            useItemsStore.getState().initialize(realSessionId);
-            useQuestsStore.getState().initialize(realSessionId);
-            // ... les autres stores si besoin
+            console.log(`[LobbyPage] Adoption de l'ID réel : ${realSessionId}`);
+            try {
+                if (useCharactersStore?.getState) useCharactersStore.getState().initialize(realSessionId);
+                if (useItemsStore?.getState) useItemsStore.getState().initialize(realSessionId);
+                if (useQuestsStore?.getState) useQuestsStore.getState().initialize(realSessionId);
+            } catch (err) {
+                console.error('[LobbyPage] Erreur lors de la bascule UUID:', err);
+            }
         }
         
         const savedSessions = JSON.parse(localStorage.getItem('summoned_sessions') || '[]');
@@ -258,6 +264,18 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         useCharactersStore.getState().addOrUpdateCharacter(data.payload);
       }
       
+      // Pour tout le monde : Liste des personnages
+      else if (data.type === 'CHARACTER_LIST' && !isHostRef.current) {
+        console.log(`[LobbyPage] ${data.payload.length} personnages synchronisés.`);
+        data.payload.forEach((char: any) => {
+          useCharactersStore.getState().addOrUpdateCharacter(char, true);
+          // ✅ CRITIQUE : Toujours utiliser l'ID initial (code de session) pour le canal local
+          const channel = new BroadcastChannel(`board_actions_${sessionIdRef.current}`);
+          channel.postMessage({ type: 'REFRESH_TOKEN_DATA', payload: char });
+          channel.close();
+        });
+      }
+      
       // Pour tout le monde : Déconnexions
       else if (data.type === 'PLAYER_LEAVE') {
         if (isMJRef.current) {
@@ -278,7 +296,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
     const unsubData = onData(handleMessage);
     return () => { unsubData(); };
-  }, [onData, refreshPlayers, players, sessionData]);
+  }, [onData, refreshPlayers, players, sessionData, peerId]);
 
   // LOGIQUE DE CONNEXION P2P
   useEffect(() => {
@@ -344,6 +362,12 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const handleLaunchSession = () => {
     setIsGameStarted(true);
     broadcast({ type: 'SESSION_START', payload: {} });
+    
+    // ✅ CRITIQUE : Envoyer une dernière fois la liste complète des persos pour être SÛR que les joueurs ont les images
+    if (isHost) {
+        const allChars = useCharactersStore.getState().characters;
+        broadcast({ type: 'CHARACTER_LIST', payload: allChars });
+    }
   };
 
   const handlePauseSession = () => {

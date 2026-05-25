@@ -221,9 +221,19 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       } else if (type === 'GET_TOKEN_STATUS') {
         const isOnMap = mapTokens.some(t => t.character_id === payload.id);
         channel.postMessage({ type: 'TOKEN_STATUS_RESPONSE', payload: { id: payload.id, isOnMap } });
+      } else if (type === 'REFRESH_TOKEN_DATA') {
+        // ✅ CRITIQUE : Si des données de perso arrivent après le token, on met à jour le token existant
+        console.log(`[BoardCanvas] Refreshing token data for: ${payload.name}`);
+        addToken({
+            id: payload.id,
+            name: payload.name,
+            image_url: payload.image_url,
+            x: NaN, // BoardScene gérera le maintien de la position actuelle si NaN
+            y: NaN
+        });
       }
     };
-    return () => channel.close();
+
   }, [sessionId, isHost, characters, handleToggleToken, mapTokens]);
 
   return (

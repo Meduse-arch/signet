@@ -163,6 +163,18 @@ export class TokenSprite extends Container {
     }
   }
 
+  updateData(data: Partial<TokenData>) {
+    if (data.image_url && data.image_url !== (this as any)._lastImageUrl) {
+        (this as any)._lastImageUrl = data.image_url;
+        this.loadImage(data.image_url);
+    }
+    if (data.name) {
+        this.labelText.text = data.name;
+        const initials = data.name.substring(0, 2).toUpperCase();
+        this.idText.text = initials;
+    }
+  }
+
   moveTo(x: number, y: number) {
     this.x = isNaN(x) ? this.x : Math.round(x);
     this.y = isNaN(y) ? this.y : Math.round(y);
