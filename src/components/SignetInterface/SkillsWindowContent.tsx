@@ -127,6 +127,24 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
                   formula = formula.replace(regex, `(${name.charAt(0).toUpperCase() + name.slice(1)}=${val})`);
                 });
                 const rollRes = parseAndRoll(formula);
+                
+                // AJOUT : On ajoute au DiceRollModal SEULEMENT s'il y a eu des dés
+                if (rollRes.rolls.length > 0) {
+                  diceResults.push({
+                    rolls: rollRes.rolls || [],
+                    total: rollRes.total,
+                    bonus: 0,
+                    diceString: m.formula,
+                    label: `Bonus ${m.targetId}`,
+                    groups: rollRes.groups,
+                    color: '#3b82f6', // Bleu pour les auras/buffs
+                    secret: !diceSharingEnabled,
+                    timestamp: Date.now(),
+                    sender_id: user?.id,
+                    sender_name: character.name
+                  });
+                }
+
                 return { ...m, value: rollRes.total };
               }
               return m;
@@ -145,19 +163,22 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
                 });
 
                 const rollRes = parseAndRoll(formula);
-                diceResults.push({
-                  rolls: rollRes.rolls || [],
-                  total: rollRes.total,
-                  bonus: 0,
-                  diceString: eff.formula,
-                  label: eff.description || s.name,
-                  groups: rollRes.groups,
-                  color: '#d4af37',
-                  secret: !diceSharingEnabled,
-                  timestamp: Date.now(),
-                  sender_id: user?.id,
-                  sender_name: character.name
-                });
+                // On n'ajoute que s'il y a des dés
+                if (rollRes.rolls.length > 0) {
+                  diceResults.push({
+                    rolls: rollRes.rolls || [],
+                    total: rollRes.total,
+                    bonus: 0,
+                    diceString: eff.formula,
+                    label: eff.description || s.name,
+                    groups: rollRes.groups,
+                    color: '#d4af37',
+                    secret: !diceSharingEnabled,
+                    timestamp: Date.now(),
+                    sender_id: user?.id,
+                    sender_name: character.name
+                  });
+                }
               }
             });
           }
