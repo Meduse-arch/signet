@@ -20,7 +20,22 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     
     console.log('[useBoard] Loading map:', url, 'with grid size:', gridSize);
     await boardRef.current.loadMap(url, format, gridSize);
-  }, []);
+
+    // ✅ CRITIQUE : Le MJ met l'image en cache pour la servir aux joueurs
+    if (isHost && !url.startsWith('blob:')) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const buffer = await blob.arrayBuffer();
+        cachedMapBuffer.current = { buffer, type: blob.type };
+        console.log('[Host] Map mise en cache pour le transfert P2P');
+        // On signale aux joueurs que l'image est prête
+        broadcast({ type: 'MAP_READY', payload: { gridSize } });
+      } catch (e) {
+        console.error('Erreur MJ lors de la mise en cache de la map:', e);
+      }
+    }
+  }, [isHost, broadcast]);
 
   const setGridSize = useCallback((size: number) => {
     if (boardRef.current) {

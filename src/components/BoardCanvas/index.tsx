@@ -100,12 +100,18 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
     const unsub = onData((data) => {
       if (data.type === 'MAP_CHANGE' && !isHost) {
         console.log('[Player] Changement de map reçu:', data.payload.name);
-        // On utilise la grid_size du payload ou 50 par défaut
-        loadMap(data.payload.url, undefined, data.payload.grid_size || 50);
+        const { url, grid_size, id } = data.payload;
+        // On force le chargement du visuel
+        loadMap(url, undefined, grid_size || 50);
         clearTokens();
+
+        // Si on est un joueur, on demande l'image au MJ par sécurité (si c'est du local)
+        broadcast({ type: 'REQUEST_MAP_IMAGE', payload: { peerId } });
+
         // On demande les tokens de la nouvelle map
         broadcast({ type: 'TOKEN_SYNC_REQUEST', payload: {} });
-      } else if (data.type === 'TOKEN_ADD') {
+      }
+ else if (data.type === 'TOKEN_ADD') {
         // Un nouveau token arrive (ou suite à une synchro)
         if (!isHost) {
           boardRef.current?.addToken({

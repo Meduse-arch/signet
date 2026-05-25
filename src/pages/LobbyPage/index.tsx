@@ -159,6 +159,11 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         broadcastRef.current({ type: 'PLAYER_LIST', payload: updatedList });
 
         // 4. Envoyer les infos de la session au nouveau joueur immédiatement
+        let sessionMaps: any[] = [];
+        if (window.electronAPI) {
+            sessionMaps = await window.electronAPI.getMaps(sessionIdRef.current);
+        }
+
         broadcastRef.current({
           type: 'SESSION_METADATA',
           payload: {
@@ -167,7 +172,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
             imageUrl: sessionData?.imageUrl,
             hostPeerId: sessionData?.hostPeerId,
             settings: sessionData?.settings,
-            isGameStarted: isGameStarted // ✅ On informe le joueur si la partie a déjà commencé
+            isGameStarted: isGameStarted,
+            maps: sessionMaps // ✅ On inclut la liste des maps
           }
         });
 

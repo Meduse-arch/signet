@@ -45,7 +45,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   const { characterManagementId, setCharacterManagement } = useUIStore();
   const { peerId, connections } = usePeersStore();
   const { user } = useAuthStore();
-  const { broadcast, onData } = usePeer();
+  const { broadcast, onData, sendTo } = usePeer();
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const characters = useCharactersStore(state => state.characters);
   const { addOrUpdateCharacter, removeCharacter } = useCharactersStore();
@@ -58,7 +58,10 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   const isMJ = !!user && (user.role === SecurityLevel.MJ || user.role === SecurityLevel.ADMIN || Number(user.role) >= 1);
   const isHost = session?.hostPeerId === user?.id;
 
-  const [maps, setMaps] = useState<MapItem[]>([]);
+  // ✅ Initialiser avec les maps déjà reçues dans le store session si on est joueur
+  const [maps, setMaps] = useState<MapItem[]>(() => {
+    return (session as any)?.maps || [];
+  });
   const [currentMapId, setCurrentMapId] = useState<string>('');
 
   // On utilise les joueurs passés en prop s'ils sont dispo, sinon fallback
@@ -80,17 +83,22 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
     initTags(sessionId);
     initQuests(sessionId);
     initChars(sessionId);
-  }, [sessionId, initItems, initSkills, initTags, initQuests, initChars]);
+    
+    // ✅ Si on est joueur et qu'on a déjà des maps dans la session, on met à jour l'état local
+    if (!isHost && (session as any)?.maps) {
+        setMaps((session as any).maps);
+    }
+  }, [sessionId, initItems, initSkills, initTags, initQuests, initChars, session, isHost]);
 
   useEffect(() => {
     async function loadMaps() {
       if (window.electronAPI) {
         const dbMaps = await window.electronAPI.getMaps(sessionId);
-        
+
         // Si aucune map et que la session a une image de fond -> Créer la map initiale
         if (dbMaps.length === 0 && session?.imageUrl) {
           const defaultMap = {
-            id: 'initial-scene', // ID fixe pour éviter les doublons
+            id: 'initial-scene',
             name: 'Scène Initiale',
             url: session.imageUrl,
             is_hidden: false,
@@ -101,10 +109,16 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
           setMaps(updatedMaps);
           setCurrentMapId(defaultMap.id);
           localStorage.setItem(`active_map_${sessionId}`, defaultMap.id);
+
+          // ✅ Diffuser immédiatement la nouvelle liste
+          broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
         } else {
           setMaps(dbMaps);
-          // Par défaut, on se connecte sur la première map (souvent l'initiale)
-          // sauf si on a déjà une map active en mémoire
+          // ✅ Diffuser la liste aux joueurs déjà là
+          if (isHost && dbMaps.length > 0) {
+            broadcast({ type: 'MAP_UPDATE', payload: dbMaps });
+          }
+
           const lastActive = localStorage.getItem(`active_map_${sessionId}`);
           if (lastActive && dbMaps.find(m => m.id === lastActive)) {
             setCurrentMapId(lastActive);
@@ -115,11 +129,18 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       }
     }
     loadMaps();
-  }, [sessionId, session?.imageUrl]);
+  }, [sessionId, session?.imageUrl, isHost]);
+
+  // ✅ CRITIQUE : Envoyer la liste des maps à CHAQUE nouvelle connexion de joueur
+  useEffect(() => {
+    if (isHost && maps.length > 0 && connections.length > 0) {
+        broadcast({ type: 'MAP_UPDATE', payload: maps });
+    }
+  }, [connections.length, maps, isHost]);
 
   useEffect(() => {
     if (!isHost && peerId) {
-      console.log('[Player] Demande de synchronisation initiale au MJ...');
+      console.log('[Player] Demande de synchronisation initiale...');
       broadcast({ type: 'INITIAL_SYNC_REQUEST', payload: { peerId } });
     }
   }, [isHost, peerId, broadcast, sessionId]);
@@ -132,18 +153,22 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       } else if (type === 'CHAR_DELETE') {
         removeCharacter(payload.id);
       } else if (type === 'MAP_CHANGE' && !isHost) {
-        // Un changement de scène GLOBAL ordonné par le MJ
-        // On ne change QUE le visuel (ID et URL), pas les tokens qui sont liés à la map
+        // MJ change la map pour TOUT LE MONDE
         if (payload.id) {
             setCurrentMapId(payload.id);
             localStorage.setItem(`active_map_${sessionId}`, payload.id);
         }
       } else if (type === 'MAP_UPDATE') {
+        console.log('[Player] Liste des scènes reçue:', payload.length);
         setMaps(payload);
+        // Si on n'a pas de map active, on prend la première de la liste
+        if (!currentMapId && payload.length > 0) {
+            setCurrentMapId(payload[0].id);
+        }
       } else if (type === 'INITIAL_SYNC_REQUEST' && isHost) {
-        // MJ envoie l'état actuel au nouveau joueur
+        // MJ répond à un nouveau joueur
+        console.log(`[Host] Réponse synchro pour ${fromPeerId}`);
         sendTo(fromPeerId, { type: 'MAP_UPDATE', payload: maps });
-        // On force le joueur sur la map actuellement affichée par le MJ (ou la première)
         const current = maps.find(m => m.id === currentMapId) || maps[0];
         if (current) {
             sendTo(fromPeerId, { 
@@ -156,7 +181,8 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
                 } 
             });
         }
-      } else if (type === 'QUEST_UPDATE') {
+      }
+ else if (type === 'QUEST_UPDATE') {
         useQuestsStore.getState().addQuest(sessionId, payload, true);
       } else if (type === 'QUEST_DELETE') {
         useQuestsStore.getState().removeQuest(sessionId, payload.id, true);
