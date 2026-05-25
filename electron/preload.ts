@@ -79,6 +79,7 @@ export interface ElectronAPI {
   toggleFullscreen: () => void;
   closeWindow: () => void;
   onFullscreen: (callback: (isFS: boolean) => void) => (() => void);
+  fetchImage: (url: string) => Promise<string | null>;
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -135,4 +136,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('window:fullscreen', listener);
     };
   },
+  fetchImage: (url: string) => ipcRenderer.invoke('utils:fetchImage', url),
 });

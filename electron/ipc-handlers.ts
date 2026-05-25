@@ -680,6 +680,20 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
 
   // --- NAVIGATION & WINDOWS ---
 
+  ipcMain.handle('utils:fetchImage', async (_, url: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const contentType = response.headers.get('content-type') || 'image/png';
+      return `data:${contentType};base64,${buffer.toString('base64')}`;
+    } catch (e) {
+      console.error('[IPC] Failed to fetch image (CORS bypass):', e);
+      return null;
+    }
+  });
+
   ipcMain.handle('windows:reDock', (event, type, sessionId) => {
     console.log('IPC: Re-docking window', type);
     const targetWin = mainWin || BrowserWindow.getAllWindows().find(w => !w.webContents.getURL().includes('/external/'));

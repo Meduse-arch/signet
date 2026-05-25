@@ -165,10 +165,15 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
         if (!currentMapId && payload.length > 0) {
             setCurrentMapId(payload[0].id);
         }
+      } else if (type === 'CHARACTER_LIST' && !isHost) {
+        console.log('[Player] Liste des personnages reçue:', payload.length);
+        payload.forEach((char: any) => addOrUpdateCharacter(char));
       } else if (type === 'INITIAL_SYNC_REQUEST' && isHost) {
         // MJ répond à un nouveau joueur
         console.log(`[Host] Réponse synchro pour ${fromPeerId}`);
         sendTo(fromPeerId, { type: 'MAP_UPDATE', payload: maps });
+        sendTo(fromPeerId, { type: 'CHARACTER_LIST', payload: characters });
+        
         const current = maps.find(m => m.id === currentMapId) || maps[0];
         if (current) {
             sendTo(fromPeerId, { 

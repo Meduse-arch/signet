@@ -6,13 +6,27 @@ import { usePeer } from '../../hooks/usePeer';
 import { Character } from '../../services/characters.service';
 import { useMapStore } from '../../store/map';
 
-// ... (MapItem interface remains same)
+interface MapItem {
+  id: string;
+  name: string;
+  url: string;
+  is_hidden: boolean;
+  grid_size?: number;
+}
+
+interface BoardCanvasProps {
+  sessionId: string;
+  imageUrl?: string;
+  maps: MapItem[];
+  currentMapId: string;
+  characters: Character[];
+}
 
 export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, characters }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
   const { isHost } = usePeersStore();
-  const { onData, broadcast } = usePeer();
+  const { onData, broadcast, sendTo } = usePeer();
   const { user } = useAuthStore();
   const [mapTokens, setMapTokens] = useState<any[]>([]);
   const updateTokenList = useMapStore(state => state.updateTokenList);
@@ -46,8 +60,10 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
     if (hasLoadedTokensForMap === currentMapId) return;
 
     const loadInitialTokens = async () => {
-      console.log('[BoardCanvas] Initial load of tokens for map:', currentMapId);
+      console.log(`[BoardCanvas] Loading tokens for map: ${currentMapId}. Characters available: ${characters.length}`);
       const tokens = await window.electronAPI.getMapTokens(sessionId, currentMapId);
+      console.log(`[BoardCanvas] Found ${tokens.length} tokens in DB for this map`);
+      
       setMapTokens(tokens);
       updateTokenList(tokens.map((t: any) => t.character_id));
       
@@ -55,6 +71,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       tokens.forEach(t => {
         const char = characters.find(c => c.id === t.character_id);
         if (char) {
+          console.log(`[BoardCanvas] Restoring token for character: ${char.name}`);
           addToken({
             id: char.id,
             name: char.name,
@@ -62,6 +79,8 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
             x: isNaN(t.x) ? 0 : t.x,
             y: isNaN(t.y) ? 0 : t.y,
           });
+        } else {
+          console.warn(`[BoardCanvas] Character not found for token: ${t.character_id}`);
         }
       });
       setHasLoadedTokensForMap(currentMapId);
@@ -126,7 +145,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
   useEffect(() => {
     if (!isReady) return;
 
-    const unsub = onData((data) => {
+    const unsub = onData((data, fromPeerId) => {
       if (data.type === 'MAP_CHANGE' && !isHost) {
         console.log('[Player] Changement de map reçu:', data.payload.name);
         const { url, grid_size, id } = data.payload;
@@ -159,23 +178,26 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
         }
       } else if (data.type === 'TOKEN_SYNC_REQUEST' && isHost) {
         // Un joueur demande une synchro complète des tokens (Le MJ répond)
-        console.log('[Host] Réponse à TOKEN_SYNC_REQUEST');
-        // On envoie les infos du store local
-        mapTokens.forEach(t => {
-            const char = characters.find(c => c.id === t.character_id);
-            if (char) {
-                broadcast({
-                    type: 'TOKEN_ADD',
-                    payload: {
-                        id: char.id,
-                        name: char.name,
-                        image_url: char.image_url,
-                        x: t.x,
-                        y: t.y,
+        console.log(`[Host] Réponse à TOKEN_SYNC_REQUEST pour ${fromPeerId}`);
+        if (window.electronAPI && currentMapId) {
+            window.electronAPI.getMapTokens(sessionId, currentMapId).then(tokens => {
+                tokens.forEach((t: any) => {
+                    const char = characters.find(c => c.id === t.character_id);
+                    if (char && fromPeerId) {
+                        sendTo(fromPeerId, {
+                            type: 'TOKEN_ADD',
+                            payload: {
+                                id: char.id,
+                                name: char.name,
+                                image_url: char.image_url,
+                                x: t.x,
+                                y: t.y,
+                            }
+                        });
                     }
                 });
-            }
-        });
+            });
+        }
       } else if (data.type === 'TOGGLE_TOKEN_REQUEST' && isHost) {
         // Un joueur demande à poser/retirer son token
         const char = characters.find(c => c.id === data.payload.id);
@@ -185,7 +207,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       }
     });
     return () => unsub();
-  }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken]);
+  }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, sendTo, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken, currentMapId, sessionId]);
 
   // Exposer handleToggleToken via BroadcastChannel
   useEffect(() => {

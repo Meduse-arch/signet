@@ -167,6 +167,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         broadcastRef.current({
           type: 'SESSION_METADATA',
           payload: {
+            id: sessionData?.id, // ✅ ID réel de la session (UUID)
             name: sessionData?.name,
             system: sessionData?.system,
             imageUrl: sessionData?.imageUrl,
@@ -352,7 +353,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
           system={sessionData?.system || 'Seal'} 
           isMJ={isMJ} 
           onPause={handlePauseSession}
-          sessionId={sessionId}
+          sessionId={sessionData?.id || sessionId}
           imageUrl={sessionImage}
           players={players}
         />
