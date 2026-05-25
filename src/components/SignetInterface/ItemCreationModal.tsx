@@ -256,12 +256,12 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                   <div className="flex gap-3 items-center">
                     {m.target === 'bar' && (
                       <select 
-                        value={m.targetProperty} 
+                        value={m.targetProperty || 'max'} 
                         onChange={e => updateModifier(i, { targetProperty: e.target.value as any })}
                         className="flex-1 bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] text-white/50 font-cinzel outline-none appearance-none cursor-pointer text-center"
                       >
                         <option value="max">MAX</option>
-                        <option value="value">ACTUEL</option>
+                        <option value="current">ACTUEL</option>
                       </select>
                     )}
                     

@@ -60,6 +60,7 @@ type UnifiedEntry = {
   nature: 'classique' | 'buff' | 'debuff';
   targetType: 'attribut' | 'ressource';
   targetId: string;
+  targetProperty?: 'current' | 'max'; // Pour les ressources
   mode: 'flat' | 'percent' | 'dice';
   value: number;
   formula: string;
@@ -75,6 +76,11 @@ const NATURE_OPTIONS = [
 const TARGET_TYPE_OPTIONS = [
   { value: 'attribut', label: 'Attribut (Stats)' },
   { value: 'ressource', label: 'Ressource (Jauges)' }
+];
+
+const PROPERTY_OPTIONS = [
+  { value: 'current', label: 'Actuel (Régén/Heal)' },
+  { value: 'max', label: 'Maximum (Bonus fixe)' }
 ];
 
 const MODE_OPTIONS = [
@@ -194,6 +200,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
         modifiers.push({
           target: entry.targetType === 'attribut' ? 'stat' : 'bar',
           targetId: entry.targetId,
+          targetProperty: entry.targetType === 'ressource' ? entry.targetProperty || 'current' : undefined,
           mode: entry.mode,
           value: finalValue,
           formula: finalFormula
@@ -266,8 +273,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
     </div>
   );
 
-  const removeEntry = (idx: number) => {
-
+  const toggleTag = (tagId: string) => {
     setSelectedTags(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]);
   };
 
@@ -437,7 +443,11 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                   <CustomSelect 
                                     value={entry.targetType} 
                                     options={TARGET_TYPE_OPTIONS} 
-                                    onChange={val => updateEntry(idx, { targetType: val as any, targetId: val === 'attribut' ? availableStats[0]?.id : availableBars[0]?.id })} 
+                                    onChange={val => updateEntry(idx, { 
+                                      targetType: val as any, 
+                                      targetId: val === 'attribut' ? availableStats[0]?.id : availableBars[0]?.id,
+                                      targetProperty: val === 'ressource' ? 'current' : undefined
+                                    })} 
                                   />
                                 </div>
                                 <div className="space-y-1 col-span-2 sm:col-span-1">
@@ -450,6 +460,16 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                     onChange={val => updateEntry(idx, { targetId: val })} 
                                   />
                                 </div>
+                                {entry.targetType === 'ressource' && (
+                                  <div className="space-y-1 col-span-2 sm:col-span-1">
+                                    <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Propriété Visée</label>
+                                    <CustomSelect 
+                                      value={entry.targetProperty || 'current'} 
+                                      options={PROPERTY_OPTIONS} 
+                                      onChange={val => updateEntry(idx, { targetProperty: val as any })} 
+                                    />
+                                  </div>
+                                )}
                               </>
                             )}
 

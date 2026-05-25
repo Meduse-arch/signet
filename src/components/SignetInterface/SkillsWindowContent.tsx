@@ -110,6 +110,9 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
       statValues[s.name.toLowerCase()] = val;
     });
 
+    const updatedBars = { ...(character.bars || {}) };
+    let barsChanged = false;
+
     const updatedSkills = (character.custom_skills || []).map((s: any) => {
       if (s.id === skillId) {
         const isActive = !s.is_active;
@@ -119,6 +122,8 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
         if (isActive) {
           if (updatedModifiers) {
             updatedModifiers = updatedModifiers.map((m: any) => {
+              let valueToApply = 0;
+
               if (m.mode === 'dice' && m.formula) {
                 let formula = m.formula;
                 const sortedStats = Object.entries(statValues).sort((a, b) => b[0].length - a[0].length);
@@ -144,8 +149,38 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
                     sender_name: character.name
                   });
                 }
+                valueToApply = rollRes.total;
+              } else {
+                valueToApply = m.value;
+              }
 
-                return { ...m, value: rollRes.total };
+              // Gestion Spécifique de la Régénération / Soin (Propriété 'current')
+              if (m.target === 'bar' && m.targetProperty === 'current') {
+                const barId = m.targetId;
+                const currentVal = updatedBars[barId] || 0;
+                const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
+                
+                // On recalcule le max effectif (base + item bonuses) pour le clamp
+                const statsFlat: Record<string, number> = {};
+                (character.inventory || []).forEach((item: any) => {
+                  if (item.equipped && item.modifiers) {
+                    item.modifiers.forEach((mod: any, modIdx: number) => {
+                      if (mod.target === 'bar' && mod.targetId === barId && mod.targetProperty === 'max') {
+                        statsFlat[barId] = (statsFlat[barId] || 0) + (mod.mode === 'dice' ? (item.rolledValues?.[modIdx] || 0) : mod.value);
+                      }
+                    });
+                  }
+                });
+                const baseMaxVal = (character.bars as Record<string, number>)[maxKey] || (character.bars as Record<string, number>)[barId] || 100;
+                const maxVal = baseMaxVal + (statsFlat[barId] || 0);
+
+                updatedBars[barId] = Math.max(0, Math.min(maxVal, currentVal + valueToApply));
+                barsChanged = true;
+                return m; 
+              }
+
+              if (m.mode === 'dice') {
+                return { ...m, value: valueToApply };
               }
               return m;
             });
@@ -195,7 +230,7 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
     });
 
 
-    const updatedChar = { ...character, custom_skills: updatedSkills };
+    const updatedChar = { ...character, custom_skills: updatedSkills, bars: barsChanged ? updatedBars : character.bars };
     addOrUpdateCharacter(updatedChar);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });

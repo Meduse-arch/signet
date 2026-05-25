@@ -560,6 +560,9 @@ export function CharacterSheetContent({
       statValues[s.name.toLowerCase()] = val + itemMod;
     });
 
+    const updatedBars = { ...(character.bars || {}) };
+    let barsChanged = false;
+
     const updatedSkills = (character.custom_skills || []).map((s: any) => {
       if (s.id === skillId) {
         const isActive = !s.is_active;
@@ -571,6 +574,8 @@ export function CharacterSheetContent({
           // Modificateurs (Aura/Passif) - On fige les valeurs pour les bonus statiques
           if (updatedModifiers) {
             updatedModifiers = updatedModifiers.map((m: any) => {
+              let valueToApply = 0;
+
               if (m.mode === 'dice' && m.formula) {
                 let formula = m.formula;
                 const sortedStats = Object.entries(statValues).sort((a, b) => b[0].length - a[0].length);
@@ -596,8 +601,27 @@ export function CharacterSheetContent({
                     sender_name: character.name
                   });
                 }
+                valueToApply = rollRes.total;
+              } else {
+                valueToApply = m.value;
+              }
 
-                return { ...m, value: rollRes.total }; 
+              // Gestion Spécifique de la Régénération / Soin (Propriété 'current')
+              if (m.target === 'bar' && m.targetProperty === 'current') {
+                const barId = m.targetId;
+                const currentVal = updatedBars[barId] || 0;
+                const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
+                const itemMod = calculatedModifiers.bars[barId] || { value: 0, max: 0 };
+                const baseMaxVal = (character.bars as Record<string, number>)[maxKey] || (character.bars as Record<string, number>)[barId] || 100;
+                const maxVal = baseMaxVal + itemMod.max;
+
+                updatedBars[barId] = Math.max(0, Math.min(maxVal, currentVal + valueToApply));
+                barsChanged = true;
+                return m; // On ne fige pas dans 'value' car c'est un effet "One-shot" à l'activation
+              }
+
+              if (m.mode === 'dice') {
+                return { ...m, value: valueToApply };
               }
               return m;
             });
@@ -646,7 +670,7 @@ export function CharacterSheetContent({
       return s;
     });
 
-    const updatedChar = { ...character, custom_skills: updatedSkills };
+    const updatedChar = { ...character, custom_skills: updatedSkills, bars: barsChanged ? updatedBars : character.bars };
     addOrUpdateCharacter(updatedChar);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
@@ -797,11 +821,9 @@ export function CharacterSheetContent({
           >
             {s.name}
           </span>
-          {itemMod !== 0 && (
-            <span className="text-[7px] font-bold text-gold-DEFAULT/60">
-              BONUS: {itemMod > 0 ? '+' : ''}{itemMod}
-            </span>
-          )}
+          <span className="text-[7px] font-bold text-gold-DEFAULT/40 uppercase tracking-tighter">
+            BASE: {val}
+          </span>
         </div>
         <span className="font-cinzel font-black" style={{ fontSize: isPopup ? '10px' : '13px', color: '#d4af37' }}>
           D{finalVal}
