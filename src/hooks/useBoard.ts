@@ -190,20 +190,24 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   const addToken = useCallback((token: TokenData) => {
     if (boardRef.current) {
       boardRef.current.addToken(token);
-      broadcast({ type: 'TOKEN_ADD', payload: token });
     }
-  }, [broadcast]);
+  }, []);
 
   const removeToken = useCallback((id: string) => {
     if (boardRef.current) {
       boardRef.current.removeToken(id);
-      broadcast({ type: 'TOKEN_REMOVE', payload: { id } });
     }
-  }, [broadcast]);
+  }, []);
 
   const clearTokens = useCallback(() => {
     if (boardRef.current) {
       boardRef.current.clearTokens();
+    }
+  }, []);
+
+  const moveToken = useCallback((id: string, x: number, y: number) => {
+    if (boardRef.current) {
+      boardRef.current.moveToken(id, x, y);
     }
   }, []);
 
@@ -219,5 +223,5 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     return boardRef.current.toLocal({ x: centerX, y: centerY });
   }, [containerRef]);
 
-  return { addToken, removeToken, loadMap, setGridSize, clearTokens, isReady, getCenterView };
+  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView };
 }

@@ -10,7 +10,7 @@ import { useMapStore } from '../../store/map';
 
 export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, characters }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { addToken, loadMap, setGridSize, clearTokens, isReady, getCenterView } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
+  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
   const { isHost } = usePeersStore();
   const { onData, broadcast } = usePeer();
   const { user } = useAuthStore();
@@ -20,29 +20,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
 
   const isMJ = user && user.role >= SecurityLevel.MJ;
 
-  // Charger les tokens de la map (Host only)
-  const fetchTokens = useCallback(async () => {
-    if (isHost && window.electronAPI && currentMapId) {
-      console.log('[BoardCanvas] Fetching tokens for map:', currentMapId);
-      const tokens = await window.electronAPI.getMapTokens(sessionId, currentMapId);
-      setMapTokens(tokens);
-      
-      // Update store for all windows
-      updateTokenList(tokens.map((t: any) => t.character_id));
-      
-      // Notifier tout le monde du nouvel état des tokens
-      const channel = new BroadcastChannel(`board_actions_${sessionId}`);
-      channel.postMessage({ 
-        type: 'TOKEN_LIST_UPDATE', 
-        payload: { tokens: tokens.map((t: any) => t.character_id) } 
-      });
-      channel.close();
-    }
-  }, [isHost, sessionId, currentMapId, updateTokenList]);
-
-  useEffect(() => {
-    fetchTokens();
-  }, [fetchTokens]);
+  const [hasLoadedTokensForMap, setHasLoadedTokensForMap] = useState<string>('');
 
   // Synchronisation de la map initiale et des changements de props
   useEffect(() => {
@@ -62,36 +40,87 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
     }
   }, [isReady, currentMapId, maps, imageUrl, loadMap, isHost, broadcast]);
 
-  // Synchroniser la taille de la grille spécifiquement si elle change (sans recharger toute l'image)
+  // Placer les tokens sur la map (Source de vérité MJ : Initialisation uniquement)
   useEffect(() => {
-    if (!isReady) return;
-    const currentMap = maps.find(m => m.id === currentMapId);
-    if (currentMap?.grid_size) {
-      setGridSize(currentMap.grid_size);
-    }
-  }, [isReady, currentMapId, maps, setGridSize]);
+    if (!isReady || !isHost || !currentMapId) return;
+    if (hasLoadedTokensForMap === currentMapId) return;
 
-  // Placer les tokens sur la map (Source de vérité MJ)
-  useEffect(() => {
-    if (!isReady || !isHost) return;
+    const loadInitialTokens = async () => {
+      console.log('[BoardCanvas] Initial load of tokens for map:', currentMapId);
+      const tokens = await window.electronAPI.getMapTokens(sessionId, currentMapId);
+      setMapTokens(tokens);
+      updateTokenList(tokens.map((t: any) => t.character_id));
+      
+      clearTokens();
+      tokens.forEach(t => {
+        const char = characters.find(c => c.id === t.character_id);
+        if (char) {
+          addToken({
+            id: char.id,
+            name: char.name,
+            image_url: char.image_url,
+            x: isNaN(t.x) ? 0 : t.x,
+            y: isNaN(t.y) ? 0 : t.y,
+          });
+        }
+      });
+      setHasLoadedTokensForMap(currentMapId);
+      
+      // Notifier les joueurs du statut initial
+      const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+      channel.postMessage({ 
+        type: 'TOKEN_LIST_UPDATE', 
+        payload: { tokens: tokens.map((t: any) => t.character_id) } 
+      });
+      channel.close();
+    };
 
-    // ✅ Seulement le MJ (host) vide et replace selon sa DB locale
-    clearTokens();
-    
-    console.log('[BoardCanvas] Placing tokens on board:', mapTokens.length);
-    mapTokens.forEach(t => {
-      const char = characters.find(c => c.id === t.character_id);
-      if (char) {
-        addToken({
-          id: char.id,
-          name: char.name,
-          image_url: char.image_url,
-          x: t.x,
-          y: t.y,
-        });
+    loadInitialTokens();
+  }, [isReady, isHost, currentMapId, hasLoadedTokensForMap, characters, addToken, clearTokens, sessionId, updateTokenList]);
+
+  const handleToggleToken = useCallback(async (char: Character) => {
+    if (!isHost || !currentMapId) return;
+
+    const isOnMap = mapTokens.some(t => t.character_id === char.id);
+
+    if (isOnMap) {
+      // Retirer le token
+      if (window.electronAPI) {
+        await window.electronAPI.removeMapToken(sessionId, currentMapId, char.id);
       }
-    });
-  }, [isReady, mapTokens, characters, addToken, clearTokens, isHost]);
+      setMapTokens(prev => prev.filter(t => t.character_id !== char.id));
+      updateTokenList(mapTokens.filter(t => t.character_id !== char.id).map(t => t.character_id));
+      
+      removeToken(char.id); // On l'enlève de Pixi pour le MJ
+      broadcast({ type: 'TOKEN_REMOVE', payload: { id: char.id } }); // On previent les autres
+      setTokenStatus(char.id, false); // Update UI
+    } else {
+      // Ajouter le token au centre
+      const center = getCenterView();
+      const x = isNaN(center.x) ? 0 : Math.round(center.x);
+      const y = isNaN(center.y) ? 0 : Math.round(center.y);
+
+      const tokenData = {
+        id: char.id,
+        name: char.name,
+        image_url: char.image_url,
+        x,
+        y
+      };
+
+      if (window.electronAPI) {
+        await window.electronAPI.updateMapToken(sessionId, currentMapId, char.id, x, y);
+      }
+      
+      const newMapToken = { character_id: char.id, x, y };
+      setMapTokens(prev => [...prev, newMapToken]);
+      updateTokenList([...mapTokens, newMapToken].map(t => t.character_id));
+
+      addToken(tokenData); // Ajout Pixi pour le MJ
+      broadcast({ type: 'TOKEN_ADD', payload: tokenData }); // Prevenir les autres
+      setTokenStatus(char.id, true); // Update UI
+    }
+  }, [isHost, currentMapId, mapTokens, sessionId, getCenterView, broadcast, addToken, updateTokenList, setTokenStatus, removeToken]);
 
   // Synchronisation des changements de map et tokens pour les joueurs
   useEffect(() => {
@@ -101,40 +130,37 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       if (data.type === 'MAP_CHANGE' && !isHost) {
         console.log('[Player] Changement de map reçu:', data.payload.name);
         const { url, grid_size, id } = data.payload;
-        // On force le chargement du visuel
         loadMap(url, undefined, grid_size || 50);
         clearTokens();
-
-        // Si on est un joueur, on demande l'image au MJ par sécurité (si c'est du local)
-        broadcast({ type: 'REQUEST_MAP_IMAGE', payload: { peerId } });
-
         // On demande les tokens de la nouvelle map
         broadcast({ type: 'TOKEN_SYNC_REQUEST', payload: {} });
-      }
- else if (data.type === 'TOKEN_ADD') {
-        // Un nouveau token arrive (ou suite à une synchro)
+        // On demande l'image au cas où ce soit un fichier local MJ
+        broadcast({ type: 'REQUEST_MAP_IMAGE', payload: { peerId: usePeersStore.getState().peerId } });
+      } else if (data.type === 'TOKEN_ADD') {
         if (!isHost) {
-          boardRef.current?.addToken({
+          addToken({
             id: data.payload.id,
             name: data.payload.name,
             image_url: data.payload.image_url,
             x: data.payload.x,
             y: data.payload.y,
           });
-          setTokenStatus(data.payload.id, true);
         }
-      } else if (data.type === 'TOKEN_MOVE') {
-        // Mise à jour de position reçue
-        const { id, x, y } = data.payload;
-        boardRef.current?.moveToken(id, x, y);
+        setTokenStatus(data.payload.id, true);
       } else if (data.type === 'TOKEN_REMOVE') {
-        // Un token est retiré
         if (!isHost) {
-          boardRef.current?.removeToken(data.payload.id);
-          setTokenStatus(data.payload.id, false);
+          removeToken(data.payload.id);
+        }
+        setTokenStatus(data.payload.id, false);
+      } else if (data.type === 'TOKEN_MOVE') {
+        if (!isHost) {
+          const { id, x, y } = data.payload;
+          moveToken(id, x, y);
         }
       } else if (data.type === 'TOKEN_SYNC_REQUEST' && isHost) {
         // Un joueur demande une synchro complète des tokens (Le MJ répond)
+        console.log('[Host] Réponse à TOKEN_SYNC_REQUEST');
+        // On envoie les infos du store local
         mapTokens.forEach(t => {
             const char = characters.find(c => c.id === t.character_id);
             if (char) {
@@ -159,44 +185,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       }
     });
     return () => unsub();
-  }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, setTokenStatus, addToken]);
-
-  const handleToggleToken = useCallback(async (char: Character) => {
-    if (!isHost || !currentMapId) return;
-
-    const isOnMap = mapTokens.some(t => t.character_id === char.id);
-
-    if (isOnMap) {
-      // Retirer le token
-      if (window.electronAPI) {
-        await window.electronAPI.removeMapToken(sessionId, currentMapId, char.id);
-        fetchTokens();
-      }
-      // Notify pixi and network
-      broadcast({ type: 'TOKEN_REMOVE', payload: { id: char.id } });
-    } else {
-      // Ajouter le token au centre
-      const center = getCenterView();
-      const x = Math.round(center.x);
-      const y = Math.round(center.y);
-
-      const tokenData = {
-        id: char.id,
-        name: char.name,
-        image_url: char.image_url,
-        x,
-        y
-      };
-
-      if (window.electronAPI) {
-        await window.electronAPI.updateMapToken(sessionId, currentMapId, char.id, x, y);
-        fetchTokens();
-      }
-      addToken(tokenData);
-      // ✅ CRITIQUE : Informer les autres joueurs de l'ajout
-      broadcast({ type: 'TOKEN_ADD', payload: tokenData });
-    }
-  }, [isHost, currentMapId, mapTokens, sessionId, fetchTokens, getCenterView, broadcast, addToken]);
+  }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken]);
 
   // Exposer handleToggleToken via BroadcastChannel
   useEffect(() => {

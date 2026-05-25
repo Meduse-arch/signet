@@ -42,7 +42,7 @@ export class TokenSprite extends Container {
     this.eventMode = 'static';
     this.cursor = 'pointer';
 
-    // ✅ Mask (Circular) - On l'ajoute direct pour la cohérence des transforms
+    // ✅ Mask (Circular)
     this.maskGraphics = new Graphics();
     this.maskGraphics.circle(0, 0, 18).fill(0xffffff);
     this.addChild(this.maskGraphics);

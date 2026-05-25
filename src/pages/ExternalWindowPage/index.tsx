@@ -40,6 +40,7 @@ export function ExternalWindowPage() {
   const initItems = useItemsStore(state => state.initialize);
   const initSkills = useSkillsStore(state => state.initialize);
   const initTags = useTagsStore(state => state.initialize);
+  const initQuests = useQuestsStore(state => state.initialize);
   const { characterManagementId, setCharacterManagement } = useUIStore();
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   
@@ -47,8 +48,23 @@ export function ExternalWindowPage() {
   const { sessions, isLoading: sessionsLoading } = useSession();
   
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string }[]>([]);
+  const { connections } = usePeersStore();
+  const { characters } = useCharactersStore();
+
   const [maps, setMaps] = useState<MapItem[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('');
+
+  const playersList = players.length > 0 ? players : [
+    ...(user ? [{ peer_id: user.id, pseudo: user.pseudo, role: user.role }] : []),
+    ...connections.map(connId => {
+      const char = characters.find(c => c.user_id === connId);
+      return {
+        peer_id: connId,
+        pseudo: char ? char.name : 'Voyageur',
+        role: 0
+      };
+    })
+  ].filter((v, i, a) => a.findIndex(t => t.peer_id === v.peer_id) === i);
 
   // Initialisation des données personnages et objets depuis le storage
   useEffect(() => {
