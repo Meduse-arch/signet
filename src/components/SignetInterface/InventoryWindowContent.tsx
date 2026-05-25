@@ -238,7 +238,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                 : 'text-white/40 hover:text-white hover:bg-white/5'
               }`}
             >
-              <User size={14} /> {character.name ? `COFFRE DE ${character.name.toUpperCase()}` : 'INVENTAIRE'}
+              <User size={14} /> {character.name ? `INVENTAIRE DE ${character.name.toUpperCase()}` : 'INVENTAIRE'}
             </button>
             <button
               onClick={() => setActiveTab('forge')}
@@ -248,7 +248,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                 : 'text-white/40 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Hammer size={14} /> ARCHIVES DES RELIQUES
+              <Hammer size={14} /> BIBLIOTHÈQUE D'OBJETS
             </button>
           </div>
         )}

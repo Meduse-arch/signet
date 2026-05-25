@@ -315,9 +315,9 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
             </div>
             <div>
               <h2 className="text-xl font-cinzel font-black text-gold-bright tracking-[0.2em] uppercase">
-                {skillToEdit ? "CONSOLIDER L'ART" : "GRAVER DANS LE CODEX"}
+                {skillToEdit ? "MODIFIER LA COMPÉTENCE" : "CRÉER UNE COMPÉTENCE"}
               </h2>
-              <p className="text-[10px] font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase mt-0.5">Forge des Maîtrises Occultes</p>
+              <p className="text-[10px] font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase mt-0.5">Éditeur de Capacités</p>
             </div>
           </div>
           <button onClick={() => setShowSkillCreateModal(false)} className="p-2 hover:bg-white/5 rounded-full text-gold-dim hover:text-gold-bright transition-colors">

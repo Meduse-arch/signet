@@ -228,7 +228,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
         {windows.players.isOpen && (
           <DraggableWindow
             id="players"
-            title="Le Cercle des Voyageurs"
+            title="Joueurs"
             onClose={() => closeWindow('players')}
             onPopOut={() => handlePopOut('players')}
             defaultPosition={windows.players.position}
@@ -243,7 +243,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
         {windows.assets.isOpen && (
           <DraggableWindow
             id="assets"
-            title="Le Coffre de l'Archive"
+            title="Inventaire & Objets"
             onClose={() => closeWindow('assets')}
             onPopOut={() => handlePopOut('assets')}
             defaultPosition={windows.assets.position}
@@ -258,7 +258,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
         {windows.bestiary.isOpen && (
           <DraggableWindow
             id="bestiary"
-            title="Bestiaire Occulte"
+            title="Bestiaire"
             variant="codex"
             onClose={() => closeWindow('bestiary')}
             onPopOut={() => handlePopOut('bestiary')}
@@ -274,7 +274,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
         {windows.dice.isOpen && (
           <DraggableWindow
             id="dice"
-            title="Le Sort du Destin"
+            title="Dés"
             onClose={() => closeWindow('dice')}
             onPopOut={() => handlePopOut('dice')}
             defaultPosition={windows.dice.position}
@@ -289,7 +289,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
         {windows.story.isOpen && (
           <DraggableWindow
             id="story"
-            title="Histoire & Lore"
+            title="Histoire"
             variant="codex"
             onClose={() => closeWindow('story')}
             onPopOut={() => handlePopOut('story')}
@@ -307,7 +307,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
         {windows.skills.isOpen && (
           <DraggableWindow
             id="skills"
-            title="Codex des Maîtrises"
+            title="Compétences"
             variant="codex"
             onClose={() => closeWindow('skills')}
             onPopOut={() => handlePopOut('skills')}
@@ -323,7 +323,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
         {windows.character.isOpen && (
           <DraggableWindow
             id="character"
-            title="Écho de l'Âme"
+            title="Personnage"
             onClose={() => closeWindow('character')}
             onPopOut={() => handlePopOut('character')}
             defaultPosition={windows.character.position}

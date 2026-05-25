@@ -471,7 +471,7 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
               : 'text-white/40 hover:text-white hover:bg-white/5'
             }`}
           >
-            <User size={14} /> {character.name ? `CODEX DE ${character.name.toUpperCase()}` : 'MAÎTRISES'}
+            <User size={14} /> {character.name ? `COMPÉTENCES DE ${character.name.toUpperCase()}` : 'COMPÉTENCES'}
           </button>
           <button
             onClick={() => setActiveTab('archives')}
@@ -481,7 +481,7 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
               : 'text-white/40 hover:text-white hover:bg-white/5'
             }`}
           >
-            <BookOpen size={14} /> ARCHIVES OCCULTES
+            <BookOpen size={14} /> BIBLIOTHÈQUE DE COMPÉTENCES
           </button>
         </div>
       )}

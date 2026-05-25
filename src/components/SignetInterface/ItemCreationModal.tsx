@@ -150,10 +150,10 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
             </div>
             <div>
               <h3 className="text-xl font-cinzel font-black text-white uppercase tracking-widest leading-tight">
-                {itemCreationType === 'forge' ? "FORGER UNE RELIQUE" : "NOUVEL ARTEFACT"}
+                {itemCreationType === 'forge' ? "BIBLIOTHÈQUE D'OBJETS" : "AJOUTER UN OBJET"}
               </h3>
               <p className="text-[10px] font-cinzel text-gold-DEFAULT/60 uppercase tracking-[0.2em]">
-                {itemCreationType === 'forge' ? "Archives Éternelles" : "Inventaire du Voyageur"}
+                {itemCreationType === 'forge' ? "Gestionnaire d'Équipement" : "Inventaire du Personnage"}
               </p>
             </div>
           </div>

@@ -71,8 +71,8 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
     { type: 'skills' as const, icon: <Sparkles size={18} />, label: 'Compétences', minSecurity: SecurityLevel.PLAYER },
     { type: 'story' as const, icon: <ScrollText size={18} />, label: 'Histoire', minSecurity: SecurityLevel.PLAYER },
     { type: 'dice' as const, icon: <Dices size={18} />, label: 'Dés', minSecurity: SecurityLevel.PLAYER },
-    { type: 'assets' as const, icon: <Package size={18} />, label: 'Coffre', minSecurity: SecurityLevel.PLAYER },
-    { type: 'players' as const, icon: <Users size={18} />, label: 'Voyageurs', minSecurity: SecurityLevel.PLAYER },
+    { type: 'assets' as const, icon: <Package size={18} />, label: 'Inventaire', minSecurity: SecurityLevel.PLAYER },
+    { type: 'players' as const, icon: <Users size={18} />, label: 'Joueurs', minSecurity: SecurityLevel.PLAYER },
   ].filter(item => securityLevel >= item.minSecurity);
 
   // Calcul pour une disposition en quart de cercle (arc)

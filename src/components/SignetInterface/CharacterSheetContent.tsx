@@ -1062,8 +1062,8 @@ export function CharacterSheetContent({
         </div>
 
         <div className="flex-1 flex gap-4 min-h-0">
-          <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs Primordiaux" variant="window" />
-          <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Essences Vitales" variant="window" />
+          <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs" variant="window" />
+          <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Ressources" variant="window" />
         </div>
       </div>
     </>
