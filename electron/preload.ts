@@ -64,6 +64,9 @@ export interface ElectronAPI {
   removeMap: (sessionId: string, id: string) => Promise<void>;
   getLogs: (sessionId: string) => Promise<any[]>;
   addLog: (sessionId: string, log: any) => Promise<void>;
+  getQuests: (sessionId: string) => Promise<any[]>;
+  addQuest: (sessionId: string, quest: any) => Promise<boolean>;
+  removeQuest: (sessionId: string, id: string) => Promise<boolean>;
   openExternalWindow: (type: string, sessionId: string) => Promise<void>;
   reDock: (type: string, sessionId: string) => Promise<void>;
   onReDock: (callback: (type: string) => void) => (() => void);
@@ -102,6 +105,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeMap: (sessionId: string, id: string) => ipcRenderer.invoke('maps:remove', sessionId, id),
   getLogs: (sessionId: string) => ipcRenderer.invoke('logs:getAll', sessionId),
   addLog: (sessionId: string, log: any) => ipcRenderer.invoke('logs:add', sessionId, log),
+  getQuests: (sessionId: string) => ipcRenderer.invoke('quests:getAll', sessionId),
+  addQuest: (sessionId: string, quest: any) => ipcRenderer.invoke('quests:add', sessionId, quest),
+  removeQuest: (sessionId: string, id: string) => ipcRenderer.invoke('quests:remove', sessionId, id),
   getMapTokens: (sessionId: string, mapId: string) => ipcRenderer.invoke('map_tokens:getAll', sessionId, mapId),
   updateMapToken: (sessionId: string, mapId: string, characterId: string, x: number, y: number) => ipcRenderer.invoke('map_tokens:update', sessionId, mapId, characterId, x, y),
   removeMapToken: (sessionId: string, mapId: string, characterId: string) => ipcRenderer.invoke('map_tokens:remove', sessionId, mapId, characterId),

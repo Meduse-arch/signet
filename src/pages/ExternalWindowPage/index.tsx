@@ -11,7 +11,9 @@ import {
   ManageCharacterModal,
   PlayerWindowContent,
   SkillsWindowContent,
-  SkillCreationModal
+  SkillCreationModal,
+  QuestsWindowContent,
+  QuestCreationModal
 } from '../../components/SignetInterface';
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { usePeer } from '../../hooks/usePeer';
@@ -20,6 +22,7 @@ import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
 import { useSkillsStore } from '../../store/skills';
+import { useQuestsStore } from '../../store/quests';
 import { useTagsStore } from '../../store/tags';
 import { useUIStore } from '../../store/ui';
 import { getSessionPlayers } from '../../services/session.service';
@@ -213,10 +216,8 @@ export function ExternalWindowPage() {
             <DiceWindowContent sessionId={sessionId} />
           )}
 
-          {type === 'story' && (
-             <div className="p-4 text-gray-400 font-cinzel text-center mt-10">
-               Les chroniques de ce monde s'écriront bientôt...
-             </div>
+          {type === 'quests' && (
+             <QuestsWindowContent sessionId={sessionId} />
           )}
 
           {type === 'skills' && (
@@ -236,6 +237,7 @@ export function ExternalWindowPage() {
        <ItemCreationModal sessionId={sessionId} />
        <ItemDetailModal sessionId={sessionId} />
        <SkillCreationModal sessionId={sessionId} />
+       <QuestCreationModal sessionId={sessionId} />
        {characterManagementId && (
          <ManageCharacterModal 
            sessionId={sessionId} 

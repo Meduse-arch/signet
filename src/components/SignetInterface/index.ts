@@ -11,4 +11,6 @@ export * from './ItemDetailModal';
 export * from './ManageCharacterModal';
 export * from './SkillsWindowContent';
 export * from './SkillCreationModal';
+export * from './QuestsWindowContent';
+export * from './QuestCreationModal';
 export * from './TagManagementModal';

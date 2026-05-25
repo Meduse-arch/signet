@@ -133,6 +133,17 @@ function getSessionDb(sessionId: string): Database.Database {
           character_id TEXT,
           character_name TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS quests (
+          id TEXT PRIMARY KEY,
+          title TEXT,
+          description TEXT,
+          status TEXT,
+          image_url TEXT,
+          rewards TEXT,
+          participant_ids TEXT,
+          created_at TEXT
+        );
       `);
 
       // Migration: Ajouter les colonnes manquantes si nécessaire
@@ -611,6 +622,57 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
         .run(log.id, log.type, log.action, JSON.stringify(log.details), log.timestamp, log.character_id, log.character_name);
     } catch (e) {
       console.error('[DB] logs:add error', e);
+    }
+  });
+
+  // --- HANDLERS QUESTS (SESSION DB) ---
+
+  ipcMain.handle('quests:getAll', (_, sessionId) => {
+    try {
+      const db = getSessionDb(sessionId);
+      const quests = db.prepare('SELECT * FROM quests').all() as any[];
+      return quests.map(q => ({
+        ...q,
+        rewards: q.rewards ? JSON.parse(q.rewards) : [],
+        participant_ids: q.participant_ids ? JSON.parse(q.participant_ids) : []
+      }));
+    } catch (err) {
+      console.error('[DB] Erreur quests:getAll:', err);
+      return [];
+    }
+  });
+
+  ipcMain.handle('quests:add', (_, sessionId, quest) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare(`
+        INSERT OR REPLACE INTO quests (id, title, description, status, image_url, rewards, participant_ids, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        quest.id,
+        quest.title,
+        quest.description,
+        quest.status,
+        quest.image_url || null,
+        JSON.stringify(quest.rewards || []),
+        JSON.stringify(quest.participant_ids || []),
+        quest.created_at || new Date().toISOString()
+      );
+      return true;
+    } catch (err) {
+      console.error('[DB] Erreur quests:add:', err);
+      return false;
+    }
+  });
+
+  ipcMain.handle('quests:remove', (_, sessionId, id) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare('DELETE FROM quests WHERE id = ?').run(id);
+      return true;
+    } catch (err) {
+      console.error('[DB] Erreur quests:remove:', err);
+      return false;
     }
   });
 

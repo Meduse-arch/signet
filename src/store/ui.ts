@@ -20,6 +20,12 @@ interface UIState {
   selectedSkill: any | null;
   skillDetailOpen: boolean;
 
+  // Quests specific UI state
+  showQuestCreateModal: boolean;
+  questToEdit: any | null;
+  selectedQuest: any | null;
+  questDetailOpen: boolean;
+
   setSidebarOpen: (open: boolean) => void;
   setActiveTab: (tab: 'library' | 'search' | 'key' | 'forge') => void;
   setShowModal: (show: boolean) => void;
@@ -34,9 +40,14 @@ interface UIState {
   setShowSkillCreateModal: (show: boolean, skillToEdit?: any | null) => void;
   setSelectedSkill: (skill: any | null, openModal?: boolean) => void;
   setSkillDetailOpen: (open: boolean) => void;
-}
 
-export const useUIStore = create<UIState>((set) => ({
+  // Quests actions
+  setShowQuestCreateModal: (show: boolean, questToEdit?: any | null) => void;
+  setSelectedQuest: (quest: any | null, openModal?: boolean) => void;
+  setQuestDetailOpen: (open: boolean) => void;
+  }
+
+  export const useUIStore = create<UIState>((set) => ({
   sidebarOpen: true,
   activeTab: 'library',
   showModal: false,
@@ -54,6 +65,11 @@ export const useUIStore = create<UIState>((set) => ({
   skillToEdit: null,
   selectedSkill: null,
   skillDetailOpen: false,
+
+  showQuestCreateModal: false,
+  questToEdit: null,
+  selectedQuest: null,
+  questDetailOpen: false,
 
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -73,4 +89,8 @@ export const useUIStore = create<UIState>((set) => ({
   setShowSkillCreateModal: (show, skillToEdit = null) => set({ showSkillCreateModal: show, skillToEdit }),
   setSelectedSkill: (skill, openModal = true) => set({ selectedSkill: skill, skillDetailOpen: skill ? openModal : false }),
   setSkillDetailOpen: (open) => set({ skillDetailOpen: open }),
-}));
+
+  setShowQuestCreateModal: (show: boolean, questToEdit = null) => set({ showQuestCreateModal: show, questToEdit }),
+  setSelectedQuest: (quest, openModal = true) => set({ selectedQuest: quest, questDetailOpen: quest ? openModal : false }),
+  setQuestDetailOpen: (open) => set({ questDetailOpen: open }),
+  }));

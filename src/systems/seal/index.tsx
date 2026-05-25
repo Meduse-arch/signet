@@ -13,7 +13,9 @@ import {
   SkillsWindowContent,
   SkillCreationModal,
   BestiaryWindowContent,
-  PlayerWindowContent
+  PlayerWindowContent,
+  QuestsWindowContent,
+  QuestCreationModal
 } from '../../components/SignetInterface';
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { useSignetInterface } from '../../hooks/useSignetInterface';
@@ -27,6 +29,7 @@ import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
 import { useSkillsStore } from '../../store/skills';
+import { useQuestsStore } from '../../store/quests';
 import { useTagsStore } from '../../store/tags';
 import { useUIStore } from '../../store/ui';
 
@@ -48,6 +51,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
   const initItems = useItemsStore(state => state.initialize);
   const initSkills = useSkillsStore(state => state.initialize);
   const initTags = useTagsStore(state => state.initialize);
+  const initQuests = useQuestsStore(state => state.initialize);
   
   const isMJ = !!user && (user.role === SecurityLevel.MJ || user.role === SecurityLevel.ADMIN || Number(user.role) >= 1);
   const isHost = session?.hostPeerId === user?.id;
@@ -72,6 +76,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
     initItems(sessionId);
     initSkills(sessionId);
     initTags(sessionId);
+    initQuests(sessionId);
   }, [sessionId]);
 
   useEffect(() => {
@@ -97,6 +102,10 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
         }
       } else if (type === 'MAP_UPDATE') {
         setMaps(payload);
+      } else if (type === 'QUEST_UPDATE') {
+        useQuestsStore.getState().addQuest(sessionId, payload, true);
+      } else if (type === 'QUEST_DELETE') {
+        useQuestsStore.getState().removeQuest(sessionId, payload.id, true);
       }
     });
 
@@ -286,21 +295,19 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
           </DraggableWindow>
         )}
 
-        {windows.story.isOpen && (
+        {windows.quests.isOpen && (
           <DraggableWindow
-            id="story"
-            title="Histoire"
+            id="quests"
+            title="Quêtes & Récits"
             variant="codex"
-            onClose={() => closeWindow('story')}
-            onPopOut={() => handlePopOut('story')}
-            defaultPosition={windows.story.position}
-            onPositionChange={(x, y) => updatePosition('story', x, y)}
-            zIndex={windows.story.zIndex + 200}
-            onFocus={() => focusWindow('story')}
+            onClose={() => closeWindow('quests')}
+            onPopOut={() => handlePopOut('quests')}
+            defaultPosition={windows.quests.position}
+            onPositionChange={(x, y) => updatePosition('quests', x, y)}
+            zIndex={windows.quests.zIndex + 200}
+            onFocus={() => focusWindow('quests')}
           >
-            <div className="p-4 text-gray-400 font-cinzel text-center mt-10">
-              Les chroniques de ce monde s'écriront bientôt...
-            </div>
+            <QuestsWindowContent sessionId={sessionId} />
           </DraggableWindow>
         )}
 
@@ -340,6 +347,7 @@ export default function SealEngine({ sessionId, onPause, players = [] }: SealEng
       <ItemCreationModal sessionId={sessionId} />
       <ItemDetailModal sessionId={sessionId} />
       <SkillCreationModal sessionId={sessionId} />
+      <QuestCreationModal sessionId={sessionId} />
       {characterManagementId && (
         <ManageCharacterModal 
           sessionId={sessionId} 

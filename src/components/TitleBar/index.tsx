@@ -19,10 +19,11 @@ export function TitleBar() {
         const sessionId = parts[typeIndex + 1];
         setExternalInfo({ type, sessionId });
         const translatedType = type === 'scenes' ? 'SCÈNES' : 
-                               type === 'story' ? 'HISTOIRE' : 
+                               type === 'quests' ? 'QUÊTES' :
+ 
                                type === 'dice' ? 'DÉS' : 
-                               type === 'assets' ? 'COFFRE' : 
-                               type === 'players' ? 'VOYAGEURS' : type.toUpperCase();
+                               type === 'assets' ? 'INVENTAIRE' : 
+                               type === 'players' ? 'JOUEURS' : type.toUpperCase();
         setTitle(`SIGIL - ${translatedType}`);
       }
     }
