@@ -140,7 +140,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
 
   return (
     <div className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="bg-[#0D0D0F] border border-gold-DEFAULT/40 rounded-2xl w-full max-w-lg shadow-[0_0_80px_rgba(212,175,55,0.15)] flex flex-col overflow-hidden">
+      <div className="bg-[#0D0D0F] border border-gold-DEFAULT/40 rounded-2xl w-full max-w-2xl shadow-[0_0_80px_rgba(212,175,55,0.15)] flex flex-col overflow-hidden">
         
         {/* Header Noble */}
         <div className="bg-gradient-to-r from-gold-DEFAULT/20 to-transparent p-6 border-b border-white/5 flex justify-between items-center">

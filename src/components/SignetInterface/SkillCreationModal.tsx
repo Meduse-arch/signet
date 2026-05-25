@@ -304,7 +304,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
 
   return createPortal(
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 sm:p-6 animate-in fade-in duration-300">
-      <div className="relative w-full max-w-5xl bg-[#0D0D0F]/95 border border-gold-DEFAULT/30 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-4xl bg-[#0D0D0F]/95 border border-gold-DEFAULT/30 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[90vh]">
         <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-gold-DEFAULT/50 rounded-tl-[2rem] pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-gold-DEFAULT/50 rounded-br-[2rem] pointer-events-none" />
 

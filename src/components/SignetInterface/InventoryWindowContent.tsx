@@ -225,8 +225,28 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
   const getIcon = (cat: string) => CATEGORY_ICONS[cat] || Package;
 
   return (
-    <div ref={containerRef} className={`flex flex-col lg:flex-row h-full gap-6 animate-in fade-in duration-500 relative bg-[#0D0D0F] ${variant === 'codex' ? 'min-h-[500px]' : ''}`}>
+    <div ref={containerRef} className="flex flex-col h-full gap-4 animate-in fade-in duration-500 relative bg-[#0D0D0F]">
       
+      {/* Item Detail Overlay (Same as Skill Detail) */}
+      {selectedItem && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedItem(null)}>
+          <div className="w-full max-w-sm bg-[#0D0D0F]/95 border border-gold-DEFAULT/30 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-full" onClick={e => e.stopPropagation()}>
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <ItemDetailContent 
+                item={selectedItem}
+                character={character}
+                onToggleEquip={effectiveTab === 'inventory' ? () => { handleToggleEquip(selectedItem); setSelectedItem(null); } : undefined}
+                onUse={effectiveTab === 'inventory' ? () => { handleUseItem(selectedItem); setSelectedItem(null); } : undefined}
+                isMJ={isMJ}
+              />
+            </div>
+            <div className="p-4 bg-black/40 border-t border-white/5 flex justify-end shrink-0">
+               <button onClick={() => setSelectedItem(null)} className="px-6 py-2 rounded-xl text-white/50 hover:text-white text-[10px] font-cinzel font-black uppercase tracking-widest transition-colors">Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col gap-4 h-full min-w-0">
         {isMJ && character && (
           <div className="flex gap-2 mb-2 bg-black/40 p-1.5 rounded-2xl border border-white/5 shrink-0 shadow-inner">
@@ -504,18 +524,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
           )}
         </div>
       </div>
-
-      {isWideView && (
-        <div className="flex flex-col w-[350px] shrink-0 border border-gold-DEFAULT/10 bg-black/40 backdrop-blur-md rounded-2xl h-full shadow-2xl relative overflow-hidden">
-          <ItemDetailContent 
-            item={selectedItem}
-            character={character}
-            onToggleEquip={effectiveTab === 'inventory' ? handleToggleEquip : undefined}
-            onUse={effectiveTab === 'inventory' ? handleUseItem : undefined}
-            isMJ={isMJ}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
+      </div>
+      );
+      }

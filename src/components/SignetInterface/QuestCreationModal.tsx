@@ -86,7 +86,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
 
   return createPortal(
     <div className="fixed inset-0 z-[350] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-300">
-      <div className="bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-3xl w-full max-w-4xl shadow-[0_0_50px_rgba(212,175,55,0.1)] overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-3xl w-full max-w-2xl shadow-[0_0_50px_rgba(212,175,55,0.1)] overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <header className="p-6 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-gold-DEFAULT/10 to-transparent">
