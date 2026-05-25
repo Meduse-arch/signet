@@ -821,9 +821,11 @@ export function CharacterSheetContent({
           >
             {s.name}
           </span>
-          <span className="text-[7px] font-bold text-gold-DEFAULT/40 uppercase tracking-tighter">
-            BASE: {val}
-          </span>
+          {itemMod !== 0 && (
+            <span className="text-[7px] font-bold text-gold-DEFAULT/40 uppercase tracking-tighter">
+              BASE: {val}
+            </span>
+          )}
         </div>
         <span className="font-cinzel font-black" style={{ fontSize: isPopup ? '10px' : '13px', color: '#d4af37' }}>
           D{finalVal}
@@ -862,8 +864,8 @@ export function CharacterSheetContent({
             <span className="font-cinzel uppercase tracking-widest text-[8px] sm:text-[10px] truncate" title={b.name} style={{ color: b.color }}>{b.name}</span>
             {(itemMod.value !== 0 || itemMod.max !== 0) && (
               <span className="text-[7px] font-bold opacity-50" style={{ color: b.color }}>
-                {itemMod.value !== 0 && `ACTU:${itemMod.value > 0 ? '+' : ''}${itemMod.value} `}
-                {itemMod.max !== 0 && `MAX:${itemMod.max > 0 ? '+' : ''}${itemMod.max}`}
+                {itemMod.value !== 0 && `ACTUEL JAUGE:${itemMod.value > 0 ? '+' : ''}${itemMod.value} `}
+                {itemMod.max !== 0 && `MAX JAUGE:${itemMod.max > 0 ? '+' : ''}${itemMod.max}`}
               </span>
             )}
           </div>

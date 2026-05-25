@@ -439,7 +439,7 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
                 <div className="flex flex-col gap-1.5">
                   {selectedSkill.modifiers.map((mod: any, i: number) => (
                     <div key={i} className="text-xs text-white/80 bg-white/5 px-3 py-2 rounded-lg flex justify-between items-center">
-                      <span>Bonus {mod.targetId}</span>
+                      <span>Bonus {mod.targetId} ({mod.targetProperty === 'current' ? 'Actuel Jauge' : 'Max Jauge'})</span>
                       <span className="font-mono text-blue-400">
                         {mod.mode === 'dice' ? mod.formula : `${mod.value > 0 ? '+' : ''}${mod.value}${mod.mode === 'percent' ? '%' : ''}`}
                       </span>

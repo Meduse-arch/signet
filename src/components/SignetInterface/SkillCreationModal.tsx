@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Zap, Plus, X, Save, BarChart2, BookOpen, Shuffle, Backpack, ChevronDown } from 'lucide-react';
+import { Sparkles, Zap, Plus, X, Save, BarChart2, BookOpen, Shuffle, Backpack, ChevronDown, Dices, Power } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
 import { useSkillsStore } from '../../store/skills';
 import { useTagsStore } from '../../store/tags';
@@ -60,7 +60,7 @@ type UnifiedEntry = {
   nature: 'classique' | 'buff' | 'debuff';
   targetType: 'attribut' | 'ressource';
   targetId: string;
-  targetProperty?: 'current' | 'max'; // Pour les ressources
+  targetProperty?: 'current' | 'max';
   mode: 'flat' | 'percent' | 'dice';
   value: number;
   formula: string;
@@ -79,8 +79,8 @@ const TARGET_TYPE_OPTIONS = [
 ];
 
 const PROPERTY_OPTIONS = [
-  { value: 'current', label: 'Actuel (Régén/Heal)' },
-  { value: 'max', label: 'Maximum (Bonus fixe)' }
+  { value: 'current', label: 'Actuel Jauge' },
+  { value: 'max', label: 'Max Jauge' }
 ];
 
 const MODE_OPTIONS = [
@@ -110,6 +110,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
   const [onglet, setOnglet] = useState<'arcanes' | 'condition'>('arcanes');
 
   const [unifiedEntries, setUnifiedEntries] = useState<UnifiedEntry[]>([]);
+  const [activeFormulaIdx, setActiveFormulaIdx] = useState<number | null>(null);
 
   const [conditionType, setConditionType] = useState<'item' | 'skill' | 'les_deux' | null>(null);
   const [conditionTags, setConditionTags] = useState<string[]>([]);
@@ -119,7 +120,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
   const availableBars = session?.settings?.bars || DEFAULT_BARS;
 
   useEffect(() => {
-    if (skillToEdit) {
+    if (skillToEdit && showSkillCreateModal) {
       setName(skillToEdit.name);
       setDescription(skillToEdit.description);
       setType(skillToEdit.type);
@@ -136,6 +137,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
           nature: isNegative ? 'debuff' : 'buff',
           targetType: m.target === 'stat' ? 'attribut' : 'ressource',
           targetId: m.targetId,
+          targetProperty: m.targetProperty,
           mode: m.mode || 'flat',
           value: Math.abs(m.value || 0),
           formula: m.formula ? m.formula.replace(/^-/, '') : '',
@@ -168,7 +170,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
         }
       });
       setUnifiedEntries(initialUnified);
-    } else {
+    } else if (showSkillCreateModal) {
       setName('');
       setDescription('');
       setType('active');
@@ -177,8 +179,9 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
       setSelectedTags([]);
       setConditionType(null);
       setConditionTags([]);
+      setOnglet('arcanes');
     }
-  }, [skillToEdit, showSkillCreateModal]);
+  }, [skillToEdit, showSkillCreateModal, availableBars]);
 
   if (!showSkillCreateModal || !isMJ) return null;
 
@@ -257,28 +260,46 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
     setUnifiedEntries(unifiedEntries.map((e, i) => i === idx ? { ...e, ...updates } : e));
   };
 
-  const StatHelper = ({ onSelect }: { onSelect: (statName: string) => void }) => (
-    <div className="flex flex-wrap gap-1.5 mt-2 p-2 bg-black/40 rounded-xl border border-white/5 shadow-inner">
-      <span className="text-[7px] font-cinzel font-black text-white/30 uppercase tracking-widest w-full mb-1">Insérer un attribut :</span>
-      {availableStats.map(s => (
-        <button
-          key={s.id}
-          type="button"
-          onClick={() => onSelect(s.name)}
-          className="px-2 py-1 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/20 text-[8px] font-cinzel font-bold text-gold-DEFAULT hover:bg-gold-DEFAULT/20 hover:border-gold-DEFAULT/40 transition-all uppercase tracking-wider"
-        >
-          {s.name}
-        </button>
-      ))}
-    </div>
-  );
-
   const toggleTag = (tagId: string) => {
     setSelectedTags(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]);
   };
 
   const toggleConditionTag = (tagId: string) => {
     setConditionTags(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]);
+  };
+
+  const StatHelperModal = () => {
+    if (activeFormulaIdx === null) return null;
+    return (
+      <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="bg-[#0D0D0F] border border-gold-DEFAULT/40 p-6 rounded-2xl shadow-2xl w-full max-w-sm flex flex-col gap-4">
+          <div className="flex justify-between items-center border-b border-white/10 pb-3">
+            <h3 className="text-gold-bright font-cinzel font-black uppercase tracking-widest text-sm">Lexique des Attributs</h3>
+            <button onClick={() => setActiveFormulaIdx(null)} className="text-white/40 hover:text-white transition-colors">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar p-1">
+            {availableStats.map(s => (
+              <button
+                key={s.id}
+                onClick={() => {
+                  const entry = unifiedEntries[activeFormulaIdx];
+                  const current = entry.formula || '';
+                  const newVal = current + (current && !current.endsWith(' ') ? ' ' : '') + s.name;
+                  updateEntry(activeFormulaIdx, { formula: newVal });
+                  setActiveFormulaIdx(null);
+                }}
+                className="px-3 py-2 rounded-xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/20 text-[10px] font-cinzel font-bold text-gold-DEFAULT hover:bg-gold-DEFAULT/20 hover:border-gold-DEFAULT/40 transition-all uppercase tracking-wider text-left"
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+          <p className="text-[9px] font-serif italic text-white/30 text-center">Cliquez sur un attribut pour l'insérer dans votre formule.</p>
+        </div>
+      </div>
+    );
   };
 
   return createPortal(
@@ -483,24 +504,27 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                               />
                             </div>
                             <div className="space-y-1 col-span-2 sm:col-span-1">
-                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">
-                                {entry.mode === 'dice' ? 'Formule (ex: 1d6+2)' : 'Valeur'}
-                              </label>
+                              <div className="flex justify-between items-center">
+                                <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">
+                                  {entry.mode === 'dice' ? 'Formule (ex: 1d6+2)' : 'Valeur'}
+                                </label>
+                                {entry.mode === 'dice' && (
+                                  <button 
+                                    onClick={() => setActiveFormulaIdx(idx)}
+                                    className="text-[7px] font-cinzel font-bold text-gold-bright bg-gold-DEFAULT/10 px-2 py-0.5 rounded border border-gold-DEFAULT/20 hover:bg-gold-DEFAULT/20 transition-all uppercase tracking-tighter"
+                                  >
+                                    Aide
+                                  </button>
+                                )}
+                              </div>
                               {entry.mode === 'dice' ? (
-                                <>
-                                  <input 
-                                    type="text" 
-                                    value={entry.formula} 
-                                    onChange={e => updateEntry(idx, { formula: e.target.value })}
-                                    placeholder="ex: 2d10 + Force"
-                                    className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono shadow-inner"
-                                  />
-                                  <StatHelper onSelect={(statName) => {
-                                    const current = entry.formula || '';
-                                    const newVal = current + (current && !current.endsWith(' ') ? ' ' : '') + statName;
-                                    updateEntry(idx, { formula: newVal });
-                                  }} />
-                                </>
+                                <input 
+                                  type="text" 
+                                  value={entry.formula} 
+                                  onChange={e => updateEntry(idx, { formula: e.target.value })}
+                                  placeholder="ex: 2d10 + Force"
+                                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono shadow-inner"
+                                />
                               ) : (
                                 <input 
                                   type="number" 
@@ -605,6 +629,8 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
           onClose={() => setShowTagManagement(false)} 
         />
       )}
+
+      <StatHelperModal />
     </div>,
     document.body
   );
