@@ -564,29 +564,67 @@ export function CharacterSheetContent({
       if (s.id === skillId) {
         const isActive = !s.is_active;
         let updatedModifiers = s.modifiers;
-        
-        // Si on active l'aura, on roll les modificateurs de type 'dice'
-        if (isActive && updatedModifiers) {
-          updatedModifiers = updatedModifiers.map((m: any) => {
-            if (m.mode === 'dice' && m.formula) {
-              let formula = m.formula;
-              const sortedStats = Object.entries(statValues).sort((a, b) => b[0].length - a[0].length);
-              sortedStats.forEach(([name, val]) => {
-                const regex = new RegExp(`(?<=\\b|d)${name}\\b`, 'gi');
-                formula = formula.replace(regex, `(${name.charAt(0).toUpperCase() + name.slice(1)}=${val})`);
-              });
+        const diceResults: any[] = [];
 
-              const rollRes = parseAndRoll(formula);
-              return { ...m, value: rollRes.total }; // on fige le résultat dans value
-            }
-            return m;
-          });
+        // 2. Si on active l'aura, on roll les modificateurs ET les effets classiques
+        if (isActive) {
+          // Modificateurs (Aura/Passif) - On fige les valeurs pour les bonus statiques
+          if (updatedModifiers) {
+            updatedModifiers = updatedModifiers.map((m: any) => {
+              if (m.mode === 'dice' && m.formula) {
+                let formula = m.formula;
+                const sortedStats = Object.entries(statValues).sort((a, b) => b[0].length - a[0].length);
+                sortedStats.forEach(([name, val]) => {
+                  const regex = new RegExp(`(?<=\\b|d)${name}\\b`, 'gi');
+                  formula = formula.replace(regex, `(${name.charAt(0).toUpperCase() + name.slice(1)}=${val})`);
+                });
+                const rollRes = parseAndRoll(formula);
+                return { ...m, value: rollRes.total }; 
+              }
+              return m;
+            });
+          }
+
+          // Effets Classiques (Dégâts, etc.) - On déclenche l'animation de roll
+          if (s.effects && s.effects.length > 0) {
+            s.effects.forEach((eff: any) => {
+              if (eff.mode === 'dice' && eff.formula) {
+                let formula = eff.formula;
+                const sortedStats = Object.entries(statValues).sort((a, b) => b[0].length - a[0].length);
+                sortedStats.forEach(([name, val]) => {
+                  const regex = new RegExp(`(?<=\\b|d)${name}\\b`, 'gi');
+                  formula = formula.replace(regex, `(${name.charAt(0).toUpperCase() + name.slice(1)}=${val})`);
+                });
+
+                const rollRes = parseAndRoll(formula);
+                diceResults.push({
+                  rolls: rollRes.rolls || [],
+                  total: rollRes.total,
+                  bonus: 0,
+                  diceString: eff.formula,
+                  label: eff.description || s.name,
+                  groups: rollRes.groups,
+                  color: '#d4af37',
+                  secret: !diceSharingEnabled,
+                  timestamp: Date.now(),
+                  sender_id: user?.id,
+                  sender_name: character.name
+                });
+              }
+            });
+          }
         }
-        
+
+        if (diceResults.length > 0) {
+          setDiceResult(diceResults);
+          if (diceSharingEnabled) diceResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+        }
+
         return { ...s, is_active: isActive, modifiers: updatedModifiers };
       }
       return s;
     });
+
     const updatedChar = { ...character, custom_skills: updatedSkills };
     addOrUpdateCharacter(updatedChar);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
