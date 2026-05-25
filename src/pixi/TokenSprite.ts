@@ -15,26 +15,27 @@ export class TokenSprite extends Container {
   private idText: Text;
   private sprite: Sprite | null = null;
   private app: Application;
+  private onMoveCallback?: (x: number, y: number) => void;
 
   constructor(data: TokenData, app: Application, onMove?: (x: number, y: number) => void) {
     super();
     this.app = app;
+    this.onMoveCallback = onMove;
 
-    console.log(`[TokenSprite] Constructor for: ${data.name} (ID: ${data.id}) at ${data.x},${data.y}`);
+    console.log(`[TokenSprite] Init: ${data.name} (ID: ${data.id}) at ${data.x},${data.y}`);
 
-    // positionnement initial
-    this.x = typeof data.x === 'number' && !isNaN(data.x) ? Math.round(data.x) : 0;
-    this.y = typeof data.y === 'number' && !isNaN(data.y) ? Math.round(data.y) : 0;
+    this.x = Number(data.x) || 0;
+    this.y = Number(data.y) || 0;
 
     this.eventMode = 'static';
     this.cursor = 'pointer';
 
-    // 1. Fond (Toujours visible en premier)
+    // 1. Fond doré (Immédiat)
     this.bgGraphics = new Graphics();
     this.drawBg(false);
     this.addChild(this.bgGraphics);
 
-    // 2. Initiales (Base de visibilité)
+    // 2. Initiales (Immédiat)
     const initials = (data.name || '??').substring(0, 2).toUpperCase();
     this.idText = new Text({
       text: initials,
@@ -62,10 +63,8 @@ export class TokenSprite extends Container {
     this.labelText.y = 22;
     this.addChild(this.labelText);
 
-    // 4. Événements de drag
     this.on('pointerdown', (e) => this.onDragStart(e));
 
-    // 5. Chargement de l'image
     if (data.image_url) {
       this.loadImage(data.image_url);
     }
@@ -76,50 +75,46 @@ export class TokenSprite extends Container {
       const cleanUrl = url.trim();
       if (!cleanUrl) return;
 
-      console.log(`[TokenSprite] Tentative image: ${this.labelText.text}`);
-
       let finalUrl = cleanUrl;
-
-      // Bypass CORS via proxy Electron
       if (!cleanUrl.startsWith('blob:') && !cleanUrl.startsWith('data:') && window.electronAPI?.fetchImage) {
         const base64 = await window.electronAPI.fetchImage(cleanUrl);
         if (base64) finalUrl = base64;
       }
 
-      // Texture.from est synchrone pour la création de l'objet, asynchrone pour le chargement
-      const texture = Texture.from(finalUrl);
+      // Bypass total des Pixi Workers pour éviter les erreurs CORS WebGL/Bitmap
+      const img = new Image();
+      img.crossOrigin = "anonymous";
       
-      // On attend que la texture soit vraiment prête
-      if (texture.source.ready) {
-          this.applyTexture(texture);
-      } else {
-          texture.on('update', () => this.applyTexture(texture));
-          texture.on('error', (e) => console.warn('[TokenSprite] Texture error:', e));
-      }
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(new Error("DOM Image load failed"));
+        img.src = finalUrl;
+      });
+
+      if (this.destroyed) return;
+
+      // Création de texture DIRECTE (plus sûr que Assets.load pour les URLs dynamiques)
+      const texture = Texture.from(img);
+      
+      this.sprite = new Sprite(texture);
+      this.sprite.anchor.set(0.5);
+      
+      const targetSize = 36;
+      const scale = Math.max(targetSize / texture.width, targetSize / texture.height);
+      this.sprite.scale.set(scale);
+
+      const mask = new Graphics();
+      mask.circle(0, 0, 18).fill(0xffffff);
+      this.addChild(mask);
+      this.sprite.mask = mask;
+
+      this.addChildAt(this.sprite, 1);
+      this.idText.visible = false;
+
     } catch (e) {
-      console.warn('[TokenSprite] Image failed:', e);
+      console.warn(`[TokenSprite] Image failed for ${this.labelText.text}:`, e);
+      this.idText.visible = true;
     }
-  }
-
-  private applyTexture(texture: Texture) {
-    if (this.sprite) return; // Déjà fait
-
-    console.log(`[TokenSprite] Application texture pour ${this.labelText.text}`);
-    this.sprite = new Sprite(texture);
-    this.sprite.anchor.set(0.5);
-    
-    const targetSize = 36;
-    const scale = Math.max(targetSize / texture.width, targetSize / texture.height);
-    this.sprite.scale.set(scale);
-
-    // Masque circulaire
-    const mask = new Graphics();
-    mask.circle(0, 0, 18).fill(0xffffff);
-    this.addChild(mask);
-    this.sprite.mask = mask;
-
-    this.addChildAt(this.sprite, 1);
-    this.idText.visible = false;
   }
 
   private drawBg(selected: boolean) {
@@ -132,7 +127,6 @@ export class TokenSprite extends Container {
 
   private dragging = false;
   private dragOffset = { x: 0, y: 0 };
-  private onMoveCallback?: (x: number, y: number) => void;
 
   private onDragStart(event: FederatedPointerEvent) {
     this.dragging = true;
@@ -152,6 +146,9 @@ export class TokenSprite extends Container {
       const newPosition = this.parent.toLocal(event.global);
       this.x = Math.round(newPosition.x + this.dragOffset.x);
       this.y = Math.round(newPosition.y + this.dragOffset.y);
+      if (this.onMoveCallback) {
+          this.onMoveCallback(this.x, this.y);
+      }
     }
   }
 
@@ -160,17 +157,9 @@ export class TokenSprite extends Container {
       this.dragging = false;
       this.setSelected(false);
       this.alpha = 1;
-      
-      const stage = this.app.stage;
-      if (stage) {
-          stage.off('pointermove', this.onDragMove);
-          stage.off('pointerup', this.onDragEnd);
-          stage.off('pointerupoutside', this.onDragEnd);
-      }
-
-      if (this.onMoveCallback) {
-        this.onMoveCallback(Math.round(this.x), Math.round(this.y));
-      }
+      this.app.stage.off('pointermove', this.onDragMove, this);
+      this.app.stage.off('pointerup', this.onDragEnd, this);
+      this.app.stage.off('pointerupoutside', this.onDragEnd, this);
     }
   }
 

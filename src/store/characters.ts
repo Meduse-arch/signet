@@ -79,13 +79,15 @@ export const useCharactersStore = create<CharactersState>((set, get) => ({
   },
 
   addOrUpdateCharacter: (character, skipSync = false) => {
-    const sessionId = character.session_id;
+    const state = get();
+    // ✅ Utiliser l'ID de session du personnage ou celui stocké dans l'URL/localStorage
+    const sessionId = character.session_id || localStorage.getItem('last_active_session');
+    
     if (!sessionId) {
-        console.error('[CharactersStore] character.session_id is missing!');
+        console.error('[CharactersStore] Impossible de déterminer la session pour ce personnage');
         return;
     }
 
-    const state = get();
     const existing = state.characters.find(c => c.id === character.id);
     let newChars;
     if (existing) {
@@ -94,14 +96,16 @@ export const useCharactersStore = create<CharactersState>((set, get) => ({
       newChars = [...state.characters, character];
     }
     
-    // Save to State and LocalStorage (namespaced by session)
     set({ characters: newChars });
     localStorage.setItem(`signet_chars_${sessionId}`, JSON.stringify(newChars));
 
-    // Sync with other local windows
     if (!skipSync) {
+      // 1. Sync avec les autres fenêtres locales
       const syncChannel = new BroadcastChannel(`signet_char_store_sync_${sessionId}`);
       syncChannel.postMessage({ type: 'CHAR_UPDATE_INTERNAL', payload: character });
+      
+      // 2. Sync avec les autres joueurs via P2P
+      peerService.broadcast({ type: 'CHAR_UPDATE', payload: character });
     }
   },
 

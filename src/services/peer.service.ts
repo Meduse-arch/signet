@@ -11,12 +11,12 @@ class PeerService {
   public connections: Map<string, DataConnection> = new Map();
   private dataCallbacks: Set<(data: PeerMessage, fromPeerId: string) => void> = new Set();
   private connectionCallbacks: Set<(conns: string[]) => void> = new Set();
-  
+
   private hostConnection: DataConnection | null = null;
   private isDestroying = false;
 
   async init(isHost: boolean, hostPeerId: string, myPeerId?: string): Promise<string> {
-    this.performDestroy(); // Nettoyage propre
+    this.performDestroy(); 
     this.isHost = isHost;
     this.isDestroying = false;
 
@@ -27,17 +27,35 @@ class PeerService {
     }
   }
 
-  private initAsHost(hostId: string): Promise<string> {
+  private initAsHost(hostId: string, retryCount = 0): Promise<string> {
     return new Promise((resolve, reject) => {
+      // ✅ MJ : L'ID doit être fixe. PAS DE SUFFIXE.
       this.peer = new Peer(hostId, this.getPeerOptions());
-      
+
       this.peer.on('open', (id) => {
         console.log(`[PeerService] ONLINE (HOST): ${id}`);
         resolve(id);
       });
 
-      this.peer.on('error', (err) => {
+      this.peer.on('error', (err: any) => {
         if (this.isDestroying) return;
+
+        if (err.type === 'unavailable-id') {
+            console.warn(`[PeerService] ID ${hostId} occupé, tentative ${retryCount + 1}/10...`);
+            this.isDestroying = true;
+            this.peer?.destroy();
+
+            if (retryCount < 10) {
+                setTimeout(() => {
+                    this.isDestroying = false;
+                    this.initAsHost(hostId, retryCount + 1).then(resolve).catch(reject);
+                }, 3000);
+                return;
+            }
+            reject(new Error("L'identifiant est déjà utilisé. Patientez 1 min."));
+            return;
+        }
+
         console.error('[PeerService] Host Peer Error:', err);
         reject(err);
       });
@@ -49,7 +67,6 @@ class PeerService {
 
       this.peer.on('disconnected', () => {
         if (!this.isDestroying) {
-          console.warn('[PeerService] Host déconnecté du serveur de signalement, reconnexion...');
           this.peer?.reconnect();
         }
       });
@@ -73,7 +90,6 @@ class PeerService {
 
       this.peer.on('disconnected', () => {
         if (!this.isDestroying) {
-          console.warn('[PeerService] Player déconnecté du serveur de signalement, reconnexion...');
           this.peer?.reconnect();
         }
       });
@@ -83,11 +99,11 @@ class PeerService {
   private connectToHost(hostId: string, resolve: (id: string) => void, reject: (err: any) => void) {
     let attempts = 0;
     const maxAttempts = 10;
-    
+
     const tryConnect = () => {
       if (this.isDestroying || !this.peer) return;
       attempts++;
-      console.log(`[PeerService] Tentative de connexion au MJ (${attempts}/${maxAttempts})...`);
+      console.log(`[PeerService] Tentative MJ (${attempts}/${maxAttempts})...`);
       
       const conn = this.peer.connect(hostId, { reliable: true });
       this.hostConnection = conn;
@@ -98,21 +114,15 @@ class PeerService {
           if (attempts < maxAttempts) {
             setTimeout(tryConnect, 1500);
           } else {
-            reject(new Error("L'hôte est injoignable après plusieurs tentatives."));
+            reject(new Error("Hôte injoignable."));
           }
         }
       }, 5000);
 
       conn.on('open', () => {
         clearTimeout(timeout);
-        console.log(`[PeerService] Connecté au MJ avec succès (P2P Établi)`);
         this.setupConnection(conn);
         resolve(this.peer!.id);
-      });
-
-      conn.on('error', (err) => {
-        console.warn('[PeerService] Erreur de connexion individuelle:', err);
-        // Le timeout gérera le retry
       });
     };
 
@@ -120,11 +130,9 @@ class PeerService {
   }
 
   private setupConnection(conn: DataConnection) {
-    // ✅ Protection contre les doublons de connexion
     if (this.connections.has(conn.peer)) {
       const oldConn = this.connections.get(conn.peer);
-      if (oldConn && oldConn.open) {
-        console.log(`[PeerService] Connexion déjà active pour ${conn.peer}, on ignore la nouvelle.`);
+      if (oldConn?.open) {
         conn.close();
         return;
       }
@@ -134,16 +142,11 @@ class PeerService {
     this.connections.set(conn.peer, conn);
     this.notifyConnectionChange();
 
-    // ✅ Utiliser une fonction nommée pour éviter les doubles enregistrements
     const onOpen = () => {
       if (this.isDestroying) return;
-      console.log(`[PeerService] P2P Ouvert avec ${conn.peer}`);
-      
-      // On se prévient nous-même
       this.dataCallbacks.forEach(cb => cb({ type: 'CONN_READY', payload: { peerId: conn.peer } }, conn.peer));
     };
 
-    // Nettoyer les anciens écouteurs au cas où
     conn.off('open');
     conn.off('data');
     conn.off('close');
@@ -154,19 +157,17 @@ class PeerService {
 
     conn.on('data', (data: any) => {
       if (this.isDestroying) return;
-      if (data && data.type === 'HEARTBEAT') return;
+      if (data?.type === 'HEARTBEAT') return;
       this.dataCallbacks.forEach(cb => cb(data as PeerMessage, conn.peer));
     });
 
     conn.on('close', () => {
-      console.log(`[PeerService] Connexion fermée avec ${conn.peer}`);
       this.connections.delete(conn.peer);
       this.notifyConnectionChange();
       this.dataCallbacks.forEach(cb => cb({ type: 'PLAYER_LEAVE', payload: { peerId: conn.peer } }, conn.peer));
     });
 
     conn.on('error', (err) => {
-      console.error(`[PeerService] Erreur sur connexion ${conn.peer}:`, err);
       conn.close();
     });
   }
@@ -184,8 +185,7 @@ class PeerService {
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
           { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' },
-          { urls: 'stun:stun.services.mozilla.com' }
+          { urls: 'stun:stun4.l.google.com:19302' }
         ],
         iceCandidatePoolSize: 10
       }
@@ -194,9 +194,7 @@ class PeerService {
 
   public broadcast(data: PeerMessage) {
     if (this.isHost) {
-      this.connections.forEach(conn => {
-        if (conn.open) conn.send(data);
-      });
+      this.connections.forEach(conn => { if (conn.open) conn.send(data); });
     } else if (this.hostConnection?.open) {
       this.hostConnection.send(data);
     }
@@ -204,9 +202,7 @@ class PeerService {
 
   public sendTo(peerId: string, data: PeerMessage) {
     const conn = this.connections.get(peerId);
-    if (conn && conn.open) {
-      conn.send(data);
-    }
+    if (conn?.open) conn.send(data);
   }
 
   public onData(cb: (data: PeerMessage, fromPeerId: string) => void) {
@@ -224,21 +220,17 @@ class PeerService {
     this.connectionCallbacks.forEach(cb => cb(ids));
   }
 
-  public destroy() {
-    this.performDestroy();
-  }
+  public destroy() { this.performDestroy(); }
 
   private performDestroy() {
     this.isDestroying = true;
     this.connections.forEach(conn => conn.close());
     this.connections.clear();
     this.hostConnection = null;
-    
     if (this.peer) {
       this.peer.destroy();
       this.peer = null;
     }
-    
     this.notifyConnectionChange();
     this.isHost = false;
   }
@@ -248,8 +240,6 @@ export const peerService = new PeerService();
 
 export function generateSessionKey(): string {
   const digits = Math.floor(1000 + Math.random() * 9000).toString();
-  const letters = Array.from({ length: 4 }, () => 
-    String.fromCharCode(65 + Math.floor(Math.random() * 26))
-  ).join('');
+  const letters = Array.from({ length: 4 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('');
   return `SIGNET-${digits}-${letters}`;
 }

@@ -1,4 +1,4 @@
-import { Container, Sprite, Assets, Graphics } from 'pixi.js';
+import { Container, Sprite, Texture, Graphics } from 'pixi.js';
 
 export class MapLayer extends Container {
   private mapSprite: Sprite | null = null;
@@ -61,7 +61,7 @@ export class MapLayer extends Container {
 
       let finalUrl = cleanUrl;
 
-      // Proxy Electron pour CORS
+      // 1. Proxy Electron pour CORS
       if (!cleanUrl.startsWith('blob:') && !cleanUrl.startsWith('data:') && window.electronAPI && window.electronAPI.fetchImage) {
         try {
             const base64 = await window.electronAPI.fetchImage(cleanUrl);
@@ -74,13 +74,18 @@ export class MapLayer extends Container {
         }
       }
 
-      // Pixi v8 Load
-      const texture = await Assets.load({
-          src: finalUrl,
-          format: format || 'png',
-          loadStrategy: 'image',
-          parser: 'loadTextures' // INDISPENSABLE pour les blobs et dataURIs sans extension
+      // 2. Bypass total des Pixi Workers pour les images (évite loadImageBitmap crash)
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      
+      await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error("Map DOM Image load failed"));
+          img.src = finalUrl;
       });
+
+      // 3. Création de texture DIRECTE
+      const texture = Texture.from(img);
 
       if (texture) {
           console.log(`[MapLayer] Texture success: ${texture.width}x${texture.height}`);
@@ -89,8 +94,6 @@ export class MapLayer extends Container {
           this.mapSprite.anchor.set(0.5);
           this.addChildAt(this.mapSprite, 0); 
           this.drawDynamicGrid(gridSize);
-      } else {
-          console.error('[MapLayer] Assets.load returned null texture');
       }
     } catch (e) {
       console.error('[MapLayer] Critical load error:', e);

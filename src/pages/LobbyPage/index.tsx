@@ -5,6 +5,7 @@ import { useSessionStore } from '../../store/session';
 import { usePeersStore } from '../../store/peers';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
+import { useQuestsStore } from '../../store/quests';
 import { peerService } from '../../services/peer.service';
 import {
   addSessionPlayer,
@@ -57,7 +58,10 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
   // ✅ Initialiser le store des personnages
   useEffect(() => {
-    useCharactersStore.getState().initialize(sessionId);
+    if (sessionId) {
+        localStorage.setItem('last_active_session', sessionId);
+        useCharactersStore.getState().initialize(sessionId);
+    }
   }, [sessionId]);
 
   // ✅ Récupérer les infos de la session
@@ -201,6 +205,16 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       else if (data.type === 'SESSION_METADATA' && !isHostRef.current) {
         console.log(`[LobbyPage] Métadonnées reçues:`, data.payload);
         setLocalMetadata(data.payload);
+
+        // ✅ IMPORTANT : Si on reçoit un ID réel (UUID), on réinitialise tous les stores avec cet ID
+        const realSessionId = data.payload.id;
+        if (realSessionId && realSessionId !== sessionIdRef.current) {
+            console.log(`[LobbyPage] Passage sur l'ID réel de session : ${realSessionId}`);
+            useCharactersStore.getState().initialize(realSessionId);
+            useItemsStore.getState().initialize(realSessionId);
+            useQuestsStore.getState().initialize(realSessionId);
+            // ... les autres stores si besoin
+        }
         
         const savedSessions = JSON.parse(localStorage.getItem('summoned_sessions') || '[]');
         const existingIndex = savedSessions.findIndex((s: any) => s.hostPeerId === data.payload.hostPeerId);

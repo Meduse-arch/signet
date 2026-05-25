@@ -151,10 +151,13 @@ export class BoardScene extends Container {
   }
 
   addToken(data: TokenData) {
-    if (this.tokens.has(data.id)) {
-        console.log('[BoardScene] Token already exists:', data.id);
+    const existing = this.tokens.get(data.id);
+    if (existing) {
+        console.log('[BoardScene] Updating existing token:', data.name);
+        existing.moveTo(data.x, data.y);
         return;
     }
+
     console.log('[BoardScene] Adding token:', data.name, 'at', data.x, data.y);
     const token = new TokenSprite(data, this.app, (x, y) => {
       if (this.onTokenMove) this.onTokenMove(data.id, x, y);
