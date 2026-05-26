@@ -217,6 +217,8 @@ class MapSyncService {
       map_id: mapId,
       global_hash: globalHash,
       grid_size: gridSize,
+      width: bitmap.width,
+      height: bitmap.height,
       chunks: entries
     };
 

@@ -25,6 +25,8 @@ export interface ChunkManifest {
   map_id: string;
   global_hash: string; // Merkle root hash of all chunk hashes
   grid_size?: number;
+  width?: number;
+  height?: number;
   chunks: ChunkManifestEntry[];
 }
 

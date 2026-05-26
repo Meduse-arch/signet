@@ -147,18 +147,24 @@ export class BoardScene extends Container {
   }
 
   loadManifest(width: number, height: number, gridSize: number = 50) {
+    console.log(`[BoardScene] Loading manifest: ${width}x${height}, grid: ${gridSize}`);
     this.mapLayer.clear();
     this.mapLayer.setMapDimensions(width, height, gridSize);
     
     // Auto-fit or center
-    if (width > 0 && height > 0) {
-      const scaleX = this.app.screen.width / width;
-      const scaleY = this.app.screen.height / height;
+    const screenW = this.app.renderer.width / this.app.renderer.resolution;
+    const screenH = this.app.renderer.height / this.app.renderer.resolution;
+
+    if (width > 0 && height > 0 && screenW > 0) {
+      const scaleX = screenW / width;
+      const scaleY = screenH / height;
+      // On calcule l'échelle pour que l'image couvre tout l'écran
       const scale = Math.max(scaleX, scaleY);
       this.scale.set(scale);
-      this.x = this.app.screen.width / 2;
-      this.y = this.app.screen.height / 2;
+      this.x = screenW / 2;
+      this.y = screenH / 2;
       
+      console.log(`[BoardScene] Set scale to ${scale.toFixed(4)} and position to ${this.x},${this.y}`);
       this.constrainPan();
     }
   }

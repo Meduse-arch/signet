@@ -40,10 +40,18 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
 
     console.log(`[useBoard] Processing manifest for ${mapId}. Missing: ${missingChunks.length}`);
-    const maxX = Math.max(...manifest.chunks.map((c: any) => c.x));
-    const maxY = Math.max(...manifest.chunks.map((c: any) => c.y));
-    const width = (maxX + 1) * 512;
-    const height = (maxY + 1) * 512;
+    
+    // On utilise les dimensions réelles si présentes, sinon on calcule à partir des chunks
+    let width = manifest.width;
+    let height = manifest.height;
+
+    if (!width || !height) {
+        const maxX = Math.max(...manifest.chunks.map((c: any) => c.x));
+        const maxY = Math.max(...manifest.chunks.map((c: any) => c.y));
+        width = (maxX + 1) * 512;
+        height = (maxY + 1) * 512;
+    }
+
     const gridSize = manifest.grid_size || 50;
 
     boardRef.current.loadManifest(width, height, gridSize);

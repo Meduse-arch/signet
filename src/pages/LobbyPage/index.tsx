@@ -150,7 +150,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
             system: sessionData?.system,
             imageUrl: sessionData?.imageUrl,
             hostPeerId: sessionData?.hostPeerId,
-            maps: sessionMaps
+            maps: sessionMaps,
+            activeMapId: localStorage.getItem(`active_map_${sessionIdRef.current}`) || 'initial-scene'
           }
         });
 

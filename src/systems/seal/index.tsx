@@ -95,7 +95,10 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
 
   useEffect(() => {
     async function loadMaps() {
-      if (window.electronAPI && sessionId) {
+      const lastActive = localStorage.getItem(`active_map_${sessionId}`);
+      const sessionActiveMapId = (session as any)?.activeMapId;
+
+      if (window.electronAPI && sessionId && isHost) {
         const dbMaps = await window.electronAPI.getMaps(sessionId);
 
         if (dbMaps.length === 0 && session?.imageUrl) {
@@ -114,35 +117,35 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
           broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
         } else {
           setMaps(dbMaps);
-          if (isHost && dbMaps.length > 0) {
-            broadcast({ type: 'MAP_UPDATE', payload: dbMaps });
-          }
+          broadcast({ type: 'MAP_UPDATE', payload: dbMaps });
           
-          // Persistence logic:
-          const lastActive = localStorage.getItem(`active_map_${sessionId}`);
           const foundMap = dbMaps.find(m => m.id === lastActive);
-          
-          // Si la map existe et n'est pas cachée (ou si on est MJ)
-          if (foundMap && (!foundMap.is_hidden || isMJ)) {
+          if (foundMap) {
             setCurrentMapId(foundMap.id);
           } else {
-            // Sinon on cherche initial-scene
             const initialScene = dbMaps.find(m => m.id === 'initial-scene');
-            if (initialScene) {
-              setCurrentMapId(initialScene.id);
-              localStorage.setItem(`active_map_${sessionId}`, initialScene.id);
-            } else if (dbMaps.length > 0) {
-              // Sinon la première map visible
-              const firstVisible = dbMaps.find(m => !m.is_hidden) || dbMaps[0];
-              setCurrentMapId(firstVisible.id);
-              localStorage.setItem(`active_map_${sessionId}`, firstVisible.id);
-            }
+            setCurrentMapId(initialScene?.id || dbMaps[0]?.id || '');
           }
+        }
+      } else if (!isHost) {
+        // Pour les joueurs, on se base sur les maps du store session
+        const storeMaps = (session as any)?.maps || [];
+        setMaps(storeMaps);
+        
+        // On priorise la map active de la session, puis le localStorage
+        const targetId = sessionActiveMapId || lastActive;
+        const found = storeMaps.find((m: any) => m.id === targetId);
+        
+        if (found && (!found.is_hidden || isMJ)) {
+            setCurrentMapId(found.id);
+        } else {
+            const initial = storeMaps.find((m: any) => m.id === 'initial-scene');
+            setCurrentMapId(initial?.id || storeMaps[0]?.id || 'initial-scene');
         }
       }
     }
     loadMaps();
-  }, [sessionId, session?.imageUrl, isHost, isMJ, broadcast]);
+  }, [sessionId, session?.imageUrl, isHost, isMJ, broadcast, (session as any)?.activeMapId]);
 
   useEffect(() => {
     if (isHost && maps.length > 0 && connections.length > 0) {
