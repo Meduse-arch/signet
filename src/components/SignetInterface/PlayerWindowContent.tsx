@@ -90,6 +90,7 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
 
     if (window.electronAPI) {
       await updateSessionCharacter(
+        sessionId,
         newChar.id,
         newChar.name,
         newChar.stats,
@@ -110,7 +111,7 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
       {players.map((player) => {
         const char = characters.find(c => c.user_id === player.peer_id);
         const isSelf = player.peer_id === user?.id;
-        const playerIsMJ = player.role === SecurityLevel.MJ;
+        const playerIsMJ = player.role !== undefined && player.role >= SecurityLevel.MJ;
 
         return (
           <div key={player.peer_id} className={`group relative p-4 rounded-2xl border transition-all duration-300 ${isSelf ? 'bg-gold-DEFAULT/5 border-gold-DEFAULT/30 shadow-[0_0_20px_rgba(212,175,55,0.1)]' : 'bg-black/40 border-white/5 hover:border-white/10'}`}>
@@ -169,7 +170,7 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
                 {char && (
                   <div className="flex items-center gap-4 px-6 py-2 rounded-xl bg-black/40 border border-white/5 group-hover:border-gold-DEFAULT/20 transition-colors">
                     {Object.entries(char.bars).filter(([key]) => !key.startsWith('max')).map(([key, val]) => {
-                      const barDef = session?.settings?.bars?.find(b => b.id === key) || { color: '#fff' };
+                      const barDef = session?.settings?.bars?.find((b: any) => b.id === key) || { color: '#fff' };
                       return (
                         <div key={key} className="flex flex-col items-center gap-1">
                           <div className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: barDef.color, color: barDef.color }} />

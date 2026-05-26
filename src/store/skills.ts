@@ -46,7 +46,7 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
 
         if (affectedChars.length > 0) {
           affectedChars.forEach(char => {
-            const updatedCustomSkills = char.custom_skills.map((s: any) => 
+            const updatedCustomSkills = char.custom_skills?.map((s: any) => 
               s.id === skill.id ? { ...skill, is_active: s.is_active } : s
             );
             const updatedChar = { ...char, custom_skills: updatedCustomSkills };

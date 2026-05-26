@@ -246,9 +246,9 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                       className="flex-[2] bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] text-white/80 font-cinzel outline-none appearance-none cursor-pointer"
                     >
                       {m.target === 'stat' ? (
-                        statDefs.map(s => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)
+                        statDefs.map((s: any) => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)
                       ) : (
-                        barDefs.map(b => <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>)
+                        barDefs.map((b: any) => <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>)
                       )}
                     </select>
                   </div>

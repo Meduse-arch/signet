@@ -5,12 +5,11 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { Character } from '../../services/characters.service';
 import { useMapStore } from '../../store/map';
-
-interface MapItem {
+export interface MapItem {
   id: string;
   name: string;
   url: string;
-  is_hidden: boolean;
+  is_hidden?: boolean;
   grid_size?: number;
 }
 

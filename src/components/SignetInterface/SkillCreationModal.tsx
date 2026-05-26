@@ -203,7 +203,9 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
         modifiers.push({
           target: entry.targetType === 'attribut' ? 'stat' : 'bar',
           targetId: entry.targetId,
-          targetProperty: entry.targetType === 'ressource' ? entry.targetProperty || 'current' : undefined,
+          targetProperty: entry.targetType === 'ressource' 
+            ? (entry.targetProperty === 'current' ? 'value' : (entry.targetProperty || 'value')) as 'value' | 'max' 
+            : undefined,
           mode: entry.mode,
           value: finalValue,
           formula: finalFormula
@@ -280,7 +282,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar p-1">
-            {availableStats.map(s => (
+            {availableStats.map((s: any) => (
               <button
                 key={s.id}
                 onClick={() => {
@@ -476,8 +478,8 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                   <CustomSelect 
                                     value={entry.targetId} 
                                     options={entry.targetType === 'attribut' 
-                                      ? availableStats.map(s => ({ value: s.id, label: s.name }))
-                                      : availableBars.map(b => ({ value: b.id, label: b.name }))} 
+                                      ? availableStats.map((s: any) => ({ value: s.id, label: s.name }))
+                                      : availableBars.map((b: any) => ({ value: b.id, label: b.name }))} 
                                     onChange={val => updateEntry(idx, { targetId: val })} 
                                   />
                                 </div>
@@ -582,7 +584,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                       <div className="space-y-3">
                         <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Déclencheur (Posséder un signe)</label>
                         <div className="flex flex-wrap gap-2">
-                          {tags.map(t => (
+                          {tags.map((t: any) => (
                             <button
                               key={t.id}
                               onClick={() => toggleConditionTag(t.id)}

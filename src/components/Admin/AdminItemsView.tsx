@@ -22,6 +22,7 @@ export function AdminItemsView({ sessionId }: { sessionId: string }) {
       description: newItemDesc || 'Un objet mystérieux...',
       category: newItemCat,
       image_url: newItemImg,
+      modifiers: [],
       effects: [],
       stats: []
     };

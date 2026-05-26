@@ -3,9 +3,16 @@ import { Container, Sprite, Texture, Graphics } from 'pixi.js';
 export class MapLayer extends Container {
   private mapSprite: Sprite | null = null;
   private gridGraphics: Graphics;
+  private chunksContainer: Container;
+  private chunkSprites: Map<string, Sprite> = new Map();
+  private mapWidth: number = 0;
+  private mapHeight: number = 0;
 
   constructor() {
     super();
+    this.chunksContainer = new Container();
+    this.addChild(this.chunksContainer);
+    
     // Conteneur pour la grille (au-dessus de la map)
     this.gridGraphics = new Graphics();
     this.addChild(this.gridGraphics);
@@ -14,13 +21,17 @@ export class MapLayer extends Container {
   private drawDynamicGrid(step: number = 50) {
     this.gridGraphics.clear();
     
-    if (!this.mapSprite) {
-        console.warn('[MapLayer] Missing mapSprite for grid drawing');
-        return;
+    let imgWidth = this.mapWidth;
+    let imgHeight = this.mapHeight;
+
+    if (this.mapSprite) {
+      imgWidth = this.mapSprite.width;
+      imgHeight = this.mapSprite.height;
     }
 
-    const imgWidth = this.mapSprite.width;
-    const imgHeight = this.mapSprite.height;
+    if (imgWidth === 0 || imgHeight === 0) {
+      return;
+    }
 
     // --- GRILLE (5% plus grand que l'image) ---
     const gridPaddingX = imgWidth * 0.05;
@@ -50,6 +61,36 @@ export class MapLayer extends Container {
 
   setGridSize(size: number) {
     this.drawDynamicGrid(size);
+  }
+
+  public setMapDimensions(width: number, height: number, gridSize: number = 50) {
+    this.mapWidth = width;
+    this.mapHeight = height;
+    
+    // Center the chunks container
+    this.chunksContainer.x = -width / 2;
+    this.chunksContainer.y = -height / 2;
+    
+    this.drawDynamicGrid(gridSize);
+  }
+
+  public async paintChunk(chunkId: string, x: number, y: number, data: ArrayBuffer) {
+    if (this.chunkSprites.has(chunkId)) return;
+
+    try {
+      const blob = new Blob([data], { type: 'image/webp' });
+      const imgBitmap = await createImageBitmap(blob);
+      const texture = Texture.from(imgBitmap);
+      const sprite = new Sprite(texture);
+      
+      sprite.x = x * 512;
+      sprite.y = y * 512;
+      
+      this.chunkSprites.set(chunkId, sprite);
+      this.chunksContainer.addChild(sprite);
+    } catch (e) {
+      console.error(`[MapLayer] Error painting chunk ${chunkId}:`, e);
+    }
   }
 
   async loadMap(url: string, format?: string, gridSize: number = 50): Promise<void> {
@@ -109,19 +150,32 @@ export class MapLayer extends Container {
       this.removeChild(this.mapSprite);
       this.mapSprite.destroy();
       this.mapSprite = null;
-      this.gridGraphics.clear();
     }
+    
+    this.chunkSprites.forEach(sprite => sprite.destroy());
+    this.chunkSprites.clear();
+    this.chunksContainer.removeChildren();
+    
+    this.mapWidth = 0;
+    this.mapHeight = 0;
+    this.gridGraphics.clear();
   }
 
   getMapBounds() {
+    let w = this.mapWidth;
+    let h = this.mapHeight;
+    
     if (this.mapSprite) {
-      const paddingX = this.mapSprite.width * 0.10;
-      const paddingY = this.mapSprite.height * 0.10;
-      return { 
-        width: this.mapSprite.width + paddingX, 
-        height: this.mapSprite.height + paddingY 
-      };
+      w = this.mapSprite.width;
+      h = this.mapSprite.height;
     }
+
+    if (w > 0 && h > 0) {
+      const paddingX = w * 0.10;
+      const paddingY = h * 0.10;
+      return { width: w + paddingX, height: h + paddingY };
+    }
+    
     return { width: 0, height: 0 };
   }
 
@@ -129,6 +183,6 @@ export class MapLayer extends Container {
     if (this.mapSprite) {
       return { width: this.mapSprite.width, height: this.mapSprite.height };
     }
-    return { width: 0, height: 0 };
+    return { width: this.mapWidth, height: this.mapHeight };
   }
 }

@@ -20,6 +20,10 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      // TODO: Security - Remettre webSecurity: true en production.
+      // Remplacer le chargement d'images externes par un proxy Electron (ipcMain)
+      // ou un protocole custom (protocol.registerFileProtocol) pour éviter les problèmes CORS
+      // sans désactiver la sécurité globale du renderer.
       webSecurity: false, // Permet de charger des images externes (CORS) pour les maps/tokens
       preload: path.join(__dirname, 'preload.js'),
     },

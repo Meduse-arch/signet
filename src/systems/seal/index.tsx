@@ -147,7 +147,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       if (type === 'CHAR_UPDATE') {
         addOrUpdateCharacter(payload);
       } else if (type === 'CHAR_DELETE') {
-        removeCharacter(payload.id);
+        removeCharacter(sessionId, payload.id);
       } else if (type === 'MAP_CHANGE' && !isHost) {
         if (payload.id) {
             setCurrentMapId(payload.id);
@@ -210,7 +210,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
     const updatedMaps = maps.map(m => m.id === id ? { ...m, is_hidden: hidden } : m);
     setMaps(updatedMaps);
     if (window.electronAPI) await window.electronAPI.addMap(sessionId, updatedMaps.find(m => m.id === id)!);
-    if (isHost) broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+    if (isMJ) broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
   };
 
   const handleUpdateMap = async (id: string, updates: Partial<MapItem>) => {
@@ -219,7 +219,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
     setMaps(updatedMaps);
     const updatedMap = updatedMaps.find(m => m.id === id);
     if (updatedMap && window.electronAPI) await window.electronAPI.addMap(sessionId, updatedMap);
-    if (isHost) {
+    if (isMJ) {
       broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
       if (id === currentMapId && updates.url) {
         broadcast({ type: 'MAP_CHANGE', payload: { url: updates.url, name: updates.name || updatedMap?.name, id: updatedMap?.id, grid_size: updatedMap?.grid_size } });
@@ -228,11 +228,11 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   };
 
   const handleAddMap = async (name: string, url: string) => {
-    const newMap: MapItem = { id: Math.random().toString(36).substring(2, 9), name, url, is_hidden: false, grid_size: 50 };
+    const newMap: MapItem = { id: Math.random().toString(36).substring(2, 9), name, url, is_hidden: true, grid_size: 50 };
     const updatedMaps = [...maps, newMap];
     setMaps(updatedMaps);
     if (window.electronAPI) await window.electronAPI.addMap(sessionId, newMap);
-    if (isHost) broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+    if (isMJ) broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
   };
 
   const handlePopOut = (type: string) => {
@@ -268,7 +268,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       <div className="absolute inset-0 pointer-events-none z-[200]">
         {Object.entries(windows).map(([id, win]) => win.isOpen && (
           <DraggableWindow
-            key={id} id={id} title={win.id} 
+            key={id} id={id} title={id} 
             onClose={() => closeWindow(id as any)} 
             onPopOut={() => handlePopOut(id)}
             defaultPosition={win.position} 

@@ -74,10 +74,10 @@ interface UIState {
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setShowModal: (show) => set({ showModal: show }),
-  setShowCreateModal: (show, type = null, characterId = null, itemToEdit = null) => set({ 
+  setShowCreateModal: (show, type = undefined, characterId = undefined, itemToEdit = null) => set({ 
     showCreateModal: show, 
-    itemCreationType: type,
-    itemCreationCharacterId: characterId,
+    itemCreationType: type === undefined ? null : type,
+    itemCreationCharacterId: characterId === undefined ? null : characterId,
     itemToEdit
   }),
   setSelectedItem: (item, openModal = true) => set({ selectedItem: item, itemDetailOpen: item ? openModal : false }),

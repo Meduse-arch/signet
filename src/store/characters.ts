@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Character, getSessionCharacters } from '../services/characters.service';
+import { peerService } from '../services/peer.service';
 
 interface CharactersState {
   characters: Character[];

@@ -5,15 +5,24 @@ export type PeerMessage = {
   payload: any;
 };
 
+interface PeerConnections {
+  control?: DataConnection;
+  transfer?: DataConnection;
+}
+
 class PeerService {
   public peer: Peer | null = null;
   public isHost: boolean = false;
-  public connections: Map<string, DataConnection> = new Map();
+  public connections: Map<string, PeerConnections> = new Map();
+  
   private dataCallbacks: Set<(data: PeerMessage, fromPeerId: string) => void> = new Set();
+  private transferCallbacks: Set<(data: ArrayBuffer, fromPeerId: string) => void> = new Set();
   private connectionCallbacks: Set<(conns: string[]) => void> = new Set();
 
-  private hostConnection: DataConnection | null = null;
+  private hostControlConnection: DataConnection | null = null;
+  private hostTransferConnection: DataConnection | null = null;
   private isDestroying = false;
+  private isConnecting = false;
 
   async init(isHost: boolean, hostPeerId: string, myPeerId?: string): Promise<string> {
     this.performDestroy(); 
@@ -31,7 +40,6 @@ class PeerService {
     return new Promise((resolve, reject) => {
       if (this.isDestroying) return;
 
-      // Nettoyage TOTAL avant de recréer
       if (this.peer) {
           this.peer.off('open');
           this.peer.off('error');
@@ -68,7 +76,6 @@ class PeerService {
         if (err.type === 'unavailable-id') {
             console.warn(`[PeerService] ID ${hostId} occupé (ghost), patience...`);
             
-            // On désactive tout pour empêcher PeerJS de boucler en interne
             if (this.peer) {
                 this.peer.off('disconnected');
                 this.peer.destroy();
@@ -76,7 +83,6 @@ class PeerService {
             }
 
             if (retryCount < 10) {
-                // Délai croissant pour laisser le serveur respirer
                 const delay = 3000 + (retryCount * 1000);
                 setTimeout(() => {
                     if (!this.isDestroying) {
@@ -119,36 +125,79 @@ class PeerService {
   }
 
   private connectToHost(hostId: string, resolve: (id: string) => void, reject: (err: any) => void) {
+    if (this.isConnecting) {
+      console.warn('[PeerService] connectToHost appelé en double, ignoré.');
+      return;
+    }
+    this.isConnecting = true;
+
     let attempts = 0;
     const maxAttempts = 15;
 
     const tryConnect = () => {
-      if (this.isDestroying || !this.peer) return;
+      if (this.isDestroying || !this.peer) {
+          this.isConnecting = false;
+          return;
+      }
       attempts++;
       console.log(`[PeerService] Liaison MJ (${attempts}/${maxAttempts})...`);
       
-      const conn = this.peer.connect(hostId, { reliable: true });
-      this.hostConnection = conn;
+      const controlConn = this.peer.connect(hostId, { reliable: true, label: 'control' });
+      const transferConn = this.peer.connect(hostId, { reliable: false, label: 'transfer' });
       
-      const timeout = setTimeout(() => {
-        if (!conn.open) {
-          conn.close();
-          if (attempts < maxAttempts) {
+      this.hostControlConnection = controlConn;
+      this.hostTransferConnection = transferConn;
+      
+      let controlOpen = false;
+      let transferOpen = false;
+
+      const checkReady = () => {
+        if (controlOpen && transferOpen) {
+          clearTimeout(timeout);
+          this.isConnecting = false;
+          resolve(this.peer!.id);
+        }
+      };
+
+      const retry = () => {
+          controlConn.close();
+          transferConn.close();
+          if (attempts < maxAttempts && !this.isDestroying) {
             setTimeout(tryConnect, 2000);
+          } else if (!this.isDestroying) {
+            this.isConnecting = false;
+            reject(new Error("Hôte injoignable après plusieurs tentatives."));
           } else {
-            reject(new Error("Hôte injoignable."));
+            this.isConnecting = false;
           }
+      };
+
+      const timeout = setTimeout(() => {
+        if (!controlOpen || !transferOpen) {
+           console.warn(`[PeerService] Timeout de liaison MJ (${attempts}).`);
+           retry();
         }
       }, 6000);
 
-      conn.on('open', () => {
-        clearTimeout(timeout);
-        this.setupConnection(conn);
-        resolve(this.peer!.id);
+      controlConn.on('open', () => {
+        controlOpen = true;
+        this.setupConnection(controlConn);
+        checkReady();
       });
 
-      conn.on('error', (err) => {
-        conn.close();
+      transferConn.on('open', () => {
+        transferOpen = true;
+        this.setupConnection(transferConn);
+        checkReady();
+      });
+
+      controlConn.on('error', (err) => {
+          console.warn(`[PeerService] Control connection error:`, err);
+          retry();
+      });
+      transferConn.on('error', (err) => {
+          console.warn(`[PeerService] Transfer connection error:`, err);
+          retry();
       });
     };
 
@@ -156,21 +205,27 @@ class PeerService {
   }
 
   private setupConnection(conn: DataConnection) {
-    if (this.connections.has(conn.peer)) {
-      const oldConn = this.connections.get(conn.peer);
-      if (oldConn?.open) {
-        conn.close();
-        return;
-      }
-      this.connections.delete(conn.peer);
+    let peerConns = this.connections.get(conn.peer) || {};
+    
+    if (conn.label === 'transfer') {
+      if (peerConns.transfer?.open) peerConns.transfer.close();
+      peerConns.transfer = conn;
+    } else {
+      if (peerConns.control?.open) peerConns.control.close();
+      peerConns.control = conn;
     }
 
-    this.connections.set(conn.peer, conn);
-    this.notifyConnectionChange();
+    this.connections.set(conn.peer, peerConns);
+    
+    if (conn.label !== 'transfer') {
+      this.notifyConnectionChange();
+    }
 
     const onOpen = () => {
       if (this.isDestroying) return;
-      this.dataCallbacks.forEach(cb => cb({ type: 'CONN_READY', payload: { peerId: conn.peer } }, conn.peer));
+      if (conn.label !== 'transfer') {
+        this.dataCallbacks.forEach(cb => cb({ type: 'CONN_READY', payload: { peerId: conn.peer } }, conn.peer));
+      }
     };
 
     conn.off('open');
@@ -184,16 +239,31 @@ class PeerService {
     conn.on('data', (data: any) => {
       if (this.isDestroying) return;
       if (data?.type === 'HEARTBEAT') return;
-      this.dataCallbacks.forEach(cb => cb(data as PeerMessage, conn.peer));
+      
+      if (conn.label === 'transfer') {
+        this.transferCallbacks.forEach(cb => cb(data, conn.peer));
+      } else {
+        this.dataCallbacks.forEach(cb => cb(data as PeerMessage, conn.peer));
+      }
     });
 
     conn.on('close', () => {
-      this.connections.delete(conn.peer);
-      this.notifyConnectionChange();
-      this.dataCallbacks.forEach(cb => cb({ type: 'PLAYER_LEAVE', payload: { peerId: conn.peer } }, conn.peer));
+      const pc = this.connections.get(conn.peer);
+      if (pc) {
+        if (conn.label === 'transfer') pc.transfer = undefined;
+        else pc.control = undefined;
+        
+        if (!pc.control && !pc.transfer) {
+          this.connections.delete(conn.peer);
+        }
+      }
+      if (conn.label !== 'transfer') {
+        this.notifyConnectionChange();
+        this.dataCallbacks.forEach(cb => cb({ type: 'PLAYER_LEAVE', payload: { peerId: conn.peer } }, conn.peer));
+      }
     });
 
-    conn.on('error', (err) => {
+    conn.on('error', () => {
       conn.close();
     });
   }
@@ -211,7 +281,23 @@ class PeerService {
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
           { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' }
+          { urls: 'stun:stun4.l.google.com:19302' },
+          // TODO: Replace with private TURN server for production (security/reliability/quota issues with openrelay)
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          }
         ],
         iceCandidatePoolSize: 10
       }
@@ -220,20 +306,42 @@ class PeerService {
 
   public broadcast(data: PeerMessage) {
     if (this.isHost) {
-      this.connections.forEach(conn => { if (conn.open) conn.send(data); });
-    } else if (this.hostConnection?.open) {
-      this.hostConnection.send(data);
+      this.connections.forEach(pc => { if (pc.control?.open) pc.control.send(data); });
+    } else if (this.hostControlConnection?.open) {
+      this.hostControlConnection.send(data);
     }
   }
 
   public sendTo(peerId: string, data: PeerMessage) {
-    const conn = this.connections.get(peerId);
-    if (conn?.open) conn.send(data);
+    const pc = this.connections.get(peerId);
+    if (pc?.control?.open) pc.control.send(data);
+  }
+
+  public broadcastTransfer(data: ArrayBuffer) {
+    if (this.isHost) {
+      this.connections.forEach(pc => { if (pc.transfer?.open) pc.transfer.send(data); });
+    } else if (this.hostTransferConnection?.open) {
+      this.hostTransferConnection.send(data);
+    }
+  }
+
+  public sendTransferTo(peerId: string, data: ArrayBuffer) {
+    const pc = this.connections.get(peerId);
+    if (pc?.transfer?.open) {
+      pc.transfer.send(data);
+    } else {
+      console.warn(`[PeerService] Cannot send transfer to ${peerId} - transfer channel not open.`);
+    }
   }
 
   public onData(cb: (data: PeerMessage, fromPeerId: string) => void) {
     this.dataCallbacks.add(cb);
     return () => this.dataCallbacks.delete(cb);
+  }
+
+  public onTransferData(cb: (data: ArrayBuffer, fromPeerId: string) => void) {
+    this.transferCallbacks.add(cb);
+    return () => this.transferCallbacks.delete(cb);
   }
 
   public onConnectionChange(cb: (conns: string[]) => void) {
@@ -242,7 +350,9 @@ class PeerService {
   }
 
   private notifyConnectionChange() {
-    const ids = Array.from(this.connections.keys());
+    const ids = Array.from(this.connections.entries())
+      .filter(([_, pc]) => pc.control?.open)
+      .map(([id]) => id);
     this.connectionCallbacks.forEach(cb => cb(ids));
   }
 
@@ -250,9 +360,13 @@ class PeerService {
 
   private performDestroy() {
     this.isDestroying = true;
-    this.connections.forEach(conn => conn.close());
+    this.connections.forEach(pc => {
+      pc.control?.close();
+      pc.transfer?.close();
+    });
     this.connections.clear();
-    this.hostConnection = null;
+    this.hostControlConnection = null;
+    this.hostTransferConnection = null;
     if (this.peer) {
       this.peer.off('open');
       this.peer.off('error');

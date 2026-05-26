@@ -4,11 +4,17 @@ import { BoardScene } from '../pixi/BoardScene';
 import { usePeer } from './usePeer';
 import { TokenData } from '../pixi/TokenSprite';
 import { usePeersStore } from '../store/peers';
+import { mapSyncService } from '../services/map-sync.service';
+
+import { useSessionStore } from '../store/session';
+
+import { BrowserImageCompressor } from '../services/browser-image-compressor';
 
 export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: string, currentMapId?: string, imageUrl?: string) {
   const boardRef = useRef<BoardScene | null>(null);
   const { onData, broadcast, sendTo, peerId } = usePeer();
   const { isHost } = usePeersStore();
+  const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const cachedMapBuffer = useRef<{ buffer: ArrayBuffer; type: string } | null>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -21,27 +27,80 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     console.log('[useBoard] Loading map:', url, 'with grid size:', gridSize);
     await boardRef.current.loadMap(url, format, gridSize);
 
-    // ✅ CRITIQUE : Le MJ met l'image en cache pour la servir aux joueurs
     if (isHost && !url.startsWith('blob:')) {
       try {
-        const response = await fetch(url);
+        let finalUrl = url;
+        if (window.electronAPI && window.electronAPI.fetchImage && !url.startsWith('data:')) {
+          const base64 = await window.electronAPI.fetchImage(url);
+          if (base64) finalUrl = base64;
+        }
+
+        const response = await fetch(finalUrl);
         const blob = await response.blob();
-        const buffer = await blob.arrayBuffer();
-        cachedMapBuffer.current = { buffer, type: blob.type };
-        console.log('[Host] Map mise en cache pour le transfert P2P');
-        // On signale aux joueurs que l'image est prête
-        broadcast({ type: 'MAP_READY', payload: { gridSize } });
+        cachedMapBuffer.current = { buffer: await blob.arrayBuffer(), type: blob.type };
+        
+        if (currentMapIdRef.current) {
+          console.log('[Host] Buffer size:', cachedMapBuffer.current.buffer.byteLength);
+          console.log('[Host] Compression et découpage de la map en cours...');
+          await mapSyncService.broadcastNewMap(
+            currentMapIdRef.current, 
+            blob, 
+            new BrowserImageCompressor()
+          );
+        }
       } catch (e) {
-        console.error('Erreur MJ lors de la mise en cache de la map:', e);
+        console.error('Erreur MJ lors de la préparation de la map:', e);
       }
     }
-  }, [isHost, broadcast]);
+  }, [isHost]);
 
   const setGridSize = useCallback((size: number) => {
     if (boardRef.current) {
         boardRef.current.setGridSize(size);
     }
   }, []);
+
+  const currentMapIdRef = useRef(currentMapId);
+  useEffect(() => { currentMapIdRef.current = currentMapId; }, [currentMapId]);
+
+  useEffect(() => {
+    const unsubManifest = mapSyncService.onManifestReceived((mapId, manifest, missingChunks, hostPeerId) => {
+      if (!boardRef.current || mapId !== currentMapIdRef.current) return;
+      
+      const maxX = Math.max(...manifest.chunks.map(c => c.x));
+      const maxY = Math.max(...manifest.chunks.map(c => c.y));
+      const width = (maxX + 1) * 512;
+      const height = (maxY + 1) * 512;
+
+      boardRef.current.loadManifest(width, height, 50);
+
+      if (missingChunks.length > 0 && hostPeerId) {
+        const center = getCenterView();
+        const camX = isNaN(center.x) ? width / 2 : center.x + width / 2;
+        const camY = isNaN(center.y) ? height / 2 : center.y + height / 2;
+
+        const sortedChunks = [...missingChunks].sort((a, b) => {
+          const distA = Math.hypot((a.x * 512 + 256) - camX, (a.y * 512 + 256) - camY);
+          const distB = Math.hypot((b.x * 512 + 256) - camX, (b.y * 512 + 256) - camY);
+          return distA - distB;
+        });
+
+        const chunkIds = sortedChunks.map(c => c.id);
+        mapSyncService.requestChunks(mapId, chunkIds, hostPeerId);
+      }
+    });
+
+    const unsubChunk = mapSyncService.onChunkReady((mapId, chunk, data) => {
+      if (boardRef.current && mapId === currentMapIdRef.current) {
+        boardRef.current.paintChunk(chunk.id, chunk.x, chunk.y, data);
+      }
+    });
+
+    return () => {
+      unsubManifest();
+      unsubChunk();
+    };
+  }, [session?.hostPeerId]);
 
   // 1. Initialisation de Pixi (Une seule fois)
   useEffect(() => {
@@ -117,7 +176,6 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   }, [containerRef]); // On ne dépend que du container
 
   // Gestion du onTokenMove avec les IDs à jour
-  const currentMapIdRef = useRef(currentMapId);
   useEffect(() => { currentMapIdRef.current = currentMapId; }, [currentMapId]);
 
   useEffect(() => {
@@ -133,19 +191,17 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
 
   // 2. Chargement initial et synchronisation
   useEffect(() => {
+    let cancelled = false;
     if (!isReady) return;
 
-    if (imageUrl) {
-      if (isHost) {
-        loadMap(imageUrl);
-      } else {
-        // Le joueur demande l'image au MJ
-        broadcast({ type: 'REQUEST_MAP_IMAGE', payload: { peerId } });
-      }
+    if (imageUrl && isHost && !cancelled) {
+      loadMap(imageUrl);
     }
-  }, [isReady, imageUrl, isHost, loadMap, broadcast, peerId]);
 
-  // Networking logic for tokens & map
+    return () => { cancelled = true; };
+  }, [isReady, imageUrl, isHost, loadMap]);
+
+  // Networking logic for tokens
   useEffect(() => {
     const unsub = onData((data, fromPeerId) => {
       if (!boardRef.current) return;
@@ -157,35 +213,11 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         boardRef.current.moveToken(id, x, y);
       } else if (data.type === 'TOKEN_REMOVE') {
         boardRef.current.removeToken(data.payload.id);
-      } else if (data.type === 'REQUEST_MAP_IMAGE' && isHost) {
-        // Le MJ reçoit une demande d'image d'un joueur
-        if (cachedMapBuffer.current) {
-          console.log(`[Host] Envoi de la map à ${fromPeerId}`);
-          sendTo(fromPeerId, { type: 'MAP_IMAGE_DATA', payload: cachedMapBuffer.current });
-        }
-      } else if (data.type === 'MAP_READY' && !isHost) {
-        // Le MJ signale qu'il vient de finir de charger l'image
-        broadcast({ type: 'REQUEST_MAP_IMAGE', payload: { peerId } });
-      } else if (data.type === 'MAP_IMAGE_DATA' && !isHost) {
-        // Le joueur reçoit les données binaires de l'image
-        console.log('[Player] Map reçue en P2P, chargement...');
-        const { buffer, type, gridSize } = data.payload;
-        const format = type?.split('/')[1] || 'png';
-        
-        const blob = new Blob([buffer], { type });
-        const objectUrl = URL.createObjectURL(blob);
-        
-        boardRef.current.loadMap(objectUrl, format, gridSize || 50).then(() => {
-          URL.revokeObjectURL(objectUrl);
-        }).catch(err => {
-          console.error('[Player] Error loading P2P map:', err);
-          URL.revokeObjectURL(objectUrl);
-        });
       }
     });
 
     return () => unsub();
-  }, [onData, isHost, broadcast, sendTo, peerId]);
+  }, [onData]);
 
   const addToken = useCallback((token: TokenData) => {
     if (boardRef.current) {

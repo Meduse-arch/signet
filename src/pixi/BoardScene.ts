@@ -146,6 +146,27 @@ export class BoardScene extends Container {
     }
   }
 
+  loadManifest(width: number, height: number, gridSize: number = 50) {
+    this.mapLayer.clear();
+    this.mapLayer.setMapDimensions(width, height, gridSize);
+    
+    // Auto-fit or center
+    if (width > 0 && height > 0) {
+      const scaleX = this.app.screen.width / width;
+      const scaleY = this.app.screen.height / height;
+      const scale = Math.max(scaleX, scaleY);
+      this.scale.set(scale);
+      this.x = this.app.screen.width / 2;
+      this.y = this.app.screen.height / 2;
+      
+      this.constrainPan();
+    }
+  }
+
+  async paintChunk(chunkId: string, x: number, y: number, data: ArrayBuffer) {
+    await this.mapLayer.paintChunk(chunkId, x, y, data);
+  }
+
   init() {
     // Basic setup, maybe load a default map
   }

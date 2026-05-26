@@ -84,7 +84,7 @@ function MainApp() {
 function ExternalWindowWrapper() {
   const { type, sessionId } = useParams<{ type: string; sessionId: string }>();
   if (!type || !sessionId) return null;
-  return <ExternalWindowPage type={type} sessionId={sessionId} />;
+  return <ExternalWindowPage />;
 }
 
 export function App() {

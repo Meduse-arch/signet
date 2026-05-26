@@ -8,6 +8,7 @@ import { Ghost, User, Plus, Search, Trash2, Shield, Heart, Zap, Settings, Sword,
 import { addSessionCharacter, updateSessionCharacter, removeSessionCharacter, Character } from '../../services/characters.service';
 import { CreateCharacterModal } from '../CreateCharacterModal';
 import { CharacterSheetContent } from './CharacterSheetContent';
+import { DEFAULT_BARS } from '../../systems/seal/constants';
 
 interface BestiaryWindowContentProps {
   sessionId: string;
@@ -134,6 +135,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
     // Persist to DB if in electron
     if (window.electronAPI) {
       await updateSessionCharacter(
+        sessionId,
         updatedNPC.id,
         updatedNPC.name,
         updatedNPC.stats,
@@ -309,7 +311,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                          {npc.type === 'Joueur' && <span className="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded uppercase font-black tracking-widest border border-blue-500/30">Joueur</span>}
                          <div className="flex gap-2">
                              {Object.entries(npc.bars).filter(([key]) => !key.startsWith('max')).map(([key, val]) => {
-                                 const barDef = session?.settings?.bars?.find(b => b.id === key) || DEFAULT_BARS.find(b => b.id === key);
+                                 const barDef = session?.settings?.bars?.find((b: any) => b.id === key) || DEFAULT_BARS.find((b: any) => b.id === key);
                                  if (!barDef) return null;
                                  return (
                                      <div key={key} className="flex items-center gap-1">
@@ -345,7 +347,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                       <Settings size={16} />
                     </button>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); setPnjControle(controlledCharacterId === npc.id ? null : npc.id); }}
+                      onClick={(e) => { e.stopPropagation(); setPnjControle(sessionId, controlledCharacterId === npc.id ? null : npc.id); }}
                       className={`p-2 rounded-lg transition-all ${controlledCharacterId === npc.id ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'bg-white/5 text-white/40 hover:bg-purple-500/20 hover:text-purple-400'}`}
                       title={controlledCharacterId === npc.id ? "Libérer l'entité" : "Prendre possession"}
                     >
@@ -461,7 +463,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
           initialType={editingNPC?.type}
           initialIsTemplate={editingNPC?.is_template}
           initialMode={creationMode}
-          title={editingNPC ? (editingNPC.is_template ? "Façonner le Modèle" : "Façonner l'Entité") : (activeTab === 'templates' ? "Éveiller un Nouveau Modèle" : "Éveiller une Entité")}
+          title={editingNPC ? (editingNPC.is_template ? "Façonner le Modèle" : "Façonner l'Entité") : (activeTab === 'models' ? "Éveiller un Nouveau Modèle" : "Éveiller une Entité")}
           settings={session?.settings}
         />
       )}

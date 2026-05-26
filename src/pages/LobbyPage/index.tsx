@@ -26,6 +26,11 @@ import {
 import logo from '../../assets/logo.png';
 import { SystemRouter } from '../../systems/core/SystemRouter';
 
+import { mapSyncService } from '../../services/map-sync.service';
+import { dbStorage } from '../../services/db.storage';
+import { BrowserImageCompressor } from '../../services/browser-image-compressor';
+import { ChunkManifest, ChunkManifestEntry } from '../../services/p2p-sync.types';
+
 interface LobbyPageProps {
   sessionId: string;
   onLeave: () => void;
@@ -41,6 +46,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const [copied, setCopied] = useState(false);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [localMetadata, setLocalMetadata] = useState<{name?: string, id?: string, imageUrl?: string, system?: string, hostPeerId?: string, settings?: any} | null>(null);
+  const [lobbyBg, setLobbyBg] = useState<string | null>(null);
 
   const currentUser = useAuthStore(state => state.user);
   const { sessions, addSession: addSessionToStore } = useSessionStore();
@@ -185,7 +191,9 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   }, [onData, refreshPlayers, sessionData, isGameStarted, addSessionToStore, onLeave, peerId]);
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
+    let timer: any;
+
     const setupPeer = async () => {
       try {
         const sData = useSessionStore.getState().sessions.find(s => s.id === sessionIdRef.current);
@@ -196,24 +204,31 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         if (!hostPeerId) throw new Error("ID de session manquant");
 
         if (isHostRef.current) {
-          if (mounted) setStatus('initializing');
-          const myId = await init(true, hostPeerId);
-          if (!mounted) return;
+          if (!cancelled) setStatus('initializing');
+          const myId = await initRef.current(true, hostPeerId);
+          if (cancelled) return;
           await clearSessionPlayers(sessionIdRef.current);
           await addSessionPlayer(sessionIdRef.current, myId, currentUser?.pseudo || 'MJ', currentUser?.role);
           await refreshPlayers();
-          if (mounted) setStatus('connected');
+          if (!cancelled) setStatus('connected');
         } else {
-          if (mounted) setStatus('initializing');
-          await init(false, hostPeerId);
+          if (!cancelled) setStatus('initializing');
+          await initRef.current(false, hostPeerId);
         }
       } catch (e: any) {
-        if (mounted) { setStatus('error'); setErrorMessage(e.message); }
+        if (!cancelled) { setStatus('error'); setErrorMessage(e.message); }
       }
     };
-    setupPeer();
-    return () => { mounted = false; };
-  }, [sessionId, isHost, currentUser, init, refreshPlayers, sessionData?.hostPeerId]);
+
+    timer = setTimeout(() => {
+        if (!cancelled) setupPeer();
+    }, 50);
+
+    return () => { 
+        cancelled = true; 
+        clearTimeout(timer);
+    };
+  }, [sessionId, currentUser, refreshPlayers]);
 
   useEffect(() => {
     const bc = broadcastRef.current;
@@ -227,6 +242,60 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       destroy(); 
     };
   }, [destroy]);
+
+  // Pre-loading des maps dans le Hub
+  useEffect(() => {
+    if (status !== 'connected' || !sessionId) return;
+
+    const unsubManifest = mapSyncService.onManifestReceived(async (mapId, manifest, missingChunks, hostPeerId) => {
+      console.log(`[Lobby] Manifest reçu pour ${mapId}, ${missingChunks.length} chunks manquants.`);
+      
+      if (missingChunks.length > 0) {
+        // Dans le lobby, on n'a pas de caméra, on demande tout dans l'ordre
+        const chunkIds = missingChunks.map(c => c.id);
+        mapSyncService.requestChunks(mapId, chunkIds, hostPeerId);
+      } else {
+        // Map complète, on peut essayer d'afficher le premier chunk comme BG
+        const firstChunk = await dbStorage.getChunk(manifest.chunks[0].id);
+        if (firstChunk?.data) {
+           const blob = new Blob([firstChunk.data], { type: 'image/webp' });
+           setLobbyBg(URL.createObjectURL(blob));
+        }
+      }
+    });
+
+    const unsubChunk = mapSyncService.onChunkReady((mapId, chunk, data) => {
+      console.log(`[Lobby] Chunk reçu: ${chunk.id}`);
+      // Si c'est le premier chunk, on met à jour le BG du lobby
+      if (!lobbyBg && chunk.x === 0 && chunk.y === 0) {
+          const blob = new Blob([data], { type: 'image/webp' });
+          setLobbyBg(URL.createObjectURL(blob));
+      }
+    });
+
+    // MJ : déclenche le broadcast dès que la connexion est stable
+    if (isHost && sessionData?.imageUrl) {
+        const prepareMap = async () => {
+            try {
+              let finalUrl = sessionData.imageUrl!;
+              if (window.electronAPI && window.electronAPI.fetchImage) {
+                const base64 = await window.electronAPI.fetchImage(finalUrl);
+                if (base64) finalUrl = base64;
+              }
+              const response = await fetch(finalUrl);
+              const blob = await response.blob();
+              await mapSyncService.broadcastNewMap('initial-scene', blob, new BrowserImageCompressor());
+            } catch (e) { console.error('[Lobby] Host pre-load fail', e); }
+        };
+        prepareMap();
+    }
+
+    return () => {
+      unsubManifest();
+      unsubChunk();
+      if (lobbyBg) URL.revokeObjectURL(lobbyBg);
+    };
+  }, [status, sessionId, isHost, sessionData?.imageUrl]);
 
   const handleLaunchSession = () => {
     setIsGameStarted(true);
@@ -270,7 +339,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   return (
     <div className="flex flex-col h-screen bg-[#0D0D0F] text-white overflow-hidden relative">
       <div className="absolute inset-0 z-0">
-        {sessionImage && <img src={sessionImage} className="w-full h-full object-cover opacity-20 grayscale-[0.5]" alt="bg" />}
+        {(lobbyBg || sessionImage) && <img src={lobbyBg || sessionImage} className="w-full h-full object-cover opacity-20 grayscale-[0.5]" alt="bg" />}
         <div className="absolute inset-0 bg-vignette pointer-events-none" />
       </div>
 

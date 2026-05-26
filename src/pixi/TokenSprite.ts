@@ -136,6 +136,7 @@ export class TokenSprite extends Container {
     this.dragging = true;
     this.setSelected(true);
     this.alpha = 0.8;
+    if (!this.parent) return;
     const pos = event.getLocalPosition(this.parent);
     this.dragOffset = { x: this.x - pos.x, y: this.y - pos.y };
 

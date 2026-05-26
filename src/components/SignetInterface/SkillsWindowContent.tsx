@@ -51,7 +51,7 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
     // 1. Collecter les valeurs des attributs pour le remplacement
     const statDefs = session?.settings?.stats || DEFAULT_STATS;
     const statValues: Record<string, number> = {};
-    statDefs.forEach(s => {
+    statDefs.forEach((s: any) => {
       const val = (character.stats || {})[s.id] || 20;
       statValues[s.name.toLowerCase()] = val;
     });
@@ -105,7 +105,7 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
     // 1. Collecter les valeurs des attributs pour le remplacement
     const statDefs = session?.settings?.stats || DEFAULT_STATS;
     const statValues: Record<string, number> = {};
-    statDefs.forEach(s => {
+    statDefs.forEach((s: any) => {
       const val = (character.stats || {})[s.id] || 20;
       statValues[s.name.toLowerCase()] = val;
     });
@@ -274,7 +274,7 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
     });
 
     const statValues: Record<string, number> = {};
-    statDefs.forEach(s => {
+    statDefs.forEach((s: any) => {
       const baseVal = (character.stats || {})[s.id] || 20;
       const flat = statsFlat[s.id] || 0;
       const percent = statsPercent[s.id] || 0;

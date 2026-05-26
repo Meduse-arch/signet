@@ -8,7 +8,7 @@ import { useUIStore } from '../../store/ui';
 import { DEFAULT_STATS, DEFAULT_BARS, DEFAULT_SKILLS } from '../../systems/seal/constants';
 import { usePeer } from '../../hooks/usePeer';
 import { addSessionCharacter, removeSessionCharacter } from '../../services/characters.service';
-import { lancerDes } from '../../services/des.service';
+import { lancerDes, parseAndRoll } from '../../services/des.service';
 import { addSessionLog } from '../../services/db.service';
 import { useMapStore } from '../../store/map';
 import { MapItem } from '../BoardCanvas';
@@ -278,15 +278,14 @@ export function CharacterSheetContent({
     if (!confirm(`Souhaitez-vous vraiment bannir ${character.name} de l'Archive ?`)) return;
 
     if (window.electronAPI) {
-      await removeSessionCharacter(character.id);
-    }
-    
-    if (controlledCharacterId === character.id) {
-        setPnjControle(null);
+      await removeSessionCharacter(sessionId, character.id);
     }
 
-    removeCharacter(character.id);
-    broadcast({ type: 'CHAR_DELETE', payload: { id: character.id } });
+    if (controlledCharacterId === character.id) {
+        setPnjControle(sessionId, null);
+    }
+
+    removeCharacter(sessionId, character.id);    broadcast({ type: 'CHAR_DELETE', payload: { id: character.id } });
   };
 
   const handleAvatarClick = () => {
@@ -372,9 +371,9 @@ export function CharacterSheetContent({
             if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
             const prop = m.targetProperty || 'max';
             if (m.mode === 'dice') {
-               barsFlat[m.targetId][prop] += (item.rolledValues?.[idx] || 0);
+               barsFlat[m.targetId][prop as 'value' | 'max'] += (item.rolledValues?.[idx] || 0);
             } else {
-               barsFlat[m.targetId][prop] += m.value;
+               barsFlat[m.targetId][prop as 'value' | 'max'] += m.value;
             }
           }
         });
@@ -399,7 +398,7 @@ export function CharacterSheetContent({
           } else if (m.target === 'bar') {
             if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
             const prop = m.targetProperty || 'max';
-            barsFlat[m.targetId][prop] += m.value;
+            barsFlat[m.targetId][prop as 'value' | 'max'] += m.value;
           }
         });
       }
@@ -407,7 +406,7 @@ export function CharacterSheetContent({
 
     // Calculer les bonus finaux des stats
     const statsFinal: Record<string, number> = {};
-    statDefs.forEach(s => {
+    statDefs.forEach((s: any) => {
       const base = stats[s.id] || 20;
       const flat = statsFlat[s.id] || 0;
       const percent = statsPercent[s.id] || 0;
@@ -535,7 +534,7 @@ export function CharacterSheetContent({
 
     // 1. Collecter les valeurs des attributs pour le remplacement
     const statValues: Record<string, number> = {};
-    statDefs.forEach(s => {
+    statDefs.forEach((s: any) => {
       const val = (character.stats || {})[s.id] || 20;
       const itemMod = calculatedModifiers.stats[s.id] || 0;
       statValues[s.name.toLowerCase()] = val + itemMod;
@@ -663,7 +662,7 @@ export function CharacterSheetContent({
     
     // 1. Collecter les valeurs des attributs pour le remplacement
     const statValues: Record<string, number> = {};
-    statDefs.forEach(s => {
+    statDefs.forEach((s: any) => {
       const val = stats[s.id] || 20;
       const itemMod = calculatedModifiers.stats[s.id] || 0;
       statValues[s.name.toLowerCase()] = val + itemMod;

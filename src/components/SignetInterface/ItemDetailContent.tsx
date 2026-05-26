@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Star, Sword, Package, Trash2, Hammer, Zap } from 'lucide-react';
+import { Shield, Star, Sword, Package, Trash2, Hammer, Zap, Sparkles } from 'lucide-react';
 import { Item } from '../../services/items.service';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 

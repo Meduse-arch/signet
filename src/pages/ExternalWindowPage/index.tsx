@@ -18,6 +18,7 @@ import {
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
+import { usePeersStore } from '../../store/peers';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
@@ -33,7 +34,7 @@ import { useSession } from '../../hooks/useSession';
 
 export function ExternalWindowPage() {
   const { type, sessionId } = useParams<{ type: string; sessionId: string }>();
-  const { onData, broadcast, init } = usePeer();
+  const { onData, broadcast, init, destroy } = usePeer();
   const user = useAuthStore(state => state.user);
   const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
   const initChars = useCharactersStore(state => state.initialize);
@@ -79,20 +80,34 @@ export function ExternalWindowPage() {
 
   // Initialisation P2P pour rester synchronisé (Live Sync)
   useEffect(() => {
+    let cancelled = false;
+    let timer: any;
+
     const setup = async () => {
       if (!sessionId || !type || sessionsLoading) return;
       
       const session = sessions.find(s => s.id === sessionId);
       const hostId = session?.hostPeerId;
       
-      if (hostId) {
+      if (hostId && !cancelled) {
         console.log('[ExternalWindow] Syncing with host:', hostId);
-        // Toujours se connecter comme client (false) pour les fenêtres externes
-        await init(false, hostId, `ext-${type}-${Math.random().toString(36).substr(2, 5)}`);
+        
+        timer = setTimeout(async () => {
+          if (!cancelled) {
+             // Toujours se connecter comme client (false) pour les fenêtres externes
+             await init(false, hostId, `ext-${type}-${Math.random().toString(36).substr(2, 5)}`);
+          }
+        }, 50);
       }
     };
     setup();
-  }, [sessionId, type, init, sessions, sessionsLoading]);
+
+    return () => {
+       cancelled = true;
+       if (timer) clearTimeout(timer);
+       destroy();
+    };
+  }, [sessionId, type, init, sessions, sessionsLoading, destroy]);
 
   // Chargement initial des données statiques
   useEffect(() => {
@@ -166,9 +181,39 @@ export function ExternalWindowPage() {
     }
   };
 
+  const handleToggleHideMap = async (id: string, hidden: boolean) => {
+    if (!isMJ || !sessionId) return;
+    const updatedMaps = maps.map(m => m.id === id ? { ...m, is_hidden: hidden } : m);
+    setMaps(updatedMaps);
+    if (window.electronAPI) {
+      await addSessionMap(sessionId, updatedMaps.find(m => m.id === id)!);
+    }
+    broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    channel.postMessage({ type: 'MAP_UPDATE', payload: updatedMaps });
+    channel.close();
+  };
+
+  const handleUpdateMap = async (id: string, updates: Partial<MapItem>) => {
+    if (!isMJ || !sessionId) return;
+    const updatedMaps = maps.map(m => m.id === id ? { ...m, ...updates } : m);
+    setMaps(updatedMaps);
+    const updatedMap = updatedMaps.find(m => m.id === id);
+    if (updatedMap && window.electronAPI) {
+      await addSessionMap(sessionId, updatedMap);
+    }
+    broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+    if (id === currentMapId && updates.url) {
+      broadcast({ type: 'MAP_CHANGE', payload: { url: updates.url, name: updates.name || updatedMap?.name, id: updatedMap?.id, grid_size: updatedMap?.grid_size } });
+    }
+    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    channel.postMessage({ type: 'MAP_UPDATE', payload: updatedMaps });
+    channel.close();
+  };
+
   const handleAddMap = async (name: string, url: string) => {
     if (!sessionId) return;
-    const newMap = { id: Math.random().toString(36).substring(2, 9), name, url };
+    const newMap: MapItem = { id: Math.random().toString(36).substring(2, 9), name, url, is_hidden: true, grid_size: 50 };
     const updatedMaps = [...maps, newMap];
     setMaps(updatedMaps);
     
@@ -218,6 +263,8 @@ export function ExternalWindowPage() {
               currentSceneId={currentMapId}
               onSelectScene={handleSelectMap}
               onAddScene={handleAddMap}
+              onUpdateScene={handleUpdateMap}
+              onToggleHide={handleToggleHideMap}
             />
           )}
 

@@ -12,19 +12,27 @@ declare global {
       removePlayer: (sessionId: string, peerId: string) => Promise<void>;
       clearPlayers: (sessionId: string) => Promise<void>;
       getCharacters: (sessionId: string) => Promise<any[]>;
-      addCharacter: (character: any) => Promise<void>;
-      removeCharacter: (id: string) => Promise<void>;
-      updateCharacter: (id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => Promise<void>;
-
-      updateCharacterBars: (id: string, bars: Record<string, number>) => Promise<void>;
+      addCharacter: (sessionId: string, character: any) => Promise<void>;
+      removeCharacter: (sessionId: string, id: string) => Promise<void>;
+      updateCharacter: (sessionId: string, id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => Promise<void>;
+      updateCharacterBars: (sessionId: string, id: string, bars: Record<string, number>) => Promise<void>;
       getItems: (sessionId: string) => Promise<any[]>;
       addItem: (sessionId: string, item: any) => Promise<boolean>;
       removeItem: (sessionId: string, id: string) => Promise<boolean>;
-      getMaps: (sessionId: string) => Promise<MapItem[]>;
+      getSkills: (sessionId: string) => Promise<any[]>;
+      addSkill: (sessionId: string, skill: any) => Promise<boolean>;
+      removeSkill: (sessionId: string, id: string) => Promise<boolean>;
+      getTags: (sessionId: string) => Promise<any[]>;
+      addTag: (sessionId: string, tag: any) => Promise<boolean>;
+      removeTag: (sessionId: string, id: string) => Promise<boolean>;
+      getMaps: (sessionId: string) => Promise<any[]>;
       addMap: (sessionId: string, map: any) => Promise<void>;
       removeMap: (sessionId: string, id: string) => Promise<void>;
       getLogs: (sessionId: string) => Promise<any[]>;
       addLog: (sessionId: string, log: any) => Promise<void>;
+      getQuests: (sessionId: string) => Promise<any[]>;
+      addQuest: (sessionId: string, quest: any) => Promise<boolean>;
+      removeQuest: (sessionId: string, id: string) => Promise<boolean>;
       getMapTokens: (sessionId: string, mapId: string) => Promise<any[]>;
       updateMapToken: (sessionId: string, mapId: string, characterId: string, x: number, y: number) => Promise<void>;
       removeMapToken: (sessionId: string, mapId: string, characterId: string) => Promise<void>;
@@ -36,6 +44,7 @@ declare global {
       toggleFullscreen: () => void;
       closeWindow: () => void;
       onFullscreen: (callback: (isFS: boolean) => void) => (() => void);
+      fetchImage: (url: string) => Promise<string | null>;
     };
   }
 }

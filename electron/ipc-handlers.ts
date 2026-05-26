@@ -195,8 +195,13 @@ function getSessionDb(sessionId: string): Database.Database {
 
   sessionDbs.set(sessionId, db);
   // On indexe aussi par l'autre ID pour les recherches futures
-  if (session.id !== sessionId) sessionDbs.set(session.id, db);
-  if (session.hostPeerId !== sessionId) sessionDbs.set(session.hostPeerId, db);
+  if (masterDb) {
+    const session = masterDb.prepare('SELECT id, hostPeerId FROM sessions WHERE id = ? OR hostPeerId = ?').get(sessionId, sessionId) as any;
+    if (session) {
+      if (session.id !== sessionId) sessionDbs.set(session.id, db);
+      if (session.hostPeerId !== sessionId) sessionDbs.set(session.hostPeerId, db);
+    }
+  }
   
   return db;
 }
