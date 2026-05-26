@@ -58,15 +58,25 @@ class TransferService {
     return () => this.chunkCallbacks.delete(cb);
   }
 
-  private handleIncomingFragment(payload: ArrayBuffer, fromPeerId: string) {
+  private async handleIncomingFragment(payload: any, fromPeerId: string) {
     try {
-      const view = new DataView(payload);
+      let buffer: ArrayBuffer;
+      if (payload instanceof Blob) {
+        buffer = await payload.arrayBuffer();
+      } else if (payload instanceof ArrayBuffer) {
+        buffer = payload;
+      } else {
+        console.error('[TransferService] Type de payload inconnu:', typeof payload, payload);
+        return;
+      }
+
+      const view = new DataView(buffer);
       const headerLen = view.getUint32(0);
-      const headerBytes = new Uint8Array(payload, 4, headerLen);
+      const headerBytes = new Uint8Array(buffer, 4, headerLen);
       const headerString = new TextDecoder().decode(headerBytes);
       const header: FragmentHeader = JSON.parse(headerString);
       
-      const fragData = payload.slice(4 + headerLen);
+      const fragData = buffer.slice(4 + headerLen);
 
       if (!this.assemblyBuffers.has(header.chunk_id)) {
         this.assemblyBuffers.set(header.chunk_id, {
@@ -77,13 +87,13 @@ class TransferService {
         });
       }
 
-      const buffer = this.assemblyBuffers.get(header.chunk_id)!;
-      if (!buffer.frags[header.frag_index]) {
-        buffer.frags[header.frag_index] = fragData;
-        buffer.received++;
+      const bufferObj = this.assemblyBuffers.get(header.chunk_id)!;
+      if (!bufferObj.frags[header.frag_index]) {
+        bufferObj.frags[header.frag_index] = fragData;
+        bufferObj.received++;
 
-        if (buffer.received === buffer.total) {
-          this.assembleChunk(header.chunk_id, buffer.frags, buffer.expected_hash);
+        if (bufferObj.received === bufferObj.total) {
+          this.assembleChunk(header.chunk_id, bufferObj.frags, bufferObj.expected_hash);
           this.assemblyBuffers.delete(header.chunk_id);
         }
       }
