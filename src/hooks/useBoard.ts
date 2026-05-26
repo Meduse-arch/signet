@@ -125,9 +125,13 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
 
   useEffect(() => {
     const unsubManifest = mapSyncService.onManifestReceived((mapId, manifest, missingChunks, hostPeerId) => {
-      if (mapId !== currentMapIdRef.current) return;
+      if (mapId !== currentMapIdRef.current) {
+          console.log(`[useBoard] Ignoring manifest for ${mapId} (current: ${currentMapIdRef.current})`);
+          return;
+      }
       
       if (!boardRef.current || !isReady) {
+        console.log(`[useBoard] Pixi not ready, queuing manifest for ${mapId}`);
         pendingManifest.current = { mapId, manifest, missingChunks, hostPeerId };
         return;
       }
@@ -136,13 +140,12 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     });
 
     const unsubChunk = mapSyncService.onChunkReady((mapId, chunk, data) => {
-      console.log(`[useBoard] Chunk ready for ${mapId}: ${chunk.id}. Pixi ready: ${isReady}`);
       if (mapId !== currentMapIdRef.current) return;
       
       if (boardRef.current && isReady) {
         boardRef.current.paintChunk(chunk.id, chunk.x, chunk.y, data);
       } else {
-        console.log(`[useBoard] Queuing chunk ${chunk.id}`);
+        console.log(`[useBoard] Queuing chunk ${chunk.id} for ${mapId}`);
         chunkQueue.current.push({ mapId, chunk, data });
       }
     });
@@ -151,29 +154,34 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       unsubManifest();
       unsubChunk();
     };
-  }, [session?.hostPeerId, isReady, processManifest]);
+  }, [isReady, processManifest]);
 
   // Drain queues when ready
   useEffect(() => {
     if (isReady && boardRef.current) {
       if (pendingManifest.current) {
         const { mapId, manifest, missingChunks, hostPeerId } = pendingManifest.current;
-        processManifest(mapId, manifest, missingChunks, hostPeerId);
-        
-        // Si la map était déjà complète, on déclenche l'hydratation maintenant que Pixi est prêt
-        if (missingChunks.length === 0) {
-            console.log(`[useBoard] Retrying hydration for complete map ${mapId}`);
-            mapSyncService.hydrateMapFromCache(mapId);
+        if (mapId === currentMapIdRef.current) {
+            processManifest(mapId, manifest, missingChunks, hostPeerId);
+            
+            // Si la map était déjà complète, on déclenche l'hydratation maintenant que Pixi est prêt
+            if (missingChunks.length === 0) {
+                console.log(`[useBoard] Retrying hydration for complete map ${mapId}`);
+                mapSyncService.hydrateMapFromCache(mapId);
+            }
         }
-        
         pendingManifest.current = null;
       }
 
       if (chunkQueue.current.length > 0) {
-        console.log(`[useBoard] Replaying ${chunkQueue.current.length} queued chunks`);
-        chunkQueue.current.forEach(({ chunk, data }) => {
-          boardRef.current!.paintChunk(chunk.id, chunk.x, chunk.y, data);
-        });
+        // Filtrer les chunks qui ne correspondent plus à la map actuelle
+        const validChunks = chunkQueue.current.filter(c => c.mapId === currentMapIdRef.current);
+        if (validChunks.length > 0) {
+            console.log(`[useBoard] Replaying ${validChunks.length} queued chunks for ${currentMapIdRef.current}`);
+            validChunks.forEach(({ chunk, data }) => {
+              boardRef.current!.paintChunk(chunk.id, chunk.x, chunk.y, data);
+            });
+        }
         chunkQueue.current = [];
       }
     }
@@ -222,6 +230,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         const resizeObserver = new ResizeObserver(() => {
           if (app && isInitialized && !isDestroyed) {
             app.renderer.resize(container!.offsetWidth, container!.offsetHeight);
+            // On centre la scène à chaque resize
             scene.x = app.screen.width / 2;
             scene.y = app.screen.height / 2;
           }
@@ -253,7 +262,12 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   }, [containerRef]); // On ne dépend que du container
 
   // Gestion du onTokenMove avec les IDs à jour
-  useEffect(() => { currentMapIdRef.current = currentMapId; }, [currentMapId]);
+  useEffect(() => { 
+      currentMapIdRef.current = currentMapId; 
+      // ✅ MJ : On vide les files d'attente lors d'un changement de map manuel
+      pendingManifest.current = null;
+      chunkQueue.current = [];
+  }, [currentMapId]);
 
   useEffect(() => {
     if (isReady && boardRef.current) {

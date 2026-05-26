@@ -251,6 +251,14 @@ class MapSyncService {
     const existingMap = await dbStorage.getMap(map_id);
     
     if (existingMap && existingMap.global_hash === manifest.global_hash) {
+      // ✅ MJ : On s'assure que le manifest local a bien les dimensions réelles (si reçues du MJ)
+      if (manifest.width && manifest.height && (!existingMap.manifest.width || !existingMap.manifest.height)) {
+          console.log(`[MapSync] Updating local manifest dimensions for ${map_id}`);
+          existingMap.manifest.width = manifest.width;
+          existingMap.manifest.height = manifest.height;
+          await dbStorage.putMap(existingMap);
+      }
+
       const allChunkRecords = await Promise.all(manifest.chunks.map(c => dbStorage.getChunk(c.id)));
       const missingChunks = manifest.chunks.filter((c, i) => 
         !allChunkRecords[i] || allChunkRecords[i]?.status !== 'complete'
