@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Scroll, X, Save, Image as ImageIcon, Plus, Trash2, User, Trophy, Star } from 'lucide-react';
+import { Scroll, X, Save, Image as ImageIcon, Plus, Trash2, User, Trophy, Star, Upload, Loader2 } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
 import { useQuestsStore } from '../../store/quests';
 import { useCharactersStore } from '../../store/characters';
@@ -8,6 +8,8 @@ import { useItemsStore } from '../../store/items';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { Quest, QuestReward } from '../../services/quests.service';
+import { assetSyncService } from '../../services/asset-sync.service';
+import { useAssetUrl } from '../../hooks/useAssetUrl';
 
 interface QuestCreationModalProps {
   sessionId: string;
@@ -25,6 +27,9 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrl = useAssetUrl(imageUrl);
   const [status, setStatus] = useState<Quest['status']>('En cours');
   const [rewards, setRewards] = useState<QuestReward[]>([]);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
@@ -122,18 +127,54 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Illustration (URL)</label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                    <input 
-                      type="text" 
-                      value={imageUrl}
-                      onChange={e => setImageUrl(e.target.value)}
-                      placeholder="https://..."
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-xs text-white placeholder:text-white/20 focus:border-gold-DEFAULT/50 outline-none transition-all font-mono"
-                    />
-                  </div>
+                <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Illustration</label>
+                <div className="flex gap-4">
+                    <div className="w-16 h-16 rounded-2xl border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden shrink-0">
+                        {previewUrl ? (
+                            <img src={previewUrl} className="w-full h-full object-cover" alt="Quest" />
+                        ) : (
+                            <ImageIcon className="text-white/20" size={24} />
+                        )}
+                    </div>
+                    <div className="flex-1 flex flex-col gap-2">
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                value={imageUrl}
+                                onChange={e => setImageUrl(e.target.value)}
+                                placeholder="URL ou asset://..."
+                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-[10px] text-white placeholder:text-white/20 focus:border-gold-DEFAULT/50 outline-none transition-all font-mono"
+                            />
+                            <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="p-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[40px]"
+                            >
+                                {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                            </button>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        setIsUploading(true);
+                                        try {
+                                            const assetUrl = await assetSyncService.uploadLocalAsset(file);
+                                            setImageUrl(assetUrl);
+                                        } catch (err) {
+                                            console.error('Upload failed', err);
+                                        } finally {
+                                            setIsUploading(false);
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
+                        <p className="text-[7px] font-cinzel text-white/20 uppercase tracking-widest ml-1">Image locale synchronisée via P2P</p>
+                    </div>
                 </div>
               </div>
 

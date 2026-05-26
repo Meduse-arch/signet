@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Zap, Plus, X, Save, BarChart2, BookOpen, Shuffle, Backpack, ChevronDown, Dices, Power } from 'lucide-react';
+import { Sparkles, Zap, Plus, X, Save, BarChart2, BookOpen, Shuffle, Backpack, ChevronDown, Dices, Power, Upload, Loader2 } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
 import { useSkillsStore } from '../../store/skills';
 import { useTagsStore } from '../../store/tags';
@@ -10,6 +10,8 @@ import { Skill, SkillModifier, SkillEffect } from '../../services/skills.service
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { useSessionStore } from '../../store/session';
 import { TagManagementModal } from './TagManagementModal';
+import { assetSyncService } from '../../services/asset-sync.service';
+import { useAssetUrl } from '../../hooks/useAssetUrl';
 
 // --- Composant Select Personnalisé ---
 const CustomSelect = ({ value, options, onChange, placeholder }: { value: string, options: {value: string, label: string}[], onChange: (v: string) => void, placeholder?: string }) => {
@@ -106,6 +108,9 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
   const [description, setDescription] = useState('');
   const [type, setType] = useState<'active' | 'passive_auto' | 'passive_toggle'>('active');
   const [imageUrl, setImageUrl] = useState('');
+  const [isUploading, setIsHostUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrl = useAssetUrl(imageUrl);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [onglet, setOnglet] = useState<'arcanes' | 'condition'>('arcanes');
 
@@ -348,14 +353,58 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Illustration (URL)</label>
-                  <input 
-                    type="text" 
-                    value={imageUrl}
-                    onChange={e => setImageUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono shadow-inner"
-                  />
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Illustration</label>
+                  <div className="flex gap-2">
+                    <div className="relative group w-12 h-12 rounded-xl overflow-hidden border border-gold-DEFAULT/20 bg-black/40 shrink-0">
+                        {previewUrl ? (
+                            <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT/20">
+                                <Sparkles size={16} />
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex-1 flex flex-col gap-2">
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                value={imageUrl}
+                                onChange={e => setImageUrl(e.target.value)}
+                                placeholder="URL ou asset://..."
+                                className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-[10px] text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono shadow-inner"
+                            />
+                            <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="p-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[40px]"
+                                title="Charger une image locale"
+                            >
+                                {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                            </button>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        setIsHostUploading(true);
+                                        try {
+                                            const assetUrl = await assetSyncService.uploadLocalAsset(file);
+                                            setImageUrl(assetUrl);
+                                        } catch (err) {
+                                            console.error('Upload failed', err);
+                                        } finally {
+                                            setIsHostUploading(false);
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
+                        <p className="text-[7px] font-cinzel text-white/20 uppercase tracking-widest px-1">Importez une image locale pour la synchroniser en P2P (WebP)</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

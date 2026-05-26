@@ -1,4 +1,5 @@
 import { Container, Graphics, Text, TextStyle, FederatedPointerEvent, Sprite, Texture, Application } from 'pixi.js';
+import { assetSyncService } from '../services/asset-sync.service';
 
 export interface TokenData {
   id: string;
@@ -76,7 +77,11 @@ export class TokenSprite extends Container {
       if (!cleanUrl) return;
 
       let finalUrl = cleanUrl;
-      if (!cleanUrl.startsWith('blob:') && !cleanUrl.startsWith('data:') && window.electronAPI?.fetchImage) {
+
+      // ✅ Support de l'Asset Store (P2P on-demand)
+      if (cleanUrl.startsWith('asset://')) {
+        finalUrl = await assetSyncService.getAssetUrl(cleanUrl);
+      } else if (!cleanUrl.startsWith('blob:') && !cleanUrl.startsWith('data:') && window.electronAPI?.fetchImage) {
         const base64 = await window.electronAPI.fetchImage(cleanUrl);
         if (base64) finalUrl = base64;
       }

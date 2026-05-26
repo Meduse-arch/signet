@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Hammer, Package, Plus, X, Minus, Sparkles, Sword, Shield, Gem, FlaskConical, Save } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Hammer, Package, Plus, X, Minus, Sparkles, Sword, Shield, Gem, FlaskConical, Save, Upload, Loader2 } from 'lucide-react';
 import { useUIStore } from '../../store/ui';
 import { useItemsStore } from '../../store/items';
 import { useCharactersStore } from '../../store/characters';
@@ -9,6 +9,8 @@ import { Item, ItemModifier } from '../../services/items.service';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { addSessionCharacter } from '../../services/characters.service';
 import { useSessionStore } from '../../store/session';
+import { assetSyncService } from '../../services/asset-sync.service';
+import { useAssetUrl } from '../../hooks/useAssetUrl';
 
 interface ItemCreationModalProps {
   sessionId: string;
@@ -36,6 +38,9 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Divers');
   const [imageUrl, setImageUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrl = useAssetUrl(imageUrl);
   const [modifiers, setModifiers] = useState<ItemModifier[]>([]);
 
   useEffect(() => {
@@ -204,14 +209,55 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-[9px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Apparence (URL Image)</label>
-              <input 
-                type="text" 
-                placeholder="https://..." 
-                value={imageUrl} 
-                onChange={e => setImageUrl(e.target.value)} 
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:border-gold-DEFAULT/50 focus:bg-white/10 outline-none transition-all shadow-inner" 
-              />
+              <label className="text-[9px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Apparence</label>
+              <div className="flex gap-4">
+                <div className="w-14 h-14 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
+                    {previewUrl ? (
+                        <img src={previewUrl} className="w-full h-full object-cover" alt="Item" />
+                    ) : (
+                        <Package size={20} className="text-white/20" />
+                    )}
+                </div>
+                <div className="flex-1 flex flex-col gap-2">
+                    <div className="flex gap-2">
+                        <input 
+                            type="text" 
+                            placeholder="URL ou asset://..." 
+                            value={imageUrl} 
+                            onChange={e => setImageUrl(e.target.value)} 
+                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-[10px] text-white placeholder:text-white/20 focus:border-gold-DEFAULT/50 outline-none transition-all" 
+                        />
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                            className="p-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[40px]"
+                        >
+                            {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                        </button>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    setIsUploading(true);
+                                    try {
+                                        const assetUrl = await assetSyncService.uploadLocalAsset(file);
+                                        setImageUrl(assetUrl);
+                                    } catch (err) {
+                                        console.error('Upload failed', err);
+                                    } finally {
+                                        setIsUploading(false);
+                                    }
+                                }
+                            }}
+                        />
+                    </div>
+                    <p className="text-[7px] font-cinzel text-white/20 uppercase tracking-widest ml-1">Utilisez une image locale pour la synchroniser avec les joueurs</p>
+                </div>
+              </div>
             </div>
           </div>
           

@@ -45,34 +45,38 @@ const myCharacter = useMemo(() => {
 
   // Sync token status via network and store
   useEffect(() => {
-    if (!myCharacter) return;
-
-    // Mise à jour initiale du store si besoin (la source de vérité est dans BoardCanvas)
+    // Écouter les changements de tokens pour tout le monde
     const unsub = onData((data: any) => {
-        if (data.type === 'TOKEN_ADD' && data.payload.id === myCharacter.id) {
-            setStoreTokenStatus(myCharacter.id, true);
+        if (data.type === 'TOKEN_ADD') {
+            setStoreTokenStatus(data.payload.id, true);
         }
-        if (data.type === 'TOKEN_REMOVE' && data.payload.id === myCharacter.id) {
-            setStoreTokenStatus(myCharacter.id, false);
+        if (data.type === 'TOKEN_REMOVE') {
+            setStoreTokenStatus(data.payload.id, false);
+        }
+        if (data.type === 'INITIAL_SYNC_REPLY') {
+            // ... handle initial token list if needed
         }
     });
 
     return () => unsub();
-  }, [myCharacter, onData, setStoreTokenStatus]);
+  }, [onData, setStoreTokenStatus]);
 
   const handleToggleToken = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!myCharacter) return;
     
+    // Si on retire, on peut le faire optimiste. Si on ajoute, on demande au MJ.
+    const isCurrentlyOnMap = !!tokenStatuses[myCharacter.id];
+
     if (isMJ) {
         const channel = new BroadcastChannel(`board_actions_${sessionId}`);
         channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: myCharacter.id } });
         channel.close();
-    } 
-    
-    broadcast({ type: 'TOGGLE_TOKEN_REQUEST', payload: { id: myCharacter.id } });
-    // Optimistic update
-    setStoreTokenStatus(myCharacter.id, !tokenStatus);
+        setStoreTokenStatus(myCharacter.id, !isCurrentlyOnMap);
+    } else {
+        broadcast({ type: 'TOGGLE_TOKEN_REQUEST', payload: { id: myCharacter.id } });
+        // Pour les joueurs, on attend le retour du MJ (BoardCanvas)
+    }
   };
 
   const handleCreateSave = async (data: { 

@@ -199,8 +199,17 @@ export class BoardScene extends Container {
     }
 
     console.log('[BoardScene] Adding token:', data.name, 'at', data.x, data.y);
+    
+    // ✅ Optimisation : Throttle des mouvements pour éviter de saturer le réseau
+    let lastEmit = 0;
+    const throttleDelay = 33; // ~30 FPS max pour les updates réseau
+
     const token = new TokenSprite(data, this.app, (x, y) => {
-      if (this.onTokenMove) this.onTokenMove(data.id, x, y);
+      const now = Date.now();
+      if (now - lastEmit > throttleDelay) {
+        if (this.onTokenMove) this.onTokenMove(data.id, x, y);
+        lastEmit = now;
+      }
     });
     this.tokens.set(data.id, token);
     this.tokenLayer.addChild(token);

@@ -14,7 +14,7 @@ interface DiceState {
 
 export const useDiceStore = create<DiceState>((set) => ({
   diceResult: null,
-  diceSharingEnabled: true,
+  diceSharingEnabled: false,
   nbDice: 1,
   modifier: 0,
   setDiceResult: (result) => set({ diceResult: result }),

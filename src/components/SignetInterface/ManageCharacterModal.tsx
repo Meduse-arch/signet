@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { X, User, Sword, Heart, Package, Save, Trash2, Search, Hammer, Plus, ArrowLeft, Zap } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { X, User, Sword, Heart, Package, Save, Trash2, Search, Hammer, Plus, ArrowLeft, Zap, Upload, Loader2, MapPin } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
 import { useSkillsStore } from '../../store/skills';
@@ -8,6 +8,9 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { updateSessionCharacter } from '../../services/characters.service';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
+import { assetSyncService } from '../../services/asset-sync.service';
+import { useAssetUrl } from '../../hooks/useAssetUrl';
+import { useMapStore } from '../../store/map';
 
 interface ManageCharacterModalProps {
   sessionId: string;
@@ -28,7 +31,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
   const { characters, addOrUpdateCharacter } = useCharactersStore();
   const { items } = useItemsStore();
   const { skills } = useSkillsStore();
-  const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
+  const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId || s.hostPeerId === sessionId));
   const { broadcast } = usePeer();
   const { user } = useAuthStore();
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
@@ -42,6 +45,13 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
   const [searchSkillArchive, setSearchSkillArchive] = useState('');
   const [forgeQuantities, setForgeQuantities] = useState<Record<string, number>>({});
   const [addedFeedback, setAddedFeedback] = useState<string | null>(null);
+
+  const tokenStatuses = useMapStore(state => state.tokenStatuses);
+  const isTokenOnMap = !!tokenStatuses[characterId];
+
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrl = useAssetUrl(editedChar?.image_url);
 
   useEffect(() => {
     const char = characters.find(c => c.id === characterId);
@@ -74,7 +84,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
       if (item.equipped) {
         groups.push({ ...item, quantity: 1, isStack: false });
       } else {
-        if (!unequippedStacks[item.id]) {
+        if (!unquippedStacks[item.id]) {
           unequippedStacks[item.id] = { ...item, quantity: 0, isStack: true, instances: [] };
           groups.push(unequippedStacks[item.id]);
         }
@@ -91,25 +101,34 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
   const handleSave = async () => {
     if (!editedChar) return;
     
-    addOrUpdateCharacter(editedChar);
+    // ✅ Utiliser l'ID de session actuel pour l'entité si non défini
+    const finalChar = { ...editedChar, session_id: sessionId };
+    
+    addOrUpdateCharacter(finalChar);
     
     if (window.electronAPI) {
       await updateSessionCharacter(
         sessionId,
-        editedChar.id,
-        editedChar.name,
-        editedChar.stats,
-        editedChar.skills,
-        editedChar.bars,
-        editedChar.image_url,
-        editedChar.inventory,
-        editedChar.custom_skills,
-        editedChar.type,
-        editedChar.is_template
+        finalChar.id,
+        finalChar.name,
+        finalChar.stats,
+        finalChar.skills,
+        finalChar.bars,
+        finalChar.image_url,
+        finalChar.inventory,
+        finalChar.custom_skills,
+        finalChar.type,
+        finalChar.is_template
       );
     }
     
-    broadcast({ type: 'CHAR_UPDATE', payload: editedChar });
+    broadcast({ type: 'CHAR_UPDATE', payload: finalChar });
+    
+    // Sync local pour les autres fenêtres
+    const syncChannel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
+    syncChannel.postMessage({ type: 'CHAR_UPDATE', payload: finalChar });
+    syncChannel.close();
+
     setHasChanges(false);
     onClose();
   };
@@ -215,8 +234,8 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
         <header className="flex items-center justify-between p-6 border-b border-gold-DEFAULT/10 shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 flex items-center justify-center overflow-hidden shadow-lg">
-              {editedChar.image_url ? (
-                <img src={editedChar.image_url} alt="" className="w-full h-full object-cover" />
+              {previewUrl ? (
+                <img src={previewUrl} alt="" className="w-full h-full object-cover" />
               ) : (
                 <User size={24} className="text-gold-bright" />
               )}
@@ -225,10 +244,15 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
               <h2 className="text-xl font-cinzel font-black text-gold-bright tracking-[0.2em] uppercase">
                 {editedChar.name}
               </h2>
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex items-center gap-3 mt-0.5">
                 <span className="text-[10px] font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase">GÉRER L'ENTITÉ</span>
                 <div className="w-1 h-1 rounded-full bg-gold-DEFAULT/20" />
-                <span className="text-[10px] font-mono text-white/20 uppercase tracking-tighter">{editedChar.id}</span>
+                <div className="flex items-center gap-1.5">
+                    <div className={`w-1.5 h-1.5 rounded-full ${isTokenOnMap ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 opacity-50'}`} />
+                    <span className={`text-[8px] font-cinzel font-black uppercase tracking-tighter ${isTokenOnMap ? 'text-green-400' : 'text-white/20'}`}>
+                        {isTokenOnMap ? 'Sur la carte' : 'Hors carte'}
+                    </span>
+                </div>
               </div>
             </div>
           </div>
@@ -288,20 +312,55 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Illustration (URL)</label>
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Illustration</label>
                   <div className="flex gap-4">
-                    <input 
-                      type="text" 
-                      value={editedChar.image_url || ''} 
-                      onChange={e => { setEditedChar((p: any) => ({ ...p, image_url: e.target.value })); setHasChanges(true); }}
-                      placeholder="https://..."
-                      className="flex-1 bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono shadow-inner"
-                    />
-                    {editedChar.image_url && (
-                      <div className="w-10 h-10 rounded-lg border border-gold-DEFAULT/30 overflow-hidden shrink-0 shadow-lg">
-                        <img src={editedChar.image_url} alt="" className="w-full h-full object-cover" />
-                      </div>
-                    )}
+                    <div className="w-16 h-16 rounded-2xl border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden shrink-0">
+                        {previewUrl ? (
+                            <img src={previewUrl} className="w-full h-full object-cover" alt="Portrait" />
+                        ) : (
+                            <User className="text-white/20" size={24} />
+                        )}
+                    </div>
+                    <div className="flex-1 flex flex-col gap-2">
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                value={editedChar.image_url || ''} 
+                                onChange={e => { setEditedChar((p: any) => ({ ...p, image_url: e.target.value })); setHasChanges(true); }}
+                                placeholder="URL ou asset://..."
+                                className="flex-1 bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-[10px] text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono shadow-inner"
+                            />
+                            <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="p-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[40px]"
+                            >
+                                {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                            </button>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        setIsUploading(true);
+                                        try {
+                                            const assetUrl = await assetSyncService.uploadLocalAsset(file);
+                                            setEditedChar((p: any) => ({ ...p, image_url: assetUrl }));
+                                            setHasChanges(true);
+                                        } catch (err) {
+                                            console.error('Upload failed', err);
+                                        } finally {
+                                            setIsUploading(false);
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
+                        <p className="text-[7px] font-cinzel text-white/20 uppercase tracking-widest px-1">Importez un portrait local (P2P)</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -381,7 +440,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                             <div className="flex items-center gap-4 flex-1 min-w-0">
                               <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0 relative">
                                 {item.image_url ? (
-                                  <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-60" />
+                                  <InventoryItemImage url={item.image_url} />
                                 ) : (
                                   <Package size={16} className="text-white/20" />
                                 )}
@@ -467,7 +526,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                           <div className="flex items-center gap-4 flex-1 min-w-0">
                              <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
                                 {item.image_url ? (
-                                  <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-60" />
+                                  <InventoryItemImage url={item.image_url} />
                                 ) : (
                                   <Package size={16} className="text-white/20" />
                                 )}
@@ -529,7 +588,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                             <div className="flex items-center gap-4 flex-1 min-w-0">
                               <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
                                 {skill.image_url ? (
-                                  <img src={skill.image_url} alt="" className="w-full h-full object-cover opacity-60" />
+                                  <SkillItemImage url={skill.image_url} />
                                 ) : (
                                   <Zap size={18} className="text-gold-DEFAULT/40" />
                                 )}
@@ -577,7 +636,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                           <div className="flex items-center gap-4 flex-1 min-w-0">
                              <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
                                 {skill.image_url ? (
-                                  <img src={skill.image_url} alt="" className="w-full h-full object-cover opacity-60" />
+                                  <SkillItemImage url={skill.image_url} />
                                 ) : (
                                   <Zap size={18} className="text-gold-DEFAULT/40" />
                                 )}
@@ -639,4 +698,15 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
       </div>
     </div>
   );
+}
+
+// Composants internes pour gérer la résolution des URLs d'assets
+function InventoryItemImage({ url }: { url: string }) {
+  const resolved = useAssetUrl(url);
+  return <img src={resolved} alt="" className="w-full h-full object-contain p-1 opacity-60" />;
+}
+
+function SkillItemImage({ url }: { url: string }) {
+  const resolved = useAssetUrl(url);
+  return <img src={resolved} alt="" className="w-full h-full object-cover opacity-60" />;
 }
