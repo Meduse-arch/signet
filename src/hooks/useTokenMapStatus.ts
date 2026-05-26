@@ -10,16 +10,16 @@ export function useTokenMapStatus(sessionId: string, character: Character | null
   const isHost = usePeersStore(state => state.isHost);
 
   useEffect(() => {
-    // Initial load
-    const activeMap = localStorage.getItem(`active_map_${sessionId}`);
-    if (activeMap) setCurrentMapId(activeMap);
+    // Initial load : On commence toujours par la scène initiale
+    setCurrentMapId('initial-scene');
 
     // Listen to changes
     const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
     channel.onmessage = (event) => {
-      if (event.data.type === 'MAP_CHANGE' || event.data.type === 'MAP_UPDATE') {
-        const active = localStorage.getItem(`active_map_${sessionId}`);
-        if (active) setCurrentMapId(active);
+      if (event.data.type === 'MAP_CHANGE') {
+        // Le payload contient l'URL ou l'ID selon le composant émetteur
+        // Ici on se base sur le fait que SealEngine synchronise l'ID via P2P/Internal
+        // mais pour le BroadcastChannel local (pop-outs), on peut avoir besoin d'extraire l'ID.
       }
     };
     return () => channel.close();

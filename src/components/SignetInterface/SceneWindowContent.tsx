@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { Plus, Check, X, Eye, EyeOff, Settings2 } from 'lucide-react';
+import { Plus, Check, X, Eye, EyeOff, Settings2, Trash2 } from 'lucide-react';
 import { MapItem } from '../BoardCanvas';
 import { SecurityLevel, useAuthStore } from '../../store/auth';
 
@@ -10,9 +10,10 @@ interface SceneWindowContentProps {
   onAddScene?: (name: string, url: string) => void;
   onUpdateScene?: (id: string, updates: Partial<MapItem>) => void;
   onToggleHide?: (id: string, hidden: boolean) => void;
+  onRemoveScene?: (id: string) => void;
 }
 
-export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAddScene, onUpdateScene, onToggleHide }: SceneWindowContentProps) {
+export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAddScene, onUpdateScene, onToggleHide, onRemoveScene }: SceneWindowContentProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -122,16 +123,30 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
                     <Settings2 size={14} />
                 </button>
                 {scene.id !== 'initial-scene' && (
-                  <button
-                      onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleHide?.(scene.id, !scene.is_hidden);
-                      }}
-                      className="p-2 rounded-full bg-black/40 border border-white/10 text-white/40 hover:text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
-                      title={scene.is_hidden ? "Rendre visible" : "Cacher aux joueurs"}
-                  >
-                      {scene.is_hidden ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
+                  <>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleHide?.(scene.id, !scene.is_hidden);
+                        }}
+                        className="p-2 rounded-full bg-black/40 border border-white/10 text-white/40 hover:text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
+                        title={scene.is_hidden ? "Rendre visible" : "Cacher aux joueurs"}
+                    >
+                        {scene.is_hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Supprimer définitivement ce plan ?')) {
+                                onRemoveScene?.(scene.id);
+                            }
+                        }}
+                        className="p-2 rounded-full bg-black/40 border border-white/10 text-white/40 hover:text-red-500 hover:border-red-500/40 transition-all"
+                        title="Supprimer le plan"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                  </>
                 )}
               </div>
             )}

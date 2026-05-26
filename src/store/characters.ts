@@ -10,11 +10,14 @@ interface CharactersState {
   removeCharacter: (sessionId: string, id: string) => void;
   setPnjControle: (sessionId: string, id: string | null) => void;
   initialize: (sessionId: string) => Promise<void>;
+  reset: () => void;
 }
 
 export const useCharactersStore = create<CharactersState>((set, get) => ({
   characters: [],
   controlledCharacterId: null,
+
+  reset: () => set({ characters: [], controlledCharacterId: null }),
   
   setCharacters: (characters) => {
     set({ characters });
@@ -23,7 +26,7 @@ export const useCharactersStore = create<CharactersState>((set, get) => ({
   initialize: async (sessionId: string) => {
     console.log(`[CharactersStore] Initializing for session: ${sessionId}`);
     // Toujours reset pour éviter les fuites de données entre sessions
-    set({ characters: [], controlledCharacterId: null });
+    get().reset();
     
     // 1. Charger depuis la base de données (Source de vérité)
     const dbChars = await getSessionCharacters(sessionId);

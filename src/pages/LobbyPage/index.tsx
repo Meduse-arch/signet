@@ -49,7 +49,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const { sessions, addSession: persistSession } = useSession();
   
   const isPreparedRef = useRef(false);
-  const sessionDataFromStore = sessions.find(s => s.id === sessionId);
+  const sessionDataFromStore = sessions.find(s => s.id === sessionId || s.hostPeerId === sessionId);
   
   // Si c'est un code SIGNET-xxx, on est forcément joueur. 
   // Sinon on regarde en base : si isSummoned est vrai, on est forcément joueur.
@@ -135,8 +135,10 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         broadcastRef.current({ type: 'PLAYER_LIST', payload: updatedList });
 
         // Trigger map sync for the new player immediately
+        const initialSceneId = `initial-scene-${sessionIdRef.current}`;
+        const currentMapId = initialSceneId;
         if (sessionData?.id) {
-          mapSyncService.syncCurrentMapToPeer('initial-scene', newPeerId);
+          mapSyncService.syncCurrentMapToPeer(currentMapId, newPeerId);
         }
 
         let sessionMaps = [];
@@ -151,7 +153,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
             imageUrl: sessionData?.imageUrl,
             hostPeerId: sessionData?.hostPeerId,
             maps: sessionMaps,
-            activeMapId: localStorage.getItem(`active_map_${sessionIdRef.current}`) || 'initial-scene'
+            activeMapId: currentMapId
           }
         });
 

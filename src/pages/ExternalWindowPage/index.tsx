@@ -137,8 +137,14 @@ export function ExternalWindowPage() {
         if (savedMaps) setMaps(JSON.parse(savedMaps));
       }
 
-      const lastActive = localStorage.getItem(`active_map_${sessionId}`);
-      if (lastActive) setCurrentMapId(lastActive);
+      const initialSceneId = `initial-scene-${sessionId}`;
+      const lastActive = initialSceneId;
+      setCurrentMapId(lastActive);
+      
+      // ✅ Demander l'état actuel à la fenêtre principale pour se synchroniser sur la scène en cours
+      const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+      channel.postMessage({ type: 'REQUEST_CURRENT_MAP' });
+      channel.close();
 
       const list = await getSessionPlayers(sessionId);
       setPlayers(list);
@@ -156,7 +162,6 @@ export function ExternalWindowPage() {
         const map = maps.find((m: MapItem) => m.url === targetUrl);
         if (map) {
           setCurrentMapId(map.id);
-          if (sessionId) localStorage.setItem(`active_map_${sessionId}`, map.id);
         }
       } else if (data.type === 'MAP_UPDATE') {
         setMaps(data.payload);
@@ -170,7 +175,6 @@ export function ExternalWindowPage() {
   const handleSelectMap = (map: MapItem) => {
     if (!sessionId) return;
     setCurrentMapId(map.id);
-    localStorage.setItem(`active_map_${sessionId}`, map.id);
 
     const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
     channel.postMessage({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name } });
@@ -185,9 +189,38 @@ export function ExternalWindowPage() {
     if (!isMJ || !sessionId) return;
     const updatedMaps = maps.map(m => m.id === id ? { ...m, is_hidden: hidden } : m);
     setMaps(updatedMaps);
+
+    // Si la map devient cachée et que c'était la map actuelle, on repasse sur la scène initiale
+    if (hidden && currentMapId === id) {
+        const fallback = updatedMaps.find(m => m.id === 'initial-scene') || updatedMaps[0];
+        if (fallback) handleSelectMap(fallback);
+    }
+
     if (window.electronAPI) {
       await addSessionMap(sessionId, updatedMaps.find(m => m.id === id)!);
     }
+    broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+    const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+    channel.postMessage({ type: 'MAP_UPDATE', payload: updatedMaps });
+    channel.close();
+  };
+
+  const handleRemoveMap = async (id: string) => {
+    if (!isMJ || !sessionId || id === 'initial-scene') return;
+
+    const updatedMaps = maps.filter(m => m.id !== id);
+    setMaps(updatedMaps);
+
+    if (window.electronAPI) {
+        await window.electronAPI.removeMap(sessionId, id);
+    }
+
+    // Si on supprime la map sur laquelle on est, on repasse sur la scène initiale
+    if (currentMapId === id) {
+        const fallback = updatedMaps.find(m => m.id === 'initial-scene') || updatedMaps[0];
+        if (fallback) handleSelectMap(fallback);
+    }
+
     broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
     const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
     channel.postMessage({ type: 'MAP_UPDATE', payload: updatedMaps });
@@ -240,9 +273,16 @@ export function ExternalWindowPage() {
       const { type, payload } = event.data;
       if (type === 'MAP_CHANGE') {
         const map = maps.find((m: MapItem) => m.url === payload.url);
-        if (map) setCurrentMapId(map.id);
+        if (map) {
+           setCurrentMapId(map.id);
+        }
       } else if (type === 'MAP_UPDATE') {
         setMaps(payload);
+      } else if (type === 'CURRENT_MAP_REPLY') {
+        // ✅ Réponse à notre demande de synchronisation
+        if (payload.currentMapId) {
+            setCurrentMapId(payload.currentMapId);
+        }
       }
     };
     return () => channel.close();
@@ -265,6 +305,7 @@ export function ExternalWindowPage() {
               onAddScene={handleAddMap}
               onUpdateScene={handleUpdateMap}
               onToggleHide={handleToggleHideMap}
+              onRemoveScene={handleRemoveMap}
             />
           )}
 

@@ -39,6 +39,13 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
   const [hasLoadedTokensForMap, setHasLoadedTokensForMap] = useState<string>('');
   const lastPreparedMapRef = useRef<string>('');
 
+  // Reset local state when sessionId changes to prevent leakage
+  useEffect(() => {
+    setHasLoadedTokensForMap('');
+    lastPreparedMapRef.current = '';
+    setMapTokens([]);
+  }, [sessionId]);
+
   // Synchronisation MJ : Préparation de la map quand l'ID change
   useEffect(() => {
     if (!isReady || !isHost || !currentMapId) return;

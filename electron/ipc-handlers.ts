@@ -5,48 +5,39 @@ import * as fs from 'fs';
 
 let masterDb: Database.Database;
 const sessionDbs = new Map<string, Database.Database>();
-const initializedDbs = new Set<string>(); // ✅ Track initialized DBs to avoid redundant exec()
+const initializedDbs = new Set<string>();
 let mainWin: BrowserWindow | null = null;
 
-/**
- * Récupère ou initialise la base de données spécifique à une session.
- * Supporte la recherche par UUID (id) ou par clef (hostPeerId).
- */
-function getSessionDb(sessionId: string): Database.Database {
-  if (sessionDbs.has(sessionId)) return sessionDbs.get(sessionId)!;
+function getSessionDb(inputId: string): Database.Database {
+  // 1. Toujours résoudre l'UUID réel depuis la Master DB d'abord
+  let realSessionId = inputId;
+  if (masterDb) {
+    const session = masterDb.prepare('SELECT id FROM sessions WHERE id = ? OR hostPeerId = ?').get(inputId, inputId) as any;
+    if (session) {
+      realSessionId = session.id;
+    }
+  }
 
-  // On utilise l'ID fourni comme nom de dossier. 
-  // Cela garantit une isolation physique par dossier.
-  const folderName = sessionId;
-  
+  if (sessionDbs.has(realSessionId)) {
+    return sessionDbs.get(realSessionId)!;
+  }
+
   const baseDir = app.getPath('userData');
-  const sessionsDir = path.join(baseDir, 'data', 'sessions');
-  
-  if (!fs.existsSync(sessionsDir)) {
-    fs.mkdirSync(sessionsDir, { recursive: true });
-  }
+  const sessionDir = path.join(baseDir, 'data', 'sessions', realSessionId);
+  if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
 
-  const sessionFolder = path.join(sessionsDir, folderName);
-  if (!fs.existsSync(sessionFolder)) {
-    fs.mkdirSync(sessionFolder, { recursive: true });
-  }
-
-  const dbPath = path.join(sessionFolder, `session.db`);
-  console.log(`[DB] Ouverture de la base session [${folderName}] : ${dbPath}`);
-  
-  const db = new Database(dbPath, { timeout: 5000 });
-  
+  const dbPath = path.join(sessionDir, 'session.db');
+  const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
 
   if (!initializedDbs.has(dbPath)) {
     try {
       db.exec(`
         CREATE TABLE IF NOT EXISTS players (
           peer_id TEXT PRIMARY KEY,
-          session_id TEXT,
           pseudo TEXT,
-          role INTEGER DEFAULT 0
+          role INTEGER DEFAULT 0,
+          session_id TEXT
         );
 
         CREATE TABLE IF NOT EXISTS characters (
@@ -181,28 +172,19 @@ function getSessionDb(sessionId: string): Database.Database {
 
       const itemTableInfo = db.prepare("PRAGMA table_info(items)").all() as any[];
       if (!itemTableInfo.some(col => col.name === 'modifiers')) {
-        console.log(`[DB] Migration: Ajout de la colonne modifiers à la table items pour la session ${sessionId}`);
+        console.log(`[DB] Migration: Ajout de la colonne modifiers à la table items pour la session ${realSessionId}`);
         db.exec('ALTER TABLE items ADD COLUMN modifiers TEXT');
       }
       
       initializedDbs.add(dbPath);
     } catch (err) {
-      console.error(`[DB] Erreur lors de l'initialisation de la session ${sessionId}:`, err);
+      console.error(`[DB] Erreur lors de l'initialisation de la session ${realSessionId}:`, err);
       db.close();
       throw err;
     }
   }
 
-  sessionDbs.set(sessionId, db);
-  // On indexe aussi par l'autre ID pour les recherches futures
-  if (masterDb) {
-    const session = masterDb.prepare('SELECT id, hostPeerId FROM sessions WHERE id = ? OR hostPeerId = ?').get(sessionId, sessionId) as any;
-    if (session) {
-      if (session.id !== sessionId) sessionDbs.set(session.id, db);
-      if (session.hostPeerId !== sessionId) sessionDbs.set(session.hostPeerId, db);
-    }
-  }
-  
+  sessionDbs.set(realSessionId, db);
   return db;
 }
 

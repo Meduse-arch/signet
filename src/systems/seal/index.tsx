@@ -48,7 +48,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   const { peerId, connections } = usePeersStore();
   const { user } = useAuthStore();
   const { broadcast, onData, sendTo } = usePeer();
-  const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
+  const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId || s.hostPeerId === sessionId));
   const characters = useCharactersStore(state => state.characters);
   const { addOrUpdateCharacter, removeCharacter } = useCharactersStore();
   
@@ -96,16 +96,30 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
 
   useEffect(() => {
     async function loadMaps() {
-      const lastActive = localStorage.getItem(`active_map_${sessionId}`);
-      const sessionActiveMapId = (session as any)?.activeMapId;
-
+      const initialSceneId = `initial-scene-${sessionId}`;
+      
       if (window.electronAPI && sessionId && isHost) {
         const dbMaps = await window.electronAPI.getMaps(sessionId);
         console.log(`[SealEngine] Host loading maps from DB: ${dbMaps.length} found`);
 
+        // Migration : Si on a encore une vieille "initial-scene", on la renomme pour l'isoler
+        const legacyMap = dbMaps.find(m => m.id === 'initial-scene');
+        if (legacyMap) {
+          console.log('[SealEngine] Migration de la scène initiale vers un ID isolé');
+          const migratedMap = { ...legacyMap, id: initialSceneId };
+          await window.electronAPI.removeMap(sessionId, 'initial-scene');
+          await window.electronAPI.addMap(sessionId, migratedMap);
+          // Re-charger les maps après migration
+          const updatedDbMaps = await window.electronAPI.getMaps(sessionId);
+          setMaps(updatedDbMaps);
+          setCurrentMapId(initialSceneId);
+          broadcast({ type: 'MAP_UPDATE', payload: updatedDbMaps });
+          return;
+        }
+
         if (dbMaps.length === 0 && (propImageUrl || session?.imageUrl)) {
           const defaultMap = {
-            id: 'initial-scene',
+            id: initialSceneId,
             name: 'Scène Initiale',
             url: propImageUrl || session?.imageUrl || '',
             is_hidden: false,
@@ -115,19 +129,13 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
           const updatedMaps = [defaultMap];
           setMaps(updatedMaps);
           setCurrentMapId(defaultMap.id);
-          localStorage.setItem(`active_map_${sessionId}`, defaultMap.id);
           broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
         } else {
           setMaps(dbMaps);
           broadcast({ type: 'MAP_UPDATE', payload: dbMaps });
           
-          const foundMap = dbMaps.find(m => m.id === lastActive);
-          if (foundMap) {
-            setCurrentMapId(foundMap.id);
-          } else {
-            const initialScene = dbMaps.find(m => m.id === 'initial-scene');
-            setCurrentMapId(initialScene?.id || dbMaps[0]?.id || '');
-          }
+          const initialScene = dbMaps.find(m => m.id === initialSceneId);
+          setCurrentMapId(initialScene?.id || dbMaps[0]?.id || '');
         }
       } else if (!isHost) {
         // Pour les joueurs, on se base sur les maps du store session
@@ -135,16 +143,9 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
         setMaps(storeMaps);
         console.log(`[SealEngine] Player loading maps from session: ${storeMaps.length} found`);
         
-        // On priorise la map active de la session, puis le localStorage
-        const targetId = sessionActiveMapId || lastActive;
-        const found = storeMaps.find((m: any) => m.id === targetId);
-        
-        if (found && (!found.is_hidden || isMJ)) {
-            setCurrentMapId(found.id);
-        } else {
-            const initial = storeMaps.find((m: any) => m.id === 'initial-scene');
-            setCurrentMapId(initial?.id || storeMaps[0]?.id || 'initial-scene');
-        }
+        // On commence toujours par la scène initiale isolée
+        const initial = storeMaps.find((m: any) => m.id === initialSceneId);
+        setCurrentMapId(initial?.id || storeMaps[0]?.id || initialSceneId);
       }
     }
     loadMaps();
@@ -173,7 +174,6 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       } else if (type === 'MAP_CHANGE' && !isHost) {
         if (payload.id) {
             setCurrentMapId(payload.id);
-            localStorage.setItem(`active_map_${sessionId}`, payload.id);
         }
       } else if (type === 'REQUEST_MAP_MANIFEST' && isHost) {
         // ✅ Un joueur demande le manifest d'une map spécifique (ex: changement de scène indépendant)
@@ -214,6 +214,9 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
         if (map) setCurrentMapId(map.id);
       } else if (type === 'MAP_UPDATE') {
         setMaps(payload);
+      } else if (type === 'REQUEST_CURRENT_MAP') {
+        // ✅ Répondre à une demande de synchronisation (ex: fenêtre pop-out)
+        channel.postMessage({ type: 'CURRENT_MAP_REPLY', payload: { currentMapId } });
       }
     };
 
@@ -225,7 +228,6 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
 
   const handleSelectMap = (map: MapItem, global: boolean = false) => {
     setCurrentMapId(map.id);
-    localStorage.setItem(`active_map_${sessionId}`, map.id);
     if (global && isMJ) {
       broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name, id: map.id, grid_size: map.grid_size } });
     }
@@ -235,8 +237,33 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
     if (!isMJ) return;
     const updatedMaps = maps.map(m => m.id === id ? { ...m, is_hidden: hidden } : m);
     setMaps(updatedMaps);
+
+    // Si la map devient cachée et que c'était la map actuelle, on repasse sur la scène initiale pour les joueurs
+    if (hidden && currentMapId === id) {
+        handleSelectMap(maps.find(m => m.id === 'initial-scene') || maps[0], true);
+    }
+
     if (window.electronAPI) await window.electronAPI.addMap(sessionId, updatedMaps.find(m => m.id === id)!);
     if (isMJ) broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
+  };
+
+  const handleRemoveMap = async (id: string) => {
+    if (!isMJ || id === 'initial-scene') return;
+    
+    const updatedMaps = maps.filter(m => m.id !== id);
+    setMaps(updatedMaps);
+
+    if (window.electronAPI) await window.electronAPI.removeMap(sessionId, id);
+    
+    // Si on supprime la map sur laquelle on est, on repasse sur la scène initiale
+    if (currentMapId === id) {
+        const fallbackMap = updatedMaps.find(m => m.id === 'initial-scene') || updatedMaps[0];
+        if (fallbackMap) {
+            handleSelectMap(fallbackMap, true);
+        }
+    }
+
+    broadcast({ type: 'MAP_UPDATE', payload: updatedMaps });
   };
 
   const handleUpdateMap = async (id: string, updates: Partial<MapItem>) => {
@@ -304,7 +331,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
                 zIndex={win.zIndex + 200} 
                 onFocus={() => focusWindow(id as any)}
               >
-                {id === 'scenes' && <SceneWindowContent scenes={maps} currentSceneId={currentMapId} onSelectScene={handleSelectMap} onAddScene={handleAddMap} onUpdateScene={handleUpdateMap} onToggleHide={handleToggleHideMap} />}
+                {id === 'scenes' && <SceneWindowContent scenes={maps} currentSceneId={currentMapId} onSelectScene={handleSelectMap} onAddScene={handleAddMap} onUpdateScene={handleUpdateMap} onToggleHide={handleToggleHideMap} onRemoveScene={handleRemoveMap} />}
                 {id === 'players' && <PlayerWindowContent players={playersList} sessionId={sessionId} />}
                 {id === 'assets' && <InventoryWindowContent sessionId={sessionId} />}
                 {id === 'bestiary' && <BestiaryWindowContent sessionId={sessionId} />}

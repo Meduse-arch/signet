@@ -250,11 +250,23 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     init();
 
     return () => {
-      console.log('[useBoard] Requesting destruction of Pixi Application');
+      console.log('[useBoard] Requesting destruction of Pixi Application and clearing caches');
       isDestroyed = true;
       setIsReady(false);
+      
+      // ✅ Vider les caches globaux de Pixi pour éviter de réutiliser des textures d'une autre session
+      if (typeof PIXI !== 'undefined') {
+        try {
+          (PIXI.Assets as any)?.reset?.();
+          (PIXI.Cache as any)?.reset?.();
+          // Pour Pixi v8, on peut aussi vider les textures manuellement si nécessaire
+        } catch (e) {
+          console.warn('[useBoard] Failed to reset PIXI caches:', e);
+        }
+      }
+
       if (app && isInitialized) {
-        app.destroy({ removeView: true });
+        app.destroy({ removeView: true, children: true, texture: true });
         app = null;
       }
       boardRef.current = null;
@@ -267,6 +279,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       // ✅ MJ : On vide les files d'attente lors d'un changement de map manuel
       pendingManifest.current = null;
       chunkQueue.current = [];
+      console.log(`[useBoard] Scene change detected, queues cleared for: ${currentMapId}`);
   }, [currentMapId]);
 
   useEffect(() => {

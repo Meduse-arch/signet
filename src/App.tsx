@@ -58,6 +58,7 @@ function MainApp() {
       {activeSessionId && (
         <div className={`absolute inset-0 ${isTransitioning ? 'animate-page-exit' : 'animate-page-enter'}`}>
           <LobbyPage 
+            key={activeSessionId}
             sessionId={activeSessionId} 
             onLeave={handleLeaveSession} 
           />
@@ -84,7 +85,7 @@ function MainApp() {
 function ExternalWindowWrapper() {
   const { type, sessionId } = useParams<{ type: string; sessionId: string }>();
   if (!type || !sessionId) return null;
-  return <ExternalWindowPage />;
+  return <ExternalWindowPage key={`${type}-${sessionId}`} />;
 }
 
 export function App() {
