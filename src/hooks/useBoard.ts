@@ -266,9 +266,29 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
 
   // 2. Chargement initial et synchronisation
   useEffect(() => {
-    // Le chargement de la map se fait maintenant exclusivement via le système de manifest/chunks.
-    // L'effet isReady ci-dessus gère le "drainage" des files d'attente.
-  }, [isReady]);
+    if (!currentMapId || isHost) return;
+
+    const checkAndRequestMap = async () => {
+        const existing = await mapSyncService.dbStorage.getMap(currentMapId);
+        if (existing) {
+            console.log(`[useBoard] Map ${currentMapId} trouvée en cache, hydratation...`);
+            // loadManifest sera appelé via processManifest si on déclenche l'évènement manuellement
+            // ou on peut appeler hydrateMapFromCache directement si isReady est vrai
+            if (isReady) {
+                const maxX = Math.max(...existing.manifest.chunks.map(c => c.x));
+                const maxY = Math.max(...existing.manifest.chunks.map(c => c.y));
+                const width = existing.manifest.width || (maxX + 1) * 512;
+                const height = existing.manifest.height || (maxY + 1) * 512;
+                boardRef.current?.loadManifest(width, height, existing.manifest.grid_size || 50);
+                mapSyncService.hydrateMapFromCache(currentMapId);
+            }
+        } else {
+            console.log(`[useBoard] Map ${currentMapId} manquante, demande du manifest au MJ...`);
+            broadcast({ type: 'REQUEST_MAP_MANIFEST', payload: { mapId: currentMapId } });
+        }
+    };
+    checkAndRequestMap();
+  }, [currentMapId, isHost, isReady, broadcast]);
 
   // Networking logic for tokens
   useEffect(() => {

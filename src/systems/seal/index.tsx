@@ -175,6 +175,10 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
             setCurrentMapId(payload.id);
             localStorage.setItem(`active_map_${sessionId}`, payload.id);
         }
+      } else if (type === 'REQUEST_MAP_MANIFEST' && isHost) {
+        // ✅ Un joueur demande le manifest d'une map spécifique (ex: changement de scène indépendant)
+        console.log(`[Host] Joueur ${fromPeerId} demande le manifest pour: ${payload.mapId}`);
+        mapSyncService.syncCurrentMapToPeer(payload.mapId, fromPeerId);
       } else if (type === 'CHARACTER_LIST' && !isHost) {
         console.log(`[Player] ${payload.length} personnages synchronisés.`);
         payload.forEach((char: any) => {

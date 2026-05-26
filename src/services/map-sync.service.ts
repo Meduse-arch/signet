@@ -139,6 +139,26 @@ class MapSyncService {
     this.isBroadcasting.add(mapId);
 
     try {
+      // ✅ OPTIMISATION : On vérifie si la map est déjà en cache
+      const existing = await dbStorage.getMap(mapId);
+      if (existing) {
+        console.log(`[MapSync] Map ${mapId} déjà en cache, on utilise le manifest existant.`);
+        
+        peerService.broadcast({
+          type: ControlChannelMessage.TRANSFER_START,
+          payload: { 
+            map_id: mapId, 
+            session_transfer_id: crypto.randomUUID(), 
+            manifest: existing.manifest 
+          }
+        });
+
+        // On déclenche aussi l'évènement localement
+        this.onManifestReceivedCallbacks.forEach(cb => cb(mapId, existing.manifest, [], peerService.getPeerId() || 'host'));
+        return;
+      }
+
+      // ... code de compression et chunking existant ...
       const sessionTransferId = crypto.randomUUID();
       this.activeTransfers.set(mapId, sessionTransferId);
 
