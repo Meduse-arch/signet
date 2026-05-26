@@ -5,6 +5,7 @@ import SealEngine from '../seal';
 interface SystemRouterProps {
   system: string;
   isMJ: boolean;
+  isHost: boolean;
   onPause: () => void;
   sessionId: string;
   imageUrl?: string;
@@ -12,12 +13,12 @@ interface SystemRouterProps {
   lobbyMode?: boolean;
 }
 
-export function SystemRouter({ system, isMJ, onPause, sessionId, imageUrl, players, lobbyMode }: SystemRouterProps) {
+export function SystemRouter({ system, isMJ, isHost, onPause, sessionId, imageUrl, players, lobbyMode }: SystemRouterProps) {
   const safeSystem = typeof system === 'string' ? system.toLowerCase() : 'unknown';
 
   const renderSystem = () => {
     if (safeSystem === 'seal') {
-      return <SealEngine sessionId={sessionId} onPause={onPause} players={players} imageUrl={imageUrl} lobbyMode={lobbyMode} />;
+      return <SealEngine sessionId={sessionId} onPause={onPause} players={players} imageUrl={imageUrl} lobbyMode={lobbyMode} isHost={isHost} />;
     }
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-black text-gold-bright font-cinzel">

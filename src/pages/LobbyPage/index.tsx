@@ -360,7 +360,11 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
           <SystemRouter 
             system={sessionData?.system || 'Seal'} 
             isMJ={isMJ} 
-            onPause={() => setIsGameStarted(false)}
+            isHost={isHost}
+            onPause={() => {
+              setIsGameStarted(false);
+              broadcast({ type: 'SESSION_PAUSE', payload: {} });
+            }}
             sessionId={sessionData?.id || sessionId}
             imageUrl={sessionImage}
             players={players}

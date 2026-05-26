@@ -39,9 +39,10 @@ interface SealEngineProps {
   players?: { peer_id: string; pseudo: string; role?: number }[];
   imageUrl?: string;
   lobbyMode?: boolean;
+  isHost?: boolean;
 }
 
-export default function SealEngine({ sessionId, onPause, players = [], imageUrl: propImageUrl, lobbyMode }: SealEngineProps) {
+export default function SealEngine({ sessionId, onPause, players = [], imageUrl: propImageUrl, lobbyMode, isHost: propIsHost }: SealEngineProps) {
   const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
   const { characterManagementId, setCharacterManagement } = useUIStore();
   const { peerId, connections } = usePeersStore();
@@ -58,7 +59,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   const initChars = useCharactersStore(state => state.initialize);
   
   const isMJ = !!user && (user.role === SecurityLevel.MJ || user.role === SecurityLevel.ADMIN || Number(user.role) >= 1);
-  const isHost = session?.hostPeerId === user?.id;
+  const isHost = propIsHost ?? (session?.hostPeerId === user?.id);
 
   const [maps, setMaps] = useState<MapItem[]>(() => {
     return (session as any)?.maps || [];
@@ -100,12 +101,13 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
 
       if (window.electronAPI && sessionId && isHost) {
         const dbMaps = await window.electronAPI.getMaps(sessionId);
+        console.log(`[SealEngine] Host loading maps from DB: ${dbMaps.length} found`);
 
-        if (dbMaps.length === 0 && session?.imageUrl) {
+        if (dbMaps.length === 0 && (propImageUrl || session?.imageUrl)) {
           const defaultMap = {
             id: 'initial-scene',
             name: 'Scène Initiale',
-            url: session.imageUrl,
+            url: propImageUrl || session?.imageUrl || '',
             is_hidden: false,
             grid_size: 50
           };
@@ -131,6 +133,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
         // Pour les joueurs, on se base sur les maps du store session
         const storeMaps = (session as any)?.maps || [];
         setMaps(storeMaps);
+        console.log(`[SealEngine] Player loading maps from session: ${storeMaps.length} found`);
         
         // On priorise la map active de la session, puis le localStorage
         const targetId = sessionActiveMapId || lastActive;
@@ -145,7 +148,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       }
     }
     loadMaps();
-  }, [sessionId, session?.imageUrl, isHost, isMJ, broadcast, (session as any)?.activeMapId]);
+  }, [sessionId, propImageUrl, session?.imageUrl, isHost, isMJ, broadcast, (session as any)?.activeMapId]);
 
   useEffect(() => {
     if (isHost && maps.length > 0 && connections.length > 0) {
