@@ -152,19 +152,29 @@ export class BoardScene extends Container {
     this.mapLayer.setMapDimensions(width, height, gridSize);
     
     // Auto-fit or center
-    const screenW = this.app.renderer.width / this.app.renderer.resolution;
-    const screenH = this.app.renderer.height / this.app.renderer.resolution;
+    const screenW = this.app.screen.width;
+    const screenH = this.app.screen.height;
 
     if (width > 0 && height > 0 && screenW > 0) {
       const scaleX = screenW / width;
       const scaleY = screenH / height;
-      // On calcule l'échelle pour que l'image couvre tout l'écran
-      const scale = Math.max(scaleX, scaleY);
+      
+      // On calcule l'échelle pour que l'image s'adapte à l'écran (zoom arrière max)
+      // Math.min pour tout voir, Math.max pour couvrir. On prend Math.min par défaut pour le confort.
+      const scale = Math.min(scaleX, scaleY, 1.0); 
       this.scale.set(scale);
+      
+      // On centre la scène (le 0,0 de BoardScene sera au centre de l'écran)
+      // Comme MapLayer centre son contenu sur 0,0, ça centre la map.
       this.x = screenW / 2;
       this.y = screenH / 2;
       
-      console.log(`[BoardScene] Set scale to ${scale.toFixed(4)} and position to ${this.x},${this.y}`);
+      console.log(`[BoardScene] Scaled to ${scale.toFixed(4)} and centered at ${this.x},${this.y}`);
+      
+      // On réinitialise la position initiale pour le drag
+      this.initialScenePos = { x: this.x, y: this.y };
+      
+      // On s'assure de rester dans les clous
       this.constrainPan();
     }
   }
