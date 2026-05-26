@@ -5,6 +5,9 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { Character } from '../../services/characters.service';
 import { useMapStore } from '../../store/map';
+import { mapSyncService } from '../../services/map-sync.service';
+import { BrowserImageCompressor } from '../../services/browser-image-compressor';
+
 export interface MapItem {
   id: string;
   name: string;
@@ -34,6 +37,41 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
   const isMJ = user && user.role >= SecurityLevel.MJ;
 
   const [hasLoadedTokensForMap, setHasLoadedTokensForMap] = useState<string>('');
+  const lastPreparedMapRef = useRef<string>('');
+
+  // Synchronisation MJ : Préparation de la map quand l'ID change
+  useEffect(() => {
+    if (!isReady || !isHost || !currentMapId) return;
+    if (lastPreparedMapRef.current === currentMapId) return;
+
+    const currentMap = maps.find(m => m.id === currentMapId);
+    if (!currentMap) return;
+
+    const prepareCurrentMap = async () => {
+        try {
+          let finalUrl = currentMap.url;
+          if (window.electronAPI && window.electronAPI.fetchImage && !finalUrl.startsWith('data:') && !finalUrl.startsWith('blob:')) {
+            const base64 = await window.electronAPI.fetchImage(finalUrl);
+            if (base64) finalUrl = base64;
+          }
+
+          const response = await fetch(finalUrl);
+          const blob = await response.blob();
+          
+          console.log('[Host] BoardCanvas prépare la map:', currentMap.name);
+          lastPreparedMapRef.current = currentMapId;
+          await mapSyncService.broadcastNewMap(
+            currentMap.id, 
+            blob, 
+            new BrowserImageCompressor(),
+            currentMap.grid_size || 50
+          );
+        } catch (e) {
+          console.error('[Host] Erreur préparation map:', e);
+        }
+    };
+    prepareCurrentMap();
+  }, [isReady, currentMapId, maps, isHost]);
 
   // Synchronisation de la map initiale et des changements de props
   useEffect(() => {
@@ -41,8 +79,6 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
 
     const currentMap = maps.find(m => m.id === currentMapId);
     if (currentMap && isHost) {
-      // ✅ MJ : La map est déjà préparée dans LobbyPage.
-      // Elle arrivera ici via les évènements MapSync (onManifestReceived -> hydrateMapFromCache)
       console.log('[Host] BoardCanvas prêt pour la map:', currentMap.name);
     }
 
