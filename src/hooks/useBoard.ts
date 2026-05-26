@@ -10,6 +10,8 @@ import { useSessionStore } from '../store/session';
 
 import { BrowserImageCompressor } from '../services/browser-image-compressor';
 
+import { dbStorage } from '../services/db.storage';
+
 export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: string, currentMapId?: string, imageUrl?: string) {
   const boardRef = useRef<BoardScene | null>(null);
   const { onData, broadcast, sendTo, peerId } = usePeer();
@@ -269,7 +271,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     if (!currentMapId || isHost) return;
 
     const checkAndRequestMap = async () => {
-        const existing = await mapSyncService.dbStorage.getMap(currentMapId);
+        const existing = await dbStorage.getMap(currentMapId);
         if (existing) {
             console.log(`[useBoard] Map ${currentMapId} trouvée en cache, hydratation...`);
             // loadManifest sera appelé via processManifest si on déclenche l'évènement manuellement

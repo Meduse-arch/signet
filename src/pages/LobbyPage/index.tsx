@@ -277,51 +277,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       }
     });
 
-    if (isHost && !isPreparedRef.current) {
-        const prepareMap = async () => {
-            if (isPreparedRef.current) return;
-            isPreparedRef.current = true;
-            try {
-              let mapId = 'initial-scene';
-              let imageUrl = sessionData?.imageUrl;
-              let gridSize = 50;
-
-              const lastActiveId = localStorage.getItem(`active_map_${sessionId}`);
-              
-              if (window.electronAPI) {
-                 const maps = await window.electronAPI.getMaps(sessionId);
-                 const foundMap = maps.find((m: any) => m.id === lastActiveId);
-                 
-                 if (foundMap) {
-                    mapId = foundMap.id;
-                    imageUrl = foundMap.url;
-                    gridSize = foundMap.grid_size || 50;
-                 } else {
-                    const initial = maps.find((m: any) => m.id === 'initial-scene');
-                    if (initial) {
-                        mapId = initial.id;
-                        imageUrl = initial.url;
-                        gridSize = initial.grid_size || 50;
-                    }
-                 }
-              }
-
-              if (!imageUrl) return;
-
-              let finalUrl = imageUrl;
-              if (window.electronAPI && window.electronAPI.fetchImage && !finalUrl.startsWith('data:') && !finalUrl.startsWith('blob:')) {
-                const base64 = await window.electronAPI.fetchImage(finalUrl);
-                if (base64) finalUrl = base64;
-              }
-              const response = await fetch(finalUrl);
-              const blob = await response.blob();
-
-              console.log(`[Lobby] Host prépare la map active: ${mapId}`);
-              await mapSyncService.broadcastNewMap(mapId, blob, new BrowserImageCompressor(), gridSize);
-            } catch (e) { console.error('[Lobby] Host pre-load fail', e); isPreparedRef.current = false; }
-        };
-        prepareMap();
-    }
+    // MJ : Le broadcast est maintenant géré réactivement par BoardCanvas.tsx 
+    // qui est monté en arrière-plan dès l'entrée dans le lobby.
 
     return () => {
       unsubManifest();

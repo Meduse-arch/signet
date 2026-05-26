@@ -7,6 +7,8 @@ export interface Session {
   hostPeerId: string;
   system?: string;
   isSummoned?: boolean;
+  activeMapId?: string;
+  maps?: any[];
 }
 
 export function formatRelativeDate(ts: number): string {
