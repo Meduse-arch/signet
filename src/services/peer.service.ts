@@ -304,6 +304,10 @@ class PeerService {
     };
   }
 
+  public getPeerId(): string | undefined {
+    return this.peer?.id;
+  }
+
   public broadcast(data: PeerMessage) {
     if (this.isHost) {
       this.connections.forEach(pc => { if (pc.control?.open) pc.control.send(data); });

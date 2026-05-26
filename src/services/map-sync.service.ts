@@ -32,6 +32,20 @@ class MapSyncService {
     await dbStorage.clearAllData();
   }
 
+  public async hydrateMapFromCache(mapId: string) {
+    const map = await dbStorage.getMap(mapId);
+    if (!map) return;
+    
+    console.log(`[MapSync] Hydrating map ${mapId} from local cache (${map.manifest.chunks.length} chunks).`);
+    
+    for (const chunk of map.manifest.chunks) {
+      const record = await dbStorage.getChunk(chunk.id);
+      if (record?.data && record.status === 'complete') {
+        this.onChunkReadyCallbacks.forEach(cb => cb(mapId, chunk, record.data!));
+      }
+    }
+  }
+
   public onChunkReady(cb: (mapId: string, chunk: ChunkManifestEntry, data: ArrayBuffer) => void) {
     this.onChunkReadyCallbacks.add(cb);
     return () => this.onChunkReadyCallbacks.delete(cb);
@@ -47,6 +61,25 @@ class MapSyncService {
     peerService.sendTo(hostPeerId, {
       type: ControlChannelMessage.CHUNK_REQUEST,
       payload: { map_id: mapId, chunk_ids: chunkIds }
+    });
+  }
+
+  /**
+   * Resends the transfer manifest for a specific map to a targeted peer.
+   * Useful when a peer joins the lobby late.
+   */
+  public async syncCurrentMapToPeer(mapId: string, peerId: string) {
+    const map = await dbStorage.getMap(mapId);
+    if (!map) return;
+
+    console.log(`[MapSync] Targeted sync for map ${mapId} to peer ${peerId}`);
+    peerService.sendTo(peerId, {
+      type: ControlChannelMessage.TRANSFER_START,
+      payload: { 
+        map_id: mapId, 
+        session_transfer_id: crypto.randomUUID(), 
+        manifest: map.manifest 
+      }
     });
   }
 
@@ -98,7 +131,7 @@ class MapSyncService {
     }
   }
 
-  public async broadcastNewMap(mapId: string, imageSource: ArrayBuffer | Blob, compressor: ImageCompressor) {
+  public async broadcastNewMap(mapId: string, imageSource: ArrayBuffer | Blob, compressor: ImageCompressor, gridSize: number = 50) {
     if (this.isBroadcasting.has(mapId)) {
       console.warn(`[MapSync] broadcastNewMap déjà en cours pour ${mapId}, ignoré.`);
       return;
@@ -110,7 +143,7 @@ class MapSyncService {
       this.activeTransfers.set(mapId, sessionTransferId);
 
       const compressedData = await compressor.compress(imageSource);
-      const { chunks, manifest } = await this.chunkAndHashImage(mapId, compressedData);
+      const { chunks, manifest } = await this.chunkAndHashImage(mapId, compressedData, gridSize);
 
       const mapRecord: MapRecord = {
         map_id: mapId,
@@ -137,12 +170,15 @@ class MapSyncService {
         type: ControlChannelMessage.TRANSFER_START,
         payload: { map_id: mapId, session_transfer_id: sessionTransferId, manifest }
       });
+
+      // ✅ MJ : On déclenche aussi l'évènement localement pour que notre propre useBoard réagisse
+      this.onManifestReceivedCallbacks.forEach(cb => cb(mapId, manifest, [], peerService.getPeerId() || 'host'));
     } finally {
       this.isBroadcasting.delete(mapId);
     }
   }
 
-  private async chunkAndHashImage(mapId: string, buffer: ArrayBuffer) {
+  private async chunkAndHashImage(mapId: string, buffer: ArrayBuffer, gridSize: number = 50) {
     const blob = new Blob([buffer]);
     const bitmap = await createImageBitmap(blob);
     
@@ -180,6 +216,7 @@ class MapSyncService {
     const manifest: ChunkManifest = {
       map_id: mapId,
       global_hash: globalHash,
+      grid_size: gridSize,
       chunks: entries
     };
 

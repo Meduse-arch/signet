@@ -40,10 +40,10 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
     if (!isReady) return;
 
     const currentMap = maps.find(m => m.id === currentMapId);
-    if (currentMap) {
-      loadMap(currentMap.url, undefined, currentMap.grid_size || 50);
-    } else if (imageUrl) {
-      loadMap(imageUrl);
+    if (currentMap && isHost) {
+      // ✅ MJ : La map est déjà préparée dans LobbyPage.
+      // Elle arrivera ici via les évènements MapSync (onManifestReceived -> hydrateMapFromCache)
+      console.log('[Host] BoardCanvas prêt pour la map:', currentMap.name);
     }
 
     // ✅ Si on est un joueur, on demande une synchro des tokens dès que la map est prête
@@ -51,7 +51,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       console.log('[Player] Map prête, demande de synchro des tokens...');
       broadcast({ type: 'TOKEN_SYNC_REQUEST', payload: {} });
     }
-  }, [isReady, currentMapId, maps, imageUrl, loadMap, isHost, broadcast]);
+  }, [isReady, currentMapId, maps, isHost, broadcast]);
 
   // Placer les tokens sur la map (Source de vérité MJ : Initialisation uniquement)
   useEffect(() => {
@@ -147,13 +147,11 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
     const unsub = onData((data, fromPeerId) => {
       if (data.type === 'MAP_CHANGE' && !isHost) {
         console.log('[Player] Changement de map reçu:', data.payload.name);
-        const { url, grid_size, id } = data.payload;
-        loadMap(url, undefined, grid_size || 50);
+        // ✅ On ne charge plus l'URL en direct (CORS + doublon système de chunks)
+        // L'hydratation de la map se fera via useBoard qui écoute ControlChannelMessage.TRANSFER_START
         clearTokens();
         // On demande les tokens de la nouvelle map
         broadcast({ type: 'TOKEN_SYNC_REQUEST', payload: {} });
-        // On demande l'image au cas où ce soit un fichier local MJ
-        broadcast({ type: 'REQUEST_MAP_IMAGE', payload: { peerId: usePeersStore.getState().peerId } });
       } else if (data.type === 'TOKEN_ADD') {
         if (!isHost) {
           addToken({

@@ -44,7 +44,22 @@ export function useSession() {
   const add = async (session: Session) => {
     storeAdd(session); // Optimistic update
     try {
-      await addSession(session);
+      if (session.isSummoned) {
+        // Sauvegarder dans le localStorage pour les joueurs
+        const summonedSessions = JSON.parse(localStorage.getItem('summoned_sessions') || '[]');
+        const existsIndex = summonedSessions.findIndex((s: Session) => s.id === session.id);
+        
+        let updated;
+        if (existsIndex >= 0) {
+          updated = summonedSessions.map((s: Session, i: number) => i === existsIndex ? session : s);
+        } else {
+          updated = [session, ...summonedSessions];
+        }
+        localStorage.setItem('summoned_sessions', JSON.stringify(updated));
+      } else {
+        // Sauvegarder dans SQLite pour l'hôte
+        await addSession(session);
+      }
     } catch (e) {
       console.error(e);
     }

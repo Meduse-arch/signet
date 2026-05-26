@@ -17,6 +17,55 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const cachedMapBuffer = useRef<{ buffer: ArrayBuffer; type: string } | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const chunkQueue = useRef<{mapId: string, chunk: any, data: ArrayBuffer}[]>([]);
+  const pendingManifest = useRef<{mapId: string, manifest: any, missingChunks: any[], hostPeerId: string} | null>(null);
+
+  const getCenterView = useCallback(() => {
+    if (!boardRef.current || !containerRef.current) return { x: 0, y: 0 };
+    
+    // On calcule le centre du container en coordonnée "monde" Pixi
+    const container = containerRef.current;
+    const centerX = container.offsetWidth / 2;
+    const centerY = container.offsetHeight / 2;
+    
+    // On convertit ce point local au container vers le repère local de la scène
+    return boardRef.current.toLocal({ x: centerX, y: centerY });
+  }, [containerRef]);
+
+  const processManifest = useCallback((mapId: string, manifest: any, missingChunks: any[], hostPeerId: string) => {
+    if (!boardRef.current || !isReady) {
+      console.log(`[useBoard] Pixi not ready, queuing manifest for ${mapId}`);
+      pendingManifest.current = { mapId, manifest, missingChunks, hostPeerId };
+      return;
+    }
+
+    console.log(`[useBoard] Processing manifest for ${mapId}. Missing: ${missingChunks.length}`);
+    const maxX = Math.max(...manifest.chunks.map((c: any) => c.x));
+    const maxY = Math.max(...manifest.chunks.map((c: any) => c.y));
+    const width = (maxX + 1) * 512;
+    const height = (maxY + 1) * 512;
+    const gridSize = manifest.grid_size || 50;
+
+    boardRef.current.loadManifest(width, height, gridSize);
+
+    if (missingChunks.length > 0 && hostPeerId) {
+      const center = getCenterView();
+      const camX = isNaN(center.x) ? width / 2 : center.x + width / 2;
+      const camY = isNaN(center.y) ? height / 2 : center.y + height / 2;
+
+      const sortedChunks = [...missingChunks].sort((a, b) => {
+        const distA = Math.hypot((a.x * 512 + 256) - camX, (a.y * 512 + 256) - camY);
+        const distB = Math.hypot((b.x * 512 + 256) - camX, (b.y * 512 + 256) - camY);
+        return distA - distB;
+      });
+
+      const chunkIds = sortedChunks.map(c => c.id);
+      mapSyncService.requestChunks(mapId, chunkIds, hostPeerId);
+    } else if (missingChunks.length === 0) {
+      console.log(`[useBoard] Map ${mapId} complete in cache, starting hydration...`);
+      mapSyncService.hydrateMapFromCache(mapId);
+    }
+  }, [getCenterView, isReady]);
 
   const loadMap = useCallback(async (url: string, format?: string, gridSize: number = 50) => {
     if (!boardRef.current) {
@@ -45,7 +94,8 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
           await mapSyncService.broadcastNewMap(
             currentMapIdRef.current, 
             blob, 
-            new BrowserImageCompressor()
+            new BrowserImageCompressor(),
+            gridSize
           );
         }
       } catch (e) {
@@ -65,34 +115,25 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
 
   useEffect(() => {
     const unsubManifest = mapSyncService.onManifestReceived((mapId, manifest, missingChunks, hostPeerId) => {
-      if (!boardRef.current || mapId !== currentMapIdRef.current) return;
+      if (mapId !== currentMapIdRef.current) return;
       
-      const maxX = Math.max(...manifest.chunks.map(c => c.x));
-      const maxY = Math.max(...manifest.chunks.map(c => c.y));
-      const width = (maxX + 1) * 512;
-      const height = (maxY + 1) * 512;
-
-      boardRef.current.loadManifest(width, height, 50);
-
-      if (missingChunks.length > 0 && hostPeerId) {
-        const center = getCenterView();
-        const camX = isNaN(center.x) ? width / 2 : center.x + width / 2;
-        const camY = isNaN(center.y) ? height / 2 : center.y + height / 2;
-
-        const sortedChunks = [...missingChunks].sort((a, b) => {
-          const distA = Math.hypot((a.x * 512 + 256) - camX, (a.y * 512 + 256) - camY);
-          const distB = Math.hypot((b.x * 512 + 256) - camX, (b.y * 512 + 256) - camY);
-          return distA - distB;
-        });
-
-        const chunkIds = sortedChunks.map(c => c.id);
-        mapSyncService.requestChunks(mapId, chunkIds, hostPeerId);
+      if (!boardRef.current || !isReady) {
+        pendingManifest.current = { mapId, manifest, missingChunks, hostPeerId };
+        return;
       }
+      
+      processManifest(mapId, manifest, missingChunks, hostPeerId);
     });
 
     const unsubChunk = mapSyncService.onChunkReady((mapId, chunk, data) => {
-      if (boardRef.current && mapId === currentMapIdRef.current) {
+      console.log(`[useBoard] Chunk ready for ${mapId}: ${chunk.id}. Pixi ready: ${isReady}`);
+      if (mapId !== currentMapIdRef.current) return;
+      
+      if (boardRef.current && isReady) {
         boardRef.current.paintChunk(chunk.id, chunk.x, chunk.y, data);
+      } else {
+        console.log(`[useBoard] Queuing chunk ${chunk.id}`);
+        chunkQueue.current.push({ mapId, chunk, data });
       }
     });
 
@@ -100,7 +141,33 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       unsubManifest();
       unsubChunk();
     };
-  }, [session?.hostPeerId]);
+  }, [session?.hostPeerId, isReady, processManifest]);
+
+  // Drain queues when ready
+  useEffect(() => {
+    if (isReady && boardRef.current) {
+      if (pendingManifest.current) {
+        const { mapId, manifest, missingChunks, hostPeerId } = pendingManifest.current;
+        processManifest(mapId, manifest, missingChunks, hostPeerId);
+        
+        // Si la map était déjà complète, on déclenche l'hydratation maintenant que Pixi est prêt
+        if (missingChunks.length === 0) {
+            console.log(`[useBoard] Retrying hydration for complete map ${mapId}`);
+            mapSyncService.hydrateMapFromCache(mapId);
+        }
+        
+        pendingManifest.current = null;
+      }
+
+      if (chunkQueue.current.length > 0) {
+        console.log(`[useBoard] Replaying ${chunkQueue.current.length} queued chunks`);
+        chunkQueue.current.forEach(({ chunk, data }) => {
+          boardRef.current!.paintChunk(chunk.id, chunk.x, chunk.y, data);
+        });
+        chunkQueue.current = [];
+      }
+    }
+  }, [isReady, processManifest]);
 
   // 1. Initialisation de Pixi (Une seule fois)
   useEffect(() => {
@@ -191,15 +258,9 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
 
   // 2. Chargement initial et synchronisation
   useEffect(() => {
-    let cancelled = false;
-    if (!isReady) return;
-
-    if (imageUrl && isHost && !cancelled) {
-      loadMap(imageUrl);
-    }
-
-    return () => { cancelled = true; };
-  }, [isReady, imageUrl, isHost, loadMap]);
+    // Le chargement de la map se fait maintenant exclusivement via le système de manifest/chunks.
+    // L'effet isReady ci-dessus gère le "drainage" des files d'attente.
+  }, [isReady]);
 
   // Networking logic for tokens
   useEffect(() => {
@@ -242,18 +303,6 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       boardRef.current.moveToken(id, x, y);
     }
   }, []);
-
-  const getCenterView = useCallback(() => {
-    if (!boardRef.current || !containerRef.current) return { x: 0, y: 0 };
-    
-    // On calcule le centre du container en coordonnée "monde" Pixi
-    const container = containerRef.current;
-    const centerX = container.offsetWidth / 2;
-    const centerY = container.offsetHeight / 2;
-    
-    // On convertit ce point local au container vers le repère local de la scène
-    return boardRef.current.toLocal({ x: centerX, y: centerY });
-  }, [containerRef]);
 
   return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView };
 }

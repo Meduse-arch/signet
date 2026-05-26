@@ -3,6 +3,8 @@ import { peerService } from './peer.service';
 
 export const CHUNK_SIZE = 16 * 1024; // 16KB
 
+import { toArrayBuffer } from '../utils/binary';
+
 async function calculateHash(buffer: ArrayBuffer): Promise<string> {
   const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -60,15 +62,7 @@ class TransferService {
 
   private async handleIncomingFragment(payload: any, fromPeerId: string) {
     try {
-      let buffer: ArrayBuffer;
-      if (payload instanceof Blob) {
-        buffer = await payload.arrayBuffer();
-      } else if (payload instanceof ArrayBuffer) {
-        buffer = payload;
-      } else {
-        console.error('[TransferService] Type de payload inconnu:', typeof payload, payload);
-        return;
-      }
+      const buffer = await toArrayBuffer(payload);
 
       const view = new DataView(buffer);
       const headerLen = view.getUint32(0);

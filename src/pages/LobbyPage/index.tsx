@@ -16,10 +16,7 @@ import {
 import { 
   Users, 
   WifiOff, 
-  LogOut, 
   Loader2,
-  Copy,
-  CheckCircle2,
   Zap,
   Play
 } from 'lucide-react';
@@ -29,7 +26,7 @@ import { SystemRouter } from '../../systems/core/SystemRouter';
 import { mapSyncService } from '../../services/map-sync.service';
 import { dbStorage } from '../../services/db.storage';
 import { BrowserImageCompressor } from '../../services/browser-image-compressor';
-import { ChunkManifest, ChunkManifestEntry } from '../../services/p2p-sync.types';
+import { useSession } from '../../hooks/useSession';
 
 interface LobbyPageProps {
   sessionId: string;
@@ -39,7 +36,7 @@ interface LobbyPageProps {
 type ConnectionStatus = 'initializing' | 'connecting' | 'connected' | 'relay' | 'error' | 'disconnected';
 
 export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
-  const { init, broadcast, onData, destroy, connections, peerId } = usePeer();
+  const { init, broadcast, onData, destroy, peerId } = usePeer();
   const [status, setStatus] = useState<ConnectionStatus>('initializing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string; role?: number }[]>([]);
@@ -49,8 +46,9 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const [lobbyBg, setLobbyBg] = useState<string | null>(null);
 
   const currentUser = useAuthStore(state => state.user);
-  const { sessions, addSession: addSessionToStore } = useSessionStore();
+  const { sessions, addSession: persistSession } = useSession();
   
+  const isPreparedRef = useRef(false);
   const sessionDataFromStore = sessions.find(s => s.id === sessionId);
   
   // Si c'est un code SIGNET-xxx, on est forcément joueur. 
@@ -136,6 +134,11 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         setPlayers(updatedList);
         broadcastRef.current({ type: 'PLAYER_LIST', payload: updatedList });
 
+        // Trigger map sync for the new player immediately
+        if (sessionData?.id) {
+          mapSyncService.syncCurrentMapToPeer('initial-scene', newPeerId);
+        }
+
         let sessionMaps = [];
         if (window.electronAPI) sessionMaps = await window.electronAPI.getMaps(sessionIdRef.current);
 
@@ -165,7 +168,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
             } catch (err) { console.error('Switch UUID fail', err); }
         }
         const updatedSession = { ...data.payload, lastPlayed: Date.now(), isSummoned: true };
-        addSessionToStore(updatedSession);
+        persistSession(updatedSession);
       }
       else if (data.type === 'PLAYER_LIST') {
         setPlayers(data.payload);
@@ -188,7 +191,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
     const unsub = onData(handleMessage);
     return () => unsub();
-  }, [onData, refreshPlayers, sessionData, isGameStarted, addSessionToStore, onLeave, peerId]);
+  }, [onData, refreshPlayers, sessionData, isGameStarted, persistSession, onLeave, peerId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -244,6 +247,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   }, [destroy]);
 
   // Pre-loading des maps dans le Hub
+  const bgSetRef = useRef(false);
   useEffect(() => {
     if (status !== 'connected' || !sessionId) return;
 
@@ -251,13 +255,12 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
       console.log(`[Lobby] Manifest reçu pour ${mapId}, ${missingChunks.length} chunks manquants.`);
       
       if (missingChunks.length > 0) {
-        // Dans le lobby, on n'a pas de caméra, on demande tout dans l'ordre
         const chunkIds = missingChunks.map(c => c.id);
         mapSyncService.requestChunks(mapId, chunkIds, hostPeerId);
       } else {
-        // Map complète, on peut essayer d'afficher le premier chunk comme BG
         const firstChunk = await dbStorage.getChunk(manifest.chunks[0].id);
-        if (firstChunk?.data) {
+        if (firstChunk?.data && !bgSetRef.current) {
+           bgSetRef.current = true;
            const blob = new Blob([firstChunk.data], { type: 'image/webp' });
            setLobbyBg(URL.createObjectURL(blob));
         }
@@ -265,27 +268,56 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
     });
 
     const unsubChunk = mapSyncService.onChunkReady((mapId, chunk, data) => {
-      console.log(`[Lobby] Chunk reçu: ${chunk.id}`);
-      // Si c'est le premier chunk, on met à jour le BG du lobby
-      if (!lobbyBg && chunk.x === 0 && chunk.y === 0) {
+      if (!bgSetRef.current && chunk.x === 0 && chunk.y === 0) {
+          console.log(`[Lobby] Premier chunk reçu (${chunk.id}), mise à jour du fond.`);
+          bgSetRef.current = true;
           const blob = new Blob([data], { type: 'image/webp' });
           setLobbyBg(URL.createObjectURL(blob));
       }
     });
 
-    // MJ : déclenche le broadcast dès que la connexion est stable
-    if (isHost && sessionData?.imageUrl) {
+    if (isHost && !isPreparedRef.current) {
         const prepareMap = async () => {
+            if (isPreparedRef.current) return;
+            isPreparedRef.current = true;
             try {
-              let finalUrl = sessionData.imageUrl!;
-              if (window.electronAPI && window.electronAPI.fetchImage) {
+              let mapId = 'initial-scene';
+              let imageUrl = sessionData?.imageUrl;
+              let gridSize = 50;
+
+              const lastActiveId = localStorage.getItem(`active_map_${sessionId}`);
+              
+              if (window.electronAPI) {
+                 const maps = await window.electronAPI.getMaps(sessionId);
+                 const foundMap = maps.find((m: any) => m.id === lastActiveId);
+                 
+                 if (foundMap) {
+                    mapId = foundMap.id;
+                    imageUrl = foundMap.url;
+                    gridSize = foundMap.grid_size || 50;
+                 } else {
+                    const initial = maps.find((m: any) => m.id === 'initial-scene');
+                    if (initial) {
+                        mapId = initial.id;
+                        imageUrl = initial.url;
+                        gridSize = initial.grid_size || 50;
+                    }
+                 }
+              }
+
+              if (!imageUrl) return;
+
+              let finalUrl = imageUrl;
+              if (window.electronAPI && window.electronAPI.fetchImage && !finalUrl.startsWith('data:') && !finalUrl.startsWith('blob:')) {
                 const base64 = await window.electronAPI.fetchImage(finalUrl);
                 if (base64) finalUrl = base64;
               }
               const response = await fetch(finalUrl);
               const blob = await response.blob();
-              await mapSyncService.broadcastNewMap('initial-scene', blob, new BrowserImageCompressor());
-            } catch (e) { console.error('[Lobby] Host pre-load fail', e); }
+
+              console.log(`[Lobby] Host prépare la map active: ${mapId}`);
+              await mapSyncService.broadcastNewMap(mapId, blob, new BrowserImageCompressor(), gridSize);
+            } catch (e) { console.error('[Lobby] Host pre-load fail', e); isPreparedRef.current = false; }
         };
         prepareMap();
     }
@@ -293,7 +325,6 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
     return () => {
       unsubManifest();
       unsubChunk();
-      if (lobbyBg) URL.revokeObjectURL(lobbyBg);
     };
   }, [status, sessionId, isHost, sessionData?.imageUrl]);
 
@@ -314,21 +345,6 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
     }
   };
 
-  if (isGameStarted) {
-    return (
-      <div className="flex-1 w-full h-full animate-page-enter">
-        <SystemRouter 
-          system={sessionData?.system || 'Seal'} 
-          isMJ={isMJ} 
-          onPause={() => setIsGameStarted(false)}
-          sessionId={sessionData?.id || sessionId}
-          imageUrl={sessionImage}
-          players={players}
-        />
-      </div>
-    );
-  }
-
   const getRoleLabelLocal = (role?: number) => {
     const level = role ?? 0;
     if (level === SecurityLevel.ADMIN) return 'ADMIN';
@@ -338,76 +354,95 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
   return (
     <div className="flex flex-col h-screen bg-[#0D0D0F] text-white overflow-hidden relative">
-      <div className="absolute inset-0 z-0">
-        {(lobbyBg || sessionImage) && <img src={lobbyBg || sessionImage} className="w-full h-full object-cover opacity-20 grayscale-[0.5]" alt="bg" />}
-        <div className="absolute inset-0 bg-vignette pointer-events-none" />
-      </div>
-
-      <header className="relative z-10 flex items-center justify-between px-8 py-4 border-b border-gold-DEFAULT/20 bg-[#0D0D0F]/60 backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-4">
-          <img src={logo} className="w-8 h-8 animate-rune-pulse" alt="logo" />
-          <div>
-            <h1 className="text-lg font-black text-gold-bright tracking-widest uppercase">{sessionData?.name || 'Lobby'}</h1>
-            <div className="flex items-center gap-2 text-[8px] font-cinzel">
-              <span className={`w-1.5 h-1.5 rounded-full ${status === 'connected' ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`} />
-              <span className="text-gold-muted uppercase tracking-widest">{status}</span>
-            </div>
-          </div>
+      {(sessionData || isHost) && (
+        <div className={`absolute inset-0 transition-all duration-1000 ${isGameStarted ? 'z-50 opacity-100' : 'z-0 opacity-30'}`}>
+          <SystemRouter 
+            system={sessionData?.system || 'Seal'} 
+            isMJ={isMJ} 
+            onPause={() => setIsGameStarted(false)}
+            sessionId={sessionData?.id || sessionId}
+            imageUrl={sessionImage}
+            players={players}
+            lobbyMode={!isGameStarted}
+          />
         </div>
-        <div className="flex items-center gap-3">
-          {isHost && <button onClick={copyId} className="px-4 py-1.5 rounded-lg border border-gold-DEFAULT/30 text-[9px] font-bold text-gold-bright hover:bg-gold-DEFAULT/10 transition-all">{copied ? 'COPIÉ' : 'PARTAGER'}</button>}
-          <button onClick={onLeave} className="px-4 py-1.5 rounded-lg border border-red-500/30 text-[9px] font-bold text-red-500 hover:bg-red-500/10 transition-all">QUITTER</button>
-        </div>
-      </header>
+      )}
 
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-12">
-        {status === 'error' ? (
-          <div className="text-center space-y-4">
-            <WifiOff size={48} className="mx-auto text-red-500 opacity-50" />
-            <h2 className="text-xl font-bold">Lien Rompu</h2>
-            <p className="text-sm text-white/60 italic">{errorMessage}</p>
-            <button onClick={() => window.location.reload()} className="px-6 py-2 rounded-full border border-white/20 text-xs font-bold uppercase tracking-widest">Ré-Invocation</button>
-          </div>
-        ) : (status !== 'connected' && status !== 'relay') ? (
-          <div className="text-center space-y-4 animate-pulse">
-            <Loader2 size={48} className="mx-auto text-gold-DEFAULT animate-spin" />
-            <h2 className="text-sm font-cinzel tracking-[0.3em] text-gold-DEFAULT uppercase">Établissement du Signet...</h2>
-          </div>
-        ) : (
-          <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <span className="text-[10px] font-black text-gold-muted tracking-[0.3em] uppercase">Chroniques en attente</span>
-                <h2 className="text-5xl font-black text-white uppercase tracking-tighter leading-none">{sessionData?.name}</h2>
-                <p className="text-gold-muted italic font-serif">Les récits du système {sessionData?.system} s'apprêtent à naître.</p>
+      {!isGameStarted && (
+        <div className="absolute inset-0 z-[1] pointer-events-none">
+          <div className="absolute inset-0 bg-vignette pointer-events-none" />
+        </div>
+      )}
+
+      {!isGameStarted && (
+        <>
+          <header className="relative z-10 flex items-center justify-between px-8 py-4 border-b border-gold-DEFAULT/20 bg-[#0D0D0F]/60 backdrop-blur-md shrink-0">
+            <div className="flex items-center gap-4">
+              <img src={logo} className="w-8 h-8 animate-rune-pulse" alt="logo" />
+              <div>
+                <h1 className="text-lg font-black text-gold-bright tracking-widest uppercase">{sessionData?.name || 'Lobby'}</h1>
+                <div className="flex items-center gap-2 text-[8px] font-cinzel">
+                  <span className={`w-1.5 h-1.5 rounded-full ${status === 'connected' ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`} />
+                  <span className="text-gold-muted uppercase tracking-widest">{status}</span>
+                </div>
               </div>
-              {isHost && (
-                <button onClick={handleLaunchSession} className="w-full py-5 rounded-2xl bg-gold-DEFAULT text-black font-black uppercase tracking-widest hover:bg-gold-bright transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3">
-                  <Play size={20} fill="currentColor" /> LANCER LA SESSION
-                </button>
-              )}
             </div>
-            <div className="bg-black/40 border border-gold-DEFAULT/20 rounded-[2.5rem] p-8 backdrop-blur-xl relative overflow-hidden">
-              <div className="absolute inset-0 bg-grimoire-texture opacity-[0.03] pointer-events-none" />
-              <h3 className="text-[10px] font-black text-gold-muted uppercase tracking-[0.3em] mb-6 flex items-center gap-2 relative z-10"><Users size={14}/> Cercle d'Initiés</h3>
-              <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar relative z-10 pr-2">
-                {players.map(p => (
-                  <div key={p.peer_id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5 group hover:border-gold-DEFAULT/30 transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 flex items-center justify-center text-xs font-black text-gold-bright font-cinzel shadow-inner">{p.pseudo.charAt(0)}</div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-white/90 tracking-wide">{p.pseudo}</span>
-                        <span className="text-[8px] text-gold-muted/60 uppercase font-black tracking-widest">{getRoleLabelLocal(p.role)}</span>
-                      </div>
-                    </div>
-                    {p.pseudo === 'MJ' && <Zap size={12} className="text-gold-bright animate-pulse" />}
+            <div className="flex items-center gap-3">
+              {isHost && <button onClick={copyId} className="px-4 py-1.5 rounded-lg border border-gold-DEFAULT/30 text-[9px] font-bold text-gold-bright hover:bg-gold-DEFAULT/10 transition-all">{copied ? 'COPIÉ' : 'PARTAGER'}</button>}
+              <button onClick={onLeave} className="px-4 py-1.5 rounded-lg border border-red-500/30 text-[9px] font-bold text-red-500 hover:bg-red-500/10 transition-all">QUITTER</button>
+            </div>
+          </header>
+
+          <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-12">
+            {status === 'error' ? (
+              <div className="text-center space-y-4">
+                <WifiOff size={48} className="mx-auto text-red-500 opacity-50" />
+                <h2 className="text-xl font-bold">Lien Rompu</h2>
+                <p className="text-sm text-white/60 italic">{errorMessage}</p>
+                <button onClick={() => window.location.reload()} className="px-6 py-2 rounded-full border border-white/20 text-xs font-bold uppercase tracking-widest">Ré-Invocation</button>
+              </div>
+            ) : (status !== 'connected' && status !== 'relay') ? (
+              <div className="text-center space-y-4 animate-pulse">
+                <Loader2 size={48} className="mx-auto text-gold-DEFAULT animate-spin" />
+                <h2 className="text-sm font-cinzel tracking-[0.3em] text-gold-DEFAULT uppercase">Établissement du Signet...</h2>
+              </div>
+            ) : (
+              <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-black text-gold-muted tracking-[0.3em] uppercase">Chroniques en attente</span>
+                    <h2 className="text-5xl font-black text-white uppercase tracking-tighter leading-none">{sessionData?.name}</h2>
+                    <p className="text-gold-muted italic font-serif">Les récits du système {sessionData?.system} s'apprêtent à naître.</p>
                   </div>
-                ))}
+                  {isHost && (
+                    <button onClick={handleLaunchSession} className="w-full py-5 rounded-2xl bg-gold-DEFAULT text-black font-black uppercase tracking-widest hover:bg-gold-bright transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3">
+                      <Play size={20} fill="currentColor" /> LANCER LA SESSION
+                    </button>
+                  )}
+                </div>
+                <div className="bg-black/40 border border-gold-DEFAULT/20 rounded-[2.5rem] p-8 backdrop-blur-xl relative overflow-hidden">
+                  <div className="absolute inset-0 bg-grimoire-texture opacity-[0.03] pointer-events-none" />
+                  <h3 className="text-[10px] font-black text-gold-muted uppercase tracking-[0.3em] mb-6 flex items-center gap-2 relative z-10"><Users size={14}/> Cercle d'Initiés</h3>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar relative z-10 pr-2">
+                    {players.map(p => (
+                      <div key={p.peer_id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5 group hover:border-gold-DEFAULT/30 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 flex items-center justify-center text-xs font-black text-gold-bright font-cinzel shadow-inner">{p.pseudo.charAt(0)}</div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-white/90 tracking-wide">{p.pseudo}</span>
+                            <span className="text-[8px] text-gold-muted/60 uppercase font-black tracking-widest">{getRoleLabelLocal(p.role)}</span>
+                          </div>
+                        </div>
+                        {p.pseudo === 'MJ' && <Zap size={12} className="text-gold-bright animate-pulse" />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
-      </main>
+            )}
+          </main>
+        </>
+      )}
     </div>
   );
 }

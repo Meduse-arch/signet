@@ -9,14 +9,15 @@ interface SystemRouterProps {
   sessionId: string;
   imageUrl?: string;
   players: { peer_id: string; pseudo: string; role?: number }[];
+  lobbyMode?: boolean;
 }
 
-export function SystemRouter({ system, isMJ, onPause, sessionId, imageUrl, players }: SystemRouterProps) {
+export function SystemRouter({ system, isMJ, onPause, sessionId, imageUrl, players, lobbyMode }: SystemRouterProps) {
   const safeSystem = typeof system === 'string' ? system.toLowerCase() : 'unknown';
 
   const renderSystem = () => {
     if (safeSystem === 'seal') {
-      return <SealEngine sessionId={sessionId} onPause={onPause} players={players} imageUrl={imageUrl} />;
+      return <SealEngine sessionId={sessionId} onPause={onPause} players={players} imageUrl={imageUrl} lobbyMode={lobbyMode} />;
     }
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-black text-gold-bright font-cinzel">

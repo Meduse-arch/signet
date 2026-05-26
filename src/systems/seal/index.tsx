@@ -38,9 +38,10 @@ interface SealEngineProps {
   onPause?: () => void;
   players?: { peer_id: string; pseudo: string; role?: number }[];
   imageUrl?: string;
+  lobbyMode?: boolean;
 }
 
-export default function SealEngine({ sessionId, onPause, players = [], imageUrl: propImageUrl }: SealEngineProps) {
+export default function SealEngine({ sessionId, onPause, players = [], imageUrl: propImageUrl, lobbyMode }: SealEngineProps) {
   const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
   const { characterManagementId, setCharacterManagement } = useUIStore();
   const { peerId, connections } = usePeersStore();
@@ -116,17 +117,32 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
           if (isHost && dbMaps.length > 0) {
             broadcast({ type: 'MAP_UPDATE', payload: dbMaps });
           }
+          
+          // Persistence logic:
           const lastActive = localStorage.getItem(`active_map_${sessionId}`);
-          if (lastActive && dbMaps.find(m => m.id === lastActive)) {
-            setCurrentMapId(lastActive);
-          } else if (dbMaps.length > 0) {
-            setCurrentMapId(dbMaps[0].id);
+          const foundMap = dbMaps.find(m => m.id === lastActive);
+          
+          // Si la map existe et n'est pas cachée (ou si on est MJ)
+          if (foundMap && (!foundMap.is_hidden || isMJ)) {
+            setCurrentMapId(foundMap.id);
+          } else {
+            // Sinon on cherche initial-scene
+            const initialScene = dbMaps.find(m => m.id === 'initial-scene');
+            if (initialScene) {
+              setCurrentMapId(initialScene.id);
+              localStorage.setItem(`active_map_${sessionId}`, initialScene.id);
+            } else if (dbMaps.length > 0) {
+              // Sinon la première map visible
+              const firstVisible = dbMaps.find(m => !m.is_hidden) || dbMaps[0];
+              setCurrentMapId(firstVisible.id);
+              localStorage.setItem(`active_map_${sessionId}`, firstVisible.id);
+            }
           }
         }
       }
     }
     loadMaps();
-  }, [sessionId, session?.imageUrl, isHost, broadcast]);
+  }, [sessionId, session?.imageUrl, isHost, isMJ, broadcast]);
 
   useEffect(() => {
     if (isHost && maps.length > 0 && connections.length > 0) {
@@ -256,43 +272,47 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#050507]">
       <BoardCanvas sessionId={sessionId} imageUrl={propImageUrl} maps={maps} currentMapId={currentMapId} characters={characters} />
-      {isMJ && onPause && (
-        <button onClick={onPause} className="fixed top-8 right-8 z-[150] group flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 text-gold-DEFAULT hover:text-gold-bright transition-all active:scale-95">
-          <Pause size={18} />
-          <span className="text-[10px] font-cinzel font-black tracking-[0.2em] uppercase">Pause</span>
-        </button>
+      {!lobbyMode && (
+        <>
+          {isMJ && onPause && (
+            <button onClick={onPause} className="fixed top-8 right-8 z-[150] group flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 text-gold-DEFAULT hover:text-gold-bright transition-all active:scale-95">
+              <Pause size={18} />
+              <span className="text-[10px] font-cinzel font-black tracking-[0.2em] uppercase">Pause</span>
+            </button>
+          )}
+          <SignetLauncher sessionId={sessionId} onOpenWindow={openWindow} securityLevel={user?.role} />
+          <PlayerHUD players={playersList} sessionId={sessionId} />
+          <CharacterHUD sessionId={sessionId} />
+          <div className="absolute inset-0 pointer-events-none z-[200]">
+            {Object.entries(windows).map(([id, win]) => win.isOpen && (
+              <DraggableWindow
+                key={id} id={id} title={id} 
+                onClose={() => closeWindow(id as any)} 
+                onPopOut={() => handlePopOut(id)}
+                defaultPosition={win.position} 
+                onPositionChange={(x, y) => updatePosition(id as any, x, y)}
+                zIndex={win.zIndex + 200} 
+                onFocus={() => focusWindow(id as any)}
+              >
+                {id === 'scenes' && <SceneWindowContent scenes={maps} currentSceneId={currentMapId} onSelectScene={handleSelectMap} onAddScene={handleAddMap} onUpdateScene={handleUpdateMap} onToggleHide={handleToggleHideMap} />}
+                {id === 'players' && <PlayerWindowContent players={playersList} sessionId={sessionId} />}
+                {id === 'assets' && <InventoryWindowContent sessionId={sessionId} />}
+                {id === 'bestiary' && <BestiaryWindowContent sessionId={sessionId} />}
+                {id === 'dice' && <DiceWindowContent sessionId={sessionId} />}
+                {id === 'quests' && <QuestsWindowContent sessionId={sessionId} />}
+                {id === 'skills' && <SkillsWindowContent sessionId={sessionId} />}
+                {id === 'character' && <CharacterSheetContent sessionId={sessionId} variant="window" />}
+              </DraggableWindow>
+            ))}
+          </div>
+          <DiceRollModal />
+          <ItemCreationModal sessionId={sessionId} />
+          <ItemDetailModal sessionId={sessionId} />
+          <SkillCreationModal sessionId={sessionId} />
+          <QuestCreationModal sessionId={sessionId} />
+          {characterManagementId && <ManageCharacterModal sessionId={sessionId} characterId={characterManagementId} onClose={() => setCharacterManagement(null)} />}
+        </>
       )}
-      <SignetLauncher sessionId={sessionId} onOpenWindow={openWindow} securityLevel={user?.role} />
-      <PlayerHUD players={playersList} sessionId={sessionId} />
-      <CharacterHUD sessionId={sessionId} />
-      <div className="absolute inset-0 pointer-events-none z-[200]">
-        {Object.entries(windows).map(([id, win]) => win.isOpen && (
-          <DraggableWindow
-            key={id} id={id} title={id} 
-            onClose={() => closeWindow(id as any)} 
-            onPopOut={() => handlePopOut(id)}
-            defaultPosition={win.position} 
-            onPositionChange={(x, y) => updatePosition(id as any, x, y)}
-            zIndex={win.zIndex + 200} 
-            onFocus={() => focusWindow(id as any)}
-          >
-             {id === 'scenes' && <SceneWindowContent scenes={maps} currentSceneId={currentMapId} onSelectScene={handleSelectMap} onAddScene={handleAddMap} onUpdateScene={handleUpdateMap} onToggleHide={handleToggleHideMap} />}
-             {id === 'players' && <PlayerWindowContent players={playersList} sessionId={sessionId} />}
-             {id === 'assets' && <InventoryWindowContent sessionId={sessionId} />}
-             {id === 'bestiary' && <BestiaryWindowContent sessionId={sessionId} />}
-             {id === 'dice' && <DiceWindowContent sessionId={sessionId} />}
-             {id === 'quests' && <QuestsWindowContent sessionId={sessionId} />}
-             {id === 'skills' && <SkillsWindowContent sessionId={sessionId} />}
-             {id === 'character' && <CharacterSheetContent sessionId={sessionId} variant="window" />}
-          </DraggableWindow>
-        ))}
-      </div>
-      <DiceRollModal />
-      <ItemCreationModal sessionId={sessionId} />
-      <ItemDetailModal sessionId={sessionId} />
-      <SkillCreationModal sessionId={sessionId} />
-      <QuestCreationModal sessionId={sessionId} />
-      {characterManagementId && <ManageCharacterModal sessionId={sessionId} characterId={characterManagementId} onClose={() => setCharacterManagement(null)} />}
     </div>
   );
 }
