@@ -84,7 +84,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
       if (item.equipped) {
         groups.push({ ...item, quantity: 1, isStack: false });
       } else {
-        if (!unquippedStacks[item.id]) {
+        if (!unequippedStacks[item.id]) {
           unequippedStacks[item.id] = { ...item, quantity: 0, isStack: true, instances: [] };
           groups.push(unequippedStacks[item.id]);
         }
