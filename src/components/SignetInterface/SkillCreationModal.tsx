@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Zap, Plus, X, Save, BarChart2, BookOpen, Shuffle, Backpack, ChevronDown, Dices, Power, Upload, Loader2 } from 'lucide-react';
+import { Sparkles, Zap, Plus, X, Save, BarChart2, BookOpen, Shuffle, Backpack, ChevronDown, Dices, Power, Upload, Loader2, Trash2 } from 'lucide-react';
 import { useSkillsStore } from '../../store/skills';
 import { useUIStore } from '../../store/ui';
 import { useAuthStore } from '../../store/auth';
@@ -88,7 +88,6 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
       condition_tags: conditionTags.length > 0 ? conditionTags : undefined,
     };
 
-    // Si on est en mode 'inventory', on met à jour directement le personnage
     if (skillCreationType === 'inventory') {
         const { useCharactersStore } = await import('../../store/characters');
         const { controlledCharacterId } = useCharactersStore.getState();
@@ -99,10 +98,8 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                 custom_skills: (character.custom_skills || []).map((s: any) => s.id === skillData.id ? { ...skillData, is_active: s.is_active } : s)
             };
             useCharactersStore.getState().addOrUpdateCharacter(updatedChar);
-            // On peut aussi broadcaster ici si besoin
         }
     } else {
-        // Sinon c'est une sauvegarde dans le codex global
         await addSkill(sessionId, skillData as any);
     }
 
@@ -144,88 +141,91 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
   if (!showSkillCreateModal) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 lg:p-10 animate-in fade-in zoom-in-95 duration-300">
+      <div className="w-full max-w-4xl max-h-[90vh] bg-[#0D0D0F] border border-gold-DEFAULT/40 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8),0_0_40px_rgba(212,175,55,0.1)] flex flex-col overflow-hidden relative">
         
-        {/* HEADER */}
-        <header className="p-6 border-b border-gold-DEFAULT/20 flex justify-between items-center bg-black/40">
-           <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright shadow-lg shadow-gold-DEFAULT/5">
-                <Sparkles size={24} className="animate-pulse" />
+        {/* Decorative Golden Line Top */}
+        <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />
+
+        {/* HEADER FIXED */}
+        <header className="shrink-0 p-6 lg:p-8 border-b border-gold-DEFAULT/20 flex justify-between items-center bg-black/40 z-20">
+           <div className="flex items-center gap-5">
+              <div className="p-4 rounded-2xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright shadow-lg shadow-gold-DEFAULT/5 transition-transform hover:scale-110 duration-500">
+                <Sparkles size={28} className="animate-pulse" />
               </div>
               <div>
-                <h2 className="text-xl font-cinzel font-black text-white uppercase tracking-widest">
-                  {skillToEdit ? "Façonner l'Arcane" : "Invoquer une Maîtrise"}
+                <h2 className="text-2xl font-cinzel font-black text-white uppercase tracking-[0.3em] leading-none mb-2">
+                  {skillToEdit ? "FAÇONNER L'ARCANE" : "INVOQUER UNE MAÎTRISE"}
                 </h2>
-                <p className="text-[10px] font-cinzel text-gold-DEFAULT/40 uppercase tracking-[0.2em]">Codex des Manifestations</p>
+                <p className="text-[10px] font-cinzel text-gold-DEFAULT/40 uppercase tracking-[0.4em]">Codex des Manifestations Divines</p>
               </div>
            </div>
            <button 
              onClick={() => setShowSkillCreateModal(false)}
-             className="p-2 rounded-xl hover:bg-white/5 text-white/20 hover:text-white transition-all"
+             className="p-3 rounded-full hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-all border border-transparent hover:border-red-500/20"
            >
              <X size={24} />
            </button>
         </header>
 
-        {/* CONTENT */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar p-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
+        {/* SCROLLABLE CONTENT */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-8 lg:p-12 grid grid-cols-1 lg:grid-cols-2 gap-12">
           
           {/* COLONNE GAUCHE : IDENTITÉ */}
-          <div className="space-y-8">
-            <section className="space-y-4">
-               <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-2">
-                 <BookOpen size={14} /> Identité de l'Arcane
+          <div className="space-y-10">
+            <section className="space-y-6">
+               <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-3">
+                 <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> Identité de l'Arcane
                </h3>
-               <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[8px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Nom de la Maîtrise</label>
+               <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Nom de la Maîtrise</label>
                     <input 
                       type="text" 
                       value={name} 
-                      onChange={e => setName(e.target.value)}
+                      onChange={e => setName(e.target.value)} 
                       placeholder="NOM DE L'ARCANE..."
-                      className="w-full bg-black/40 border border-gold-DEFAULT/10 rounded-xl px-4 py-3 text-sm font-cinzel text-white placeholder:text-white/10 focus:outline-none focus:border-gold-DEFAULT/40 transition-all shadow-inner uppercase tracking-wider"
+                      className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-cinzel text-white placeholder:text-white/10 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[8px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Récit & Lore</label>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Récit & Lore</label>
                     <textarea 
                       value={description} 
                       onChange={e => setDescription(e.target.value)}
                       placeholder="DÉCRIVEZ LA NATURE DE CET ARCANNE..."
                       rows={4}
-                      className="w-full bg-black/40 border border-gold-DEFAULT/10 rounded-xl px-4 py-3 text-xs font-garamond italic text-white/60 placeholder:text-white/10 focus:outline-none focus:border-gold-DEFAULT/40 transition-all shadow-inner"
+                      className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/10 focus:border-gold-bright focus:bg-black/80 outline-none transition-all shadow-inner custom-scrollbar resize-none"
                     />
                   </div>
                </div>
             </section>
 
-            <section className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                    <label className="text-[8px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Nature de l'Usage</label>
+            <section className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <label className="text-[9px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Nature de l'Usage</label>
                     <select 
                       value={type} 
                       onChange={e => setType(e.target.value as any)}
-                      className="w-full bg-black/40 border border-gold-DEFAULT/10 rounded-xl px-4 py-3 text-[10px] font-cinzel text-white uppercase focus:outline-none focus:border-gold-DEFAULT/40 appearance-none cursor-pointer"
+                      className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-[10px] font-cinzel text-white uppercase focus:border-gold-bright outline-none appearance-none cursor-pointer"
                     >
                         <option value="active">Compétence Active</option>
                         <option value="passive_auto">Passif Permanent</option>
                         <option value="passive_toggle">Aura Activable</option>
                     </select>
                 </div>
-                <div className="space-y-1.5">
-                    <label className="text-[8px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Sceau Visuel</label>
+                <div className="space-y-2">
+                    <label className="text-[9px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Sceau Visuel</label>
                     <div className="flex gap-2">
                         <input 
                             type="text" 
                             value={imageUrl} 
                             onChange={e => setImageUrl(e.target.value)}
-                            placeholder="URL DU SCEAU..."
-                            className="flex-1 bg-black/40 border border-gold-DEFAULT/10 rounded-xl px-4 py-3 text-[9px] font-mono text-white/60 focus:outline-none focus:border-gold-DEFAULT/40"
+                            placeholder="URL OU SCEAU..."
+                            className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-4 py-4 text-[9px] font-mono text-white/40 focus:border-gold-bright outline-none"
                         />
-                        <label className="p-3 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 cursor-pointer transition-all relative">
-                            {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                        <label className="p-4 rounded-2xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 cursor-pointer transition-all relative">
+                            {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
                             <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
                         </label>
                     </div>
@@ -233,16 +233,16 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
             </section>
 
             {/* COÛT */}
-            <section className="space-y-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+            <section className="space-y-6 p-6 rounded-[2rem] bg-white/[0.02] border border-white/5">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-2">
+                    <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-3">
                         <Power size={14} /> Tribut de Ressource
                     </h3>
                     <button 
                         onClick={() => setHasCost(!hasCost)}
-                        className={`px-3 py-1 rounded-full text-[8px] font-cinzel font-black uppercase transition-all ${hasCost ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}
+                        className={`px-4 py-1.5 rounded-full text-[9px] font-cinzel font-black uppercase transition-all ${hasCost ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}
                     >
-                        {hasCost ? 'Supprimer' : 'Ajouter Coût'}
+                        {hasCost ? 'Révoquer' : 'Ajouter Tribut'}
                     </button>
                 </div>
                 {hasCost && (
@@ -250,7 +250,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                         <select 
                             value={costBarId} 
                             onChange={e => setCostBarId(e.target.value)}
-                            className="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-cinzel text-white uppercase focus:outline-none focus:border-gold-DEFAULT/40"
+                            className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[10px] font-cinzel text-white uppercase focus:border-gold-bright outline-none"
                         >
                             {DEFAULT_BARS.map(b => (
                                 <option key={b.id} value={b.id}>{b.name}</option>
@@ -260,7 +260,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                             type="number" 
                             value={costValue} 
                             onChange={e => setCostValue(parseInt(e.target.value))}
-                            className="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white text-center"
+                            className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[12px] font-mono text-gold-bright text-center outline-none focus:border-gold-bright"
                         />
                     </div>
                 )}
@@ -268,24 +268,24 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
           </div>
 
           {/* COLONNE DROITE : MÉCANIQUES */}
-          <div className="space-y-8">
+          <div className="space-y-10">
             
             {/* EFFETS ACTIFS */}
-            <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-2">
-                        <Zap size={14} /> Manifestations Actives
+            <section className="space-y-6">
+                <div className="flex items-center justify-between border-b border-gold-DEFAULT/20 pb-3">
+                    <h3 className="text-[10px] font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-3">
+                        <Zap size={16} className="text-gold-bright animate-pulse" /> Manifestations Actives
                     </h3>
-                    <button onClick={addEffect} className="p-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all">
-                        <Plus size={14} />
+                    <button onClick={addEffect} className="p-2 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
+                        <Plus size={16} />
                     </button>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {effects.map((eff) => (
-                        <div key={eff.id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3 relative group">
+                        <div key={eff.id} className="p-5 rounded-[1.5rem] bg-white/[0.02] border border-white/5 space-y-4 relative group hover:border-gold-DEFAULT/30 transition-all animate-in slide-in-from-right-4 duration-300">
                             <button 
                                 onClick={() => setEffects(effects.filter(e => e.id !== eff.id))}
-                                className="absolute top-2 right-2 p-1 text-white/10 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                                className="absolute -top-2 -right-2 p-2 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
                             >
                                 <Trash2 size={12} />
                             </button>
@@ -293,7 +293,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                 <select 
                                     value={eff.type} 
                                     onChange={e => updateEffect(eff.id, { type: e.target.value })}
-                                    className="col-span-1 bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[9px] font-cinzel text-white"
+                                    className="col-span-1 bg-black border border-white/10 rounded-xl px-3 py-2 text-[9px] font-cinzel text-white uppercase outline-none focus:border-gold-bright"
                                 >
                                     <option value="damage">Dégâts</option>
                                     <option value="heal">Soin</option>
@@ -305,7 +305,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                     <select 
                                         value={eff.mode} 
                                         onChange={e => updateEffect(eff.id, { mode: e.target.value })}
-                                        className="w-20 bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[9px] font-cinzel text-white"
+                                        className="w-24 bg-black border border-white/10 rounded-xl px-3 py-2 text-[9px] font-cinzel text-white outline-none"
                                     >
                                         <option value="dice">Dés</option>
                                         <option value="flat">Fixe</option>
@@ -314,8 +314,8 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                         type="text" 
                                         value={eff.mode === 'dice' ? eff.formula : eff.valeur}
                                         onChange={e => updateEffect(eff.id, eff.mode === 'dice' ? { formula: e.target.value } : { valeur: parseInt(e.target.value) })}
-                                        placeholder={eff.mode === 'dice' ? "1d6 + Force..." : "0"}
-                                        className="flex-1 bg-black/60 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-mono text-gold-bright"
+                                        placeholder={eff.mode === 'dice' ? "1d6..." : "0"}
+                                        className="flex-1 bg-gold-DEFAULT/10 border border-gold-DEFAULT/40 rounded-xl px-3 py-2 text-[11px] font-mono text-gold-bright text-center outline-none focus:border-gold-bright"
                                     />
                                 </div>
                             </div>
@@ -323,51 +323,55 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                 type="text" 
                                 value={eff.description} 
                                 onChange={e => updateEffect(eff.id, { description: e.target.value })}
-                                placeholder="DESCRIPTION DE L'EFFET (EX: DÉGÂTS DE FEU...)"
-                                className="w-full bg-black/20 border-b border-white/5 text-[9px] font-serif italic text-white/40 px-1 py-1 focus:outline-none focus:border-gold-DEFAULT/40"
+                                placeholder="PROPRIÉTÉ DE LA MANIFESTATION..."
+                                className="w-full bg-black/40 border border-white/5 rounded-xl text-[10px] font-serif italic text-white/50 px-4 py-2.5 focus:outline-none focus:border-gold-DEFAULT/40"
                             />
                         </div>
                     ))}
-                    {effects.length === 0 && <p className="text-center py-4 text-[9px] font-cinzel text-white/10 uppercase tracking-widest italic">Aucun effet actif défini</p>}
+                    {effects.length === 0 && (
+                        <div className="py-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.01]">
+                            <span className="text-[10px] font-cinzel text-white/10 uppercase tracking-[0.4em] italic">Aucun effet actif</span>
+                        </div>
+                    )}
                 </div>
             </section>
 
             {/* MODIFICATEURS PASSIFS */}
-            <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-2">
-                        <BarChart2 size={14} /> Augures Passifs
+            <section className="space-y-6">
+                <div className="flex items-center justify-between border-b border-gold-DEFAULT/20 pb-3">
+                    <h3 className="text-[10px] font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-3">
+                        <BarChart2 size={16} className="text-gold-bright" /> Augures Passifs
                     </h3>
-                    <button onClick={addModifier} className="p-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all">
-                        <Plus size={14} />
+                    <button onClick={addModifier} className="p-2 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
+                        <Plus size={16} />
                     </button>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                     {modifiers.map((m, i) => (
-                        <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 group">
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5 group hover:border-gold-DEFAULT/30 transition-all animate-in slide-in-from-right-4 duration-300">
                             <select 
                                 value={m.target} 
                                 onChange={e => updateModifier(i, { target: e.target.value })}
-                                className="w-24 bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[8px] font-cinzel text-white/60"
+                                className="w-28 bg-black border border-white/10 rounded-xl px-3 py-2.5 text-[9px] font-cinzel font-black text-gold-DEFAULT uppercase outline-none"
                             >
-                                <option value="stat">Attribut</option>
-                                <option value="bar">Ressource</option>
+                                <option value="stat">ATTRIBUT</option>
+                                <option value="bar">RESSOURCE</option>
                             </select>
                             <select 
                                 value={m.targetId} 
                                 onChange={e => updateModifier(i, { targetId: e.target.value })}
-                                className="flex-1 bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[8px] font-cinzel text-white"
+                                className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[10px] font-cinzel font-bold text-white uppercase outline-none focus:border-gold-bright"
                             >
-                                {m.target === 'stat' ? statDefs.map(s => <option key={s.id} value={s.id}>{s.name}</option>) : barDefs.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                {m.target === 'stat' ? statDefs.map(s => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>) : barDefs.map(b => <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>)}
                             </select>
                             <input 
                                 type="number" 
                                 value={m.value} 
-                                onChange={e => updateModifier(i, { value: parseInt(e.target.value) })}
-                                className="w-16 bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[9px] font-mono text-gold-bright text-center"
+                                onChange={e => updateModifier(i, { value: parseInt(e.target.value) || 0 })}
+                                className="w-20 bg-gold-DEFAULT/10 border border-gold-DEFAULT/40 rounded-xl px-3 py-2.5 text-[11px] font-mono text-gold-bright text-center outline-none focus:border-gold-bright"
                             />
-                            <button onClick={() => setModifiers(modifiers.filter((_, idx) => idx !== i))} className="p-1.5 text-white/10 hover:text-red-500">
-                                <Trash2 size={12} />
+                            <button onClick={() => setModifiers(modifiers.filter((_, idx) => idx !== i))} className="p-2 rounded-full text-white/10 hover:text-red-500 hover:bg-red-500/10 transition-all">
+                                <Trash2 size={14} />
                             </button>
                         </div>
                     ))}
@@ -377,21 +381,29 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
           </div>
         </main>
 
-        {/* FOOTER */}
-        <footer className="p-6 border-t border-gold-DEFAULT/20 bg-black/40 flex justify-end gap-3">
-          <button 
-            onClick={() => setShowSkillCreateModal(false)}
-            className="px-6 py-3 rounded-xl text-white/40 hover:text-white text-[10px] font-cinzel font-black uppercase tracking-[0.2em] transition-all"
-          >
-            Annuler
-          </button>
-          <button 
-            onClick={handleSave}
-            className="px-8 py-3 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright font-cinzel font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-lg flex items-center gap-3"
-          >
-            <Save size={18} />
-            {skillCreationType === 'inventory' ? "LIER À L'ÂME" : "GRAVER DANS LE CODEX"}
-          </button>
+        {/* FOOTER FIXED & NOBLE */}
+        <footer className="shrink-0 p-8 lg:p-10 border-t border-gold-DEFAULT/30 bg-black/60 backdrop-blur-3xl z-30 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold-bright/20 to-transparent" />
+          
+          <div className="flex gap-4">
+              <button 
+                onClick={() => setShowSkillCreateModal(false)}
+                className="flex-1 py-4 rounded-2xl text-white/30 hover:text-white text-[10px] font-cinzel font-black uppercase tracking-[0.3em] transition-all border border-white/5 hover:border-white/20"
+              >
+                Révoquer
+              </button>
+              <button 
+                onClick={handleSave}
+                disabled={!name.trim()}
+                className="flex-[2] py-5 bg-gold-DEFAULT text-black text-[11px] font-cinzel font-black tracking-[0.4em] rounded-2xl hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] hover:bg-gold-bright disabled:opacity-10 disabled:grayscale transition-all flex justify-center items-center gap-4 relative group overflow-hidden"
+              >
+                <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                <Save size={20} className="relative z-10" />
+                <span className="relative z-10">
+                    {skillCreationType === 'inventory' ? "LIER L'ARCANE À L'ÂME" : "GRAVER DANS LE CODEX ÉTERNEL"}
+                </span>
+              </button>
+          </div>
         </footer>
       </div>
     </div>,

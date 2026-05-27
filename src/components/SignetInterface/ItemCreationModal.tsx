@@ -144,228 +144,253 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="bg-[#0D0D0F] border border-gold-DEFAULT/40 rounded-2xl w-full max-w-2xl shadow-[0_0_80px_rgba(212,175,55,0.15)] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 lg:p-10 animate-in fade-in zoom-in-95 duration-300">
+      <div className="bg-[#0D0D0F] border border-gold-DEFAULT/40 rounded-[2rem] w-full max-w-4xl max-h-[90vh] shadow-[0_0_100px_rgba(0,0,0,0.8),0_0_40px_rgba(212,175,55,0.1)] flex flex-col overflow-hidden relative">
         
-        {/* Header Noble */}
-        <div className="bg-gradient-to-r from-gold-DEFAULT/20 to-transparent p-6 border-b border-white/5 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]">
-              {itemCreationType === 'forge' ? <Hammer size={24} /> : <Package size={24} />}
+        {/* Decorative Golden Line Top */}
+        <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />
+
+        {/* Header Noble Fixed */}
+        <header className="shrink-0 bg-black/40 p-6 lg:p-8 border-b border-gold-DEFAULT/20 flex justify-between items-center z-20">
+          <div className="flex items-center gap-5">
+            <div className="p-4 rounded-2xl bg-gold-DEFAULT text-black shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-transform hover:scale-110 duration-500">
+              {itemCreationType === 'forge' ? <Hammer size={28} /> : <Package size={28} />}
             </div>
             <div>
-              <h3 className="text-xl font-cinzel font-black text-white uppercase tracking-widest leading-tight">
-                {itemCreationType === 'forge' ? "BIBLIOTHÈQUE D'OBJETS" : "AJOUTER UN OBJET"}
+              <h3 className="text-2xl font-cinzel font-black text-white uppercase tracking-[0.3em] leading-none mb-2">
+                {itemCreationType === 'forge' ? "L'ARCHIVE DES VESTIGES" : "FORGER UN OBJET"}
               </h3>
-              <p className="text-[10px] font-cinzel text-gold-DEFAULT/60 uppercase tracking-[0.2em]">
-                {itemCreationType === 'forge' ? "Gestionnaire d'Équipement" : "Inventaire du Personnage"}
+              <p className="text-[10px] font-cinzel text-gold-DEFAULT/40 uppercase tracking-[0.4em]">
+                {itemCreationType === 'forge' ? "Codex de la Forge Éternelle" : "Inscription dans l'Essence du Héros"}
               </p>
             </div>
           </div>
-          <button onClick={handleClose} className="p-2 rounded-full hover:bg-white/5 text-white/40 hover:text-white transition-all">
-            <X size={20} />
+          <button 
+            onClick={handleClose} 
+            className="p-3 rounded-full hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-all border border-transparent hover:border-red-500/20"
+          >
+            <X size={24} />
           </button>
-        </div>
+        </header>
 
-        <div className="p-8 flex flex-col gap-6 overflow-y-auto custom-scrollbar max-h-[70vh]">
-          {/* Main Info */}
-          <div className="grid grid-cols-1 gap-6">
-            <div className="flex flex-col gap-2">
-              <label className="text-[9px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Dénomination</label>
-              <input 
-                type="text" 
-                placeholder="Nom de l'objet..." 
-                value={name} 
-                onChange={e => setName(e.target.value)} 
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:border-gold-DEFAULT/50 focus:bg-white/10 outline-none transition-all shadow-inner" 
-                autoFocus 
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[9px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Nature de l'objet</label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map(c => (
-                  <button 
-                    key={c.id} 
-                    onClick={() => setCategory(c.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border font-cinzel text-[10px] font-bold transition-all ${category === c.id ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT shadow-[0_0_10px_rgba(212,175,55,0.3)]' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white'}`}
-                  >
-                    <c.icon size={14} />
-                    {c.id.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[9px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Légende & Description</label>
-              <textarea 
-                placeholder="Racontez l'histoire de cet objet..." 
-                value={description} 
-                onChange={e => setDescription(e.target.value)} 
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/80 placeholder:text-white/20 focus:border-gold-DEFAULT/50 focus:bg-white/10 outline-none transition-all resize-none h-24 shadow-inner custom-scrollbar" 
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[9px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-widest ml-1">Apparence</label>
-              <div className="flex gap-4">
-                <div className="w-14 h-14 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
-                    {previewUrl ? (
-                        <img src={previewUrl} className="w-full h-full object-cover" alt="Item" />
-                    ) : (
-                        <Package size={20} className="text-white/20" />
-                    )}
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-8 lg:p-12 space-y-12">
+          {/* Main Form Sections */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            
+            {/* Colonne Gauche : Identité */}
+            <div className="space-y-8">
+                <div className="flex flex-col gap-3">
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                     <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> Dénomination
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="NOM DE L'ARTEFACT..." 
+                    value={name} 
+                    onChange={e => setName(e.target.value)} 
+                    className="bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-cinzel text-white placeholder:text-white/10 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner" 
+                    autoFocus 
+                  />
                 </div>
-                <div className="flex-1 flex flex-col gap-2">
-                    <div className="flex gap-2">
-                        <input 
-                            type="text" 
-                            placeholder="URL ou asset://..." 
-                            value={imageUrl} 
-                            onChange={e => setImageUrl(e.target.value)} 
-                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-[10px] text-white placeholder:text-white/20 focus:border-gold-DEFAULT/50 outline-none transition-all" 
-                        />
-                        <button 
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isUploading}
-                            className="p-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[40px]"
-                        >
-                            {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                        </button>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            className="hidden" 
-                            accept="image/*"
-                            onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                    setIsUploading(true);
-                                    try {
-                                        const assetUrl = await assetSyncService.uploadLocalAsset(file);
-                                        setImageUrl(assetUrl);
-                                    } catch (err) {
-                                        console.error('Upload failed', err);
-                                    } finally {
-                                        setIsUploading(false);
-                                    }
-                                }
-                            }}
-                        />
+
+                <div className="flex flex-col gap-3">
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-[0.2em] ml-1">Nature & Essence</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {CATEGORIES.map(c => (
+                      <button 
+                        key={c.id} 
+                        onClick={() => setCategory(c.id)}
+                        className={`flex items-center justify-center gap-3 px-4 py-3 rounded-xl border font-cinzel text-[9px] font-black tracking-widest transition-all ${category === c.id ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT shadow-[0_0_15px_rgba(212,175,55,0.3)]' : 'bg-white/[0.03] border-white/5 text-white/30 hover:border-gold-DEFAULT/30 hover:text-white'}`}
+                      >
+                        <c.icon size={14} />
+                        {c.id.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-[0.2em] ml-1">Chronique du Vestige</label>
+                  <textarea 
+                    placeholder="Récitez ici la légende qui entoure cet artefact..." 
+                    value={description} 
+                    onChange={e => setDescription(e.target.value)} 
+                    className="bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/10 focus:border-gold-bright focus:bg-black/80 outline-none transition-all resize-none h-32 shadow-inner custom-scrollbar" 
+                  />
+                </div>
+            </div>
+
+            {/* Colonne Droite : Apparence & Modificateurs */}
+            <div className="space-y-8">
+                <div className="flex flex-col gap-4">
+                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-[0.2em] ml-1">Sceau Visuel</label>
+                  <div className="flex gap-6 items-start">
+                    <div className="w-24 h-24 rounded-3xl border-2 border-gold-DEFAULT/20 bg-black/40 flex items-center justify-center overflow-hidden shrink-0 shadow-2xl relative group">
+                        {previewUrl ? (
+                            <img src={previewUrl} className="w-full h-full object-contain p-2" alt="Item" />
+                        ) : (
+                            <Package size={32} className="text-white/10" />
+                        )}
+                        <div className="absolute inset-0 bg-gold-DEFAULT/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                     </div>
-                    <p className="text-[7px] font-cinzel text-white/20 uppercase tracking-widest ml-1">Utilisez une image locale pour la synchroniser avec les joueurs</p>
+                    <div className="flex-1 space-y-4">
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                placeholder="URL OU IDENTIFIANT..." 
+                                value={imageUrl} 
+                                onChange={e => setImageUrl(e.target.value)} 
+                                className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-[10px] font-mono text-gold-bright/60 placeholder:text-white/10 focus:border-gold-bright outline-none transition-all" 
+                            />
+                            <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="p-3 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[48px] shadow-lg"
+                            >
+                                {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                            </button>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        setIsUploading(true);
+                                        try {
+                                            const assetUrl = await assetSyncService.uploadLocalAsset(file);
+                                            setImageUrl(assetUrl);
+                                        } catch (err) {
+                                            console.error('Upload failed', err);
+                                        } finally {
+                                            setIsUploading(false);
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
+                        <p className="text-[8px] font-cinzel text-white/20 uppercase tracking-[0.2em] leading-relaxed">
+                          Utilisez une gravure locale pour la synchroniser instantanément avec tous les observateurs.
+                        </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                {/* Modifiers UI High Visibility */}
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center border-b border-gold-DEFAULT/20 pb-3">
+                        <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-2">
+                            <Sparkles size={16} className="text-gold-bright animate-pulse" /> Enchantements
+                        </h3>
+                        <button onClick={addModifier} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all font-cinzel text-[9px] font-black tracking-widest shadow-lg">
+                            <Plus size={14} /> INVOQUER
+                        </button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        {modifiers.map((m, i) => (
+                            <div key={i} className="flex flex-col gap-3 p-5 bg-white/[0.02] border border-white/5 rounded-[1.5rem] relative group hover:border-gold-DEFAULT/30 transition-all animate-in slide-in-from-right-4 duration-300">
+                                <div className="flex gap-3">
+                                    <select 
+                                        value={m.target} 
+                                        onChange={e => updateModifier(i, { target: e.target.value as any })}
+                                        className="flex-1 bg-black border border-gold-DEFAULT/30 rounded-xl px-3 py-2.5 text-[9px] text-gold-DEFAULT font-cinzel font-black outline-none appearance-none cursor-pointer text-center"
+                                    >
+                                        <option value="stat">ATTRIBUT</option>
+                                        <option value="bar">RESSOURCE</option>
+                                    </select>
+                                    <select 
+                                        value={m.targetId} 
+                                        onChange={e => updateModifier(i, { targetId: e.target.value })}
+                                        className="flex-[2] bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[10px] text-white/80 font-cinzel font-bold outline-none appearance-none cursor-pointer"
+                                    >
+                                        {m.target === 'stat' ? (
+                                            statDefs.map((s: any) => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)
+                                        ) : (
+                                            barDefs.map((b: any) => <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>)
+                                        )}
+                                    </select>
+                                </div>
+
+                                <div className="flex gap-3 items-center">
+                                    <select 
+                                        value={m.mode} 
+                                        onChange={e => updateModifier(i, { mode: e.target.value as any })}
+                                        className="flex-[2] bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[9px] text-white/40 font-cinzel outline-none appearance-none cursor-pointer text-center"
+                                    >
+                                        <option value="flat">VALEUR FIXE</option>
+                                        <option value="percent">POURCENTAGE</option>
+                                        <option value="dice">JET DE DÉS</option>
+                                    </select>
+
+                                    <div className="flex-1">
+                                        {m.mode === 'dice' ? (
+                                            <input 
+                                                type="text" 
+                                                placeholder="1d6..."
+                                                value={m.formula || ''} 
+                                                onChange={e => updateModifier(i, { formula: e.target.value })}
+                                                className="w-full bg-gold-DEFAULT/10 border-2 border-gold-DEFAULT/40 rounded-xl px-2 py-2 text-xs text-gold-bright text-center font-mono outline-none focus:border-gold-bright"
+                                            />
+                                        ) : (
+                                            <input 
+                                                type="number" 
+                                                value={m.value} 
+                                                onChange={e => updateModifier(i, { value: parseInt(e.target.value) || 0 })}
+                                                className="w-full bg-gold-DEFAULT/10 border-2 border-gold-DEFAULT/40 rounded-xl px-2 py-2 text-xs text-gold-bright text-center font-mono outline-none focus:border-gold-bright"
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+
+                                <button onClick={() => removeModifier(i)} className="absolute -top-2 -right-2 p-2 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 opacity-0 group-hover:opacity-100 transition-all hover:scale-110">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        ))}
+                        {modifiers.length === 0 && (
+                            <div className="py-10 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.01]">
+                                <span className="text-[10px] font-cinzel text-white/10 uppercase tracking-[0.4em] italic">Aucun enchantement gravé</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
           </div>
           
-          {/* Modifiers Section */}
-          <div className="flex flex-col gap-4 mt-2">
-            <div className="flex justify-between items-center border-b border-gold-DEFAULT/20 pb-2">
-              <div className="flex flex-col">
-                <span className="text-xs font-cinzel font-black text-gold-DEFAULT uppercase tracking-widest">Modificateurs</span>
-                <span className="text-[8px] font-cinzel text-white/30 uppercase">Bonus d'attributs et de ressources</span>
-              </div>
-              <button onClick={addModifier} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20 border border-gold-DEFAULT/30 transition-all font-cinzel text-[10px] font-black">
-                <Plus size={14} /> AJOUTER
-              </button>
-            </div>
-            
-            <div className="flex flex-col gap-3">
-              {modifiers.map((m, i) => (
-                <div key={i} className="flex flex-col gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl animate-in slide-in-from-left-2 duration-300 relative group">
-                  <div className="flex gap-3">
-                    <select 
-                      value={m.target} 
-                      onChange={e => updateModifier(i, { target: e.target.value as any })}
-                      className="flex-1 bg-black/60 border border-gold-DEFAULT/30 rounded-xl px-3 py-2 text-[10px] text-gold-DEFAULT font-cinzel font-black outline-none appearance-none cursor-pointer text-center"
-                    >
-                      <option value="stat">ATTRIBUT</option>
-                      <option value="bar">RESSOURCE</option>
-                    </select>
-                    
-                    <select 
-                      value={m.targetId} 
-                      onChange={e => updateModifier(i, { targetId: e.target.value })}
-                      className="flex-[2] bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] text-white/80 font-cinzel outline-none appearance-none cursor-pointer"
-                    >
-                      {m.target === 'stat' ? (
-                        statDefs.map((s: any) => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)
-                      ) : (
-                        barDefs.map((b: any) => <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>)
-                      )}
-                    </select>
-                  </div>
-
-                  <div className="flex gap-3 items-center">
-                    {m.target === 'bar' && (
-                      <select 
-                        value={m.targetProperty || 'max'} 
-                        onChange={e => updateModifier(i, { targetProperty: e.target.value as any })}
-                        className="flex-1 bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] text-white/50 font-cinzel outline-none appearance-none cursor-pointer text-center"
-                      >
-                        <option value="max">MAX JAUGE</option>
-                        <option value="current">ACTUEL JAUGE</option>
-                      </select>
-                    )}
-                    
-                    <select 
-                      value={m.mode} 
-                      onChange={e => updateModifier(i, { mode: e.target.value as any })}
-                      className="flex-[2] bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] text-white/50 font-cinzel outline-none appearance-none cursor-pointer text-center"
-                    >
-                      <option value="flat">FIXE (+/-)</option>
-                      <option value="percent">POURCENT (%)</option>
-                      <option value="dice">JET DE DÉS</option>
-                    </select>
-
-                    <div className="flex-1">
-                      {m.mode === 'dice' ? (
-                        <input 
-                          type="text" 
-                          placeholder="1d6+2"
-                          value={m.formula || ''} 
-                          onChange={e => updateModifier(i, { formula: e.target.value })}
-                          className="w-full bg-white/10 border border-gold-DEFAULT/30 rounded-xl px-2 py-2 text-[10px] text-white text-center font-mono outline-none focus:border-gold-DEFAULT"
-                        />
-                      ) : (
-                        <input 
-                          type="number" 
-                          value={m.value} 
-                          onChange={e => updateModifier(i, { value: parseInt(e.target.value) || 0 })}
-                          className="w-full bg-white/10 border border-gold-DEFAULT/30 rounded-xl px-2 py-2 text-[10px] text-white text-center font-mono outline-none focus:border-gold-DEFAULT"
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  <button onClick={() => removeModifier(i)} className="absolute -top-2 -right-2 p-1.5 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
-              {modifiers.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-8 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
-                  <span className="text-[10px] font-cinzel text-white/20 italic uppercase tracking-widest text-center px-8">Cet objet ne possède aucun enchantement particulier...</span>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Spacer for scroll visibility */}
+          <div className="h-10" />
         </div>
         
-        {/* Footer / Save Button */}
-        <div className="p-8 pt-4 border-t border-white/5 bg-black/40">
-          <button 
-            onClick={handleSubmit} 
-            disabled={!name.trim()}
-            className="w-full py-4 bg-gold-DEFAULT text-black text-xs font-cinzel font-black tracking-[0.3em] rounded-xl hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] disabled:opacity-20 disabled:grayscale transition-all flex justify-center items-center gap-3"
-          >
-            <Save size={18} />
-            {itemCreationType === 'forge' ? "INSCRIRE DANS LES ARCHIVES" : "LIER À L'INVENTAIRE"}
-          </button>
-        </div>
+        {/* Footer Fixed Noble & Visible */}
+        <footer className="shrink-0 p-8 lg:p-10 border-t border-gold-DEFAULT/30 bg-black/60 backdrop-blur-3xl z-30 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+          {/* Decorative line below content */}
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold-bright/20 to-transparent" />
+          
+          <div className="flex gap-4">
+              <button 
+                onClick={handleClose}
+                className="flex-1 py-4 rounded-2xl text-white/30 hover:text-white text-[10px] font-cinzel font-black uppercase tracking-[0.3em] transition-all border border-white/5 hover:border-white/20"
+              >
+                Renoncer
+              </button>
+              <button 
+                onClick={handleSubmit} 
+                disabled={!name.trim()}
+                className="flex-[2] py-5 bg-gold-DEFAULT text-black text-[11px] font-cinzel font-black tracking-[0.4em] rounded-2xl hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] hover:bg-gold-bright disabled:opacity-10 disabled:grayscale transition-all flex justify-center items-center gap-4 relative group overflow-hidden"
+              >
+                {/* Internal shine effect */}
+                <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                
+                <Save size={20} className="relative z-10" />
+                <span className="relative z-10">
+                    {itemCreationType === 'forge' ? "INSCRIRE DANS LES ARCHIVES" : "LIER À L'INVENTAIRE"}
+                </span>
+              </button>
+          </div>
+        </footer>
       </div>
     </div>
   );
