@@ -152,6 +152,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
             system: sessionData?.system,
             imageUrl: sessionData?.imageUrl,
             hostPeerId: sessionData?.hostPeerId,
+            settings: sessionData?.settings,
             maps: sessionMaps,
             activeMapId: currentMapId
           }

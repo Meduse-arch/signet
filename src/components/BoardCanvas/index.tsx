@@ -216,6 +216,22 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
           const { id, x, y } = data.payload;
           moveToken(id, x, y);
         }
+      } else if (data.type === 'TOKEN_MOVE_REQUEST' && isHost) {
+        // ✅ Un joueur demande à bouger un token (Le MJ arbitre)
+        const { id, x, y } = data.payload;
+        console.log(`[Host] Autorisation de mouvement pour ${id} vers ${x},${y}`);
+        
+        // 1. Mise à jour locale du MJ
+        moveToken(id, x, y);
+        
+        // 2. Sauvegarde en DB
+        if (window.electronAPI && currentMapId) {
+            window.electronAPI.updateMapToken(sessionId, currentMapId, id, x, y).catch(console.error);
+        }
+        
+        // 3. Diffusion de la position "officielle" à tous les autres
+        broadcast({ type: 'TOKEN_MOVE', payload: { id, x, y } });
+
       } else if (data.type === 'TOKEN_SYNC_REQUEST' && isHost) {
         // Un joueur demande une synchro complète des tokens (Le MJ répond)
         console.log(`[Host] Réponse à TOKEN_SYNC_REQUEST pour ${fromPeerId}`);

@@ -17,6 +17,11 @@ export class TokenSprite extends Container {
   private sprite: Sprite | null = null;
   private app: Application;
   private onMoveCallback?: (x: number, y: number) => void;
+  
+  // Interpolation (LERP)
+  private targetPos = { x: 0, y: 0 };
+  private isInterpolating = false;
+  private lerpFactor = 0.2; // Vitesse de glissement (0.1 à 0.3 recommandé)
 
   constructor(data: TokenData, app: Application, onMove?: (x: number, y: number) => void) {
     super();
@@ -27,6 +32,7 @@ export class TokenSprite extends Container {
 
     this.x = Number(data.x) || 0;
     this.y = Number(data.y) || 0;
+    this.targetPos = { x: this.x, y: this.y };
 
     this.eventMode = 'static';
     this.cursor = 'pointer';
@@ -69,6 +75,26 @@ export class TokenSprite extends Container {
     if (data.image_url) {
       this.loadImage(data.image_url);
     }
+    this.app.ticker.add(this.updateInterpolation, this);
+  }
+
+  private updateInterpolation() {
+    if (!this.isInterpolating || this.dragging) return;
+
+    const dx = this.targetPos.x - this.x;
+    const dy = this.targetPos.y - this.y;
+
+    // Si on est assez proche, on s'arrête
+    if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
+      this.x = this.targetPos.x;
+      this.y = this.targetPos.y;
+      this.isInterpolating = false;
+      return;
+    }
+
+    // Interpolation linéaire
+    this.x += dx * this.lerpFactor;
+    this.y += dy * this.lerpFactor;
   }
 
   private async loadImage(url: string) {
@@ -139,6 +165,7 @@ export class TokenSprite extends Container {
 
   private onDragStart(event: FederatedPointerEvent) {
     this.dragging = true;
+    this.isInterpolating = false; // Désactiver l'interpolation pendant le drag
     this.setSelected(true);
     this.alpha = 0.8;
     if (!this.parent) return;
@@ -156,6 +183,7 @@ export class TokenSprite extends Container {
       const newPosition = this.parent.toLocal(event.global);
       this.x = Math.round(newPosition.x + this.dragOffset.x);
       this.y = Math.round(newPosition.y + this.dragOffset.y);
+      this.targetPos = { x: this.x, y: this.y }; // Maintenir la cible à jour
       if (this.onMoveCallback) {
           this.onMoveCallback(this.x, this.y);
       }
@@ -185,12 +213,27 @@ export class TokenSprite extends Container {
     }
   }
 
-  moveTo(x: number, y: number) {
-    this.x = isNaN(x) ? this.x : Math.round(x);
-    this.y = isNaN(y) ? this.y : Math.round(y);
+  moveTo(x: number, y: number, immediate = false) {
+    const targetX = isNaN(x) ? this.x : Math.round(x);
+    const targetY = isNaN(y) ? this.y : Math.round(y);
+
+    if (immediate) {
+        this.x = targetX;
+        this.y = targetY;
+        this.targetPos = { x: targetX, y: targetY };
+        this.isInterpolating = false;
+    } else {
+        this.targetPos = { x: targetX, y: targetY };
+        this.isInterpolating = true;
+    }
   }
 
   setSelected(bool: boolean) {
     this.drawBg(bool);
+  }
+
+  override destroy(options?: any) {
+    this.app.ticker.remove(this.updateInterpolation, this);
+    super.destroy(options);
   }
 }

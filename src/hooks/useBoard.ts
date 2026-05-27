@@ -285,13 +285,23 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   useEffect(() => {
     if (isReady && boardRef.current) {
       boardRef.current.onTokenMove = (id, x, y) => {
-        broadcast({ type: 'TOKEN_MOVE', payload: { id, x, y } });
-        if (isHost && window.electronAPI && currentMapIdRef.current) {
-          window.electronAPI.updateMapToken(sessionId, currentMapIdRef.current, id, x, y).catch(console.error);
+        if (isHost) {
+          // ✅ MJ : On prévient tout le monde directement et on sauve en DB
+          broadcast({ type: 'TOKEN_MOVE', payload: { id, x, y } });
+          if (window.electronAPI && currentMapIdRef.current) {
+            window.electronAPI.updateMapToken(sessionId, currentMapIdRef.current, id, x, y).catch(console.error);
+          }
+        } else {
+          // ✅ JOUEUR : On demande seulement au MJ de bouger le token
+          // On ne le broadcast pas nous-même pour éviter les conflits
+          const sData = useSessionStore.getState().sessions.find(s => s.id === sessionId);
+          if (sData?.hostPeerId) {
+            sendTo(sData.hostPeerId, { type: 'TOKEN_MOVE_REQUEST', payload: { id, x, y } });
+          }
         }
       };
     }
-  }, [isReady, isHost, sessionId, broadcast]);
+  }, [isReady, isHost, sessionId, broadcast, sendTo]);
 
   // 2. Chargement initial et synchronisation
   useEffect(() => {

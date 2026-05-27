@@ -8,7 +8,7 @@ import { Ghost, User, Plus, Search, Trash2, Shield, Heart, Zap, Settings, Sword,
 import { addSessionCharacter, updateSessionCharacter, removeSessionCharacter, Character } from '../../services/characters.service';
 import { CreateCharacterModal } from '../CreateCharacterModal';
 import { CharacterSheetContent } from './CharacterSheetContent';
-import { DEFAULT_BARS } from '../../systems/seal/constants';
+import { DEFAULT_BARS, DEFAULT_STATS } from '../../systems/seal/constants';
 
 interface BestiaryWindowContentProps {
   sessionId: string;
@@ -81,7 +81,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
 
   const handleCreateNewTemplate = () => {
     const stats: Record<string, number> = {};
-    const statIds = session?.settings?.stats?.map((s: any) => s.id) || ['FOR', 'AGI', 'INT', 'CHA', 'PER'];
+    const statIds = session?.settings?.stats?.map((s: any) => s.id) || DEFAULT_STATS.map(s => s.id);
     statIds.forEach((id: string) => stats[id] = 10); // Neutral default
 
     setEditingNPC({

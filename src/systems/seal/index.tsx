@@ -32,6 +32,7 @@ import { useQuestsStore } from '../../store/quests';
 import { useSkillsStore } from '../../store/skills';
 import { useTagsStore } from '../../store/tags';
 import { useUIStore } from '../../store/ui';
+import { mapSyncService } from '../../services/map-sync.service';
 
 interface SealEngineProps {
   sessionId: string;
@@ -168,7 +169,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
     const unsub = onData((data, fromPeerId) => {
       const { type, payload } = data;
       if (type === 'CHAR_UPDATE') {
-        addOrUpdateCharacter(payload);
+        addOrUpdateCharacter(payload, true);
       } else if (type === 'CHAR_DELETE') {
         removeCharacter(sessionId, payload.id);
       } else if (type === 'MAP_CHANGE' && !isHost) {
