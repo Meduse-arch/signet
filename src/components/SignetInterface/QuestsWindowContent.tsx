@@ -159,11 +159,11 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                             <p className="text-[8px] font-serif italic text-white/30 truncate mt-0.5">
                                 {quest.description || "Aucun détail..."}
                             </p>
-                        </div>
+                            </div>
 
-                        {/* ─── ACTIONS SUR LA BARRE ─── */}
-                        {isMJ && (
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* ─── ACTIONS SUR LA BARRE (Apparaissent au hover) ─── */}
+                            {isMJ && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1 border-l border-white/10 pl-1 shrink-0">
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); if(window.confirm("Effacer ce récit ?")) removeQuest(sessionId, quest.id); }}
                                     className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
@@ -172,10 +172,10 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                                     <Trash2 size={10} />
                                 </button>
                             </div>
-                        )}
+                            )}
 
-                        {!isWideView && <ChevronRight size={12} className="text-gold-DEFAULT/20 group-hover:text-gold-DEFAULT/60 transition-colors" />}
-                    </div>
+                            {/* Chevron supprimé pour laisser place aux actions */}
+                            </div>
                     );
                 })}
 

@@ -143,18 +143,18 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                            <h4 className={`text-[10px] font-cinzel font-black tracking-widest truncate uppercase ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-white'}`}>
+                            <h4 className={`text-[10px] font-cinzel font-black tracking-widest truncate uppercase transition-colors ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-white'}`}>
                                 {skill.name}
                             </h4>
                             <span className="text-[7px] font-mono text-white/20 uppercase tracking-tighter truncate">{skill.type || 'Compétence'}</span>
                         </div>
 
-                        {/* ─── ACTIONS SUR LA BARRE ─── */}
+                        {/* ─── ACTIONS SUR LA BARRE (Apparaissent au hover) ─── */}
                         {isMJ && (
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1 border-l border-white/10 pl-1 shrink-0">
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); setShowSkillCreateModal(true, skill); }}
-                                    className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all"
+                                    className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
                                     title="Modifier"
                                 >
                                     <PenTool size={10} />
@@ -169,7 +169,7 @@ export function SkillsWindowContent({ sessionId }: SkillsWindowContentProps) {
                             </div>
                         )}
 
-                        {!isWideView && <ChevronRight size={12} className="text-gold-DEFAULT/20 group-hover:text-gold-DEFAULT/60 transition-colors" />}
+                        {/* Chevron supprimé pour laisser place aux actions */}
                     </div>
                     );
                 })}

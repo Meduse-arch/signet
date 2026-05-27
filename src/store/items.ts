@@ -37,6 +37,28 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
       let newItems;
       if (existing) {
         newItems = state.items.map(i => i.id === item.id ? item : i);
+
+        // --- MISE À JOUR SYNCHRONE DES PERSONNAGES ---
+        const { useCharactersStore } = await import('./characters');
+        const charStore = useCharactersStore.getState();
+        const affectedChars = charStore.characters.filter(c => 
+          c.inventory?.some((inv: any) => inv.id === item.id)
+        );
+
+        if (affectedChars.length > 0) {
+          affectedChars.forEach(char => {
+            const updatedInventory = char.inventory?.map((inv: any) => 
+              inv.id === item.id ? { ...item, instanceId: inv.instanceId, equipped: inv.equipped, quantity: inv.quantity } : inv
+            );
+            const updatedChar = { ...char, inventory: updatedInventory };
+            charStore.addOrUpdateCharacter(updatedChar);
+            
+            // Notification pour les autres composants
+            const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
+            channel.postMessage({ type: 'CHAR_UPDATE', payload: updatedChar });
+            channel.close();
+          });
+        }
       } else {
         newItems = [...state.items, item];
       }

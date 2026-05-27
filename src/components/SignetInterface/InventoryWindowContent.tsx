@@ -43,7 +43,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     if (!containerRef.current) return;
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        // Mode Codex si la fenêtre dépasse 650px de large
         setIsWideView(entry.contentRect.width > 650);
       }
     });
@@ -315,14 +314,14 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                         </div>
                         
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <h4 className={`text-[10px] font-cinzel font-black tracking-widest truncate uppercase ${item.equipped ? 'text-gold-bright' : (isActive ? 'text-gold-DEFAULT' : 'text-white/60 group-hover:text-white')}`}>
+                            <h4 className={`text-[10px] font-cinzel font-black tracking-widest truncate uppercase transition-colors ${item.equipped ? 'text-gold-bright drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]' : (isActive ? 'text-gold-DEFAULT' : 'text-white/60 group-hover:text-white')}`}>
                             {item.name}
                             </h4>
                             <span className="text-[7px] font-mono text-white/20 uppercase tracking-tighter truncate">{item.category}</span>
                         </div>
 
-                        {/* ─── ACTIONS SUR LA BARRE ─── */}
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* ─── ACTIONS SUR LA BARRE (Hover) ─── */}
+                        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                             {item.category === 'Consommable' ? (
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); handleUseItem(item); }}
@@ -334,7 +333,11 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                             ) : (
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); handleToggleEquip(item); }}
-                                    className={`p-1.5 rounded-lg transition-all ${item.equipped ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-gold-DEFAULT text-black hover:bg-gold-bright'}`}
+                                    className={`p-1.5 rounded-lg transition-all ${
+                                        item.equipped 
+                                        ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                                        : 'bg-gold-DEFAULT text-black hover:bg-gold-bright'
+                                    }`}
                                     title={item.equipped ? "Déséquiper" : "Équiper"}
                                 >
                                     <Shield size={10} />
@@ -355,8 +358,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                         {item.equipped && (
                         <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gold-DEFAULT shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
                         )}
-                        
-                        {!isWideView && <ChevronRight size={12} className="text-gold-DEFAULT/20 group-hover:text-gold-DEFAULT/60 transition-colors" />}
                     </div>
                     );
                 })}

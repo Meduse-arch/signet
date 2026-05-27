@@ -12,6 +12,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { Quest } from '../../services/quests.service';
+import { useQuestsStore } from '../../store/quests';
 
 interface QuestDetailContentProps {
   quest: Quest;
@@ -23,13 +24,23 @@ interface QuestDetailContentProps {
 }
 
 export function QuestDetailContent({ 
-  quest, 
+  quest: initialQuest, 
   sessionId, 
   onEdit, 
   onDelete, 
   isMJ,
   showActions = true 
 }: QuestDetailContentProps) {
+  const { quests } = useQuestsStore();
+  const [quest, setQuest] = React.useState(initialQuest);
+
+  // Sync with global store updates
+  React.useEffect(() => {
+    if (!initialQuest) return;
+    const updated = quests.find(q => q.id === initialQuest.id) || initialQuest;
+    setQuest(updated);
+  }, [initialQuest, quests]);
+
   if (!quest) return (
     <div className="flex flex-col items-center justify-center h-full opacity-20 py-20">
       <Scroll size={64} className="mb-4 text-gold-DEFAULT" />
@@ -98,39 +109,22 @@ export function QuestDetailContent({
            </div>
         </div>
 
-        {/* BLOCK RÉCOMPENSES & PARTICIPANTS (Flexible) ─── */}
+        {/* BLOCK RÉCOMPENSES (Flexible) ─── */}
         <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
            <div className="flex items-center gap-2 mb-3 opacity-20">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
-              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Destinée</span>
+              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Récompenses</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
            </div>
            
-           {/* Conteneur scrollable dédié pour les récompenses et participants */}
+           {/* Conteneur scrollable dédié pour les récompenses */}
            <div className="max-h-48 overflow-y-auto custom-scrollbar pr-1">
               <div className="space-y-4">
-                 {/* Participants */}
-                 {quest.participantIds && quest.participantIds.length > 0 && (
-                   <div className="space-y-1.5">
-                       <h4 className="text-[7px] font-cinzel font-black text-gold-DEFAULT/30 uppercase tracking-widest flex items-center gap-1.5">
-                           <Users size={8} /> Voyageurs
-                       </h4>
-                       <div className="flex flex-wrap gap-1.5">
-                           {quest.participantIds.map(id => (
-                               <div key={id} className="px-2 py-0.5 rounded bg-white/[0.03] border border-white/5 text-[7px] font-cinzel text-white/30">
-                                   #{id.slice(0, 4)}
-                               </div>
-                           ))}
-                       </div>
-                   </div>
-                 )}
+                 {/* Participants supprimés pour raisons RP */}
 
                  {/* Rewards */}
                  {quest.rewards && quest.rewards.length > 0 ? (
                    <div className="space-y-1.5">
-                     <h4 className="text-[7px] font-cinzel font-black text-gold-DEFAULT/30 uppercase tracking-widest flex items-center gap-1.5">
-                       <Gift size={8} /> Tributs
-                     </h4>
                      {quest.rewards.map((reward, i) => (
                        <div 
                            key={i} 

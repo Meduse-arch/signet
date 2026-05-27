@@ -14,6 +14,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { Skill } from '../../services/skills.service';
+import { useSkillsStore } from '../../store/skills';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 
 interface SkillDetailContentProps {
@@ -25,12 +26,22 @@ interface SkillDetailContentProps {
 }
 
 export function SkillDetailContent({ 
-  skill, 
+  skill: initialSkill, 
   onEdit, 
   onDelete, 
   isMJ,
   showActions = true
 }: SkillDetailContentProps) {
+  const { skills } = useSkillsStore();
+  const [skill, setSkill] = React.useState(initialSkill);
+
+  // Sync with global store updates
+  React.useEffect(() => {
+    if (!initialSkill) return;
+    const updated = skills.find(s => s.id === initialSkill.id) || initialSkill;
+    setSkill(updated);
+  }, [initialSkill, skills]);
+
   if (!skill) return (
     <div className="flex flex-col items-center justify-center h-full opacity-20 py-20">
       <Zap size={64} className="mb-4 text-gold-DEFAULT" />
