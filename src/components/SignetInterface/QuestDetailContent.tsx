@@ -106,52 +106,55 @@ export function QuestDetailContent({
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
            </div>
            
-           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4">
-              {/* Participants */}
-              {quest.participantIds && quest.participantIds.length > 0 && (
-                <div className="space-y-1.5">
-                    <h4 className="text-[7px] font-cinzel font-black text-gold-DEFAULT/30 uppercase tracking-widest flex items-center gap-1.5">
-                        <Users size={8} /> Voyageurs
-                    </h4>
-                    <div className="flex flex-wrap gap-1.5">
-                        {quest.participantIds.map(id => (
-                            <div key={id} className="px-2 py-0.5 rounded bg-white/[0.03] border border-white/5 text-[7px] font-cinzel text-white/30">
-                                #{id.slice(0, 4)}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-              )}
+           {/* Conteneur scrollable dédié pour les récompenses et participants */}
+           <div className="max-h-48 overflow-y-auto custom-scrollbar pr-1">
+              <div className="space-y-4">
+                 {/* Participants */}
+                 {quest.participantIds && quest.participantIds.length > 0 && (
+                   <div className="space-y-1.5">
+                       <h4 className="text-[7px] font-cinzel font-black text-gold-DEFAULT/30 uppercase tracking-widest flex items-center gap-1.5">
+                           <Users size={8} /> Voyageurs
+                       </h4>
+                       <div className="flex flex-wrap gap-1.5">
+                           {quest.participantIds.map(id => (
+                               <div key={id} className="px-2 py-0.5 rounded bg-white/[0.03] border border-white/5 text-[7px] font-cinzel text-white/30">
+                                   #{id.slice(0, 4)}
+                               </div>
+                           ))}
+                       </div>
+                   </div>
+                 )}
 
-              {/* Rewards */}
-              {quest.rewards && quest.rewards.length > 0 ? (
-                <div className="space-y-1.5">
-                  <h4 className="text-[7px] font-cinzel font-black text-gold-DEFAULT/30 uppercase tracking-widest flex items-center gap-1.5">
-                    <Gift size={8} /> Tributs
-                  </h4>
-                  {quest.rewards.map((reward, i) => (
-                    <div 
-                        key={i} 
-                        className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 transition-all hover:border-gold-DEFAULT/20"
-                    >
-                        <div className="flex flex-col">
-                            <span className="text-[8px] font-cinzel font-black text-white/60 uppercase tracking-widest">{reward.type}</span>
-                            <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase truncate max-w-[100px]">
-                                {reward.description || 'Valeur mystique'}
-                            </span>
-                        </div>
-                        <span className="text-[10px] font-cinzel font-black text-gold-bright">
-                            {reward.type === 'Experience' ? `+${reward.value} XP` : (reward.value ? `x${reward.value}` : 'UNIQUE')}
-                        </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center py-4 opacity-5">
-                    <Sparkles size={20} className="mb-1" />
-                    <span className="text-[6px] font-cinzel uppercase tracking-widest">Néant</span>
-                </div>
-              )}
+                 {/* Rewards */}
+                 {quest.rewards && quest.rewards.length > 0 ? (
+                   <div className="space-y-1.5">
+                     <h4 className="text-[7px] font-cinzel font-black text-gold-DEFAULT/30 uppercase tracking-widest flex items-center gap-1.5">
+                       <Gift size={8} /> Tributs
+                     </h4>
+                     {quest.rewards.map((reward, i) => (
+                       <div 
+                           key={i} 
+                           className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 transition-all hover:border-gold-DEFAULT/20"
+                       >
+                           <div className="flex flex-col">
+                               <span className="text-[8px] font-cinzel font-black text-white/60 uppercase tracking-widest">{reward.type}</span>
+                               <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase truncate max-w-[100px]">
+                                   {reward.description || 'Valeur mystique'}
+                               </span>
+                           </div>
+                           <span className="text-[10px] font-cinzel font-black text-gold-bright">
+                               {reward.type === 'Experience' ? `+${reward.value} XP` : (reward.value ? `x${reward.value}` : 'UNIQUE')}
+                           </span>
+                       </div>
+                     ))}
+                   </div>
+                 ) : (
+                   <div className="h-full flex flex-col items-center justify-center py-4 opacity-5">
+                       <Sparkles size={20} className="mb-1" />
+                       <span className="text-[6px] font-cinzel uppercase tracking-widest">Néant</span>
+                   </div>
+                 )}
+              </div>
            </div>
         </div>
       </div>

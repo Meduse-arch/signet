@@ -127,57 +127,60 @@ export function SkillDetailContent({
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
            </div>
            
-           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-3">
-              {/* Effets Actifs */}
-              {skill.effects && skill.effects.length > 0 && (
-                <div className="space-y-1.5">
-                  {skill.effects.map((effect) => (
-                    <div key={effect.id} className="p-2 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-1">
-                       <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                             {getEffectIcon(effect.type)}
-                             <span className="text-[7px] font-cinzel font-bold text-white/60 uppercase tracking-widest">{effect.type}</span>
+           {/* Conteneur scrollable dédié pour les effets et modificateurs */}
+           <div className="max-h-48 overflow-y-auto custom-scrollbar pr-1">
+              <div className="space-y-3">
+                 {/* Effets Actifs */}
+                 {skill.effects && skill.effects.length > 0 && (
+                   <div className="space-y-1.5">
+                     {skill.effects.map((effect) => (
+                       <div key={effect.id} className="p-2 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                             <div className="flex items-center gap-1.5">
+                                {getEffectIcon(effect.type)}
+                                <span className="text-[7px] font-cinzel font-bold text-white/60 uppercase tracking-widest">{effect.type}</span>
+                             </div>
+                             <span className="text-[8px] font-mono text-gold-bright">
+                                {effect.mode === 'dice' ? effect.formula : `${effect.valeur >= 0 ? '+' : ''}${effect.valeur}${effect.mode === 'percent' ? '%' : ''}`}
+                             </span>
                           </div>
-                          <span className="text-[8px] font-mono text-gold-bright">
-                             {effect.mode === 'dice' ? effect.formula : `${effect.valeur >= 0 ? '+' : ''}${effect.valeur}${effect.mode === 'percent' ? '%' : ''}`}
-                          </span>
+                          <p className="text-[7px] font-serif italic text-white/30 leading-relaxed">
+                             {effect.description}
+                          </p>
                        </div>
-                       <p className="text-[7px] font-serif italic text-white/30 leading-relaxed">
-                          {effect.description}
-                       </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+                     ))}
+                   </div>
+                 )}
 
-              {/* Modificateurs Passifs */}
-              {skill.modifiers && skill.modifiers.length > 0 && (
-                <div className="grid grid-cols-1 gap-1.5">
-                  {skill.modifiers.map((m, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-gold-DEFAULT/20 transition-all">
-                      <div className="flex flex-col">
-                        <span className="text-[8px] font-cinzel font-black text-white/60 uppercase tracking-widest">
-                          {getTargetName(m.target, m.targetId, m.targetProperty)}
-                        </span>
-                        <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase">{m.target === 'stat' ? 'Attribut' : 'Ressource'}</span>
-                      </div>
-                      <span className="text-[10px] font-cinzel font-black text-gold-bright">
-                        {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                 {/* Modificateurs Passifs */}
+                 {skill.modifiers && skill.modifiers.length > 0 && (
+                   <div className="grid grid-cols-1 gap-1.5">
+                     {skill.modifiers.map((m, i) => (
+                       <div key={i} className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-gold-DEFAULT/20 transition-all">
+                         <div className="flex flex-col">
+                           <span className="text-[8px] font-cinzel font-black text-white/60 uppercase tracking-widest">
+                             {getTargetName(m.target, m.targetId, m.targetProperty)}
+                           </span>
+                           <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase">{m.target === 'stat' ? 'Attribut' : 'Ressource'}</span>
+                         </div>
+                         <span className="text-[10px] font-cinzel font-black text-gold-bright">
+                           {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`}
+                         </span>
+                       </div>
+                     ))}
+                   </div>
+                 )}
 
-              {/* Conditions */}
-              {skill.condition_type && (
-                <div className="p-2.5 rounded-xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/10">
-                   <p className="text-[7px] font-cinzel text-gold-DEFAULT/50 uppercase leading-relaxed text-center tracking-wider">
-                      Requiert {skill.condition_type === 'item' ? 'relique' : skill.condition_type === 'skill' ? 'maîtrise' : 'relique & maîtrise'}
-                      {skill.condition_tags && skill.condition_tags.length > 0 && ` [${skill.condition_tags.join(', ')}]`}
-                   </p>
-                </div>
-              )}
+                 {/* Conditions */}
+                 {skill.condition_type && (
+                   <div className="p-2.5 rounded-xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/10">
+                      <p className="text-[7px] font-cinzel text-gold-DEFAULT/50 uppercase leading-relaxed text-center tracking-wider">
+                         Requiert {skill.condition_type === 'item' ? 'relique' : skill.condition_type === 'skill' ? 'maîtrise' : 'relique & maîtrise'}
+                         {skill.condition_tags && skill.condition_tags.length > 0 && ` [${skill.condition_tags.join(', ')}]`}
+                      </p>
+                   </div>
+                 )}
+              </div>
            </div>
         </div>
       </div>

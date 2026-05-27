@@ -104,32 +104,35 @@ export function ItemDetailContent({
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
            </div>
            
-           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-1.5">
-              {item.modifiers && item.modifiers.length > 0 ? (
-                <>
-                   {item.modifiers.map((m: any, i: number) => (
-                     <div 
-                       key={i} 
-                       className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 transition-all hover:border-gold-DEFAULT/20"
-                     >
-                       <div className="flex flex-col">
-                         <span className="text-[8px] font-cinzel font-black text-white/60 uppercase tracking-widest">{getTargetName(m)}</span>
-                         <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase">
-                           {m.target === 'stat' ? 'Attribut' : 'Ressource'}
-                         </span>
-                       </div>
-                       <span className="text-[10px] font-cinzel font-black text-gold-bright">
-                         {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`}
-                       </span>
-                     </div>
-                   ))}
-                </>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center opacity-5 py-4">
-                   <Sparkles size={20} />
-                   <span className="text-[6px] font-cinzel uppercase tracking-widest mt-1">Neutre</span>
-                </div>
-              )}
+           {/* Conteneur scrollable dédié pour les modificateurs */}
+           <div className="max-h-32 overflow-y-auto custom-scrollbar pr-1">
+              <div className="space-y-1.5">
+                 {item.modifiers && item.modifiers.length > 0 ? (
+                   <>
+                      {item.modifiers.map((m: any, i: number) => (
+                        <div 
+                          key={i} 
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 transition-all hover:border-gold-DEFAULT/20"
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-[8px] font-cinzel font-black text-white/60 uppercase tracking-widest">{getTargetName(m)}</span>
+                            <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase">
+                              {m.target === 'stat' ? 'Attribut' : 'Ressource'}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-cinzel font-black text-gold-bright">
+                            {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`}
+                          </span>
+                        </div>
+                      ))}
+                   </>
+                 ) : (
+                   <div className="flex flex-col items-center justify-center opacity-5 py-4">
+                      <Sparkles size={20} />
+                      <span className="text-[6px] font-cinzel uppercase tracking-widest mt-1">Neutre</span>
+                   </div>
+                 )}
+              </div>
            </div>
         </div>
       </div>
