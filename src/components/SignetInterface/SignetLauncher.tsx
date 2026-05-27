@@ -16,7 +16,7 @@ import { SecurityLevel, useAuthStore } from '../../store/auth';
 import { useCharactersStore } from '../../store/characters';
 
 interface SignetLauncherProps {
-  onOpenWindow: (type: 'scenes' | 'quests' | 'dice' | 'assets' | 'players' | 'bestiary' | 'skills') => void;
+  onOpenWindow: (type: 'scenes' | 'quests' | 'dice' | 'inventaire' | 'players' | 'bestiary' | 'skills') => void;
   securityLevel?: SecurityLevel;
   sessionId: string;
 }
@@ -71,7 +71,7 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
     { type: 'skills' as const, icon: <Sparkles size={18} />, label: 'Compétences', minSecurity: SecurityLevel.PLAYER },
     { type: 'quests' as const, icon: <ScrollText size={18} />, label: 'Quêtes', minSecurity: SecurityLevel.PLAYER },
     { type: 'dice' as const, icon: <Dices size={18} />, label: 'Dés', minSecurity: SecurityLevel.PLAYER },
-    { type: 'assets' as const, icon: <Package size={18} />, label: 'Inventaire', minSecurity: SecurityLevel.PLAYER },
+    { type: 'inventaire' as const, icon: <Package size={18} />, label: 'Inventaire', minSecurity: SecurityLevel.PLAYER },
     { type: 'players' as const, icon: <Users size={18} />, label: 'Joueurs', minSecurity: SecurityLevel.PLAYER },
   ].filter(item => securityLevel >= item.minSecurity);
 

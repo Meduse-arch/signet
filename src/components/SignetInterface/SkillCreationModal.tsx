@@ -1,687 +1,399 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkles, Zap, Plus, X, Save, BarChart2, BookOpen, Shuffle, Backpack, ChevronDown, Dices, Power, Upload, Loader2 } from 'lucide-react';
-import { useUIStore } from '../../store/ui';
 import { useSkillsStore } from '../../store/skills';
+import { useUIStore } from '../../store/ui';
+import { useAuthStore } from '../../store/auth';
 import { useTagsStore } from '../../store/tags';
-import { useAuthStore, SecurityLevel } from '../../store/auth';
-import { usePeer } from '../../hooks/usePeer';
-import { Skill, SkillModifier, SkillEffect } from '../../services/skills.service';
-import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
-import { useSessionStore } from '../../store/session';
 import { TagManagementModal } from './TagManagementModal';
+import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { assetSyncService } from '../../services/asset-sync.service';
-import { useAssetUrl } from '../../hooks/useAssetUrl';
-
-// --- Composant Select Personnalisé ---
-const CustomSelect = ({ value, options, onChange, placeholder }: { value: string, options: {value: string, label: string}[], onChange: (v: string) => void, placeholder?: string }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const selected = options.find(o => o.value === value);
-
-  return (
-    <div className="relative w-full" ref={ref}>
-      <div 
-        className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white cursor-pointer hover:border-gold-DEFAULT/50 flex justify-between items-center font-cinzel tracking-widest uppercase transition-colors shadow-inner"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className="truncate">{selected ? selected.label : placeholder || 'Choisir...'}</span>
-        <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} text-white/40 ml-2`} />
-      </div>
-      {isOpen && (
-        <div className="absolute top-full left-0 w-full mt-1 bg-[#1a1a1d] border border-gold-DEFAULT/30 rounded-lg shadow-2xl z-[400] max-h-48 overflow-y-auto custom-scrollbar">
-          {options.map(o => (
-            <div 
-              key={o.value} 
-              className={`px-3 py-2.5 text-[10px] font-cinzel tracking-widest uppercase cursor-pointer transition-colors ${value === o.value ? 'bg-gold-DEFAULT/20 text-gold-bright' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
-              onClick={() => { onChange(o.value); setIsOpen(false); }}
-            >
-              {o.label}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// --- Modèles de données unifiés pour l'UI ---
-type UnifiedEntry = {
-  _uid: string;
-  nature: 'classique' | 'buff' | 'debuff';
-  targetType: 'attribut' | 'ressource';
-  targetId: string;
-  targetProperty?: 'current' | 'max';
-  mode: 'flat' | 'percent' | 'dice';
-  value: number;
-  formula: string;
-  description: string;
-};
-
-const NATURE_OPTIONS = [
-  { value: 'classique', label: 'Classique (Dégâts, Soins...)' },
-  { value: 'buff', label: 'Buff (Bonus)' },
-  { value: 'debuff', label: 'Debuff (Malus)' }
-];
-
-const TARGET_TYPE_OPTIONS = [
-  { value: 'attribut', label: 'Attribut (Stats)' },
-  { value: 'ressource', label: 'Ressource (Jauges)' }
-];
-
-const PROPERTY_OPTIONS = [
-  { value: 'current', label: 'Actuel Jauge' },
-  { value: 'max', label: 'Max Jauge' }
-];
-
-const MODE_OPTIONS = [
-  { value: 'flat', label: 'Valeur Fixe' },
-  { value: 'percent', label: 'Pourcentage (%)' },
-  { value: 'dice', label: 'Jet de Dé / Formule' }
-];
 
 interface SkillCreationModalProps {
   sessionId: string;
 }
 
 export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
-  const { showSkillCreateModal, setShowSkillCreateModal, skillToEdit } = useUIStore();
+  const { showSkillCreateModal, setShowSkillCreateModal, skillToEdit, skillCreationType } = useUIStore();
   const { addSkill } = useSkillsStore();
   const { tags } = useTagsStore();
-  const { user } = useAuthStore();
-  const { broadcast } = usePeer();
-  const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
-  const isMJ = !!user && user.role >= SecurityLevel.MJ;
-
+  const [showTagManager, setShowTagManager] = useState(false);
+  
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<'active' | 'passive_auto' | 'passive_toggle'>('active');
   const [imageUrl, setImageUrl] = useState('');
-  const [isUploading, setIsHostUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const previewUrl = useAssetUrl(imageUrl);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [onglet, setOnglet] = useState<'arcanes' | 'condition'>('arcanes');
+  const [isUploading, setIsWideUploading] = useState(false);
 
-  const [unifiedEntries, setUnifiedEntries] = useState<UnifiedEntry[]>([]);
-  const [activeFormulaIdx, setActiveFormulaIdx] = useState<number | null>(null);
+  // Coût
+  const [hasCost, setHasCost] = useState(false);
+  const [costBarId, setCostBarId] = useState('vitalite');
+  const [costValue, setCostValue] = useState(1);
 
-  const [conditionType, setConditionType] = useState<'item' | 'skill' | 'les_deux' | null>(null);
+  // Effets techniques (Dégâts, Soins, etc)
+  const [effects, setEffects] = useState<any[]>([]);
+
+  // Modificateurs (Bonus passifs ou Aura)
+  const [modifiers, setModifiers] = useState<any[]>([]);
+
+  // Conditions
+  const [conditionType, setConditionType] = useState<'none' | 'item' | 'skill' | 'both'>('none');
   const [conditionTags, setConditionTags] = useState<string[]>([]);
-  const [showTagManager, setShowTagManagement] = useState(false);
-
-  const availableStats = session?.settings?.stats || DEFAULT_STATS;
-  const availableBars = session?.settings?.bars || DEFAULT_BARS;
 
   useEffect(() => {
-    if (skillToEdit && showSkillCreateModal) {
-      setName(skillToEdit.name);
-      setDescription(skillToEdit.description);
-      setType(skillToEdit.type);
+    if (showSkillCreateModal && skillToEdit) {
+      setName(skillToEdit.name || '');
+      setDescription(skillToEdit.description || '');
+      setType(skillToEdit.type || 'active');
       setImageUrl(skillToEdit.image_url || '');
       setSelectedTags(skillToEdit.tags || []);
-      setConditionType(skillToEdit.condition_type || null);
+      setHasCost(!!skillToEdit.cost);
+      if (skillToEdit.cost) {
+        setCostBarId(skillToEdit.cost.barId);
+        setCostValue(skillToEdit.cost.value);
+      }
+      setEffects(skillToEdit.effects || []);
+      setModifiers(skillToEdit.modifiers || []);
+      setConditionType(skillToEdit.condition_type || 'none');
       setConditionTags(skillToEdit.condition_tags || []);
-
-      const initialUnified: UnifiedEntry[] = [];
-      skillToEdit.modifiers?.forEach((m: any) => {
-        const isNegative = m.value < 0 || (m.formula && m.formula.startsWith('-'));
-        initialUnified.push({
-          _uid: crypto.randomUUID(),
-          nature: isNegative ? 'debuff' : 'buff',
-          targetType: m.target === 'stat' ? 'attribut' : 'ressource',
-          targetId: m.targetId,
-          targetProperty: m.targetProperty,
-          mode: m.mode || 'flat',
-          value: Math.abs(m.value || 0),
-          formula: m.formula ? m.formula.replace(/^-/, '') : '',
-          description: ''
-        });
-      });
-      skillToEdit.effects?.forEach((e: any) => {
-        if (e.type === 'buff' || e.type === 'debuff') {
-          initialUnified.push({
-            _uid: crypto.randomUUID(),
-            nature: e.type,
-            targetType: 'ressource',
-            targetId: e.cible_jauge || availableBars[0]?.id || '',
-            mode: e.mode || 'flat',
-            value: Math.abs(e.valeur || 0),
-            formula: e.formula ? e.formula.replace(/^-/, '') : '',
-            description: e.description || ''
-          });
-        } else {
-          initialUnified.push({
-            _uid: crypto.randomUUID(),
-            nature: 'classique',
-            targetType: 'attribut',
-            targetId: '',
-            mode: e.mode || 'flat',
-            value: e.valeur || 0,
-            formula: e.formula || '',
-            description: e.description || ''
-          });
-        }
-      });
-      setUnifiedEntries(initialUnified);
-    } else if (showSkillCreateModal) {
+    } else {
       setName('');
       setDescription('');
       setType('active');
       setImageUrl('');
-      setUnifiedEntries([]);
       setSelectedTags([]);
-      setConditionType(null);
+      setHasCost(false);
+      setEffects([]);
+      setModifiers([]);
+      setConditionType('none');
       setConditionTags([]);
-      setOnglet('arcanes');
     }
-  }, [skillToEdit, showSkillCreateModal, availableBars]);
-
-  if (!showSkillCreateModal || !isMJ) return null;
+  }, [showSkillCreateModal, skillToEdit]);
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!name) return;
 
-    const modifiers: SkillModifier[] = [];
-    const effects: SkillEffect[] = [];
-
-    unifiedEntries.forEach(entry => {
-      if (entry.nature === 'buff' || entry.nature === 'debuff') {
-        const isDebuff = entry.nature === 'debuff';
-        const finalValue = isDebuff ? -Math.abs(entry.value) : Math.abs(entry.value);
-        let finalFormula = entry.formula;
-        if (isDebuff && finalFormula && !finalFormula.startsWith('-')) {
-            finalFormula = '-' + finalFormula;
-        }
-
-        modifiers.push({
-          target: entry.targetType === 'attribut' ? 'stat' : 'bar',
-          targetId: entry.targetId,
-          targetProperty: entry.targetType === 'ressource' 
-            ? (entry.targetProperty === 'current' ? 'value' : (entry.targetProperty || 'value')) as 'value' | 'max' 
-            : undefined,
-          mode: entry.mode,
-          value: finalValue,
-          formula: finalFormula
-        });
-      } else if (entry.nature === 'classique') {
-        effects.push({
-          id: crypto.randomUUID(),
-          type: 'utility', 
-          target: 'target', 
-          valeur: entry.value,
-          mode: entry.mode,
-          formula: entry.formula,
-          description: entry.description
-        });
-      }
-    });
-
-    const skill: Skill = {
+    const skillData = {
       id: skillToEdit?.id || crypto.randomUUID(),
       name,
       description,
       type,
       image_url: imageUrl,
       tags: selectedTags,
-      modifiers,
+      cost: hasCost ? { barId: costBarId, value: costValue } : undefined,
       effects,
-      condition_type: type === 'passive_auto' ? conditionType : null,
-      condition_tags: type === 'passive_auto' ? conditionTags : []
+      modifiers,
+      condition_type: conditionType !== 'none' ? conditionType : undefined,
+      condition_tags: conditionTags.length > 0 ? conditionTags : undefined,
     };
 
-    await addSkill(sessionId, skill);
-    broadcast({ type: 'SKILL_UPDATE', payload: skill });
+    // Si on est en mode 'inventory', on met à jour directement le personnage
+    if (skillCreationType === 'inventory') {
+        const { useCharactersStore } = await import('../../store/characters');
+        const { controlledCharacterId } = useCharactersStore.getState();
+        const character = useCharactersStore.getState().characters.find(c => c.id === controlledCharacterId);
+        if (character) {
+            const updatedChar = {
+                ...character,
+                custom_skills: (character.custom_skills || []).map((s: any) => s.id === skillData.id ? { ...skillData, is_active: s.is_active } : s)
+            };
+            useCharactersStore.getState().addOrUpdateCharacter(updatedChar);
+            // On peut aussi broadcaster ici si besoin
+        }
+    } else {
+        // Sinon c'est une sauvegarde dans le codex global
+        await addSkill(sessionId, skillData as any);
+    }
+
     setShowSkillCreateModal(false);
   };
 
-  const addEntry = () => {
-    setUnifiedEntries([...unifiedEntries, {
-      _uid: crypto.randomUUID(),
-      nature: 'classique',
-      targetType: 'attribut',
-      targetId: availableStats[0]?.id || '',
-      mode: 'dice',
-      value: 0,
-      formula: '',
-      description: ''
-    }]);
+  const addEffect = () => {
+    setEffects([...effects, { id: crypto.randomUUID(), type: 'damage', mode: 'dice', formula: '1d6', valeur: 0, description: '' }]);
   };
 
-  const removeEntry = (idx: number) => {
-    setUnifiedEntries(unifiedEntries.filter((_, i) => i !== idx));
+  const updateEffect = (id: string, updates: any) => {
+    setEffects(effects.map(e => e.id === id ? { ...e, ...updates } : e));
   };
 
-  const updateEntry = (idx: number, updates: Partial<UnifiedEntry>) => {
-    setUnifiedEntries(unifiedEntries.map((e, i) => i === idx ? { ...e, ...updates } : e));
+  const addModifier = () => {
+    setModifiers([...modifiers, { target: 'stat', targetId: 'force', mode: 'flat', value: 1 }]);
   };
 
-  const toggleTag = (tagId: string) => {
-    setSelectedTags(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]);
+  const updateModifier = (index: number, updates: any) => {
+    const newMods = [...modifiers];
+    newMods[index] = { ...newMods[index], ...updates };
+    setModifiers(newMods);
   };
 
-  const toggleConditionTag = (tagId: string) => {
-    setConditionTags(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]);
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsWideUploading(true);
+    try {
+        const assetUrl = await assetSyncService.uploadLocalAsset(file);
+        setImageUrl(assetUrl);
+    } catch (err) {
+        console.error("Upload failed", err);
+    } finally {
+        setIsWideUploading(false);
+    }
   };
 
-  const StatHelperModal = () => {
-    if (activeFormulaIdx === null) return null;
-    return (
-      <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="bg-[#0D0D0F] border border-gold-DEFAULT/40 p-6 rounded-2xl shadow-2xl w-full max-w-sm flex flex-col gap-4">
-          <div className="flex justify-between items-center border-b border-white/10 pb-3">
-            <h3 className="text-gold-bright font-cinzel font-black uppercase tracking-widest text-sm">Lexique des Attributs</h3>
-            <button onClick={() => setActiveFormulaIdx(null)} className="text-white/40 hover:text-white transition-colors">
-              <X size={18} />
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar p-1">
-            {availableStats.map((s: any) => (
-              <button
-                key={s.id}
-                onClick={() => {
-                  const entry = unifiedEntries[activeFormulaIdx];
-                  const current = entry.formula || '';
-                  const newVal = current + (current && !current.endsWith(' ') ? ' ' : '') + s.name;
-                  updateEntry(activeFormulaIdx, { formula: newVal });
-                  setActiveFormulaIdx(null);
-                }}
-                className="px-3 py-2 rounded-xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/20 text-[10px] font-cinzel font-bold text-gold-DEFAULT hover:bg-gold-DEFAULT/20 hover:border-gold-DEFAULT/40 transition-all uppercase tracking-wider text-left"
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-          <p className="text-[9px] font-serif italic text-white/30 text-center">Cliquez sur un attribut pour l'insérer dans votre formule.</p>
-        </div>
-      </div>
-    );
-  };
+  if (!showSkillCreateModal) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 sm:p-6 animate-in fade-in duration-300">
-      <div className="relative w-full max-w-4xl bg-[#0D0D0F]/95 border border-gold-DEFAULT/30 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-gold-DEFAULT/50 rounded-tl-[2rem] pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-gold-DEFAULT/50 rounded-br-[2rem] pointer-events-none" />
-
-        <header className="flex items-center justify-between p-6 border-b border-gold-DEFAULT/10 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 flex items-center justify-center text-gold-bright shadow-lg">
-              <Sparkles size={24} />
-            </div>
-            <div>
-              <h2 className="text-xl font-cinzel font-black text-gold-bright tracking-[0.2em] uppercase">
-                {skillToEdit ? "MODIFIER LA COMPÉTENCE" : "CRÉER UNE COMPÉTENCE"}
-              </h2>
-              <p className="text-[10px] font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase mt-0.5">Éditeur de Capacités</p>
-            </div>
-          </div>
-          <button onClick={() => setShowSkillCreateModal(false)} className="p-2 hover:bg-white/5 rounded-full text-gold-dim hover:text-gold-bright transition-colors">
-            <X size={24} />
-          </button>
+    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="w-full max-w-4xl max-h-[90vh] bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+        
+        {/* HEADER */}
+        <header className="p-6 border-b border-gold-DEFAULT/20 flex justify-between items-center bg-black/40">
+           <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright shadow-lg shadow-gold-DEFAULT/5">
+                <Sparkles size={24} className="animate-pulse" />
+              </div>
+              <div>
+                <h2 className="text-xl font-cinzel font-black text-white uppercase tracking-widest">
+                  {skillToEdit ? "Façonner l'Arcane" : "Invoquer une Maîtrise"}
+                </h2>
+                <p className="text-[10px] font-cinzel text-gold-DEFAULT/40 uppercase tracking-[0.2em]">Codex des Manifestations</p>
+              </div>
+           </div>
+           <button 
+             onClick={() => setShowSkillCreateModal(false)}
+             className="p-2 rounded-xl hover:bg-white/5 text-white/20 hover:text-white transition-all"
+           >
+             <X size={24} />
+           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div className="space-y-8">
-              <section className="space-y-6">
-                <div className="flex items-center gap-3 opacity-40">
-                  <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.4em] uppercase">[ IDENTITÉ ]</span>
-                  <div className="h-px flex-1 bg-gold-DEFAULT/20" />
-                </div>
+        {/* CONTENT */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
+          
+          {/* COLONNE GAUCHE : IDENTITÉ */}
+          <div className="space-y-8">
+            <section className="space-y-4">
+               <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-2">
+                 <BookOpen size={14} /> Identité de l'Arcane
+               </h3>
+               <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[8px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Nom de la Maîtrise</label>
+                    <input 
+                      type="text" 
+                      value={name} 
+                      onChange={e => setName(e.target.value)}
+                      placeholder="NOM DE L'ARCANE..."
+                      className="w-full bg-black/40 border border-gold-DEFAULT/10 rounded-xl px-4 py-3 text-sm font-cinzel text-white placeholder:text-white/10 focus:outline-none focus:border-gold-DEFAULT/40 transition-all shadow-inner uppercase tracking-wider"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[8px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Récit & Lore</label>
+                    <textarea 
+                      value={description} 
+                      onChange={e => setDescription(e.target.value)}
+                      placeholder="DÉCRIVEZ LA NATURE DE CET ARCANNE..."
+                      rows={4}
+                      className="w-full bg-black/40 border border-gold-DEFAULT/10 rounded-xl px-4 py-3 text-xs font-garamond italic text-white/60 placeholder:text-white/10 focus:outline-none focus:border-gold-DEFAULT/40 transition-all shadow-inner"
+                    />
+                  </div>
+               </div>
+            </section>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Nom de la Maîtrise</label>
-                  <input 
-                    type="text" 
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Ex: Tempête de Givre"
-                    className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-lg shadow-inner"
-                  />
+            <section className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                    <label className="text-[8px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Nature de l'Usage</label>
+                    <select 
+                      value={type} 
+                      onChange={e => setType(e.target.value as any)}
+                      className="w-full bg-black/40 border border-gold-DEFAULT/10 rounded-xl px-4 py-3 text-[10px] font-cinzel text-white uppercase focus:outline-none focus:border-gold-DEFAULT/40 appearance-none cursor-pointer"
+                    >
+                        <option value="active">Compétence Active</option>
+                        <option value="passive_auto">Passif Permanent</option>
+                        <option value="passive_toggle">Aura Activable</option>
+                    </select>
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Illustration</label>
-                  <div className="flex gap-2">
-                    <div className="relative group w-12 h-12 rounded-xl overflow-hidden border border-gold-DEFAULT/20 bg-black/40 shrink-0">
-                        {previewUrl ? (
-                            <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT/20">
-                                <Sparkles size={16} />
-                            </div>
-                        )}
+                <div className="space-y-1.5">
+                    <label className="text-[8px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Sceau Visuel</label>
+                    <div className="flex gap-2">
+                        <input 
+                            type="text" 
+                            value={imageUrl} 
+                            onChange={e => setImageUrl(e.target.value)}
+                            placeholder="URL DU SCEAU..."
+                            className="flex-1 bg-black/40 border border-gold-DEFAULT/10 rounded-xl px-4 py-3 text-[9px] font-mono text-white/60 focus:outline-none focus:border-gold-DEFAULT/40"
+                        />
+                        <label className="p-3 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 cursor-pointer transition-all relative">
+                            {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                            <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                        </label>
                     </div>
-                    <div className="flex-1 flex flex-col gap-2">
-                        <div className="flex gap-2">
+                </div>
+            </section>
+
+            {/* COÛT */}
+            <section className="space-y-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-2">
+                        <Power size={14} /> Tribut de Ressource
+                    </h3>
+                    <button 
+                        onClick={() => setHasCost(!hasCost)}
+                        className={`px-3 py-1 rounded-full text-[8px] font-cinzel font-black uppercase transition-all ${hasCost ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}
+                    >
+                        {hasCost ? 'Supprimer' : 'Ajouter Coût'}
+                    </button>
+                </div>
+                {hasCost && (
+                    <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
+                        <select 
+                            value={costBarId} 
+                            onChange={e => setCostBarId(e.target.value)}
+                            className="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-cinzel text-white uppercase focus:outline-none focus:border-gold-DEFAULT/40"
+                        >
+                            {DEFAULT_BARS.map(b => (
+                                <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                        </select>
+                        <input 
+                            type="number" 
+                            value={costValue} 
+                            onChange={e => setCostValue(parseInt(e.target.value))}
+                            className="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-mono text-white text-center"
+                        />
+                    </div>
+                )}
+            </section>
+          </div>
+
+          {/* COLONNE DROITE : MÉCANIQUES */}
+          <div className="space-y-8">
+            
+            {/* EFFETS ACTIFS */}
+            <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-2">
+                        <Zap size={14} /> Manifestations Actives
+                    </h3>
+                    <button onClick={addEffect} className="p-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all">
+                        <Plus size={14} />
+                    </button>
+                </div>
+                <div className="space-y-3">
+                    {effects.map((eff) => (
+                        <div key={eff.id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3 relative group">
+                            <button 
+                                onClick={() => setEffects(effects.filter(e => e.id !== eff.id))}
+                                className="absolute top-2 right-2 p-1 text-white/10 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                            >
+                                <Trash2 size={12} />
+                            </button>
+                            <div className="grid grid-cols-3 gap-3">
+                                <select 
+                                    value={eff.type} 
+                                    onChange={e => updateEffect(eff.id, { type: e.target.value })}
+                                    className="col-span-1 bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[9px] font-cinzel text-white"
+                                >
+                                    <option value="damage">Dégâts</option>
+                                    <option value="heal">Soin</option>
+                                    <option value="buff">Bonus</option>
+                                    <option value="debuff">Malus</option>
+                                    <option value="utility">Utilité</option>
+                                </select>
+                                <div className="col-span-2 flex gap-2">
+                                    <select 
+                                        value={eff.mode} 
+                                        onChange={e => updateEffect(eff.id, { mode: e.target.value })}
+                                        className="w-20 bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[9px] font-cinzel text-white"
+                                    >
+                                        <option value="dice">Dés</option>
+                                        <option value="flat">Fixe</option>
+                                    </select>
+                                    <input 
+                                        type="text" 
+                                        value={eff.mode === 'dice' ? eff.formula : eff.valeur}
+                                        onChange={e => updateEffect(eff.id, eff.mode === 'dice' ? { formula: e.target.value } : { valeur: parseInt(e.target.value) })}
+                                        placeholder={eff.mode === 'dice' ? "1d6 + Force..." : "0"}
+                                        className="flex-1 bg-black/60 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-mono text-gold-bright"
+                                    />
+                                </div>
+                            </div>
                             <input 
                                 type="text" 
-                                value={imageUrl}
-                                onChange={e => setImageUrl(e.target.value)}
-                                placeholder="URL ou asset://..."
-                                className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-[10px] text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono shadow-inner"
-                            />
-                            <button 
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isUploading}
-                                className="p-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[40px]"
-                                title="Charger une image locale"
-                            >
-                                {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                            </button>
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                className="hidden" 
-                                accept="image/*"
-                                onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        setIsHostUploading(true);
-                                        try {
-                                            const assetUrl = await assetSyncService.uploadLocalAsset(file);
-                                            setImageUrl(assetUrl);
-                                        } catch (err) {
-                                            console.error('Upload failed', err);
-                                        } finally {
-                                            setIsHostUploading(false);
-                                        }
-                                    }
-                                }}
+                                value={eff.description} 
+                                onChange={e => updateEffect(eff.id, { description: e.target.value })}
+                                placeholder="DESCRIPTION DE L'EFFET (EX: DÉGÂTS DE FEU...)"
+                                className="w-full bg-black/20 border-b border-white/5 text-[9px] font-serif italic text-white/40 px-1 py-1 focus:outline-none focus:border-gold-DEFAULT/40"
                             />
                         </div>
-                        <p className="text-[7px] font-cinzel text-white/20 uppercase tracking-widest px-1">Importez une image locale pour la synchroniser en P2P (WebP)</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Nature de la Maîtrise</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'active', label: 'Active', icon: Zap, desc: 'Au clic' },
-                      { id: 'passive_auto', label: 'Passif Auto', icon: BookOpen, desc: 'Conditionnel' },
-                      { id: 'passive_toggle', label: 'Passif Toggle', icon: Shuffle, desc: 'Bascule' }
-                    ].map(t => (
-                      <button
-                        key={t.id}
-                        onClick={() => setType(t.id as any)}
-                        className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${type === t.id ? 'bg-gold-DEFAULT/20 border-gold-DEFAULT text-gold-bright shadow-lg shadow-gold-DEFAULT/10' : 'bg-black/40 border-white/5 text-white/40 hover:border-white/20'}`}
-                      >
-                        <t.icon size={16} className="mb-2" />
-                        <span className="text-[9px] font-cinzel font-black uppercase tracking-widest">{t.label}</span>
-                        <span className="text-[7px] opacity-40 uppercase font-mono mt-1">{t.desc}</span>
-                      </button>
                     ))}
-                  </div>
+                    {effects.length === 0 && <p className="text-center py-4 text-[9px] font-cinzel text-white/10 uppercase tracking-widest italic">Aucun effet actif défini</p>}
                 </div>
+            </section>
 
+            {/* MODIFICATEURS PASSIFS */}
+            <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-2">
+                        <BarChart2 size={14} /> Augures Passifs
+                    </h3>
+                    <button onClick={addModifier} className="p-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all">
+                        <Plus size={14} />
+                    </button>
+                </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Récit & Effets</label>
-                  <textarea 
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    placeholder="Décrivez les arcanes de cette technique..."
-                    className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm resize-none h-32 shadow-inner"
-                  />
-                </div>
-              </section>
-
-              <section className="space-y-4">
-                <div className="flex items-center justify-between ml-1">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Affinités & Signes</label>
-                  <button 
-                    onClick={() => setShowTagManagement(true)}
-                    className="text-[8px] font-cinzel font-black uppercase text-gold-bright hover:text-white transition-colors flex items-center gap-1"
-                  >
-                    <Plus size={10} /> Gérer les Signes
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2 p-4 bg-black/40 rounded-2xl border border-white/5 shadow-inner">
-                  {tags.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => toggleTag(t.id)}
-                      className={`px-3 py-1.5 rounded-lg border text-[9px] font-cinzel font-black uppercase transition-all ${selectedTags.includes(t.id) ? 'bg-gold-DEFAULT/20 border-gold-DEFAULT text-gold-bright shadow-lg shadow-gold-DEFAULT/10' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30'}`}
-                      style={selectedTags.includes(t.id) ? { borderColor: t.color, backgroundColor: t.color + '20', color: t.color } : {}}
-                    >
-                      {t.name}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            </div>
-
-            <div className="space-y-8">
-              <section className="flex flex-col h-full space-y-6">
-                <div className="flex items-center gap-3 opacity-40">
-                  <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.4em] uppercase">[ ARCANES ]</span>
-                  <div className="h-px flex-1 bg-gold-DEFAULT/20" />
-                </div>
-
-                <div className="flex gap-1 bg-black/40 p-1.5 rounded-2xl border border-white/5 shrink-0 shadow-inner">
-                  {[
-                    { id: 'arcanes', label: 'Effets & Modificateurs', icon: BarChart2 },
-                    { id: 'condition', label: 'Condition', icon: BookOpen, hidden: type !== 'passive_auto' }
-                  ].filter(t => !t.hidden).map(tab => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setOnglet(tab.id as any)}
-                      className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl font-cinzel text-[10px] font-black uppercase tracking-widest transition-all ${onglet === tab.id ? 'bg-gold-DEFAULT text-black shadow-lg' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
-                    >
-                      <tab.icon size={14} />
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex-1 flex flex-col gap-4">
-                  {onglet === 'arcanes' && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-500">
-                      {unifiedEntries.map((entry, idx) => (
-                        <div key={entry._uid} className="bg-black/60 p-5 rounded-2xl border border-white/5 relative group hover:border-gold-DEFAULT/20 transition-all">
-                          <button onClick={() => removeEntry(idx)} className="absolute top-2 right-2 text-white/10 hover:text-red-500 transition-colors p-2 z-10">
-                            <X size={14} />
-                          </button>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            {/* Choix Principal : Nature de l'effet */}
-                            <div className="space-y-1 col-span-2 sm:col-span-1">
-                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Type d'Effet</label>
-                              <CustomSelect 
-                                value={entry.nature} 
-                                options={NATURE_OPTIONS} 
-                                onChange={val => updateEntry(idx, { nature: val as any })} 
-                              />
-                            </div>
-
-                            {/* Si Buff ou Debuff -> Choix de la Cible (Attribut ou Ressource) */}
-                            {(entry.nature === 'buff' || entry.nature === 'debuff') && (
-                              <>
-                                <div className="space-y-1 col-span-2 sm:col-span-1">
-                                  <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Élément Impacté</label>
-                                  <CustomSelect 
-                                    value={entry.targetType} 
-                                    options={TARGET_TYPE_OPTIONS} 
-                                    onChange={val => updateEntry(idx, { 
-                                      targetType: val as any, 
-                                      targetId: val === 'attribut' ? availableStats[0]?.id : availableBars[0]?.id,
-                                      targetProperty: val === 'ressource' ? 'current' : undefined
-                                    })} 
-                                  />
-                                </div>
-                                <div className="space-y-1 col-span-2 sm:col-span-1">
-                                  <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Sélection précise</label>
-                                  <CustomSelect 
-                                    value={entry.targetId} 
-                                    options={entry.targetType === 'attribut' 
-                                      ? availableStats.map((s: any) => ({ value: s.id, label: s.name }))
-                                      : availableBars.map((b: any) => ({ value: b.id, label: b.name }))} 
-                                    onChange={val => updateEntry(idx, { targetId: val })} 
-                                  />
-                                </div>
-                                {entry.targetType === 'ressource' && (
-                                  <div className="space-y-1 col-span-2 sm:col-span-1">
-                                    <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Propriété Visée</label>
-                                    <CustomSelect 
-                                      value={entry.targetProperty || 'current'} 
-                                      options={PROPERTY_OPTIONS} 
-                                      onChange={val => updateEntry(idx, { targetProperty: val as any })} 
-                                    />
-                                  </div>
-                                )}
-                              </>
-                            )}
-
-                            {/* Options communes (Mode + Valeur/Formule) */}
-                            <div className="space-y-1 col-span-2 sm:col-span-1">
-                              <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Mode de Calcul</label>
-                              <CustomSelect 
-                                value={entry.mode} 
-                                options={MODE_OPTIONS} 
-                                onChange={val => updateEntry(idx, { mode: val as any })} 
-                              />
-                            </div>
-                            <div className="space-y-1 col-span-2 sm:col-span-1">
-                              <div className="flex justify-between items-center">
-                                <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">
-                                  {entry.mode === 'dice' ? 'Formule (ex: 1d6+2)' : 'Valeur'}
-                                </label>
-                                {entry.mode === 'dice' && (
-                                  <button 
-                                    onClick={() => setActiveFormulaIdx(idx)}
-                                    className="text-[7px] font-cinzel font-bold text-gold-bright bg-gold-DEFAULT/10 px-2 py-0.5 rounded border border-gold-DEFAULT/20 hover:bg-gold-DEFAULT/20 transition-all uppercase tracking-tighter"
-                                  >
-                                    Aide
-                                  </button>
-                                )}
-                              </div>
-                              {entry.mode === 'dice' ? (
-                                <input 
-                                  type="text" 
-                                  value={entry.formula} 
-                                  onChange={e => updateEntry(idx, { formula: e.target.value })}
-                                  placeholder="ex: 2d10 + Force"
-                                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono shadow-inner"
-                                />
-                              ) : (
-                                <input 
-                                  type="number" 
-                                  value={entry.value} 
-                                  onChange={e => updateEntry(idx, { value: parseInt(e.target.value) || 0 })}
-                                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono shadow-inner"
-                                />
-                              )}
-                            </div>
-
-                            {/* Si Classique -> Description Custom */}
-                            {entry.nature === 'classique' && (
-                              <div className="col-span-2 space-y-1">
-                                <label className="text-[8px] font-cinzel font-black text-white/30 uppercase tracking-widest">Description (ex: Dégâts de givre)</label>
-                                <input 
-                                  type="text" 
-                                  value={entry.description} 
-                                  onChange={e => updateEntry(idx, { description: e.target.value })}
-                                  placeholder="Décrivez l'effet..."
-                                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-gold-DEFAULT/50 font-mono shadow-inner"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                      <button onClick={addEntry} className="w-full py-4 border-2 border-dashed border-white/5 rounded-2xl font-cinzel text-[10px] font-black tracking-[0.2em] text-white/20 hover:text-gold-bright hover:border-gold-DEFAULT/20 hover:bg-gold-DEFAULT/5 transition-all">
-                        + AJOUTER UN EFFET
-                      </button>
-                    </div>
-                  )}
-
-                  {onglet === 'condition' && type === 'passive_auto' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 bg-black/40 p-6 rounded-2xl border border-white/5">
-                      <div className="space-y-3">
-                        <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Cible de la Vérification</label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[
-                            { id: 'item', label: 'Objet', icon: Backpack },
-                            { id: 'skill', label: 'Maîtrise', icon: BookOpen },
-                            { id: 'les_deux', label: 'Les deux', icon: Shuffle }
-                          ].map(t => (
-                            <button
-                              key={t.id}
-                              onClick={() => setConditionType(t.id as any)}
-                              className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${conditionType === t.id ? 'bg-gold-DEFAULT/20 border-gold-DEFAULT text-gold-bright shadow-lg shadow-gold-DEFAULT/10' : 'bg-black/40 border-white/5 text-white/40 hover:border-white/20'}`}
+                    {modifiers.map((m, i) => (
+                        <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 group">
+                            <select 
+                                value={m.target} 
+                                onChange={e => updateModifier(i, { target: e.target.value })}
+                                className="w-24 bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[8px] font-cinzel text-white/60"
                             >
-                              <t.icon size={16} className="mb-2" />
-                              <span className="text-[9px] font-cinzel font-black uppercase tracking-widest">{t.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Déclencheur (Posséder un signe)</label>
-                        <div className="flex flex-wrap gap-2">
-                          {tags.map((t: any) => (
-                            <button
-                              key={t.id}
-                              onClick={() => toggleConditionTag(t.id)}
-                              className={`px-3 py-1.5 rounded-lg border text-[9px] font-cinzel font-black uppercase transition-all ${conditionTags.includes(t.id) ? 'bg-purple-500/20 border-purple-500 text-purple-400 shadow-lg shadow-purple-500/10' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30'}`}
+                                <option value="stat">Attribut</option>
+                                <option value="bar">Ressource</option>
+                            </select>
+                            <select 
+                                value={m.targetId} 
+                                onChange={e => updateModifier(i, { targetId: e.target.value })}
+                                className="flex-1 bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[8px] font-cinzel text-white"
                             >
-                              {t.name}
+                                {m.target === 'stat' ? statDefs.map(s => <option key={s.id} value={s.id}>{s.name}</option>) : barDefs.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            </select>
+                            <input 
+                                type="number" 
+                                value={m.value} 
+                                onChange={e => updateModifier(i, { value: parseInt(e.target.value) })}
+                                className="w-16 bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[9px] font-mono text-gold-bright text-center"
+                            />
+                            <button onClick={() => setModifiers(modifiers.filter((_, idx) => idx !== i))} className="p-1.5 text-white/10 hover:text-red-500">
+                                <Trash2 size={12} />
                             </button>
-                          ))}
                         </div>
-                      </div>
-
-                      <p className="text-[9px] font-garamond italic text-white/40 leading-relaxed p-4 bg-white/5 rounded-xl border border-white/5">
-                        Cette maîtrise s'activera automatiquement si le personnage possède un objet ou une autre maîtrise portant l'un des signes sélectionnés.
-                      </p>
-                    </div>
-                  )}
+                    ))}
                 </div>
-              </section>
-            </div>
+            </section>
+
           </div>
-        </div>
+        </main>
 
-        <footer className="p-6 border-t border-gold-DEFAULT/10 flex justify-end shrink-0 gap-4">
+        {/* FOOTER */}
+        <footer className="p-6 border-t border-gold-DEFAULT/20 bg-black/40 flex justify-end gap-3">
           <button 
             onClick={() => setShowSkillCreateModal(false)}
-            className="px-8 py-3 rounded-full text-[10px] font-cinzel font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+            className="px-6 py-3 rounded-xl text-white/40 hover:text-white text-[10px] font-cinzel font-black uppercase tracking-[0.2em] transition-all"
           >
-            Renoncer
+            Annuler
           </button>
           <button 
             onClick={handleSave}
-            disabled={!name.trim()}
-            className="flex items-center justify-center gap-3 px-12 py-3 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/40 text-gold-bright hover:bg-gold-DEFAULT/20 hover:border-gold-DEFAULT disabled:opacity-30 disabled:pointer-events-none transition-all shadow-[0_0_30px_rgba(212,175,55,0.1)] group"
+            className="px-8 py-3 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright font-cinzel font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-lg flex items-center gap-3"
           >
-            <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-cinzel font-black uppercase tracking-[0.2em]">Graver le Destin</span>
+            <Save size={18} />
+            {skillCreationType === 'inventory' ? "LIER À L'ÂME" : "GRAVER DANS LE CODEX"}
           </button>
         </footer>
       </div>
-
-      {showTagManager && (
-        <TagManagementModal 
-          sessionId={sessionId} 
-          onClose={() => setShowTagManagement(false)} 
-        />
-      )}
-
-      <StatHelperModal />
     </div>,
     document.body
   );

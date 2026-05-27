@@ -320,38 +320,44 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                             <span className="text-[7px] font-mono text-white/20 uppercase tracking-tighter truncate">{item.category}</span>
                         </div>
 
-                        {/* ─── ACTIONS SUR LA BARRE (Hover) ─── */}
-                        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {item.category === 'Consommable' ? (
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleUseItem(item); }}
-                                    className="p-1.5 rounded-lg bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all"
-                                    title="Utiliser"
-                                >
-                                    <Zap size={10} />
-                                </button>
-                            ) : (
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleToggleEquip(item); }}
-                                    className={`p-1.5 rounded-lg transition-all ${
-                                        item.equipped 
-                                        ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
-                                        : 'bg-gold-DEFAULT text-black hover:bg-gold-bright'
-                                    }`}
-                                    title={item.equipped ? "Déséquiper" : "Équiper"}
-                                >
-                                    <Shield size={10} />
-                                </button>
-                            )}
+                        {/* ─── ACTIONS SUR LA BARRE ─── */}
+                        <div className="flex items-center gap-1 shrink-0 z-10">
+                            {/* Bouton Équiper/Utiliser : Toujours visible si ÉQUIPÉ (indicateur rouge), sinon HOVER */}
+                            <div className={`transition-all duration-300 ${item.equipped ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                {item.category === 'Consommable' ? (
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleUseItem(item); }}
+                                        className="p-1.5 rounded-lg bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all"
+                                        title="Utiliser"
+                                    >
+                                        <Zap size={10} />
+                                    </button>
+                                ) : (
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleToggleEquip(item); }}
+                                        className={`p-1.5 rounded-lg transition-all ${
+                                            item.equipped 
+                                            ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/40' 
+                                            : 'bg-gold-DEFAULT text-black hover:bg-gold-bright'
+                                        }`}
+                                        title={item.equipped ? "Déséquiper" : "Équiper"}
+                                    >
+                                        <Shield size={10} />
+                                    </button>
+                                )}
+                            </div>
                             
+                            {/* Actions MJ : Uniquement au hover strict pour ne pas encombrer le nom */}
                             {isMJ && (
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleRemoveFromInventory(item); }}
-                                    className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
-                                    title="Supprimer"
-                                >
-                                    <Trash2 size={10} />
-                                </button>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5 pl-0.5 border-l border-white/5">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveFromInventory(item); }}
+                                        className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
+                                        title="Supprimer"
+                                    >
+                                        <Trash2 size={10} />
+                                    </button>
+                                </div>
                             )}
                         </div>
 
@@ -438,7 +444,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
             {selectedItem ? (
               <div className="h-full flex flex-col animate-in slide-in-from-right-4 duration-500 relative">
                  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
-                    <span className="text-[9px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails de la Relique</span>
+                    <span className="text-[9px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails du Vestige</span>
                     <button onClick={() => setSelectedItem(null)} className="p-1 rounded hover:bg-white/5 text-white/20 hover:text-white transition-colors">
                         <X size={14} />
                     </button>

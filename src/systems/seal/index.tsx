@@ -334,7 +334,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
               >
                 {id === 'scenes' && <SceneWindowContent scenes={maps} currentSceneId={currentMapId} onSelectScene={handleSelectMap} onAddScene={handleAddMap} onUpdateScene={handleUpdateMap} onToggleHide={handleToggleHideMap} onRemoveScene={handleRemoveMap} />}
                 {id === 'players' && <PlayerWindowContent players={playersList} sessionId={sessionId} />}
-                {id === 'assets' && <InventoryWindowContent sessionId={sessionId} />}
+                {id === 'inventaire' && <InventoryWindowContent sessionId={sessionId} />}
                 {id === 'bestiary' && <BestiaryWindowContent sessionId={sessionId} />}
                 {id === 'dice' && <DiceWindowContent sessionId={sessionId} />}
                 {id === 'quests' && <QuestsWindowContent sessionId={sessionId} />}

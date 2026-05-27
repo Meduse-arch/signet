@@ -32,13 +32,11 @@ export function QuestDetailContent({
   showActions = true 
 }: QuestDetailContentProps) {
   const { quests } = useQuestsStore();
-  const [quest, setQuest] = React.useState(initialQuest);
-
-  // Sync with global store updates
-  React.useEffect(() => {
-    if (!initialQuest) return;
-    const updated = quests.find(q => q.id === initialQuest.id) || initialQuest;
-    setQuest(updated);
+  
+  // On dérive la quête la plus à jour depuis le store
+  const quest = React.useMemo(() => {
+    if (!initialQuest) return null;
+    return quests.find(q => q.id === initialQuest.id) || initialQuest;
   }, [initialQuest, quests]);
 
   if (!quest) return (

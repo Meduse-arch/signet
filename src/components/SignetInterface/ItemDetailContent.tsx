@@ -2,6 +2,7 @@ import React from 'react';
 import { Shield, Star, Sword, Package, Trash2, Hammer, Zap, Sparkles } from 'lucide-react';
 import { Item } from '../../services/items.service';
 import { useItemsStore } from '../../store/items';
+import { useCharactersStore } from '../../store/characters';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 
 interface ItemDetailContentProps {
@@ -18,7 +19,7 @@ interface ItemDetailContentProps {
 
 export function ItemDetailContent({ 
   item: initialItem, 
-  character, 
+  character: propCharacter, 
   onToggleEquip, 
   onUse, 
   onEdit, 
@@ -28,24 +29,26 @@ export function ItemDetailContent({
   showActions = true 
 }: ItemDetailContentProps) {
   const { items } = useItemsStore();
-  const [item, setItem] = React.useState(initialItem);
+  const { characters } = useCharactersStore();
 
-  // Sync with global store updates
-  React.useEffect(() => {
-    if (!initialItem) return;
+  // On retrouve la version la plus fraîche du personnage et de l'item
+  const character = propCharacter ? (characters.find(c => c.id === propCharacter.id) || propCharacter) : null;
+  
+  const item = React.useMemo(() => {
+    if (!initialItem) return null;
     
-    // Find if the item exists in character inventory or forge
-    let updated = initialItem;
-    
+    // 1. Si on a un personnage, on cherche dans son inventaire (via instanceId)
     if (character?.inventory) {
       const foundInInv = character.inventory.find((i: any) => i.instanceId === initialItem.instanceId);
-      if (foundInInv) updated = foundInInv;
-    } else {
-      const foundInForge = items.find(i => i.id === initialItem.id);
-      if (foundInForge) updated = foundInForge;
+      if (foundInInv) return foundInInv;
     }
+    
+    // 2. Sinon on cherche dans la forge (via id)
+    const foundInForge = items.find(i => i.id === initialItem.id);
+    if (foundInForge) return foundInForge;
 
-    setItem(updated);
+    // 3. Fallback sur l'item initial
+    return initialItem;
   }, [initialItem, items, character?.inventory]);
 
   if (!item) return (

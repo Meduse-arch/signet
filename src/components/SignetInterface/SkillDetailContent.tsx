@@ -33,13 +33,11 @@ export function SkillDetailContent({
   showActions = true
 }: SkillDetailContentProps) {
   const { skills } = useSkillsStore();
-  const [skill, setSkill] = React.useState(initialSkill);
-
-  // Sync with global store updates
-  React.useEffect(() => {
-    if (!initialSkill) return;
-    const updated = skills.find(s => s.id === initialSkill.id) || initialSkill;
-    setSkill(updated);
+  
+  // On dérive la compétence la plus à jour depuis le store
+  const skill = React.useMemo(() => {
+    if (!initialSkill) return null;
+    return skills.find(s => s.id === initialSkill.id) || initialSkill;
   }, [initialSkill, skills]);
 
   if (!skill) return (

@@ -5,6 +5,7 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { useDiceStore } from '../../store/dice';
 import { useUIStore } from '../../store/ui';
+import { useSkillsStore } from '../../store/skills';
 import { DEFAULT_STATS, DEFAULT_BARS, DEFAULT_SKILLS } from '../../systems/seal/constants';
 import { usePeer } from '../../hooks/usePeer';
 import { addSessionCharacter, removeSessionCharacter } from '../../services/characters.service';
@@ -226,7 +227,7 @@ function SnapColumn({
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+  // ── Main component ───────────────────────────────────────────────────────────
 export function CharacterSheetContent({
   sessionId,
   variant = 'popup',
@@ -236,6 +237,8 @@ export function CharacterSheetContent({
   const characters = useCharactersStore(state => state.characters);
   const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
   const { removeCharacter, controlledCharacterId, setPnjControle } = useCharactersStore();
+  const { setSelectedSkill } = useUIStore();
+  const { skills } = useSkillsStore();
   const session = useSessionStore(state =>
     state.sessions.find(s => s.id === sessionId)
   );
@@ -342,9 +345,18 @@ export function CharacterSheetContent({
     setStoreTokenStatus(character.id, !isTokenOnMap);
   };
 
-  const { name = 'Inconnu', stats = {}, bars = {}, image_url, inventory = [] } = character || {};
+  const { name = 'Inconnu', stats = {}, bars = {}, image_url, inventory = [], custom_skills = [] } = character || {};
   const statDefs = session?.settings?.stats || DEFAULT_STATS;
   const barDefs = session?.settings?.bars || DEFAULT_BARS;
+
+  // Sync custom skills with the global skills store to enable "real-time" updates
+  const reactiveSkills = useMemo(() => {
+    return custom_skills.map((cs: any) => {
+        const template = skills.find(s => s.id === cs.id);
+        if (!template) return cs;
+        return { ...template, is_active: cs.is_active, modifiers: cs.modifiers || template.modifiers };
+    });
+  }, [custom_skills, skills]);
 
   // Calculer les modificateurs d'équipement et de compétences complexes
   const calculatedModifiers = useMemo(() => {
@@ -380,9 +392,8 @@ export function CharacterSheetContent({
       }
     });
 
-    // 2. Modificateurs de compétences (Custom Skills)
-    const customSkills = character.custom_skills || [];
-    customSkills.forEach((skill: any) => {
+    // 2. Modificateurs de compétences (Reactive Skills)
+    reactiveSkills.forEach((skill: any) => {
       // Les passifs auto s'appliquent toujours, les passifs toggle seulement si actifs
       const isAuto = skill.type === 'passive_auto';
       const isToggleActive = skill.type === 'passive_toggle' && skill.is_active;
@@ -414,7 +425,7 @@ export function CharacterSheetContent({
     });
 
     return { stats: statsFinal, bars: barsFlat };
-  }, [character, inventory, stats, statDefs]);
+  }, [character, inventory, stats, statDefs, reactiveSkills]);
 
   if (!character) {
     return (
@@ -958,9 +969,10 @@ export function CharacterSheetContent({
             </div>
           </div>
 
-          <div className="flex gap-2 p-2 h-[160px]">
+          <div className="flex gap-2 p-2 h-[160px] overflow-hidden">
             <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs" variant="popup" />
             <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Ressources" variant="popup" />
+            <SnapColumn items={reactiveSkills} itemsPerPage={itemsPerPage} renderItem={renderSkill} label="Maîtrises" variant="popup" />
           </div>
         </div>
       </>
@@ -1003,6 +1015,7 @@ export function CharacterSheetContent({
         <div className="flex-1 flex gap-4 min-h-0">
           <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs" variant="window" />
           <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Ressources" variant="window" />
+          <SnapColumn items={reactiveSkills} itemsPerPage={itemsPerPage} renderItem={renderSkill} label="Maîtrises" variant="window" />
         </div>
       </div>
     </>

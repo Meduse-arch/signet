@@ -329,7 +329,7 @@ export function ExternalWindowPage() {
              <SkillsWindowContent sessionId={sessionId} />
           )}
 
-          {type === 'assets' && (
+          {type === 'inventaire' && (
              <InventoryWindowContent sessionId={sessionId} />
           )}
 

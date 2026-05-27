@@ -6,21 +6,21 @@ interface UIState {
   showModal: boolean;
   showCreateModal: boolean;
   itemCreationType: 'forge' | 'inventory' | null;
-  itemCreationCharacterId: string | null;
   itemToEdit: any | null;
   selectedItem: any | null;
   itemDetailOpen: boolean;
-  characterManagementId: string | null;
-  searchQuery: string;
-  viewMode: 'grid' | 'codex';
   
-  // Skills specific UI state
+  // Characters
+  characterManagementId: string | null;
+  
+  // Skills
   showSkillCreateModal: boolean;
+  skillCreationType: 'forge' | 'inventory' | null;
   skillToEdit: any | null;
   selectedSkill: any | null;
   skillDetailOpen: boolean;
 
-  // Quests specific UI state
+  // Quests
   showQuestCreateModal: boolean;
   questToEdit: any | null;
   selectedQuest: any | null;
@@ -29,39 +29,38 @@ interface UIState {
   setSidebarOpen: (open: boolean) => void;
   setActiveTab: (tab: 'library' | 'search' | 'key' | 'forge') => void;
   setShowModal: (show: boolean) => void;
-  setShowCreateModal: (show: boolean, type?: 'forge' | 'inventory', characterId?: string, itemToEdit?: any | null) => void;
+  setShowCreateModal: (show: boolean, type?: 'forge' | 'inventory' | null, category?: string, item?: any) => void;
   setSelectedItem: (item: any | null, openModal?: boolean) => void;
   setItemDetailOpen: (open: boolean) => void;
+  
+  // Characters
   setCharacterManagement: (id: string | null) => void;
-  setSearchQuery: (query: string) => void;
-  setViewMode: (mode: 'grid' | 'codex') => void;
-
-  // Skills actions
-  setShowSkillCreateModal: (show: boolean, skillToEdit?: any | null) => void;
+  
+  // Skills
+  setShowSkillCreateModal: (show: boolean, skill?: any, type?: 'forge' | 'inventory' | null) => void;
   setSelectedSkill: (skill: any | null, openModal?: boolean) => void;
   setSkillDetailOpen: (open: boolean) => void;
 
-  // Quests actions
-  setShowQuestCreateModal: (show: boolean, questToEdit?: any | null) => void;
+  // Quests
+  setShowQuestCreateModal: (show: boolean, questToEdit?: any) => void;
   setSelectedQuest: (quest: any | null, openModal?: boolean) => void;
   setQuestDetailOpen: (open: boolean) => void;
-  }
+}
 
-  export const useUIStore = create<UIState>((set) => ({
-  sidebarOpen: true,
+export const useUIStore = create<UIState>((set) => ({
+  sidebarOpen: false,
   activeTab: 'library',
   showModal: false,
   showCreateModal: false,
   itemCreationType: null,
-  itemCreationCharacterId: null,
   itemToEdit: null,
   selectedItem: null,
   itemDetailOpen: false,
+
   characterManagementId: null,
-  searchQuery: '',
-  viewMode: 'grid',
 
   showSkillCreateModal: false,
+  skillCreationType: null,
   skillToEdit: null,
   selectedSkill: null,
   skillDetailOpen: false,
@@ -74,23 +73,25 @@ interface UIState {
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setShowModal: (show) => set({ showModal: show }),
-  setShowCreateModal: (show, type = undefined, characterId = undefined, itemToEdit = null) => set({ 
+  setShowCreateModal: (show, type = null, category, item = null) => set({ 
     showCreateModal: show, 
-    itemCreationType: type === undefined ? null : type,
-    itemCreationCharacterId: characterId === undefined ? null : characterId,
-    itemToEdit
+    itemCreationType: type,
+    itemToEdit: item
   }),
   setSelectedItem: (item, openModal = true) => set({ selectedItem: item, itemDetailOpen: item ? openModal : false }),
   setItemDetailOpen: (open) => set({ itemDetailOpen: open }),
-  setCharacterManagement: (id) => set({ characterManagementId: id }),
-  setSearchQuery: (query) => set({ searchQuery: query }),
-  setViewMode: (mode) => set({ viewMode: mode }),
 
-  setShowSkillCreateModal: (show, skillToEdit = null) => set({ showSkillCreateModal: show, skillToEdit }),
+  setCharacterManagement: (id) => set({ characterManagementId: id }),
+
+  setShowSkillCreateModal: (show, skill = null, type = null) => set({ 
+    showSkillCreateModal: show, 
+    skillToEdit: skill,
+    skillCreationType: type 
+  }),
   setSelectedSkill: (skill, openModal = true) => set({ selectedSkill: skill, skillDetailOpen: skill ? openModal : false }),
   setSkillDetailOpen: (open) => set({ skillDetailOpen: open }),
 
-  setShowQuestCreateModal: (show: boolean, questToEdit = null) => set({ showQuestCreateModal: show, questToEdit }),
+  setShowQuestCreateModal: (show, questToEdit = null) => set({ showQuestCreateModal: show, questToEdit }),
   setSelectedQuest: (quest, openModal = true) => set({ selectedQuest: quest, questDetailOpen: quest ? openModal : false }),
   setQuestDetailOpen: (open) => set({ questDetailOpen: open }),
-  }));
+}));

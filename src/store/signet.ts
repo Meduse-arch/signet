@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type WindowType = 'scenes' | 'quests' | 'dice' | 'assets' | 'players' | 'character' | 'bestiary' | 'skills';
+export type WindowType = 'scenes' | 'quests' | 'dice' | 'inventaire' | 'players' | 'character' | 'bestiary' | 'skills';
 
 interface WindowState {
   isOpen: boolean;
@@ -25,7 +25,7 @@ const DEFAULT_WINDOWS: Record<WindowType, WindowState> = {
   bestiary: { isOpen: false, zIndex: 50, position: getCenterPosition(10) },
   quests: { isOpen: false, zIndex: 50, position: getCenterPosition(20) },
   dice: { isOpen: false, zIndex: 50, position: getCenterPosition(40) },
-  assets: { isOpen: false, zIndex: 50, position: getCenterPosition(60) },
+  inventaire: { isOpen: false, zIndex: 50, position: getCenterPosition(60) },
   players: { isOpen: false, zIndex: 50, position: getCenterPosition(80) },
   skills: { isOpen: false, zIndex: 50, position: getCenterPosition(90) },
   character: { isOpen: false, zIndex: 50, position: getCenterPosition(100) },

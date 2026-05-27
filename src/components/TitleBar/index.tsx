@@ -22,7 +22,7 @@ export function TitleBar() {
                                type === 'quests' ? 'QUÊTES' :
  
                                type === 'dice' ? 'DÉS' : 
-                               type === 'assets' ? 'INVENTAIRE' : 
+                               type === 'inventaire' ? 'INVENTAIRE' : 
                                type === 'players' ? 'JOUEURS' : type.toUpperCase();
         setTitle(`SIGNET - ${translatedType}`);
       }
