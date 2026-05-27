@@ -875,7 +875,8 @@ export function CharacterSheetContent({
     return (
       <div
         key={s.id}
-        className="flex items-center justify-between flex-shrink-0 rounded-lg"
+        onClick={() => setSelectedSkill(s)}
+        className="flex items-center justify-between flex-shrink-0 rounded-lg cursor-pointer group"
         style={{
           padding: isPopup ? '4px 6px' : '6px 10px',
           background: s.is_active ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.04)',

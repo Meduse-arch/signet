@@ -82,6 +82,7 @@ export function ItemDetailModal({ sessionId }: { sessionId: string }) {
           onToggleEquip={handleToggleEquip}
           onUse={handleUseItem}
           isMJ={isMJ}
+          showActions={false}
         />
       </div>
     </div>

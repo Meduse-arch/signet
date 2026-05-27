@@ -3,14 +3,17 @@ import { Quest, questsService } from '../services/quests.service';
 
 interface QuestsState {
   quests: Quest[];
+  selectedQuest: Quest | null;
   initialize: (sessionId: string) => Promise<void>;
   addQuest: (sessionId: string, quest: Quest, skipSync?: boolean) => Promise<void>;
   removeQuest: (sessionId: string, id: string, skipSync?: boolean) => Promise<void>;
   updateQuestStatus: (sessionId: string, id: string, status: Quest['status']) => Promise<void>;
+  setSelectedQuest: (quest: Quest | null, openCodex?: boolean) => void;
 }
 
 export const useQuestsStore = create<QuestsState>((set, get) => ({
   quests: [],
+  selectedQuest: null,
 
   initialize: async (sessionId: string) => {
     set({ quests: [] });
@@ -71,5 +74,9 @@ export const useQuestsStore = create<QuestsState>((set, get) => ({
       const updatedQuest = { ...quest, status };
       await get().addQuest(sessionId, updatedQuest);
     }
+  },
+
+  setSelectedQuest: (quest, openCodex = false) => {
+    set({ selectedQuest: quest });
   }
 }));

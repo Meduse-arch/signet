@@ -4,10 +4,11 @@ import { useItemsStore } from '../../store/items';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
 import { usePeer } from '../../hooks/usePeer';
-import { Package, Plus, Trash2, Search, Hammer, User, Shield, Star, Sword, Sparkles, Gem, FlaskConical, ChevronRight, PenTool, Zap } from 'lucide-react';
+import { Package, Plus, Trash2, Search, Hammer, User, Shield, Star, Sword, Sparkles, Gem, FlaskConical, ChevronRight, PenTool, Zap, X } from 'lucide-react';
 import { addSessionCharacter } from '../../services/characters.service';
 import { ItemDetailContent } from './ItemDetailContent';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
+import { ItemCreationModal } from './ItemCreationModal';
 
 interface InventoryWindowContentProps {
   sessionId: string;
@@ -42,6 +43,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     if (!containerRef.current) return;
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
+        // Mode Codex si la fenêtre dépasse 650px de large
         setIsWideView(entry.contentRect.width > 650);
       }
     });
@@ -111,7 +113,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     const targetInstanceId = item.instanceId || (item.isStack ? item.instances[0] : null);
     if (!targetInstanceId) return;
 
-    // --- APPLY EFFECTS ---
     const updatedBars = { ...(character.bars || {}) };
     let hasEffect = false;
 
@@ -125,7 +126,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
           
           let bonus = 0;
           if (m.mode === 'dice' && item.rolledValues) {
-            // Find index of this modifier to get its rolled value
             const modIdx = item.modifiers.indexOf(m);
             bonus = item.rolledValues[modIdx] || 0;
           } else {
@@ -142,7 +142,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
       });
     }
 
-    // --- CONSUME ITEM ---
     const updatedChar = {
       ...character,
       bars: updatedBars,
@@ -155,10 +154,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
 
     if (selectedItem?.instanceId === targetInstanceId) {
       setSelectedItem(null);
-    }
-
-    if (hasEffect) {
-      console.log(`[Inventory] Used ${item.name}, effects applied to bars.`);
     }
   };
 
@@ -206,15 +201,6 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     return (DEFAULT_BARS.find(b => b.id === m.targetId)?.name || m.targetId) + (m.targetProperty === 'max' ? ' Max' : '');
   };
 
-  if (!character && !isMJ) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full opacity-20 py-10">
-        <Package size={40} className="mb-2" />
-        <span className="text-[10px] font-cinzel">Aucun coffre lié</span>
-      </div>
-    );
-  }
-
   const effectiveTab = (!character && isMJ) ? 'forge' : activeTab;
   const filteredForgeItems = items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -225,305 +211,259 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
   const getIcon = (cat: string) => CATEGORY_ICONS[cat] || Package;
 
   return (
-    <div ref={containerRef} className="flex flex-col h-full gap-4 animate-in fade-in duration-500 relative bg-[#0D0D0F]">
+    <div ref={containerRef} className="flex flex-col h-full animate-in fade-in duration-500 relative bg-[#0D0D0F]">
       
-      {/* Item Detail Overlay (Same as Skill Detail) */}
-      {selectedItem && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedItem(null)}>
+      {/* ─── MODALE DÉTAIL (Mode Mobile / Fenêtre étroite) ─── */}
+      {!isWideView && selectedItem && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-md" onClick={() => setSelectedItem(null)}>
           <div className="w-full max-w-sm bg-[#0D0D0F]/95 border border-gold-DEFAULT/30 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-full" onClick={e => e.stopPropagation()}>
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
-              <ItemDetailContent 
-                item={selectedItem}
-                character={character}
-                onToggleEquip={effectiveTab === 'inventory' ? () => { handleToggleEquip(selectedItem); setSelectedItem(null); } : undefined}
-                onUse={effectiveTab === 'inventory' ? () => { handleUseItem(selectedItem); setSelectedItem(null); } : undefined}
-                isMJ={isMJ}
-              />
-            </div>
-            <div className="p-4 bg-black/40 border-t border-white/5 flex justify-end shrink-0">
-               <button onClick={() => setSelectedItem(null)} className="px-6 py-2 rounded-xl text-white/50 hover:text-white text-[10px] font-cinzel font-black uppercase tracking-widest transition-colors">Fermer</button>
-            </div>
+            <ItemDetailContent 
+              item={selectedItem}
+              character={character}
+              onToggleEquip={effectiveTab === 'inventory' ? () => { handleToggleEquip(selectedItem); } : undefined}
+              onUse={effectiveTab === 'inventory' ? () => { handleUseItem(selectedItem); } : undefined}
+              onEdit={effectiveTab === 'forge' && isMJ ? () => handleEditForgeItem(selectedItem) : undefined}
+              onDelete={effectiveTab === 'forge' && isMJ ? () => handleDeleteForgeItem(selectedItem.id) : undefined}
+              onGive={effectiveTab === 'forge' && isMJ && character ? () => handleGiveItemToCharacter(selectedItem) : undefined}
+              isMJ={isMJ}
+              showActions={false}
+            />
+            <button 
+              onClick={() => setSelectedItem(null)} 
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/40 hover:text-white transition-colors z-50"
+            >
+              <X size={20} />
+            </button>
           </div>
         </div>
       )}
 
-      <div className="flex-1 flex flex-col gap-4 h-full min-w-0">
-        {isMJ && character && (
-          <div className="flex gap-2 mb-2 bg-black/40 p-1.5 rounded-2xl border border-white/5 shrink-0 shadow-inner">
-            <button
-              onClick={() => setActiveTab('inventory')}
-              className={`flex-1 py-2.5 rounded-xl text-[10px] font-cinzel font-black tracking-widest flex items-center justify-center gap-3 transition-all ${
-                effectiveTab === 'inventory' 
-                ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
-                : 'text-white/40 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <User size={14} /> {character.name ? `INVENTAIRE DE ${character.name.toUpperCase()}` : 'INVENTAIRE'}
-            </button>
-            <button
-              onClick={() => setActiveTab('forge')}
-              className={`flex-1 py-2.5 rounded-xl text-[10px] font-cinzel font-black tracking-widest flex items-center justify-center gap-3 transition-all ${
-                effectiveTab === 'forge' 
-                ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
-                : 'text-white/40 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Hammer size={14} /> BIBLIOTHÈQUE D'OBJETS
-            </button>
+      <ItemCreationModal sessionId={sessionId} />
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* ─── LISTE DES OBJETS (Panneau Gauche) ─── */}
+        <div className={`flex-1 flex flex-col p-4 gap-4 min-w-0 transition-all duration-500 ${isWideView && selectedItem ? 'border-r border-white/5 max-w-[45%]' : 'max-w-full'}`}>
+            {isMJ && character && (
+            <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5 shrink-0 shadow-inner">
+                <button
+                onClick={() => setActiveTab('inventory')}
+                className={`flex-1 py-2 rounded-lg text-[8px] font-cinzel font-black tracking-widest flex items-center justify-center gap-2 transition-all ${
+                    effectiveTab === 'inventory' 
+                    ? 'bg-gold-DEFAULT text-black shadow-lg' 
+                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                }`}
+                >
+                <User size={10} /> {character.name.toUpperCase()}
+                </button>
+                <button
+                onClick={() => setActiveTab('forge')}
+                className={`flex-1 py-2 rounded-lg text-[8px] font-cinzel font-black tracking-widest flex items-center justify-center gap-2 transition-all ${
+                    effectiveTab === 'forge' 
+                    ? 'bg-gold-DEFAULT text-black shadow-lg' 
+                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                }`}
+                >
+                <Hammer size={10} /> ARCHIVES
+                </button>
+            </div>
+            )}
+
+            <div className="flex gap-2 shrink-0">
+            <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-DEFAULT/40" />
+                <input 
+                type="text" 
+                placeholder="RECHERCHER..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-xl py-2 pl-9 pr-3 text-[9px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/10 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
+                />
+            </div>
+            {effectiveTab === 'forge' && isMJ && (
+                <button 
+                onClick={openForgeModal}
+                className="p-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center shadow-lg group"
+                >
+                <Plus size={16} className="group-hover:rotate-90 transition-transform duration-300" />
+                </button>
+            )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1.5 pb-4 min-h-0">
+            {effectiveTab === 'inventory' ? (
+                <>
+                {groupedInventory.map((item: any, idx: number) => {
+                    const Icon = getIcon(item.category);
+                    const isActive = selectedItem?.instanceId === item.instanceId || (item.isStack && selectedItem?.id === item.id && !selectedItem.equipped);
+                    return (
+                    <div 
+                        key={item.instanceId || `stack-${item.id}-${idx}`} 
+                        onClick={() => setSelectedItem(item, false)}
+                        className={`group relative rounded-xl p-2.5 transition-all cursor-pointer flex items-center gap-3 overflow-hidden ${
+                        isActive ? 'border-gold-bright bg-gold-DEFAULT/10 shadow-[0_0_15px_rgba(212,175,55,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-gold-DEFAULT/30'
+                        }`}
+                    >
+                        <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center relative overflow-hidden shrink-0 shadow-inner">
+                        {item.image_url ? (
+                            <img src={item.image_url} alt="" className={`w-full h-full object-contain p-1 ${item.equipped ? 'opacity-100' : 'opacity-40 group-hover:opacity-60 transition-opacity'}`} />
+                        ) : (
+                            <Icon size={18} className={item.equipped ? 'text-gold-DEFAULT' : 'text-white/10 group-hover:text-white/20'} />
+                        )}
+                        {item.quantity > 1 && (
+                            <div className="absolute bottom-0 right-0 bg-gold-DEFAULT text-black text-[7px] font-black px-1 rounded-tl-md shadow-sm border-t border-l border-black/10 z-20">x{item.quantity}</div>
+                        )}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                            <h4 className={`text-[10px] font-cinzel font-black tracking-widest truncate uppercase ${item.equipped ? 'text-gold-bright' : (isActive ? 'text-gold-DEFAULT' : 'text-white/60 group-hover:text-white')}`}>
+                            {item.name}
+                            </h4>
+                            <span className="text-[7px] font-mono text-white/20 uppercase tracking-tighter truncate">{item.category}</span>
+                        </div>
+
+                        {/* ─── ACTIONS SUR LA BARRE ─── */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {item.category === 'Consommable' ? (
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleUseItem(item); }}
+                                    className="p-1.5 rounded-lg bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all"
+                                    title="Utiliser"
+                                >
+                                    <Zap size={10} />
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleToggleEquip(item); }}
+                                    className={`p-1.5 rounded-lg transition-all ${item.equipped ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-gold-DEFAULT text-black hover:bg-gold-bright'}`}
+                                    title={item.equipped ? "Déséquiper" : "Équiper"}
+                                >
+                                    <Shield size={10} />
+                                </button>
+                            )}
+                            
+                            {isMJ && (
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleRemoveFromInventory(item); }}
+                                    className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
+                                    title="Supprimer"
+                                >
+                                    <Trash2 size={10} />
+                                </button>
+                            )}
+                        </div>
+
+                        {item.equipped && (
+                        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gold-DEFAULT shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
+                        )}
+                        
+                        {!isWideView && <ChevronRight size={12} className="text-gold-DEFAULT/20 group-hover:text-gold-DEFAULT/60 transition-colors" />}
+                    </div>
+                    );
+                })}
+
+                {groupedInventory.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-10 opacity-10 grayscale">
+                    <Package size={32} className="mb-2" />
+                    <span className="text-[8px] font-cinzel tracking-widest italic">VIDE...</span>
+                    </div>
+                )}
+                </>
+            ) : (
+                <div className="grid grid-cols-1 gap-1.5">
+                {filteredForgeItems.map((item) => {
+                    const Icon = getIcon(item.category);
+                    const isActive = selectedItem?.id === item.id;
+                    return (
+                    <div 
+                        key={item.id} 
+                        onClick={() => setSelectedItem(item, false)}
+                        className={`group relative rounded-xl p-2.5 transition-all cursor-pointer flex items-center gap-3 ${
+                        isActive ? 'border-gold-bright bg-gold-DEFAULT/10 shadow-[0_0_15px_rgba(212,175,55,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-gold-DEFAULT/30'
+                        }`}
+                    >
+                        <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center relative overflow-hidden shrink-0 shadow-inner">
+                        {item.image_url ? (
+                            <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-40 group-hover:opacity-60 transition-opacity" />
+                        ) : (
+                            <Icon size={18} className="text-white/10 group-hover:text-white/20" />
+                        )}
+                        </div>                      
+                        <div className="flex-1 min-w-0">
+                            <h4 className={`text-[10px] font-cinzel font-black truncate uppercase tracking-widest transition-colors ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-gold-bright'}`}>{item.name}</h4>
+                            <span className="text-[7px] text-white/20 uppercase font-cinzel tracking-widest">{item.category}</span>
+                        </div>
+
+                        {/* ─── ACTIONS MJ (FORGE) ─── */}
+                        {isMJ && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {character && (
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleGiveItemToCharacter(item); }}
+                                        className="p-1.5 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-all"
+                                        title="Offrir"
+                                    >
+                                        <Plus size={10} />
+                                    </button>
+                                )}
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleEditForgeItem(item); }}
+                                    className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all"
+                                    title="Modifier"
+                                >
+                                    <PenTool size={10} />
+                                </button>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteForgeItem(item.id); }}
+                                    className="p-1.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all"
+                                    title="Supprimer"
+                                >
+                                    <Trash2 size={10} />
+                                </button>
+                            </div>
+                        )}
+
+                        {!isWideView && <ChevronRight size={12} className="text-gold-DEFAULT/20 group-hover:text-gold-DEFAULT/60 transition-colors" />}
+                    </div>
+                    );
+                })}
+                </div>
+            )}
+            </div>
+        </div>
+
+        {/* ─── PANNEAU DE DÉTAIL (Mode Codex / Fenêtre large) ─── */}
+        {isWideView && (
+          <div className={`transition-all duration-500 overflow-hidden bg-black/20 ${selectedItem ? 'flex-1 opacity-100' : 'w-0 opacity-0'}`}>
+            {selectedItem ? (
+              <div className="h-full flex flex-col animate-in slide-in-from-right-4 duration-500 relative">
+                 <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
+                    <span className="text-[9px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails de la Relique</span>
+                    <button onClick={() => setSelectedItem(null)} className="p-1 rounded hover:bg-white/5 text-white/20 hover:text-white transition-colors">
+                        <X size={14} />
+                    </button>
+                 </div>
+                 <div className="flex-1 overflow-hidden">
+                    <ItemDetailContent 
+                        item={selectedItem}
+                        character={character}
+                        onToggleEquip={effectiveTab === 'inventory' ? () => handleToggleEquip(selectedItem) : undefined}
+                        onUse={effectiveTab === 'inventory' ? () => handleUseItem(selectedItem) : undefined}
+                        onEdit={effectiveTab === 'forge' && isMJ ? () => handleEditForgeItem(selectedItem) : undefined}
+                        onDelete={effectiveTab === 'forge' && isMJ ? () => handleDeleteForgeItem(selectedItem.id) : undefined}
+                        onGive={effectiveTab === 'forge' && isMJ && character ? () => handleGiveItemToCharacter(selectedItem) : undefined}
+                        isMJ={isMJ}
+                    />
+                 </div>
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center opacity-10 pointer-events-none">
+                 <Sparkles size={64} className="mb-4 text-gold-DEFAULT" />
+                 <span className="text-[10px] font-cinzel font-black tracking-[0.4em] uppercase">Codex des Vestiges</span>
+              </div>
+            )}
           </div>
         )}
-
-        <div className="flex gap-2 shrink-0">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gold-DEFAULT/40" />
-            <input 
-              type="text" 
-              placeholder={effectiveTab === 'inventory' ? "MURMURER LE NOM D'UNE RELIQUE..." : "INTERROGER LES ARCHIVES..."}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-2xl py-3 pl-11 pr-4 text-[10px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/10 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
-            />
-          </div>
-          {effectiveTab === 'forge' && isMJ && (
-            <button 
-              onClick={openForgeModal}
-              className="px-4 py-3 rounded-2xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center shadow-lg group"
-              title="Forger une nouvelle relique"
-            >
-              <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
-            </button>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1.5 pb-4 min-h-0">
-          {effectiveTab === 'inventory' ? (
-            <>
-              {groupedInventory.map((item: any, idx: number) => {
-                const Icon = getIcon(item.category);
-                const isActive = selectedItem?.instanceId === item.instanceId || (item.isStack && selectedItem?.id === item.id && !selectedItem.equipped);
-                return (
-                  <div 
-                    key={item.instanceId || `stack-${item.id}-${idx}`} 
-                    onClick={() => setSelectedItem(item, false)}
-                    className={`group relative rounded-xl p-3 transition-all cursor-pointer flex items-center gap-4 overflow-hidden ${
-                      isActive ? 'border-gold-bright shadow-[0_0_20px_rgba(212,175,55,0.2)]' : 'border-white/[0.05] hover:border-gold-DEFAULT/40'
-                    }`}
-                    style={{
-                      background: isActive ? 'rgba(212, 175, 55, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-                      backdropFilter: 'blur(8px)',
-                      borderTop: isActive ? '1px solid rgba(212, 175, 55, 0.5)' : '1px solid rgba(255, 255, 255, 0.05)',
-                      borderLeft: isActive ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(255, 255, 255, 0.03)',
-                      boxShadow: isActive ? 'inset 0 1px 0 rgba(255,215,0,0.1), 0 8px 16px rgba(0,0,0,0.4)' : 'inset 0 1px 0 rgba(255,255,255,0.02)',
-                    }}
-                  >
-                    <div 
-                      className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all overflow-hidden relative shrink-0 ${item.equipped ? 'border-gold-DEFAULT/50 shadow-[0_0_10px_rgba(212,175,55,0.2)]' : 'group-hover:border-white/20'}`}
-                      style={{
-                        background: 'rgba(0, 0, 0, 0.4)',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
-                      }}
-                    >
-                      {item.image_url ? (
-                        <img src={item.image_url} alt="" className={`w-full h-full object-contain p-1 ${item.equipped ? 'opacity-100' : 'opacity-40 group-hover:opacity-60 transition-opacity'}`} />
-                      ) : (
-                        <Icon size={24} className={item.equipped ? 'text-gold-DEFAULT' : 'text-white/10 group-hover:text-white/20'} />
-                      )}
-                      <div className={`absolute bottom-0 right-0 ${item.equipped ? 'bg-gold-DEFAULT text-black' : 'bg-white/10 text-white/70'} text-[8px] font-black px-1.5 py-0.5 rounded-tl-lg shadow-lg border-t border-l border-white/10 z-20`}>
-                        x{item.quantity || 1}
-                      </div>
-                      <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 to-transparent opacity-30" />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className={`text-xs font-cinzel font-black tracking-widest truncate uppercase ${item.equipped ? 'text-gold-bright' : (isActive ? 'text-gold-DEFAULT' : 'text-white/60 group-hover:text-white transition-colors')}`}>
-                          {item.name}
-                        </h4>
-                        {item.equipped && <Star size={10} className="text-gold-bright animate-pulse shrink-0" />}
-                      </div>
-                      
-                      {item.modifiers && item.modifiers.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 mt-0.5">
-                          {item.modifiers.slice(0, 2).map((m: any, i: number) => (
-                            <span key={i} className="text-[8px] font-cinzel font-black uppercase px-1.5 py-0.5 border bg-gold-DEFAULT/10 text-gold-bright border-gold-DEFAULT/20 rounded shadow-[0_0_8px_rgba(212,175,55,0.1)]">
-                              {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`} {getTargetName(m)}
-                            </span>
-                          ))}
-                          {item.modifiers.length > 2 && (
-                            <span className="text-[8px] font-cinzel opacity-40 uppercase px-1.5 py-0.5 border border-white/10 rounded">
-                              +{item.modifiers.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                           <span className="text-[8px] font-cinzel text-white/20 uppercase tracking-widest">{item.category}</span>
-                           <div className="w-1 h-1 rounded-full bg-white/5" />
-                           <p className="text-[9px] font-garamond italic text-white/30 truncate group-hover:text-white/40 transition-colors">
-                             {item.description}
-                           </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity pr-2 shrink-0">
-                      {item.category === 'Consommable' ? (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleUseItem(item); }} 
-                          className="p-1.5 rounded-lg bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20"
-                          title="Utiliser"
-                        >
-                          <Zap size={14} />
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleToggleEquip(item); }} 
-                          className={`p-1.5 rounded-lg transition-all ${item.equipped ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20'}`}
-                          title={item.equipped ? "Déséquiper" : "Équiper"}
-                        >
-                          <Shield size={14} />
-                        </button>
-                      )}
-                      {isMJ && (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleRemoveFromInventory(item); }} 
-                          className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-500/40 hover:text-red-500 transition-all"
-                          title="Détruire"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                      <div 
-                        onClick={(e) => { e.stopPropagation(); setSelectedItem(item, true); }}
-                        className="p-1 hover:bg-white/10 rounded transition-colors"
-                        title="Détails"
-                      >
-                        <ChevronRight size={16} className="text-gold-DEFAULT/30" />
-                      </div>
-                    </div>
-
-                    {item.equipped && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gold-DEFAULT shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
-                    )}
-                  </div>
-                );
-              })}
-
-              {groupedInventory.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 opacity-10 grayscale">
-                  <Package size={48} className="mb-4" />
-                  <span className="text-xs font-cinzel font-black tracking-[0.3em] italic">LE COFFRE EST VIDE...</span>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="grid grid-cols-1 gap-2">
-              {filteredForgeItems.map((item) => {
-                const Icon = getIcon(item.category);
-                const isActive = selectedItem?.id === item.id;
-                return (
-                  <div 
-                    key={item.id} 
-                    onClick={() => isWideView && setSelectedItem(item, false)}
-                    className={`group relative rounded-xl p-3 transition-all flex items-center gap-4 ${isWideView ? 'cursor-pointer' : ''} ${
-                      isActive ? 'border-gold-bright shadow-[0_0_20px_rgba(212,175,55,0.2)]' : 'border-white/[0.05] hover:border-gold-DEFAULT/30'
-                    }`}
-                    style={{
-                      background: isActive ? 'rgba(212, 175, 55, 0.1)' : 'rgba(255, 255, 255, 0.02)',
-                      backdropFilter: 'blur(8px)',
-                      borderTop: isActive ? '1px solid rgba(212, 175, 55, 0.5)' : '1px solid rgba(255, 255, 255, 0.05)',
-                      borderLeft: isActive ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(255, 255, 255, 0.03)',
-                      boxShadow: isActive ? 'inset 0 1px 0 rgba(255,215,0,0.1), 0 8px 16px rgba(0,0,0,0.4)' : 'inset 0 1px 0 rgba(255,255,255,0.02)',
-                    }}
-                  >
-                    <div 
-                      className="w-12 h-12 shrink-0 rounded-lg flex items-center justify-center relative overflow-hidden transition-all group-hover:border-white/20"
-                      style={{
-                        background: 'rgba(0, 0, 0, 0.4)',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
-                      }}
-                    >
-                      {item.image_url ? (
-                        <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-40 group-hover:opacity-60 transition-opacity" />
-                      ) : (
-                        <Icon size={24} className="text-white/10 group-hover:text-white/20" />
-                      )}
-                      <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 to-transparent opacity-30" />
-                    </div>                      
-                    <div className="flex-1 min-w-0">
-                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <h4 className={`text-xs font-cinzel font-black truncate uppercase tracking-widest transition-colors ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-gold-bright'}`}>{item.name}</h4>
-                        <span className="text-[7px] border border-white/10 bg-black/40 px-2 py-0.5 rounded-lg text-white/30 uppercase shrink-0 font-cinzel tracking-widest">{item.category}</span>
-                      </div>
-                      {item.modifiers && item.modifiers.length > 0 ? (
-                        <div className="flex items-center gap-1 mt-0.5 overflow-hidden">
-                          {item.modifiers.slice(0, 1).map((m: any, i: number) => (
-                            <span key={i} className="text-[8px] font-cinzel font-black uppercase px-1.5 py-0.5 border bg-gold-DEFAULT/10 text-gold-bright border-gold-DEFAULT/20 rounded shadow-[0_0_8px_rgba(212,175,55,0.1)] truncate max-w-[140px] shrink-0">
-                              {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`} {getTargetName(m)}
-                            </span>
-                          ))}
-                          {item.modifiers.length > 1 && (
-                            <span className="text-[8px] font-cinzel opacity-40 uppercase px-1.5 py-0.5 border border-white/10 rounded shrink-0">
-                              +{item.modifiers.length - 1}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-[9px] font-garamond italic text-white/20 line-clamp-1 mt-0.5">{item.description}</p>
-                      )}
-                    </div>
-                    
-                    <div className={`flex gap-1.5 ${isWideView ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'} transition-opacity shrink-0`}>
-                      {character && (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleGiveItemToCharacter(item); }} 
-                          className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all shadow-lg"
-                          title="Offrir à l'inventaire actif"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      )}
-                      {isMJ && (
-                        <>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); handleEditForgeItem(item); }} 
-                            className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all shadow-lg"
-                            title="Modifier"
-                          >
-                            <PenTool size={14} />
-                          </button>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); handleDeleteForgeItem(item.id); }} 
-                            className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500/40 hover:text-red-500 transition-all shadow-lg"
-                            title="Détruire"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </>
-                      )}
-                      <div 
-                        onClick={(e) => { e.stopPropagation(); setSelectedItem(item, true); }}
-                        className="p-1 hover:bg-white/10 rounded transition-colors"
-                        title="Détails"
-                      >
-                        <ChevronRight size={16} className="text-gold-DEFAULT/30" />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {filteredForgeItems.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 opacity-10 grayscale">
-                  <Hammer size={48} className="mb-4" />
-                  <span className="text-xs font-cinzel font-black tracking-[0.3em] italic">LES ARCHIVES SONT VIDES...</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
-      </div>
-      );
-      }
+    </div>
+  );
+}
