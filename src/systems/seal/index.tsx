@@ -68,15 +68,17 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   });
   const [currentMapId, setCurrentMapId] = useState<string>('');
 
-  // Sync automatique quand on active le toggle
+  // Sync automatique de l'écran externe quand on active le toggle
   useEffect(() => {
     if (autoSync && isMJ && currentMapId && maps.length > 0) {
       const currentMap = maps.find(m => m.id === currentMapId);
       if (currentMap) {
-        broadcast({ type: 'MAP_CHANGE', payload: { url: currentMap.url, name: currentMap.name, id: currentMap.id, grid_size: currentMap.grid_size } });
+        const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+        channel.postMessage({ type: 'MAP_CHANGE', payload: { url: currentMap.url, name: currentMap.name, id: currentMap.id, grid_size: currentMap.grid_size } });
+        channel.close();
       }
     }
-  }, [autoSync, isMJ, currentMapId, maps, broadcast]);
+  }, [autoSync]); // Ne se déclenche qu'au changement du toggle
 
   const playersList = players.length > 0 ? players : [
     ...(user ? [{ peer_id: user.id, pseudo: user.pseudo, role: user.role }] : []),
@@ -245,17 +247,18 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   const handleSelectMap = (map: MapItem, global: boolean = false) => {
     setCurrentMapId(map.id);
     
-    // On détermine s'il faut synchroniser la scène (soit autoSync est ON, soit le MJ a fait un double-clic)
-    const shouldSync = (global || autoSync) && isMJ;
-    
-    if (shouldSync) {
-      // 1. Notifier la fenêtre de projection externe
-      const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
-      channel.postMessage({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name, id: map.id, grid_size: map.grid_size } });
-      channel.close();
+    if (isMJ) {
+      // 1. Fenêtre de projection externe (suit l'autoSync ou le double-clic forcé)
+      if (autoSync || global) {
+        const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+        channel.postMessage({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name, id: map.id, grid_size: map.grid_size } });
+        channel.close();
+      }
 
-      // 2. Diffuser aux joueurs distants
-      broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name, id: map.id, grid_size: map.grid_size } });
+      // 2. Joueurs distants (P2P) -> UNIQUEMENT sur un double-clic (global = true)
+      if (global) {
+        broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name, id: map.id, grid_size: map.grid_size } });
+      }
     }
   };
 
