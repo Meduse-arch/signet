@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Shield, Zap, Heart, Activity, Dices } from 'lucide-react';
+import { X, Save, Shield, Zap, Heart, Activity, Dices, Upload, Loader2 } from 'lucide-react';
 import { StatDefinition, SkillDefinition, BarDefinition, DEFAULT_STATS, DEFAULT_SKILLS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
+import { useAssetUpload } from '../../hooks/useAssetUpload';
 
 interface CreateCharacterModalProps {
   onClose: () => void;
@@ -54,6 +55,13 @@ export function CreateCharacterModal({
   const [name, setName] = useState(initialName);
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
   const [type, setType] = useState<'Joueur' | 'PNJ' | 'Monstre' | 'Boss'>(initialType || (isMJ ? 'PNJ' : 'Joueur'));
+
+  const { isUploading, fileInputRef, handleFileUpload } = useAssetUpload(
+    imageUrl,
+    (url) => {
+      setImageUrl(url);
+    }
+  );
   const [isTemplate, setIsTemplate] = useState(initialIsTemplate);
   const [quantity, setQuantity] = useState(1);
   const isEditing = !!initialStats;
@@ -185,11 +193,16 @@ export function CreateCharacterModal({
 
   const derivedBars = calculateBars();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) return;
+
+    // Convertir l'image en asset:// P2P au moment de la création
+    const { assetSyncService } = await import('../../services/asset-sync.service');
+    const finalImageUrl = await assetSyncService.resolveLocalImage(imageUrl);
+
     onSave({
       name,
-      image_url: imageUrl,
+      image_url: finalImageUrl,
       stats,
       skills: {}, // On vide les compétences car elles ne sont plus utilisées
       bars: derivedBars,
@@ -328,13 +341,32 @@ export function CreateCharacterModal({
 
                 <div className="space-y-2">
                   <label className="text-xs font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Image de l'Entité (URL)</label>
-                  <input 
-                    type="text" 
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-white placeholder:text-white/60 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm"
-                  />
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="https://... ou asset://..."
+                      className="flex-1 bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-white placeholder:text-white/60 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="p-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[40px]"
+                      title="Importer un fichier local"
+                    >
+                      {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                    </button>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                    />
+                  </div>
+                  <p className="text-[10px] font-cinzel text-white/40 uppercase tracking-widest px-1">Importez un portrait local (P2P)</p>
                 </div>
               </div>
 

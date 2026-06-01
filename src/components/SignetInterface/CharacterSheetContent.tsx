@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Trash2, Settings } from 'lucide-react';
+import { Plus, Trash2, Settings, Upload, Loader2 } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
@@ -13,6 +13,7 @@ import { lancerDes, parseAndRoll } from '../../services/des.service';
 import { addSessionLog } from '../../services/db.service';
 import { useMapStore } from '../../store/map';
 import { MapItem } from '../BoardCanvas';
+import { useAssetUpload } from '../../hooks/useAssetUpload';
 
 interface CharacterSheetContentProps {
   sessionId: string;
@@ -253,6 +254,13 @@ export function CharacterSheetContent({
   const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
   const [avatarUrlInput, setAvatarUrlInput] = useState('');
 
+  const { isUploading, fileInputRef, handleFileUpload } = useAssetUpload(
+    avatarUrlInput,
+    (url) => {
+      setAvatarUrlInput(url);
+    }
+  );
+
   useEffect(() => {
     if (isPopup) {
       setItemsPerPage(3);
@@ -443,18 +451,36 @@ export function CharacterSheetContent({
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
         <div className="bg-[#0A0A0C]/90 border border-gold-DEFAULT/40 p-6 rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.2)] w-[90%] max-w-sm flex flex-col gap-4">
           <h3 className="text-gold-bright font-cinzel font-black uppercase tracking-widest text-center text-sm">Portrait du Voyageur</h3>
-          <input 
-            type="text" 
-            value={avatarUrlInput}
-            onChange={(e) => setAvatarUrlInput(e.target.value)}
-            placeholder="URL de l'image (https://...)"
-            className="w-full bg-black/50 border border-gold-DEFAULT/20 rounded-lg px-3 py-2 text-white/90 text-xs font-mono focus:outline-none focus:border-gold-DEFAULT/60 transition-colors"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') submitAvatarChange();
-              if (e.key === 'Escape') setShowAvatarPrompt(false);
-            }}
-          />
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              value={avatarUrlInput}
+              onChange={(e) => setAvatarUrlInput(e.target.value)}
+              placeholder="URL de l'image (https://...)"
+              className="flex-1 bg-black/50 border border-gold-DEFAULT/20 rounded-lg px-3 py-2 text-white/90 text-xs font-mono focus:outline-none focus:border-gold-DEFAULT/60 transition-colors"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submitAvatarChange();
+                if (e.key === 'Escape') setShowAvatarPrompt(false);
+              }}
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="p-2 rounded-lg bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[40px]"
+              title="Importer un fichier local"
+            >
+              {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*"
+              onChange={handleFileUpload}
+            />
+          </div>
+          <p className="text-[10px] font-cinzel text-white/40 uppercase tracking-widest text-center">Importez un portrait local (P2P)</p>
           <div className="flex justify-end gap-2 mt-2">
             <button 
               onClick={() => setShowAvatarPrompt(false)}

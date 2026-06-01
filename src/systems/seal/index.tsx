@@ -207,7 +207,29 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
             setCurrentMapId(payload[0].id);
         }
       } else if (type === 'INITIAL_SYNC_REQUEST' && isHost) {
-        sendTo(fromPeerId, { type: 'CHARACTER_LIST', payload: characters });
+        // ✅ Résoudre les images locales → asset:// puis POUSSER les binaires au joueur
+        const resolveAndSend = async () => {
+          const { assetSyncService } = await import('../../services/asset-sync.service');
+
+          // 1. Résoudre toutes les images locales en asset://
+          const resolvedChars = await Promise.all(
+            characters.map(async (char: any) => ({
+              ...char,
+              image_url: await assetSyncService.resolveLocalImage(char.image_url),
+            }))
+          );
+
+          // 2. Envoyer la liste de personnages avec les URLs résolues
+          sendTo(fromPeerId, { type: 'CHARACTER_LIST', payload: resolvedChars });
+
+          // 3. PUSH proactif des binaires d'images → joueur les stocke avant d'en avoir besoin
+          for (const char of resolvedChars) {
+            if (char.image_url?.startsWith('asset://')) {
+              await assetSyncService.pushAssetToPeer(char.image_url, fromPeerId);
+            }
+          }
+        };
+        resolveAndSend();
         sendTo(fromPeerId, { type: 'MAP_UPDATE', payload: maps });
         const current = maps.find(m => m.id === currentMapId) || maps[0];
         if (current) {

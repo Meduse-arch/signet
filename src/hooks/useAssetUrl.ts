@@ -6,7 +6,11 @@ import { assetSyncService } from '../services/asset-sync.service';
  * Gère automatiquement le téléchargement P2P si nécessaire avec un système de retry.
  */
 export function useAssetUrl(url: string | undefined) {
-  const [assetUrl, setAssetUrl] = useState<string | undefined>(url);
+  // Ne jamais retourner "asset://" au rendu initial, sinon le HTML <img> 
+  // va essayer de le charger immédiatement et déclencher une erreur CSP.
+  const [assetUrl, setAssetUrl] = useState<string | undefined>(
+    url?.startsWith('asset://') ? undefined : url
+  );
 
   useEffect(() => {
     if (!url) {

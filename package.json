@@ -1,6 +1,8 @@
 {
-  "name": "signet",
+  "name": "signet-vtt",
   "version": "1.0.0",
+  "description": "Signet VTT - A Virtual Tabletop Application",
+  "author": "Sigil Team",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -8,6 +10,27 @@
     "build": "tsc && vite build && tsc -p electron && electron-builder",
     "electron:dev": "concurrently \"vite\" \"wait-on tcp:5173 && tsc -p electron -w\" \"wait-on tcp:5173 && electron .\"",
     "electron:build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.signet.vtt",
+    "productName": "Signet VTT",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**/*"
+    ]
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.3",

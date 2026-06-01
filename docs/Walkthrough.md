@@ -78,8 +78,17 @@ Les dossiers morts qui polluaient l'arborescence (notamment les résidus de l'an
 - **Bouton Rouge (OFF)** : Le simple clic permet au MJ de naviguer de manière privée. Pour envoyer la carte aux joueurs et à la fenêtre de projection, le MJ doit effectuer un **double-clic** sur la scène souhaitée.
 - Ce système garantit que la fenêtre de projection locale et le broadcast P2P vers les joueurs sont parfaitement découplés et sécurisés.
 
+## Nouveautés : Synchronisation & Upload des Images de Jetons (Tokens)
+
+### 1. Upload d'Images en P2P
+- **Problème résolu** : Auparavant, si le MJ configurait un portrait avec un chemin absolu de son disque local, les joueurs ne voyaient rien.
+- **Sélecteur de Fichier dans la Fiche** : Ajout du bouton d'upload et du hook `useAssetUpload` dans [CharacterSheetContent.tsx](file:///c:/Users/Etudiant/Desktop/projet/sigil-app/sigil-vtt/src/components/SignetInterface/CharacterSheetContent.tsx) (boîte d'édition rapide d'avatar).
+- **Sélecteur de Fichier dans la Création d'Entités** : Intégration du sélecteur de fichier dans [CreateCharacterModal.tsx](file:///c:/Users/Etudiant/Desktop/projet/sigil-app/sigil-vtt/src/components/CreateCharacterModal/index.tsx) (utilisé dans le Bestiaire pour les monstres/PNJ et lors de la création d'un joueur).
+- **Hachage & P2P automatique** : Les fichiers locaux sélectionnés sont compressés, renommés en `asset://<sha256>`, et stockés dans l'Asset Store IndexedDB. Les clients des joueurs les téléchargent à la volée via PeerJS au moment du placement du jeton sur la carte.
+
 ## Vérifications
-- Une nouvelle vérification formelle des types via `npx tsc --noEmit` a été effectuée et **a réussi avec succès**. Aucune erreur TypeScript n'a été introduite.
+- Une vérification formelle des types via `npx tsc --noEmit` a été effectuée et **a réussi avec succès**.
 
 > [!TIP]
-> **Validation Requise** : Vous pouvez observer le nouvel effet de brume procédurale lors des changements de cartes, constater que vos fenêtres UI restent utilisables par-dessus, et tester la résilience P2P en coupant l'envoi du côté de l'hôte.
+> **Validation Requise** : Vous pouvez tester l'upload d'un portrait local depuis la fiche d'un personnage ou la création d'un monstre dans le Bestiaire, vérifier qu'il est synchronisé en P2P, et s'affiche correctement sous forme de jeton (token) sur la carte du joueur.
+

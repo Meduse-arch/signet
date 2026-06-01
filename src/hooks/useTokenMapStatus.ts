@@ -55,13 +55,28 @@ export function useTokenMapStatus(sessionId: string, character: Character | null
       broadcast({ type: 'TOKEN_REMOVE', payload: { id: character.id } });
       setIsTokenOnMap(false);
     } else {
+      let finalImageUrl = character.image_url;
+      if (isHost && finalImageUrl && !finalImageUrl.startsWith('asset://') && !finalImageUrl.startsWith('http') && window.electronAPI) {
+          try {
+              const base64 = await window.electronAPI.fetchImage(finalImageUrl);
+              if (base64) {
+                  const res = await fetch(base64);
+                  const blob = await res.blob();
+                  const { assetSyncService } = await import('../services/asset-sync.service');
+                  finalImageUrl = await assetSyncService.uploadLocalAsset(blob);
+              }
+          } catch (e) {
+              console.error("Auto-conversion failed for token:", e);
+          }
+      }
+
       if (isHost && window.electronAPI) {
         await window.electronAPI.updateMapToken(sessionId, currentMapId, character.id, 0, 0);
       }
       const payload = {
         id: character.id,
         name: character.name,
-        image_url: character.image_url,
+        image_url: finalImageUrl,
         x: 0,
         y: 0
       };

@@ -105,8 +105,12 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
   const handleSave = async () => {
     if (!editedChar) return;
     
+    // ✅ Convertir l'image en asset:// P2P au moment de la sauvegarde
+    const { assetSyncService } = await import('../../services/asset-sync.service');
+    const finalImageUrl = await assetSyncService.resolveLocalImage(editedChar.image_url);
+
     // ✅ Utiliser l'ID de session actuel pour l'entité si non défini
-    const finalChar = { ...editedChar, session_id: sessionId };
+    const finalChar = { ...editedChar, session_id: sessionId, image_url: finalImageUrl };
     
     addOrUpdateCharacter(finalChar);
     
@@ -269,7 +273,6 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
               { id: 'stats', label: 'ATTRIBUTS', icon: Sword },
               { id: 'ressources', label: 'VITALITÉS', icon: Heart },
               { id: 'inventaire', label: 'INVENTAIRE', icon: Package },
-              { id: 'competences', label: 'MAÎTRISES', icon: Zap },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -548,105 +551,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
               </div>
             )}
 
-            {activeTab === 'competences' && (
-              <div className="flex flex-col gap-4">
-                {!showSkillArchive ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Maîtrises du Codex</h3>
-                      <button 
-                        onClick={() => setShowSkillArchive(true)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-xs font-black uppercase tracking-widest group shadow-lg"
-                      >
-                        <Zap size={14} className="group-hover:scale-110 transition-transform" />
-                        Ouvrir le Codex
-                      </button>
-                    </div>
 
-                    <div className="flex flex-col gap-2">
-                      {(editedChar.custom_skills || []).length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 opacity-40">
-                          <Zap size={48} className="mb-4 text-gold-DEFAULT" />
-                          <span className="font-cinzel text-xs uppercase tracking-widest">AUCUNE MAÎTRISE</span>
-                        </div>
-                      ) : (
-                        editedChar.custom_skills.map((skill: any) => (
-                          <div key={skill.id} className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/[0.02] group hover:border-gold-DEFAULT/20 transition-all">
-                            <div className="flex items-center gap-4 flex-1 min-w-0">
-                              <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                                {skill.image_url ? (
-                                  <SkillItemImage url={skill.image_url} />
-                                ) : (
-                                  <Zap size={18} className="text-gold-DEFAULT/40" />
-                                )}
-                              </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{skill.name}</span>
-                                <span className="text-[11px] font-mono text-white/50 uppercase tracking-widest">Maîtrise Occulte</span>
-                              </div>
-                            </div>
-                            <button 
-                              onClick={() => handleRemoveSkill(skill.id)}
-                              className="p-2 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-colors opacity-30 group-hover:opacity-100"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col gap-6 animate-in slide-in-from-right-4 duration-500">
-                    <div className="flex items-center justify-between">
-                      <button 
-                        onClick={() => setShowSkillArchive(false)}
-                        className="flex items-center gap-2 text-white/60 hover:text-gold-bright transition-colors text-xs font-cinzel font-black uppercase tracking-widest"
-                      >
-                        <ArrowLeft size={14} /> Retour au Codex
-                      </button>
-                      <div className="relative w-48">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-DEFAULT/40" />
-                        <input 
-                          type="text" 
-                          value={searchSkillArchive}
-                          onChange={e => setSearchSkillArchive(e.target.value)}
-                          placeholder="Rechercher..."
-                          className="w-full bg-black/60 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-xs text-white focus:border-gold-DEFAULT/50 outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-2">
-                      {filteredArchiveSkills.map(skill => (
-                        <div key={skill.id} className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/[0.02] group hover:border-gold-DEFAULT/20 transition-all">
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                             <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                                {skill.image_url ? (
-                                  <SkillItemImage url={skill.image_url} />
-                                ) : (
-                                  <Zap size={18} className="text-gold-DEFAULT/40" />
-                                )}
-                             </div>
-                             <div className="flex flex-col min-w-0">
-                                <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{skill.name}</span>
-                                <span className="text-[11px] font-mono text-white/50 uppercase">{skill.type}</span>
-                             </div>
-                          </div>
-
-                          <button 
-                            onClick={() => handleAddSkillFromArchive(skill)}
-                            className={`p-2 rounded-lg transition-all ${addedFeedback === skill.id ? 'bg-green-500 text-white' : 'bg-gold-DEFAULT text-black hover:scale-105'}`}
-                          >
-                            {addedFeedback === skill.id ? <Plus size={14} className="animate-ping" /> : <Plus size={14} />}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
             {activeTab === 'quetes' && (
               <div className="flex flex-col items-center justify-center py-20 opacity-40 bg-black/20 rounded-3xl border border-dashed border-white/5">

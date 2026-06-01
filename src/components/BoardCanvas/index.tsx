@@ -8,6 +8,8 @@ import { useMapStore } from '../../store/map';
 import { mapSyncService } from '../../services/map-sync.service';
 import { BrowserImageCompressor } from '../../services/browser-image-compressor';
 import { MapTransitionOverlay } from './MapTransitionOverlay';
+import { assetSyncService } from '../../services/asset-sync.service';
+
 
 export interface MapItem {
   id: string;
@@ -169,10 +171,13 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       const x = isNaN(center.x) ? 0 : Math.round(center.x);
       const y = isNaN(center.y) ? 0 : Math.round(center.y);
 
+      // ✅ Résoudre l'image en asset:// avant diffusion aux joueurs
+      const resolvedImageUrl = await assetSyncService.resolveLocalImage(char.image_url);
+
       const tokenData = {
         id: char.id,
         name: char.name,
-        image_url: char.image_url,
+        image_url: resolvedImageUrl,
         x,
         y
       };
@@ -269,22 +274,28 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
         // Un joueur demande une synchro complète des tokens (Le MJ répond)
         console.log(`[Host] Réponse à TOKEN_SYNC_REQUEST pour ${fromPeerId}`);
         if (window.electronAPI && currentMapId) {
-            window.electronAPI.getMapTokens(sessionId, currentMapId).then(tokens => {
-                tokens.forEach((t: any) => {
+            window.electronAPI.getMapTokens(sessionId, currentMapId).then(async tokens => {
+                for (const t of tokens) {
                     const char = characters.find(c => c.id === t.character_id);
                     if (char && fromPeerId) {
+                        // ✅ Résoudre l'image locale → asset://
+                        const resolvedImageUrl = await assetSyncService.resolveLocalImage(char.image_url);
+                        // ✅ PUSH proactif de l'asset avant l'envoi du token
+                        if (resolvedImageUrl?.startsWith('asset://')) {
+                            await assetSyncService.pushAssetToPeer(resolvedImageUrl, fromPeerId);
+                        }
                         sendTo(fromPeerId, {
                             type: 'TOKEN_ADD',
                             payload: {
                                 id: char.id,
                                 name: char.name,
-                                image_url: char.image_url,
+                                image_url: resolvedImageUrl,
                                 x: t.x,
                                 y: t.y,
                             }
                         });
                     }
-                });
+                }
             });
         }
       } else if (data.type === 'TOGGLE_TOKEN_REQUEST' && isHost) {
