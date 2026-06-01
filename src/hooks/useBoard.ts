@@ -42,7 +42,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   }, [containerRef]);
 
   const paintMapFromCache = useCallback(async (mapId: string, manifest: any) => {
-    setLoadingProgress({ loaded: manifest.chunks.length, total: manifest.chunks.length, active: false, status: 'painting_cache' });
+    setLoadingProgress({ loaded: 0, total: manifest.chunks.length, active: true, status: 'painting_cache' });
     let loadedCount = 0;
     for (const chunk of manifest.chunks) {
       if (currentMapIdRef.current !== mapId) return;
@@ -53,8 +53,9 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         }
       }
       loadedCount++;
-      // Pas besoin de mettre à jour setLoadingProgress à chaque chunk si on est déjà active: false
+      // On met juste à jour pour la forme, mais sans charger l'interface avec la barre
     }
+    setLoadingProgress({ loaded: manifest.chunks.length, total: manifest.chunks.length, active: false, status: 'complete' });
   }, [isReady]);
 
   const retryLoad = useCallback(() => {
@@ -114,7 +115,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
     
     console.log('[useBoard] Loading map:', url, 'with grid size:', gridSize);
-    setLoadingProgress({ loaded: 100, total: 100, active: false, status: 'painting_cache' });
+    setLoadingProgress({ loaded: 0, total: 100, active: true, status: 'painting_cache' });
     await boardRef.current.loadMap(url, format, gridSize);
     setLoadingProgress({ loaded: 100, total: 100, active: false, status: 'complete' });
 

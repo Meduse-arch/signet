@@ -14,60 +14,46 @@ interface MapTransitionOverlayProps {
 
 export function MapTransitionOverlay({ progress, onRetry }: MapTransitionOverlayProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [minTimeReached, setMinTimeReached] = useState(true);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [showOverlay, setShowOverlay] = useState(false);
 
   useEffect(() => {
     if (progress.active) {
       setIsVisible(true);
-      setMinTimeReached(false);
-      
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        setMinTimeReached(true);
-      }, 1200); // 1.2s minimum display time
+      setShowOverlay(true);
+    } else {
+      // Le brouillard se retire légèrement (300ms) après que les chunks soient dessinés
+      const timer = setTimeout(() => setShowOverlay(false), 300);
+      return () => clearTimeout(timer);
     }
   }, [progress.active]);
 
   useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!progress.active && minTimeReached && isVisible) {
-      const timer = setTimeout(() => setIsVisible(false), 1500); // 1.5s pour la dissipation de la brume
+    if (!showOverlay && isVisible) {
+      const timer = setTimeout(() => setIsVisible(false), 800); // 800ms fade out duration
       return () => clearTimeout(timer);
     }
-  }, [progress.active, minTimeReached, isVisible]);
+  }, [showOverlay, isVisible]);
 
-  const showOverlay = progress.active || !minTimeReached;
-  
   if (!showOverlay && !isVisible) return null;
   const percentage = progress.total > 0 ? Math.round((progress.loaded / progress.total) * 100) : 0;
   
   let message = '';
-  switch (progress.status) {
-    case 'waiting_manifest':
-      message = "Demande du plan au Maître du Jeu...";
-      break;
-    case 'loading_chunks':
-    case 'painting_cache':
-      message = `Invocation de la carte...`;
-      break;
-    case 'error':
-      message = progress.error || "Une erreur est survenue.";
-      break;
-    default:
-      message = "La brume se dissipe...";
-      break;
+  if (progress.status === 'waiting_manifest') {
+    message = 'Demande au Maître du Jeu...';
+  } else if (progress.status === 'loading_chunks') {
+    message = `Invocation en cours... ${percentage}%`;
+  } else if (progress.status === 'error') {
+    message = progress.error || 'Une erreur est survenue';
+  } else if (progress.status === 'painting_cache') {
+    message = ''; // Pas de texte pour le cache
+  } else if (!progress.active) {
+    message = ''; // Pas de texte en se dissipant
   }
 
   return (
     <div 
-      className={`absolute inset-0 pointer-events-none z-[10] transition-all duration-[1500ms] ease-in-out flex items-center justify-center bg-[#050508]/95
-        ${showOverlay ? 'opacity-100 backdrop-blur-md' : 'opacity-0 backdrop-blur-none'}
+      className={`absolute inset-0 pointer-events-none z-[10] transition-all ease-in-out flex items-center justify-center bg-[#050508]/95
+        ${showOverlay ? 'opacity-100 backdrop-blur-md duration-[300ms]' : 'opacity-0 backdrop-blur-none duration-[800ms]'}
       `}
     >
       {/* Filtre SVG pour le bruit fractal (Brouillard) */}
