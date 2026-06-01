@@ -9,6 +9,13 @@ import { addSessionCharacter, updateSessionCharacter, removeSessionCharacter, Ch
 import { CreateCharacterModal } from '../CreateCharacterModal';
 import { CharacterSheetContent } from './CharacterSheetContent';
 import { DEFAULT_BARS, DEFAULT_STATS } from '../../systems/seal/constants';
+import { useAssetUrl } from '../../hooks/useAssetUrl';
+
+function BestiaryImage({ url, className }: { url: string; className?: string }) {
+  const assetUrl = useAssetUrl(url);
+  if (!assetUrl) return null;
+  return <img src={assetUrl} alt="" className={className} />;
+}
 
 interface BestiaryWindowContentProps {
   sessionId: string;
@@ -257,7 +264,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center overflow-hidden">
                     {template.image_url ? (
-                      <img src={template.image_url} alt="" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                      <BestiaryImage url={template.image_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
                     ) : (
                       <BookOpen size={20} className="text-purple-400/40" />
                     )}
@@ -296,7 +303,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                     <div className="relative">
                         <div className="w-10 h-10 rounded-xl bg-black border border-gold-DEFAULT/20 overflow-hidden shadow-lg group-hover:border-gold-DEFAULT/40 transition-colors">
                         {npc.image_url ? (
-                            <img src={npc.image_url} alt="" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                            <BestiaryImage url={npc.image_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT/30 font-cinzel font-black text-lg">?</div>
                         )}
@@ -431,7 +438,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
               >
                 <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center overflow-hidden shrink-0">
                   {t.image_url ? (
-                    <img src={t.image_url} alt="" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <BestiaryImage url={t.image_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
                   ) : (
                     <BookOpen size={20} className="text-purple-400/40" />
                   )}

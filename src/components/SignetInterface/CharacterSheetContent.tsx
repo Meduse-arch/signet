@@ -14,6 +14,7 @@ import { addSessionLog } from '../../services/db.service';
 import { useMapStore } from '../../store/map';
 import { MapItem } from '../BoardCanvas';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
+import { AssetImage } from '../AssetImage';
 
 interface CharacterSheetContentProps {
   sessionId: string;
@@ -973,7 +974,7 @@ export function CharacterSheetContent({
                 className="w-8 h-8 shrink-0 rounded-full border border-gold-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-gold-DEFAULT transition-colors"
                 onClick={handleAvatarClick}
               >
-                {image_url ? <img src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black">{name.charAt(0)}</div>}
+                {image_url ? <AssetImage src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black">{name.charAt(0)}</div>}
               </div>
               <button 
                 onClick={toggleTokenPlacement}
@@ -1022,7 +1023,7 @@ export function CharacterSheetContent({
               className="w-14 h-14 shrink-0 rounded-full border-2 border-gold-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-gold-DEFAULT transition-colors"
               onClick={handleAvatarClick}
             >
-              {image_url ? <img src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black text-2xl">{name.charAt(0)}</div>}
+              {image_url ? <AssetImage src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black text-2xl">{name.charAt(0)}</div>}
             </div>
             <button 
               onClick={toggleTokenPlacement}

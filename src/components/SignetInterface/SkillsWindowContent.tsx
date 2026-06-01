@@ -22,6 +22,7 @@ import {
 import { SkillCreationModal } from './SkillCreationModal';
 import { SkillDetailContent } from './SkillDetailContent';
 import { addSessionCharacter } from '../../services/characters.service';
+import { AssetImage } from '../AssetImage';
 
 interface SkillsWindowContentProps {
   sessionId: string;
@@ -237,7 +238,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                     >
                         <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center relative overflow-hidden shrink-0 shadow-inner">
                         {skill.image_url ? (
-                            <img src={skill.image_url} alt="" className={`w-full h-full object-cover ${isEquipped ? 'opacity-100' : 'opacity-40 group-hover:opacity-100 transition-opacity'}`} />
+                            <AssetImage src={skill.image_url} alt="" className={`w-full h-full object-cover ${isEquipped ? 'opacity-100' : 'opacity-40 group-hover:opacity-100 transition-opacity'}`} />
                         ) : (
                             <Zap size={18} className={isEquipped ? 'text-gold-DEFAULT' : 'text-white/10 group-hover:text-gold-DEFAULT/40 transition-colors'} />
                         )}

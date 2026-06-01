@@ -10,6 +10,7 @@ import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { addSessionCharacter } from '../../services/characters.service';
 import { useSessionStore } from '../../store/session';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
+import { AssetImage } from '../AssetImage';
 
 interface ItemCreationModalProps {
   sessionId: string;
@@ -223,7 +224,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                   <div className="flex gap-6 items-start">
                     <div className="w-24 h-24 rounded-3xl border-2 border-gold-DEFAULT/20 bg-black/40 flex items-center justify-center overflow-hidden shrink-0 shadow-2xl relative group">
                         {previewUrl ? (
-                            <img src={previewUrl} className="w-full h-full object-contain p-2" alt="Item" />
+                            <AssetImage src={previewUrl} className="w-full h-full object-contain p-2" alt="Item" />
                         ) : (
                             <Package size={32} className="text-white/10" />
                         )}

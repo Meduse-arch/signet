@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Search, Plus, Minus, X } from 'lucide-react';
 import { itemsService, Item } from '../../services/items.service';
+import { AssetImage } from '../AssetImage';
 
 interface GiveItemModalProps {
   sessionId: string;
@@ -80,7 +81,7 @@ export function GiveItemModal({ sessionId, targetCharacterName, onClose, onGive 
                 >
                   <div className="w-10 h-10 rounded-lg bg-black/60 border border-gold-DEFAULT/20 flex items-center justify-center shrink-0">
                     {item.image_url ? (
-                      <img src={item.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                      <AssetImage src={item.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
                     ) : (
                       <Package size={20} className="text-gold-DEFAULT/50" />
                     )}
@@ -104,7 +105,7 @@ export function GiveItemModal({ sessionId, targetCharacterName, onClose, onGive 
                 <div className="flex-1">
                   <div className="w-20 h-20 mx-auto rounded-xl bg-black/60 border border-gold-DEFAULT/30 flex items-center justify-center mb-4 shadow-[inset_0_0_20px_rgba(212,175,55,0.1)]">
                     {selectedItem.image_url ? (
-                      <img src={selectedItem.image_url} alt="" className="w-full h-full object-cover rounded-xl" />
+                      <AssetImage src={selectedItem.image_url} alt="" className="w-full h-full object-cover rounded-xl" />
                     ) : (
                       <Package size={32} className="text-gold-DEFAULT/50" />
                     )}

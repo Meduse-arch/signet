@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCharactersStore } from '../../store/characters';
 import { X, User, Plus, Minus } from 'lucide-react';
 import { ModalContainer } from '../ModalContainer';
+import { AssetImage } from '../AssetImage';
 
 interface SelectCharacterModalProps {
   onClose: () => void;
@@ -38,7 +39,7 @@ export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectChar
               >
                 <div className="w-8 h-8 rounded-full bg-black/60 border border-gold-DEFAULT/20 flex items-center justify-center shrink-0 overflow-hidden">
                   {char.image_url ? (
-                    <img src={char.image_url} alt="" className="w-full h-full object-cover" />
+                    <AssetImage src={char.image_url} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <User size={16} className="text-gold-DEFAULT/50" />
                   )}

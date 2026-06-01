@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { QuestCreationModal } from './QuestCreationModal';
 import { QuestDetailContent } from './QuestDetailContent';
+import { AssetImage } from '../AssetImage';
 
 interface QuestsWindowContentProps {
   sessionId: string;
@@ -141,7 +142,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                     >
                         <div className="w-12 h-12 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center overflow-hidden shrink-0 relative shadow-inner">
                             {quest.image_url ? (
-                                <img src={quest.image_url} alt="" className="w-full h-full object-cover" />
+                                <AssetImage src={quest.image_url} alt="" className="w-full h-full object-cover" />
                             ) : (
                                 <Scroll size={18} className="text-white/10 group-hover:text-gold-DEFAULT/40 transition-colors" />
                             )}

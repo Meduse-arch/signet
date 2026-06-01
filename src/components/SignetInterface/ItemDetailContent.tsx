@@ -4,6 +4,7 @@ import { Item } from '../../services/items.service';
 import { useItemsStore } from '../../store/items';
 import { useCharactersStore } from '../../store/characters';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
+import { AssetImage } from '../AssetImage';
 
 interface ItemDetailContentProps {
   item: any;
@@ -84,7 +85,7 @@ export function ItemDetailContent({
         {item.image_url ? (
           <>
             <div className="absolute inset-0 bg-black/60" style={{ backgroundImage: `url(${item.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.15 }} />
-            <img src={item.image_url} alt="" className="relative z-10 w-full h-full object-contain p-3 drop-shadow-2xl" />
+            <AssetImage src={item.image_url} alt="" className="relative z-10 w-full h-full object-contain p-3 drop-shadow-2xl" />
           </>
         ) : (
           <Package size={48} className="text-gold-DEFAULT/10 relative z-10" />

@@ -11,6 +11,7 @@ import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { useAssetUrl } from '../../hooks/useAssetUrl';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { useMapStore } from '../../store/map';
+import { AssetImage } from '../AssetImage';
 
 interface ManageCharacterModalProps {
   sessionId: string;
@@ -240,7 +241,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 flex items-center justify-center overflow-hidden shadow-lg">
               {previewUrl ? (
-                <img src={previewUrl} alt="" className="w-full h-full object-cover" />
+                <AssetImage src={previewUrl} alt="" className="w-full h-full object-cover" />
               ) : (
                 <User size={24} className="text-gold-bright" />
               )}
@@ -320,7 +321,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                   <div className="flex gap-4">
                     <div className="w-16 h-16 rounded-2xl border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden shrink-0">
                         {previewUrl ? (
-                            <img src={previewUrl} className="w-full h-full object-cover" alt="Portrait" />
+                            <AssetImage src={previewUrl} className="w-full h-full object-cover" alt="Portrait" />
                         ) : (
                             <User className="text-white/60" size={24} />
                         )}
@@ -595,10 +596,10 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
 // Composants internes pour gérer la résolution des URLs d'assets
 function InventoryItemImage({ url }: { url: string }) {
   const resolved = useAssetUrl(url);
-  return <img src={resolved} alt="" className="w-full h-full object-contain p-1 opacity-60" />;
+  return <AssetImage src={resolved} alt="" className="w-full h-full object-contain p-1 opacity-60" />;
 }
 
 function SkillItemImage({ url }: { url: string }) {
   const resolved = useAssetUrl(url);
-  return <img src={resolved} alt="" className="w-full h-full object-cover opacity-60" />;
+  return <AssetImage src={resolved} alt="" className="w-full h-full object-cover opacity-60" />;
 }

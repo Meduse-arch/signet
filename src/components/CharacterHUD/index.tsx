@@ -10,6 +10,7 @@ import { addSessionCharacter, Character } from '../../services/characters.servic
 import { DEFAULT_BARS } from '../../systems/seal/constants';
 import { useSignetStore } from '../../store/signet';
 import { useMapStore } from '../../store/map';
+import { AssetImage } from '../AssetImage';
 
 interface CharacterHUDProps {
   sessionId: string;
@@ -135,7 +136,7 @@ if (!myCharacter) {
            <div className="relative w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-gold-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)] overflow-hidden">
              {controlledCharacterId ? (
                characters.find(c => c.id === controlledCharacterId)?.image_url ? (
-                 <img src={characters.find(c => c.id === controlledCharacterId)?.image_url} alt="" className="w-full h-full object-cover" />
+                 <AssetImage src={characters.find(c => c.id === controlledCharacterId)?.image_url} alt="" className="w-full h-full object-cover" />
                ) : (
                  <Ghost className="w-8 h-8 text-gold-DEFAULT/60 animate-pulse" />
                )
@@ -206,7 +207,7 @@ if (!myCharacter) {
         <div className="absolute inset-[-6px] rounded-full border border-gold-DEFAULT/30 bg-[#0D0D0F]/80 backdrop-blur-xl group-hover/avatar:border-gold-DEFAULT/60 shadow-[0_4px_30px_rgba(0,0,0,0.6)] transition-all duration-500 ease-linear" />
         <div className="relative w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-gold-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)] overflow-hidden">
           {image_url ? (
-            <img src={image_url} alt={name} className="w-full h-full object-cover" />
+            <AssetImage src={image_url} alt={name} className="w-full h-full object-cover" />
           ) : (
             <span className="text-2xl font-cinzel text-gold-bright drop-shadow-md">{name.substring(0, 1).toUpperCase()}</span>
           )}

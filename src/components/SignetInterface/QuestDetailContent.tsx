@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Quest } from '../../services/quests.service';
 import { useQuestsStore } from '../../store/quests';
+import { AssetImage } from '../AssetImage';
 
 interface QuestDetailContentProps {
   quest: Quest;
@@ -69,7 +70,7 @@ export function QuestDetailContent({
         {quest.image_url ? (
           <>
             <div className="absolute inset-0 bg-black/60" style={{ backgroundImage: `url(${quest.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.15 }} />
-            <img src={quest.image_url} alt="" className="relative z-10 w-full h-full object-cover opacity-60" />
+            <AssetImage src={quest.image_url} alt="" className="relative z-10 w-full h-full object-cover opacity-60" />
           </>
         ) : (
           <Scroll size={48} className="text-gold-DEFAULT/10 relative z-10" />

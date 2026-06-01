@@ -3,6 +3,7 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useCharactersStore } from '../../store/characters';
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
+import { AssetImage } from '../AssetImage';
 
 interface Player {
   peer_id: string;
@@ -81,7 +82,7 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
           
           <div className="w-12 h-12 rounded-full bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 flex items-center justify-center text-gold-bright text-lg font-cinzel font-black shadow-[0_0_20px_rgba(212,175,55,0.15)] group-hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] transition-all overflow-hidden">
             {selfChar?.image_url ? (
-                <img src={selfChar.image_url} alt="" className="w-full h-full object-cover" />
+                <AssetImage src={selfChar.image_url} alt="" className="w-full h-full object-cover" />
             ) : (
                 user?.pseudo.substring(0, 1).toUpperCase() || 'M'
             )}
@@ -138,7 +139,7 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
               <div className="relative ml-2">
                 <div className="w-9 h-9 rounded-full bg-[#0D0D0F]/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/90 text-sm font-cinzel group-hover:border-white/40 group-hover:text-white transition-all shadow-[0_2px_10px_rgba(0,0,0,0.5)] overflow-hidden">
                   {char?.image_url ? (
-                      <img src={char.image_url} alt="" className="w-full h-full object-cover" />
+                      <AssetImage src={char.image_url} alt="" className="w-full h-full object-cover" />
                   ) : (
                       initial
                   )}

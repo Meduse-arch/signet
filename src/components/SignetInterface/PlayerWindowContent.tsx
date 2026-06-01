@@ -7,6 +7,7 @@ import { usePeer } from '../../hooks/usePeer';
 import { Shield, User, ChevronRight, Ghost, Settings, Plus, Package } from 'lucide-react';
 import { Character, updateSessionCharacter } from '../../services/characters.service';
 import { CreateCharacterModal } from '../CreateCharacterModal';
+import { AssetImage } from '../AssetImage';
 
 interface Player {
   peer_id: string;
@@ -120,7 +121,7 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
                 <div className="relative">
                   <div className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center overflow-hidden bg-black transition-colors ${isSelf ? 'border-gold-DEFAULT' : 'border-white/10 group-hover:border-gold-DEFAULT/40'}`}>
                     {char?.image_url ? (
-                      <img src={char.image_url} alt="" className="w-full h-full object-cover" />
+                      <AssetImage src={char.image_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <User className={isSelf ? 'text-gold-DEFAULT' : 'text-white/60'} size={24} />
                     )}

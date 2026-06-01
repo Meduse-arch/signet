@@ -9,6 +9,7 @@ import { addSessionCharacter } from '../../services/characters.service';
 import { ItemDetailContent } from './ItemDetailContent';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { ItemCreationModal } from './ItemCreationModal';
+import { AssetImage } from '../AssetImage';
 
 interface InventoryWindowContentProps {
   sessionId: string;
@@ -306,7 +307,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                     >
                         <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center relative overflow-hidden shrink-0 shadow-inner">
                         {item.image_url ? (
-                            <img src={item.image_url} alt="" className={`w-full h-full object-contain p-1 ${item.equipped ? 'opacity-100' : 'opacity-40 group-hover:opacity-60 transition-opacity'}`} />
+                            <AssetImage src={item.image_url} alt="" className={`w-full h-full object-contain p-1 ${item.equipped ? 'opacity-100' : 'opacity-40 group-hover:opacity-60 transition-opacity'}`} />
                         ) : (
                             <Icon size={18} className={item.equipped ? 'text-gold-DEFAULT' : 'text-white/10 group-hover:text-white/60'} />
                         )}
@@ -403,7 +404,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                     >
                         <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center relative overflow-hidden shrink-0 shadow-inner">
                         {item.image_url ? (
-                            <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-40 group-hover:opacity-60 transition-opacity" />
+                            <AssetImage src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-40 group-hover:opacity-60 transition-opacity" />
                         ) : (
                             <Icon size={18} className="text-white/10 group-hover:text-white/60" />
                         )}
