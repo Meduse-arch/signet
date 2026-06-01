@@ -118,6 +118,7 @@ const myCharacter = useMemo(() => {
 
 if (!myCharacter) {
   if (user?.role && user.role >= SecurityLevel.MJ) {
+     if (!controlledCharacterId) return null;
      return (
        <div className="fixed bottom-10 left-10 flex items-center gap-4 animate-in slide-in-from-left duration-700 pointer-events-auto">
          <div 
