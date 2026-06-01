@@ -422,7 +422,7 @@ export function CreateCharacterModal({
               </div>
             </div>
 
-            {/* Colonne Droite: Prévisualisation des Vitalités */}
+            {/* Colonne Droite: Prévisualisation des Ressources */}
             <div className="space-y-6">
                <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 tracking-[0.2em] uppercase border-b border-gold-DEFAULT/10 pb-2 text-center">Énergie Vitale Dérivée</h3>
                
@@ -443,7 +443,7 @@ export function CreateCharacterModal({
 
                <div className="p-4 bg-gold-DEFAULT/5 border border-dashed border-gold-DEFAULT/20 rounded-2xl hidden sm:block">
                  <p className="text-xs text-gold-DEFAULT/50 font-serif italic leading-relaxed text-center">
-                    "Chaque rune que vous maîtrisez résonne avec votre essence. Définissez votre chemin à travers l'Archive."
+                    "Chaque rune que vous skillz résonne avec votre essence. Définissez votre chemin à travers l'Archive."
                  </p>
                </div>
             </div>

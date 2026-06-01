@@ -9,6 +9,7 @@ export interface Character {
   image_url?: string;
   inventory?: any[];
   custom_skills?: any[];
+  quests?: any[];
   type?: 'Joueur' | 'PNJ' | 'Monstre' | 'Boss';
   is_template?: boolean;
 }
@@ -39,11 +40,12 @@ export async function updateSessionCharacter(
   inventory?: any[],
   custom_skills?: any[],
   type?: string,
-  is_template?: boolean
+  is_template?: boolean,
+  quests?: any[]
 ): Promise<void> {
   if (window.electronAPI) {
     console.log(`[CharactersService] Updating character in DB: ${name}`);
-    await window.electronAPI.updateCharacter(sessionId, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template);
+    await window.electronAPI.updateCharacter(sessionId, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template, quests);
   }
 }
 

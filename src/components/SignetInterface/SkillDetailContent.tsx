@@ -44,7 +44,7 @@ export function SkillDetailContent({
   if (!skill) return (
     <div className="flex flex-col items-center justify-center h-full opacity-40 py-20">
       <Zap size={64} className="mb-4 text-gold-DEFAULT" />
-      <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">Sélectionnez une maîtrise</span>
+      <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">Sélectionnez une skill</span>
     </div>
   );
 
@@ -68,7 +68,7 @@ export function SkillDetailContent({
       case 'active': return 'Active';
       case 'passive_auto': return 'Passif';
       case 'passive_toggle': return 'Bascule';
-      default: return 'Maîtrise';
+      default: return 'Skill';
     }
   };
 
@@ -185,7 +185,7 @@ export function SkillDetailContent({
                  {skill.condition_type && (
                    <div className="p-2.5 rounded-xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/10">
                       <p className="text-[11px] font-cinzel text-gold-DEFAULT/50 uppercase leading-relaxed text-center tracking-wider">
-                         Requiert {skill.condition_type === 'item' ? 'relique' : skill.condition_type === 'skill' ? 'maîtrise' : 'relique & maîtrise'}
+                         Requiert {skill.condition_type === 'item' ? 'relique' : skill.condition_type === 'skill' ? 'skill' : 'relique & skill'}
                          {skill.condition_tags && skill.condition_tags.length > 0 && ` [${skill.condition_tags.join(', ')}]`}
                       </p>
                    </div>

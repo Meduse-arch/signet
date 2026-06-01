@@ -996,7 +996,7 @@ export function CharacterSheetContent({
           <div className="flex gap-2 p-2 h-[160px] overflow-hidden">
             <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs" variant="popup" />
             <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Ressources" variant="popup" />
-            <SnapColumn items={reactiveSkills} itemsPerPage={itemsPerPage} renderItem={renderSkill} label="Maîtrises" variant="popup" />
+            <SnapColumn items={reactiveSkills} itemsPerPage={itemsPerPage} renderItem={renderSkill} label="Skills" variant="popup" />
           </div>
         </div>
       </>
@@ -1039,7 +1039,7 @@ export function CharacterSheetContent({
         <div className="flex-1 flex gap-4 min-h-0">
           <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs" variant="window" />
           <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Ressources" variant="window" />
-          <SnapColumn items={reactiveSkills} itemsPerPage={itemsPerPage} renderItem={renderSkill} label="Maîtrises" variant="window" />
+          <SnapColumn items={reactiveSkills} itemsPerPage={itemsPerPage} renderItem={renderSkill} label="Skills" variant="window" />
         </div>
       </div>
     </>

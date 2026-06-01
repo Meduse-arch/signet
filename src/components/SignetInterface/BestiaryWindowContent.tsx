@@ -114,7 +114,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
       user_id: undefined,
       type: 'PNJ'
     });
-    setCreationMode('manual');
+    setCreationMode(session?.settings?.sheetMode || 'roll');
     setShowCreateModal(true);
     setShowTemplateSelector(false);
   };
@@ -415,7 +415,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                   image_url: '',
                   type: 'PNJ'
                 });
-                setCreationMode('manual');
+                setCreationMode(session?.settings?.sheetMode || 'roll');
                 setShowCreateModal(true);
                 setShowTemplateSelector(false);
               }}

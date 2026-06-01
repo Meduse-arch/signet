@@ -28,6 +28,7 @@ export interface Character {
   image_url?: string;
   inventory?: any[];
   custom_skills?: any[];
+  quests?: any[];
 }
 
 export interface MapItem {
@@ -49,7 +50,7 @@ export interface ElectronAPI {
   getCharacters: (sessionId: string) => Promise<Character[]>;
   addCharacter: (sessionId: string, character: Character) => Promise<void>;
   removeCharacter: (sessionId: string, id: string) => Promise<void>;
-  updateCharacter: (sessionId: string, id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => Promise<void>;
+  updateCharacter: (sessionId: string, id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean, quests?: any[]) => Promise<void>;
   updateCharacterBars: (sessionId: string, id: string, bars: Record<string, number>) => Promise<void>;
   getItems: (sessionId: string) => Promise<any[]>;
   addItem: (sessionId: string, item: any) => Promise<boolean>;
@@ -94,7 +95,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCharacters: (sessionId: string) => ipcRenderer.invoke('characters:getAll', sessionId),
   addCharacter: (sessionId: string, character: Character) => ipcRenderer.invoke('characters:add', sessionId, character),
   removeCharacter: (sessionId: string, id: string) => ipcRenderer.invoke('characters:remove', sessionId, id),
-  updateCharacter: (sessionId: string, id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean) => ipcRenderer.invoke('characters:update', sessionId, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template),
+  updateCharacter: (sessionId: string, id: string, name: string, stats: Record<string, number>, skills: Record<string, number>, bars: Record<string, number>, imageUrl?: string, inventory?: any[], custom_skills?: any[], type?: string, is_template?: boolean, quests?: any[]) => ipcRenderer.invoke('characters:update', sessionId, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template, quests),
   updateCharacterBars: (sessionId: string, id: string, bars: Record<string, number>) => ipcRenderer.invoke('characters:updateBars', sessionId, id, bars),
   getItems: (sessionId: string) => ipcRenderer.invoke('items:getAll', sessionId),
   addItem: (sessionId: string, item: any) => ipcRenderer.invoke('items:add', sessionId, item),

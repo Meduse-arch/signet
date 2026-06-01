@@ -97,7 +97,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
   const handleGiveSkillToCharacter = async (skill: any) => {
     if (!character || !isMJ) return;
     if (character.custom_skills?.some((s: any) => s.id === skill.id)) {
-        alert("Ce voyageur maîtrise déjà cet arcane.");
+        alert("Ce voyageur skill déjà cet arcane.");
         return;
     }
     const updatedChar = {
@@ -122,7 +122,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
   };
 
   const handleDeleteSkillTemplate = async (id: string) => {
-    if (!isMJ || !window.confirm("Supprimer cette maîtrise du codex ?")) return;
+    if (!isMJ || !window.confirm("Supprimer cette skill du codex ?")) return;
     await removeSkill(sessionId, id);
     if (selectedSkill?.id === id) setSelectedSkill(null);
   };
@@ -156,7 +156,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
       <SkillCreationModal sessionId={sessionId} />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* ─── LISTE DES MAÎTRISES (Panneau Gauche) ─── */}
+        {/* ─── LISTE DES SKILLS (Panneau Gauche) ─── */}
         <div className={`flex-1 flex flex-col p-4 gap-4 min-w-0 transition-all duration-500 ${isWideView && selectedSkill ? 'border-r border-white/5 max-w-[45%]' : 'max-w-full'}`}>
             {isMJ && character && (
             <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5 shrink-0 shadow-inner">
@@ -350,7 +350,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
             {selectedSkill ? (
               <div className="h-full flex flex-col animate-in slide-in-from-right-4 duration-500 relative">
                  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
-                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails de la Maîtrise</span>
+                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails de la Skill</span>
                     <button onClick={() => setSelectedSkill(null)} className="p-1 rounded hover:bg-white/5 text-white/60 hover:text-white transition-colors">
                         <X size={14} />
                     </button>
@@ -367,7 +367,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
             ) : (
               <div className="h-full flex flex-col items-center justify-center opacity-10 pointer-events-none">
                  <Sparkles size={64} className="mb-4 text-gold-DEFAULT" />
-                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">Codex des Maîtrises</span>
+                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">Codex des Skills</span>
               </div>
             )}
           </div>

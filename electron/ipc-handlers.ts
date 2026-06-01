@@ -32,6 +32,7 @@ function getSessionDb(inputId: string): Database.Database {
 
   if (!initializedDbs.has(dbPath)) {
     try {
+      try { db.exec("ALTER TABLE characters ADD COLUMN quests TEXT;"); } catch(e) {} 
       db.exec(`
         CREATE TABLE IF NOT EXISTS players (
           peer_id TEXT PRIMARY KEY,
@@ -137,7 +138,8 @@ function getSessionDb(inputId: string): Database.Database {
       tables.forEach(t => {
         const info = db.prepare(`PRAGMA table_info(${t})`).all() as any[];
         if (!info.some(col => col.name === 'session_id')) {
-          db.exec(`ALTER TABLE ${t} ADD COLUMN session_id TEXT`);
+          try { db.exec("ALTER TABLE characters ADD COLUMN quests TEXT;"); } catch(e) {} 
+      db.exec(`ALTER TABLE ${t} ADD COLUMN session_id TEXT`);
         }
       });
 
@@ -372,11 +374,11 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     }
   });
 
-  ipcMain.handle('characters:update', (_, sessionId, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template) => {
+  ipcMain.handle('characters:update', (_, sessionId, id, name, stats, skills, bars, imageUrl, inventory, custom_skills, type, is_template, quests) => {
     try {
       const db = getSessionDb(sessionId);
-      db.prepare('UPDATE characters SET name = ?, stats = ?, skills = ?, bars = ?, image_url = ?, inventory = ?, custom_skills = ?, type = ?, is_template = ? WHERE id = ?')
-        .run(name, JSON.stringify(stats), JSON.stringify(skills || {}), JSON.stringify(bars), imageUrl || null, JSON.stringify(inventory || []), JSON.stringify(custom_skills || []), type || null, is_template ? 1 : 0, id);
+      db.prepare('UPDATE characters SET name = ?, stats = ?, skills = ?, bars = ?, image_url = ?, inventory = ?, custom_skills = ?, type = ?, is_template = ?, quests = ? WHERE id = ?')
+        .run(name, JSON.stringify(stats), JSON.stringify(skills || {}), JSON.stringify(bars), imageUrl || null, JSON.stringify(inventory || []), JSON.stringify(custom_skills || []), type || null, is_template ? 1 : 0, JSON.stringify(quests || []), id);
     } catch (e) {
       console.error('[DB] characters:update error', e);
     }
