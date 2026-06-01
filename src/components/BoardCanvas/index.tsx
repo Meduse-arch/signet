@@ -7,6 +7,7 @@ import { Character } from '../../services/characters.service';
 import { useMapStore } from '../../store/map';
 import { mapSyncService } from '../../services/map-sync.service';
 import { BrowserImageCompressor } from '../../services/browser-image-compressor';
+import { MapTransitionOverlay } from './MapTransitionOverlay';
 
 export interface MapItem {
   id: string;
@@ -26,7 +27,7 @@ interface BoardCanvasProps {
 
 export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, characters }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
+  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
   const { isHost } = usePeersStore();
   const { onData, broadcast, sendTo } = usePeer();
   const { user } = useAuthStore();
@@ -363,20 +364,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
   return (
     <div className="relative w-full h-full overflow-hidden">
       <div ref={containerRef} className="absolute inset-0 z-0" />
-      
-      {loadingProgress?.active && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
-          <div className="flex flex-col items-center gap-4 bg-[#1a1a1a]/90 p-8 rounded-xl border border-[#d4af37] shadow-2xl">
-            <div className="w-16 h-16 border-4 border-[#d4af37]/20 border-t-[#d4af37] rounded-full animate-spin"></div>
-            <p className="text-white font-cinzel text-xl">
-              Summoning map... {Math.round((loadingProgress.loaded / loadingProgress.total) * 100) || 0}%
-            </p>
-            <p className="text-gray-300 text-sm">
-              ({loadingProgress.loaded}/{loadingProgress.total} fragments)
-            </p>
-          </div>
-        </div>
-      )}
+      <MapTransitionOverlay progress={loadingProgress} onRetry={retryLoad} />
     </div>
   );
 }

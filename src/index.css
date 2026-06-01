@@ -155,3 +155,31 @@
 .animate-rune-pulse {
   animation: rune-pulse 4s infinite ease-in-out;
 }
+
+/* --- Fog Animations --- */
+@keyframes fog-drift-x {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes fog-drift-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3%); }
+}
+
+@keyframes fog-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.animate-fog-1 {
+  animation: fog-drift-x 60s linear infinite, fog-drift-y 30s ease-in-out infinite, fog-pulse 10s ease-in-out infinite;
+}
+
+.animate-fog-2 {
+  animation: fog-drift-x 40s linear infinite reverse, fog-drift-y 20s ease-in-out infinite, fog-pulse 8s ease-in-out infinite;
+}
+
+.animate-fog-3 {
+  animation: fog-drift-x 80s linear infinite, fog-pulse 15s ease-in-out infinite;
+}
