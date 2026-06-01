@@ -52,7 +52,7 @@ export function ItemDetailContent({
   }, [initialItem, items, character?.inventory]);
 
   if (!item) return (
-    <div className="flex flex-col items-center justify-center h-full opacity-20 py-20">
+    <div className="flex flex-col items-center justify-center h-full opacity-40 py-20">
       <Package size={64} className="mb-4 text-gold-DEFAULT" />
       <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">Sélectionnez une relique</span>
     </div>
@@ -65,6 +65,11 @@ export function ItemDetailContent({
     if (m.target === 'stat') return DEFAULT_STATS.find(s => s.id === m.targetId)?.name || m.targetId;
     return (DEFAULT_BARS.find(b => b.id === m.targetId)?.name || m.targetId) + (m.targetProperty === 'max' ? ' Max' : '');
   };
+
+  const possessedCount = React.useMemo(() => {
+    if (!item || !character?.inventory) return 0;
+    return character.inventory.filter((i: any) => i.id === item.id).length;
+  }, [item, character?.inventory]);
 
   return (
     <div className="flex flex-col h-full bg-[#0D0D0F]">
@@ -92,9 +97,9 @@ export function ItemDetailContent({
               <span className="px-1.5 py-0.5 rounded bg-gold-DEFAULT/10 text-gold-bright text-[6px] font-cinzel font-black tracking-widest uppercase border border-gold-DEFAULT/20">
                 {item.category}
               </span>
-              {item.quantity > 1 && (
-                <span className="text-gold-bright/60 font-cinzel font-black text-[8px]">
-                  x{item.quantity}
+              {possessedCount > 0 && (
+                <span className="px-2 py-0.5 rounded bg-gold-DEFAULT text-black font-cinzel font-black text-xs shadow-lg border border-black/10">
+                  x{possessedCount}
                 </span>
               )}
            </div>
@@ -109,7 +114,7 @@ export function ItemDetailContent({
         
         {/* BLOCK DESCRIPTION (Scrollable, plus compact) */}
         <div className="shrink-0 px-4 py-3">
-           <div className="flex items-center gap-2 mb-2 opacity-20">
+           <div className="flex items-center gap-2 mb-2 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
               <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Chroniques</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
@@ -123,7 +128,7 @@ export function ItemDetailContent({
 
         {/* BLOCK MODIFICATEURS (Flexible, prend le reste) ─── */}
         <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
-           <div className="flex items-center gap-2 mb-3 opacity-20">
+           <div className="flex items-center gap-2 mb-3 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
               <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Arithmancie</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
@@ -140,12 +145,12 @@ export function ItemDetailContent({
                           className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 transition-all hover:border-gold-DEFAULT/20"
                         >
                           <div className="flex flex-col">
-                            <span className="text-[8px] font-cinzel font-black text-white/60 uppercase tracking-widest">{getTargetName(m)}</span>
+                            <span className="text-xs font-cinzel font-black text-white/60 uppercase tracking-widest">{getTargetName(m)}</span>
                             <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase">
                               {m.target === 'stat' ? 'Attribut' : 'Ressource'}
                             </span>
                           </div>
-                          <span className="text-[10px] font-cinzel font-black text-gold-bright">
+                          <span className="text-xs font-cinzel font-black text-gold-bright">
                             {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`}
                           </span>
                         </div>
@@ -172,14 +177,14 @@ export function ItemDetailContent({
                 {isConsumable ? (
                   <button 
                     onClick={onUse}
-                    className="w-full py-2.5 rounded-xl font-cinzel font-black text-[8px] tracking-[0.2em] transition-all flex items-center justify-center gap-3 border bg-gold-bright text-black border-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]"
+                    className="w-full py-2.5 rounded-xl font-cinzel font-black text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 border bg-gold-bright text-black border-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]"
                   >
                     <Zap size={12} /> UTILISER
                   </button>
                 ) : onToggleEquip && (
                   <button 
                     onClick={onToggleEquip}
-                    className={`w-full py-2.5 rounded-xl font-cinzel font-black text-[8px] tracking-[0.2em] transition-all flex items-center justify-center gap-3 border ${
+                    className={`w-full py-2.5 rounded-xl font-cinzel font-black text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 border ${
                       isEquipped 
                       ? 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20' 
                       : 'bg-gold-DEFAULT text-black border-gold-DEFAULT hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]'
@@ -198,7 +203,7 @@ export function ItemDetailContent({
                 {onGive && character && (
                   <button 
                     onClick={onGive}
-                    className="flex-1 py-2 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all font-cinzel text-[7px] font-black uppercase tracking-widest"
+                    className="flex-1 py-2 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all font-cinzel text-[11px] font-black uppercase tracking-widest"
                   >
                     Offrir
                   </button>
@@ -206,7 +211,7 @@ export function ItemDetailContent({
                 {onEdit && (
                   <button 
                     onClick={onEdit}
-                    className="flex-1 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all font-cinzel text-[7px] font-black uppercase tracking-widest"
+                    className="flex-1 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all font-cinzel text-[11px] font-black uppercase tracking-widest"
                   >
                     Modifier
                   </button>

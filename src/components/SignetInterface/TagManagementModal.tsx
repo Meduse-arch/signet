@@ -46,7 +46,7 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
           <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-widest flex items-center gap-2">
             <Palette size={14} /> ARCHIVES DES SIGNES
           </h3>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
             <X size={18} />
           </button>
         </header>
@@ -59,7 +59,7 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
                 value={newName} 
                 onChange={e => setNewName(e.target.value)} 
                 placeholder="Nom du signe..."
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/20 focus:border-gold-DEFAULT/50 outline-none transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/60 focus:border-gold-DEFAULT/50 outline-none transition-all"
               />
             </div>
             <input 
@@ -81,18 +81,18 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
               <div key={tag.id} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 group">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: tag.color, color: tag.color }} />
-                  <span className="text-[10px] font-cinzel font-black uppercase text-white/80 tracking-widest">{tag.name}</span>
+                  <span className="text-xs font-cinzel font-black uppercase text-white/80 tracking-widest">{tag.name}</span>
                 </div>
                 <button 
                   onClick={() => handleDelete(tag.id)}
-                  className="p-1 text-white/10 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                  className="p-1 text-white/60 hover:text-red-500 opacity-30 group-hover:opacity-100 transition-all"
                 >
                   <Trash2 size={14} />
                 </button>
               </div>
             ))}
             {tags.length === 0 && (
-              <p className="text-[10px] font-garamond italic text-white/20 text-center py-4">Aucun signe gravé...</p>
+              <p className="text-xs font-garamond italic text-white/60 text-center py-4">Aucun signe gravé...</p>
             )}
           </div>
         </div>

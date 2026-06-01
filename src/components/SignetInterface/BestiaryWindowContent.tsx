@@ -206,12 +206,12 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
             placeholder="RECHERCHER DANS LE BESTIAIRE..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl py-2.5 pl-10 pr-4 text-[10px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-all uppercase tracking-widest shadow-inner"
+            className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl py-2.5 pl-10 pr-4 text-xs font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/40 focus:outline-none focus:border-gold-DEFAULT/50 transition-all uppercase tracking-widest shadow-inner"
           />
         </div>
         <button 
           onClick={() => setShowTemplateSelector(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest shadow-lg group"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-xs font-black uppercase tracking-widest shadow-lg group"
         >
           <Plus size={14} className="group-hover:rotate-90 transition-transform" />
           Créer
@@ -230,7 +230,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-cinzel text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-gold-DEFAULT/20 text-gold-bright shadow-lg border border-gold-DEFAULT/30' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-cinzel text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-gold-DEFAULT/20 text-gold-bright shadow-lg border border-gold-DEFAULT/30' : 'text-white/60 hover:text-white/60 hover:bg-white/5'}`}
           >
             <tab.icon size={12} />
             <span className="hidden sm:inline">{tab.label}</span>
@@ -249,7 +249,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                 <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                     <Plus size={24} className="text-purple-400" />
                 </div>
-                <span className="font-cinzel text-[10px] font-black uppercase tracking-widest text-purple-400">Nouveau Modèle</span>
+                <span className="font-cinzel text-xs font-black uppercase tracking-widest text-purple-400">Nouveau Modèle</span>
             </button>
 
             {templates.map(template => (
@@ -264,13 +264,13 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                   </div>
                   <div className="flex flex-col">
                     <span className="font-cinzel font-black text-xs uppercase tracking-widest text-purple-300">{template.name}</span>
-                    <span className="text-[9px] text-purple-400/60 uppercase font-mono">Modèle Neutre</span>
+                    <span className="text-[11px] text-purple-400/60 uppercase font-mono">Modèle Neutre</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={() => handleEditNPC(template)}
-                    className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white transition-colors"
+                    className="p-2 rounded-lg bg-white/5 text-white/60 hover:text-white transition-colors"
                   >
                     <Settings size={16} />
                   </button>
@@ -308,7 +308,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                     <div className="flex flex-col">
                       <span className="font-cinzel font-black text-xs uppercase tracking-widest text-gold-bright/80 group-hover:text-gold-bright transition-colors">{npc.name}</span>
                       <div className="flex items-center gap-2">
-                         {npc.type === 'Joueur' && <span className="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded uppercase font-black tracking-widest border border-blue-500/30">Joueur</span>}
+                         {npc.type === 'Joueur' && <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded uppercase font-black tracking-widest border border-blue-500/30">Joueur</span>}
                          <div className="flex gap-2">
                              {Object.entries(npc.bars).filter(([key]) => !key.startsWith('max')).map(([key, val]) => {
                                  const barDef = session?.settings?.bars?.find((b: any) => b.id === key) || DEFAULT_BARS.find((b: any) => b.id === key);
@@ -316,7 +316,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                                  return (
                                      <div key={key} className="flex items-center gap-1">
                                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: barDef.color }} />
-                                         <span className="text-[9px] font-mono text-white/40">{val}</span>
+                                         <span className="text-[11px] font-mono text-white/60">{val}</span>
                                      </div>
                                  );
                              })}
@@ -325,13 +325,13 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2 opacity-30 group-hover:opacity-100 transition-opacity">
                     <button 
                       onClick={(e) => { 
                         e.stopPropagation(); 
                         handleToggleToken(npc.id);
                       }}
-                      className={`p-2 rounded-lg transition-all ${tokenStatus[npc.id] ? 'bg-gold-DEFAULT text-black' : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white'}`}
+                      className={`p-2 rounded-lg transition-all ${tokenStatus[npc.id] ? 'bg-gold-DEFAULT text-black' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'}`}
                       title={tokenStatus[npc.id] ? "Retirer de la carte" : "Placer sur la carte"}
                     >
                       <Plus size={16} className={`transition-transform duration-500 ${tokenStatus[npc.id] ? 'rotate-45' : ''}`} />
@@ -341,14 +341,14 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                         e.stopPropagation();
                         setCharacterManagement(npc.id);
                       }}
-                      className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                      className="p-2 rounded-lg bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
                       title="Configurer l'entité"
                     >
                       <Settings size={16} />
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); setPnjControle(sessionId, controlledCharacterId === npc.id ? null : npc.id); }}
-                      className={`p-2 rounded-lg transition-all ${controlledCharacterId === npc.id ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'bg-white/5 text-white/40 hover:bg-purple-500/20 hover:text-purple-400'}`}
+                      className={`p-2 rounded-lg transition-all ${controlledCharacterId === npc.id ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'bg-white/5 text-white/60 hover:bg-purple-500/20 hover:text-purple-400'}`}
                       title={controlledCharacterId === npc.id ? "Libérer l'entité" : "Prendre possession"}
                     >
                       <Zap size={16} />
@@ -373,9 +373,9 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
             ))}
 
             {filteredPNJs.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 opacity-20 bg-black/20 rounded-2xl border border-dashed border-white/5">
+              <div className="flex flex-col items-center justify-center py-20 opacity-40 bg-black/20 rounded-2xl border border-dashed border-white/5">
                 <Search size={48} className="mb-4 text-gold-DEFAULT" />
-                <span className="font-cinzel text-[10px] uppercase tracking-widest">AUCUNE ENTITÉ TROUVÉE</span>
+                <span className="font-cinzel text-xs uppercase tracking-widest">AUCUNE ENTITÉ TROUVÉE</span>
               </div>
             )}
           </div>
@@ -388,9 +388,9 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
           <div className="flex items-center justify-between mb-8">
             <div className="flex flex-col">
               <h3 className="text-gold-bright font-cinzel font-black uppercase tracking-widest text-sm">Créer une Entité</h3>
-              <p className="text-[9px] text-gold-DEFAULT/40 uppercase tracking-wider font-mono">Choisissez un modèle ou commencez de zéro</p>
+              <p className="text-[11px] text-gold-DEFAULT/40 uppercase tracking-wider font-mono">Choisissez un modèle ou commencez de zéro</p>
             </div>
-            <button onClick={() => setShowTemplateSelector(false)} className="p-2 hover:bg-white/5 rounded-full text-white/40 transition-colors">
+            <button onClick={() => setShowTemplateSelector(false)} className="p-2 hover:bg-white/5 rounded-full text-white/60 transition-colors">
               <X size={20} />
             </button>
           </div>
@@ -419,7 +419,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
               </div>
               <div className="text-center">
                 <span className="block font-cinzel font-black text-xs uppercase tracking-[0.2em] text-gold-bright">Page Blanche</span>
-                <span className="text-[8px] text-gold-DEFAULT/40 uppercase font-mono mt-1 block">Création manuelle complète</span>
+                <span className="text-xs text-gold-DEFAULT/40 uppercase font-mono mt-1 block">Création manuelle complète</span>
               </div>
             </button>
 
@@ -437,8 +437,8 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                   )}
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="font-cinzel font-black text-[10px] uppercase tracking-widest text-purple-300 truncate">{t.name}</span>
-                  <span className="text-[8px] text-purple-400/40 uppercase font-mono mt-0.5">Utiliser ce modèle</span>
+                  <span className="font-cinzel font-black text-xs uppercase tracking-widest text-purple-300 truncate">{t.name}</span>
+                  <span className="text-xs text-purple-400/40 uppercase font-mono mt-0.5">Utiliser ce modèle</span>
                 </div>
                 <ChevronRight size={16} className="ml-auto text-purple-500/40 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -446,8 +446,8 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
           </div>
 
           {templates.length === 0 && (
-            <div className="mt-12 text-center py-8 opacity-20">
-                <p className="font-cinzel text-[10px] tracking-widest uppercase">AUCUN MODÈLE DISPONIBLE</p>
+            <div className="mt-12 text-center py-8 opacity-40">
+                <p className="font-cinzel text-xs tracking-widest uppercase">AUCUN MODÈLE DISPONIBLE</p>
             </div>
           )}
         </div>

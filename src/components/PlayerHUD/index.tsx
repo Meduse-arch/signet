@@ -111,12 +111,12 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
           <div className="flex items-center gap-2">
             <span className="text-sm text-gold-DEFAULT font-cinzel tracking-widest uppercase drop-shadow-md">{user?.pseudo}</span>
             {isHost && (
-              <span className="text-[9px] bg-gold-DEFAULT text-black px-1.5 py-0.5 rounded-sm font-black uppercase tracking-widest shadow-[0_0_10px_rgba(212,175,55,0.4)]">MJ</span>
+              <span className="text-[11px] bg-gold-DEFAULT text-black px-1.5 py-0.5 rounded-sm font-black uppercase tracking-widest shadow-[0_0_10px_rgba(212,175,55,0.4)]">MJ</span>
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <div className="h-[1px] w-8 bg-gold-DEFAULT/50" />
-            <span className="text-[10px] text-white/70 font-sans tracking-widest drop-shadow-md">
+            <span className="text-xs text-white/70 font-sans tracking-widest drop-shadow-md">
               ID: {peerId?.split('-').slice(-1)[0] || 'INIT'} • SEC: {user?.role ?? 0}
             </span>
           </div>
@@ -169,7 +169,7 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-white/90 font-cinzel tracking-wider group-hover:text-white transition-colors drop-shadow-md">{p.pseudo}</span>
                   {(p.role !== undefined || p.pseudo === 'MJ') && (
-                    <span className="text-[8px] border border-white/30 text-white/80 px-1 py-0.5 rounded-sm font-black uppercase drop-shadow-md">
+                    <span className="text-xs border border-white/30 text-white/80 px-1 py-0.5 rounded-sm font-black uppercase drop-shadow-md">
                         {p.role !== undefined ? `SEC: ${p.role}` : 'MJ'}
                     </span>
                   )}

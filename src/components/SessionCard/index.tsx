@@ -45,7 +45,7 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
         )}
 
         {/* Boutons d'action */}
-        <div className="absolute top-3 right-3 flex gap-2 z-20 opacity-0 group-hover:opacity-100 transition-all translate-y-[-10px] group-hover:translate-y-0 duration-300">
+        <div className="absolute top-3 right-3 flex gap-2 z-20 opacity-40 group-hover:opacity-100 transition-all translate-y-[-10px] group-hover:translate-y-0 duration-300">
           {onEdit && (
             <button
               onClick={(e) => {
@@ -77,7 +77,7 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
         <div className="flex items-center gap-2 mb-2">
           {session.isSummoned && (
             <div className="px-1.5 py-0.5 rounded-md bg-gold-DEFAULT/10 border border-gold-DEFAULT/40">
-              <span className="text-[7px] font-black text-gold-bright uppercase tracking-widest">Invoquée</span>
+              <span className="text-[11px] font-black text-gold-bright uppercase tracking-widest">Invoquée</span>
             </div>
           )}
           <h3 className="text-xs font-cinzel text-white/90 tracking-widest truncate group-hover:text-gold-bright transition-colors">
@@ -85,7 +85,7 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
           </h3>
         </div>
         
-        <div className="flex justify-between items-center text-[9px] font-medium tracking-wider">
+        <div className="flex justify-between items-center text-[11px] font-medium tracking-wider">
           <span className="text-gold-muted uppercase opacity-70">{session.system || 'Arcane Inconnue'}</span>
           <span className="text-white/70 italic font-serif">
             {formatRelativeDate(session.lastPlayed)}

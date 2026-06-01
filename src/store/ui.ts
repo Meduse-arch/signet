@@ -9,6 +9,7 @@ interface UIState {
   itemToEdit: any | null;
   selectedItem: any | null;
   itemDetailOpen: boolean;
+  itemCreationCharacterId: string | null;
   
   // Characters
   characterManagementId: string | null;
@@ -45,6 +46,9 @@ interface UIState {
   setShowQuestCreateModal: (show: boolean, questToEdit?: any) => void;
   setSelectedQuest: (quest: any | null, openModal?: boolean) => void;
   setQuestDetailOpen: (open: boolean) => void;
+  // Search
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -56,6 +60,7 @@ export const useUIStore = create<UIState>((set) => ({
   itemToEdit: null,
   selectedItem: null,
   itemDetailOpen: false,
+  itemCreationCharacterId: null,
 
   characterManagementId: null,
 
@@ -69,6 +74,8 @@ export const useUIStore = create<UIState>((set) => ({
   questToEdit: null,
   selectedQuest: null,
   questDetailOpen: false,
+
+  searchQuery: '',
 
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -94,4 +101,6 @@ export const useUIStore = create<UIState>((set) => ({
   setShowQuestCreateModal: (show, questToEdit = null) => set({ showQuestCreateModal: show, questToEdit }),
   setSelectedQuest: (quest, openModal = true) => set({ selectedQuest: quest, questDetailOpen: quest ? openModal : false }),
   setQuestDetailOpen: (open) => set({ questDetailOpen: open }),
+  
+  setSearchQuery: (query) => set({ searchQuery: query }),
 }));

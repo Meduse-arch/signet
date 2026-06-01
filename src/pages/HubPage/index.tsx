@@ -273,8 +273,8 @@ export function HubPage({ onEnterSession }: HubPageProps) {
         onClose={() => { setShowCreateModal(false); setEditingSession(null); }}
         onSubmit={editingSession ? handleUpdateSession : handleCreateSession}
         initialData={editingSession || undefined}
-        title={editingSession ? "Altérer Archive" : "Nouvelle Archive"}
-        submitLabel={editingSession ? "Enregistrer" : "Invoquer"}
+        title={editingSession ? "Modifier la Session" : "Nouvelle Session"}
+        submitLabel={editingSession ? "Enregistrer" : "Créer"}
       />
       <KeyModal isOpen={showModal} onClose={() => setShowModal(false)} onJoin={(key) => { onEnterSession(key); setShowModal(false); }} />
     </div>

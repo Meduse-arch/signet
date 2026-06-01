@@ -158,16 +158,16 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
             </div>
             <div>
               <h3 className="text-2xl font-cinzel font-black text-white uppercase tracking-[0.3em] leading-none mb-2">
-                {itemCreationType === 'forge' ? "L'ARCHIVE DES VESTIGES" : "FORGER UN OBJET"}
+                {itemCreationType === 'forge' ? "CRÉER UN OBJET" : "AJOUTER UN OBJET"}
               </h3>
-              <p className="text-[10px] font-cinzel text-gold-DEFAULT/40 uppercase tracking-[0.4em]">
-                {itemCreationType === 'forge' ? "Codex de la Forge Éternelle" : "Inscription dans l'Essence du Héros"}
+              <p className="text-xs font-cinzel text-gold-DEFAULT/60 uppercase tracking-[0.4em]">
+                {itemCreationType === 'forge' ? "Forge d'objets — Archives" : "Ajouter à l'inventaire du personnage"}
               </p>
             </div>
           </div>
           <button 
             onClick={handleClose} 
-            className="p-3 rounded-full hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-all border border-transparent hover:border-red-500/20"
+            className="p-3 rounded-full hover:bg-red-500/10 text-white/60 hover:text-red-400 transition-all border border-transparent hover:border-red-500/20"
           >
             <X size={24} />
           </button>
@@ -181,42 +181,41 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
             {/* Colonne Gauche : Identité */}
             <div className="space-y-8">
                 <div className="flex flex-col gap-3">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                     <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> Dénomination
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                     <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> Nom de l'objet
                   </label>
                   <input 
                     type="text" 
                     placeholder="NOM DE L'ARTEFACT..." 
                     value={name} 
                     onChange={e => setName(e.target.value)} 
-                    className="bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-cinzel text-white placeholder:text-white/10 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner" 
+                    className="bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-cinzel text-white placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner" 
                     autoFocus 
                   />
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-[0.2em] ml-1">Nature & Essence</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1">Type d'objet</label>
+                  <select 
+                    value={category} 
+                    onChange={e => setCategory(e.target.value)}
+                    className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-xs font-cinzel text-white uppercase focus:border-gold-bright outline-none appearance-none cursor-pointer"
+                  >
                     {CATEGORIES.map(c => (
-                      <button 
-                        key={c.id} 
-                        onClick={() => setCategory(c.id)}
-                        className={`flex items-center justify-center gap-3 px-4 py-3 rounded-xl border font-cinzel text-[9px] font-black tracking-widest transition-all ${category === c.id ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT shadow-[0_0_15px_rgba(212,175,55,0.3)]' : 'bg-white/[0.03] border-white/5 text-white/30 hover:border-gold-DEFAULT/30 hover:text-white'}`}
-                      >
-                        <c.icon size={14} />
+                      <option key={c.id} value={c.id} className="bg-[#0D0D0F]">
                         {c.id.toUpperCase()}
-                      </button>
+                      </option>
                     ))}
-                  </div>
+                  </select>
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-[0.2em] ml-1">Chronique du Vestige</label>
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1">Description</label>
                   <textarea 
                     placeholder="Récitez ici la légende qui entoure cet artefact..." 
                     value={description} 
                     onChange={e => setDescription(e.target.value)} 
-                    className="bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/10 focus:border-gold-bright focus:bg-black/80 outline-none transition-all resize-none h-32 shadow-inner custom-scrollbar" 
+                    className="bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 outline-none transition-all resize-none h-32 shadow-inner custom-scrollbar" 
                   />
                 </div>
             </div>
@@ -224,7 +223,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
             {/* Colonne Droite : Apparence & Modificateurs */}
             <div className="space-y-8">
                 <div className="flex flex-col gap-4">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/50 uppercase tracking-[0.2em] ml-1">Sceau Visuel</label>
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1">Image</label>
                   <div className="flex gap-6 items-start">
                     <div className="w-24 h-24 rounded-3xl border-2 border-gold-DEFAULT/20 bg-black/40 flex items-center justify-center overflow-hidden shrink-0 shadow-2xl relative group">
                         {previewUrl ? (
@@ -241,7 +240,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                                 placeholder="URL OU IDENTIFIANT..." 
                                 value={imageUrl} 
                                 onChange={e => setImageUrl(e.target.value)} 
-                                className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-[10px] font-mono text-gold-bright/60 placeholder:text-white/10 focus:border-gold-bright outline-none transition-all" 
+                                className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-xs font-mono text-gold-bright/60 placeholder:text-white/30 focus:border-gold-bright outline-none transition-all" 
                             />
                             <button 
                                 onClick={() => fileInputRef.current?.click()}
@@ -271,8 +270,8 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                                 }}
                             />
                         </div>
-                        <p className="text-[8px] font-cinzel text-white/20 uppercase tracking-[0.2em] leading-relaxed">
-                          Utilisez une gravure locale pour la synchroniser instantanément avec tous les observateurs.
+                        <p className="text-xs font-cinzel text-white/60 uppercase tracking-[0.2em] leading-relaxed">
+                          Utilisez une image locale pour la synchroniser avec tous les joueurs.
                         </p>
                     </div>
                   </div>
@@ -280,12 +279,12 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
 
                 {/* Modifiers UI High Visibility */}
                 <div className="space-y-4">
-                    <div className="flex justify-between items-center border-b border-gold-DEFAULT/20 pb-3">
+                    <div className="flex justify-between items-center border-b border-gold-DEFAULT/30 pb-3">
                         <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-2">
-                            <Sparkles size={16} className="text-gold-bright animate-pulse" /> Enchantements
+                            <Sparkles size={16} className="text-gold-bright animate-pulse" /> Modificateurs de stats
                         </h3>
-                        <button onClick={addModifier} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all font-cinzel text-[9px] font-black tracking-widest shadow-lg">
-                            <Plus size={14} /> INVOQUER
+                        <button onClick={addModifier} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT text-black font-cinzel text-[11px] font-black tracking-widest border-2 border-gold-DEFAULT hover:bg-gold-bright transition-all">
+                            <Plus size={14} /> Ajouter
                         </button>
                     </div>
                     
@@ -296,7 +295,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                                     <select 
                                         value={m.target} 
                                         onChange={e => updateModifier(i, { target: e.target.value as any })}
-                                        className="flex-1 bg-black border border-gold-DEFAULT/30 rounded-xl px-3 py-2.5 text-[9px] text-gold-DEFAULT font-cinzel font-black outline-none appearance-none cursor-pointer text-center"
+                                        className="flex-1 bg-black border border-gold-DEFAULT/30 rounded-xl px-3 py-2.5 text-[11px] text-gold-DEFAULT font-cinzel font-black outline-none appearance-none cursor-pointer text-center"
                                     >
                                         <option value="stat">ATTRIBUT</option>
                                         <option value="bar">RESSOURCE</option>
@@ -304,7 +303,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                                     <select 
                                         value={m.targetId} 
                                         onChange={e => updateModifier(i, { targetId: e.target.value })}
-                                        className="flex-[2] bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[10px] text-white/80 font-cinzel font-bold outline-none appearance-none cursor-pointer"
+                                        className="flex-[2] bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white/80 font-cinzel font-bold outline-none appearance-none cursor-pointer"
                                     >
                                         {m.target === 'stat' ? (
                                             statDefs.map((s: any) => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)
@@ -318,7 +317,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                                     <select 
                                         value={m.mode} 
                                         onChange={e => updateModifier(i, { mode: e.target.value as any })}
-                                        className="flex-[2] bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[9px] text-white/40 font-cinzel outline-none appearance-none cursor-pointer text-center"
+                                        className="flex-[2] bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[11px] text-white/60 font-cinzel outline-none appearance-none cursor-pointer text-center"
                                     >
                                         <option value="flat">VALEUR FIXE</option>
                                         <option value="percent">POURCENTAGE</option>
@@ -345,14 +344,14 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                                     </div>
                                 </div>
 
-                                <button onClick={() => removeModifier(i)} className="absolute -top-2 -right-2 p-2 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 opacity-0 group-hover:opacity-100 transition-all hover:scale-110">
+                                <button onClick={() => removeModifier(i)} className="absolute -top-2 -right-2 p-2 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 opacity-30 group-hover:opacity-100 transition-all hover:scale-110">
                                     <X size={14} />
                                 </button>
                             </div>
                         ))}
                         {modifiers.length === 0 && (
-                            <div className="py-10 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.01]">
-                                <span className="text-[10px] font-cinzel text-white/10 uppercase tracking-[0.4em] italic">Aucun enchantement gravé</span>
+                            <div className="py-10 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/20 bg-white/[0.02]">
+                                <span className="text-xs font-cinzel text-white/50 uppercase tracking-[0.4em]">Aucun modificateur ajouté</span>
                             </div>
                         )}
                     </div>
@@ -372,21 +371,23 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
           <div className="flex gap-4">
               <button 
                 onClick={handleClose}
-                className="flex-1 py-4 rounded-2xl text-white/30 hover:text-white text-[10px] font-cinzel font-black uppercase tracking-[0.3em] transition-all border border-white/5 hover:border-white/20"
+                className="flex-1 py-4 rounded-2xl text-white/70 hover:text-white text-xs font-cinzel font-black uppercase tracking-[0.3em] transition-all border border-white/20 hover:border-white/40"
               >
-                Renoncer
+                Annuler
               </button>
               <button 
                 onClick={handleSubmit} 
                 disabled={!name.trim()}
-                className="flex-[2] py-5 bg-gold-DEFAULT text-black text-[11px] font-cinzel font-black tracking-[0.4em] rounded-2xl hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] hover:bg-gold-bright disabled:opacity-10 disabled:grayscale transition-all flex justify-center items-center gap-4 relative group overflow-hidden"
+                className={`flex-[2] py-5 text-[11px] font-cinzel font-black tracking-[0.4em] rounded-2xl transition-all flex justify-center items-center gap-4 relative group overflow-hidden border-2 ${
+                  !name.trim()
+                    ? 'bg-black/20 text-white/40 border-white/15 cursor-not-allowed'
+                    : 'bg-gold-DEFAULT text-black border-gold-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_40px_rgba(212,175,55,0.4)]'
+                }`}
               >
-                {/* Internal shine effect */}
-                <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-                
+                {name.trim() && <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />}
                 <Save size={20} className="relative z-10" />
                 <span className="relative z-10">
-                    {itemCreationType === 'forge' ? "INSCRIRE DANS LES ARCHIVES" : "LIER À L'INVENTAIRE"}
+                  {itemCreationType === 'forge' ? 'Enregistrer' : "Ajouter à l'inventaire"}
                 </span>
               </button>
           </div>

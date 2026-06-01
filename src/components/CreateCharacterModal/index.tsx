@@ -217,11 +217,11 @@ export function CreateCharacterModal({
             <div className="mt-1">
               {!isMJ && (
                 mode === 'manual' ? (
-                  <p className="text-[9px] sm:text-[10px] font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase">
+                  <p className="text-[11px] sm:text-xs font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase">
                     Points restants: <span className="text-gold-bright font-black">{pointsLeft}</span>
                   </p>
                 ) : (
-                  <p className="text-[9px] sm:text-[10px] font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase">
+                  <p className="text-[11px] sm:text-xs font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase">
                     Faveurs (Rerolls): <span className="text-gold-bright font-black">{rerollsLeft}</span>
                   </p>
                 )
@@ -232,10 +232,10 @@ export function CreateCharacterModal({
             {(isMJ || (!isEditing && mode === 'roll' && (settings?.rerollAllAllowed || !stats[availableStats[0].id]))) && (
               <button 
                 onClick={handleRollAll}
-                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-[8px] sm:text-[9px] font-cinzel font-black text-gold-bright hover:bg-gold-DEFAULT/20 transition-all tracking-widest uppercase flex items-center justify-center gap-2"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-xs sm:text-[11px] font-cinzel font-black text-gold-bright hover:bg-gold-DEFAULT/20 transition-all tracking-widest uppercase flex items-center justify-center gap-2"
               >
                 <Dices size={14} />
-                {stats[availableStats[0].id] ? "Purifier la Fiche" : "Invoquer le Sort"}
+                {stats[availableStats[0].id] ? "Réinitialiser" : "Lancer les caractéristiques"}
               </button>
             )}
             <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-gold-dim hover:text-gold-bright transition-colors">
@@ -249,13 +249,13 @@ export function CreateCharacterModal({
             <div className="flex items-center gap-2 bg-white/5 p-1 rounded-lg border border-gold-DEFAULT/20 shadow-inner">
               <button 
                 onClick={() => setMode('manual')}
-                className={`px-4 py-1.5 text-[9px] font-cinzel font-black rounded-md transition-all uppercase tracking-widest ${mode === 'manual' ? 'bg-gold-DEFAULT text-black shadow-md' : 'text-gold-DEFAULT/40 hover:text-gold-DEFAULT'}`}
+                className={`px-4 py-1.5 text-[11px] font-cinzel font-black rounded-md transition-all uppercase tracking-widest ${mode === 'manual' ? 'bg-gold-DEFAULT text-black shadow-md' : 'text-gold-DEFAULT/40 hover:text-gold-DEFAULT'}`}
               >
                 Manuel
               </button>
               <button 
                 onClick={() => setMode('roll')}
-                className={`px-4 py-1.5 text-[9px] font-cinzel font-black rounded-md transition-all uppercase tracking-widest ${mode === 'roll' ? 'bg-gold-DEFAULT text-black shadow-md' : 'text-gold-DEFAULT/40 hover:text-gold-DEFAULT'}`}
+                className={`px-4 py-1.5 text-[11px] font-cinzel font-black rounded-md transition-all uppercase tracking-widest ${mode === 'roll' ? 'bg-gold-DEFAULT text-black shadow-md' : 'text-gold-DEFAULT/40 hover:text-gold-DEFAULT'}`}
               >
                 Tirage
               </button>
@@ -271,7 +271,7 @@ export function CreateCharacterModal({
               <div className={`w-8 h-4 rounded-full border border-gold-DEFAULT/30 transition-all flex items-center p-0.5 ${isTemplate ? 'bg-purple-500/20 border-purple-500/50' : 'bg-black/40'}`}>
                 <div className={`w-3 h-3 rounded-full transition-all ${isTemplate ? 'translate-x-3.5 bg-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]' : 'translate-x-0 bg-gold-DEFAULT/40'}`} />
               </div>
-              <span className={`text-[10px] font-cinzel font-black uppercase tracking-widest ${isTemplate ? 'text-purple-400' : 'text-gold-DEFAULT/60'}`}>
+              <span className={`text-xs font-cinzel font-black uppercase tracking-widest ${isTemplate ? 'text-purple-400' : 'text-gold-DEFAULT/60'}`}>
                 Modèle Neutre
               </span>
             </label>
@@ -282,7 +282,7 @@ export function CreateCharacterModal({
                   <button 
                     key={t}
                     onClick={() => setType(t)}
-                    className={`px-3 py-1.5 text-[9px] font-cinzel font-black rounded-md transition-all uppercase tracking-widest ${
+                    className={`px-3 py-1.5 text-[11px] font-cinzel font-black rounded-md transition-all uppercase tracking-widest ${
                       type === t 
                         ? (t === 'Boss' ? 'bg-red-500 text-white shadow-md' : t === 'Monstre' ? 'bg-orange-500 text-white shadow-md' : 'bg-blue-500 text-white shadow-md') 
                         : 'text-gold-DEFAULT/40 hover:text-gold-DEFAULT'
@@ -302,7 +302,7 @@ export function CreateCharacterModal({
             <div className="space-y-6 flex flex-col">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Nom de l'Entité</label>
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Nom de l'Entité</label>
                   <div className="flex gap-2">
                     <input 
                       type="text" 
@@ -310,7 +310,7 @@ export function CreateCharacterModal({
                       onChange={(e) => setName(e.target.value)}
                       disabled={isEditing && !isMJ}
                       placeholder="Ex: Kaelen l'Errant"
-                      className="flex-1 bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm disabled:opacity-50 w-full"
+                      className="flex-1 bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-white placeholder:text-white/60 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm disabled:opacity-50 w-full"
                     />
                     {!isEditing && !isTemplate && isMJ && (
                       <input 
@@ -327,24 +327,24 @@ export function CreateCharacterModal({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Image de l'Entité (URL)</label>
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase ml-1">Image de l'Entité (URL)</label>
                   <input 
                     type="text" 
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
                     placeholder="https://..."
-                    className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm"
+                    className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-white placeholder:text-white/60 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-sm"
                   />
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 tracking-[0.2em] uppercase border-b border-gold-DEFAULT/10 pb-2">Attributs Primordiaux</h3>
+                <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 tracking-[0.2em] uppercase border-b border-gold-DEFAULT/10 pb-2">Attributs Primordiaux</h3>
                 <div className="grid grid-cols-1 gap-2">
                   {availableStats.map(stat => (
                     <div key={stat.id} className="flex items-center justify-between bg-white/[0.02] p-2 rounded-lg border border-white/5 hover:border-gold-DEFAULT/20 transition-colors">
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-cinzel text-white/80 uppercase tracking-widest">{stat.name}</span>
+                        <span className="text-xs font-cinzel text-white/80 uppercase tracking-widest">{stat.name}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         {mode === 'manual' ? (
@@ -374,7 +374,7 @@ export function CreateCharacterModal({
                                 <button 
                                   onClick={() => handleRerollStat(stat.id)} 
                                   disabled={!isMJ && rerollsLeft <= 0}
-                                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 disabled:opacity-20 transition-all border border-gold-DEFAULT/20"
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-gold-DEFAULT/10 text-gold-bright hover:bg-gold-DEFAULT/20 disabled:opacity-40 transition-all border border-gold-DEFAULT/20"
                                   title="Relancer cet attribut"
                                 >
                                   <Dices size={14} />
@@ -392,25 +392,25 @@ export function CreateCharacterModal({
 
             {/* Colonne Droite: Prévisualisation des Vitalités */}
             <div className="space-y-6">
-               <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 tracking-[0.2em] uppercase border-b border-gold-DEFAULT/10 pb-2 text-center">Énergie Vitale Dérivée</h3>
+               <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 tracking-[0.2em] uppercase border-b border-gold-DEFAULT/10 pb-2 text-center">Énergie Vitale Dérivée</h3>
                
                <div className="space-y-4 bg-black/40 p-6 rounded-[2rem] border border-gold-DEFAULT/10 shadow-inner">
                   {(settings?.bars || DEFAULT_BARS).map(bar => (
                     <div key={bar.id} className="space-y-2">
-                      <div className="flex items-center justify-between text-[9px] font-cinzel uppercase tracking-widest min-w-0" style={{ color: bar.color }}>
+                      <div className="flex items-center justify-between text-[11px] font-cinzel uppercase tracking-widest min-w-0" style={{ color: bar.color }}>
                         <span className="flex items-center gap-2 truncate pr-2"><Activity className="w-3 h-3 shrink-0" /> <span className="truncate" title={bar.name}>{bar.name}</span></span>
                         <span className="font-mono font-black shrink-0" title={`${derivedBars[bar.id]}`}>{derivedBars[bar.id]}</span>
                       </div>
                       <div className="h-1.5 w-full bg-black/60 rounded-full border border-white/5 overflow-hidden">
                         <div className="h-full transition-all duration-500" style={{ width: '100%', backgroundColor: bar.color, boxShadow: `0 0 15px ${bar.color}66` }} />
                       </div>
-                      <p className="text-[7px] text-white/30 italic text-right truncate" title={bar.formula}>{bar.formula}</p>
+                      <p className="text-[11px] text-white/50 italic text-right truncate" title={bar.formula}>{bar.formula}</p>
                     </div>
                   ))}
                </div>
 
                <div className="p-4 bg-gold-DEFAULT/5 border border-dashed border-gold-DEFAULT/20 rounded-2xl hidden sm:block">
-                 <p className="text-[10px] text-gold-DEFAULT/50 font-serif italic leading-relaxed text-center">
+                 <p className="text-xs text-gold-DEFAULT/50 font-serif italic leading-relaxed text-center">
                     "Chaque rune que vous maîtrisez résonne avec votre essence. Définissez votre chemin à travers l'Archive."
                  </p>
                </div>
@@ -422,10 +422,14 @@ export function CreateCharacterModal({
           <button 
             onClick={handleSave}
             disabled={!name.trim() || (settings?.sheetMode === 'manual' && pointsLeft < 0) || (settings?.sheetMode === 'roll' && Object.values(stats).some(v => v === 0))}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-3 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/40 text-gold-bright hover:bg-gold-DEFAULT/20 hover:border-gold-DEFAULT disabled:opacity-30 disabled:pointer-events-none transition-all shadow-[0_0_30px_rgba(212,175,55,0.1)] hover:shadow-[0_0_40px_rgba(212,175,55,0.3)] group"
+            className={`w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-3 rounded-full transition-all group font-cinzel font-black border-2 ${
+              (!name.trim() || (settings?.sheetMode === 'manual' && pointsLeft < 0) || (settings?.sheetMode === 'roll' && Object.values(stats).some(v => v === 0)))
+                ? 'bg-black/20 text-white/40 border-white/15 cursor-not-allowed pointer-events-none'
+                : 'bg-gold-DEFAULT text-black border-gold-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] shadow-[0_0_30px_rgba(212,175,55,0.1)]'
+            }`}
           >
             <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-cinzel font-black uppercase tracking-[0.2em] pt-0.5">Graver dans le Destin</span>
+            <span className="text-xs uppercase tracking-[0.2em] pt-0.5">Enregistrer</span>
           </button>
         </footer>
       </div>

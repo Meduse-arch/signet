@@ -110,10 +110,7 @@ const myCharacter = useMemo(() => {
     // Broadcast via P2P (sera reçu par le MJ ou les autres joueurs via SealEngine)
     broadcast({ type: 'CHAR_UPDATE', payload: newChar });
     
-    // Broadcast local (si plusieurs fenêtres sur la même machine)
-    const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
-    channel.postMessage({ type: 'CHAR_UPDATE', payload: newChar });
-    channel.close();
+    // La synchro locale est gérée par le store Zustand
     
     setIsModalOpen(false);
   };
@@ -160,7 +157,7 @@ if (!myCharacter) {
                 />
             )}
 
-           <div className="absolute -top-1 -right-1 bg-gold-DEFAULT text-black text-[10px] font-cinzel font-black px-1.5 py-0.5 rounded shadow-lg">MJ</div>
+           <div className="absolute -top-1 -right-1 bg-gold-DEFAULT text-black text-xs font-cinzel font-black px-1.5 py-0.5 rounded shadow-lg">MJ</div>
          </div>
        </div>
      );
@@ -177,7 +174,7 @@ if (!myCharacter) {
           <div className="w-8 h-8 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 flex items-center justify-center group-hover:scale-110 transition-transform">
             <Plus className="w-4 h-4 text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright" />
           </div>
-          <span className="text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright text-[10px] font-cinzel font-black tracking-widest uppercase transition-colors">
+          <span className="text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright text-xs font-cinzel font-black tracking-widest uppercase transition-colors">
             Créer Personnage
           </span>
         </button>

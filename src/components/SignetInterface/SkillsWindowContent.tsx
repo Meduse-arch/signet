@@ -16,7 +16,8 @@ import {
   PenTool,
   Hammer,
   User,
-  Power
+  Power,
+  ChevronRight
 } from 'lucide-react';
 import { SkillCreationModal } from './SkillCreationModal';
 import { SkillDetailContent } from './SkillDetailContent';
@@ -143,7 +144,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
             />
             <button 
               onClick={() => setSelectedSkill(null)} 
-              className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/40 hover:text-white transition-colors z-50"
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/60 hover:text-white transition-colors z-50"
             >
               <X size={20} />
             </button>
@@ -160,20 +161,20 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
             <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5 shrink-0 shadow-inner">
                 <button
                 onClick={() => setActiveTab('inventory')}
-                className={`flex-1 py-2 rounded-lg text-[8px] font-cinzel font-black tracking-widest flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-2 rounded-lg text-xs font-cinzel font-black tracking-widest flex items-center justify-center gap-2 transition-all ${
                     effectiveTab === 'inventory' 
                     ? 'bg-gold-DEFAULT text-black shadow-lg' 
-                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
                 >
                 <User size={10} /> {character.name.toUpperCase()}
                 </button>
                 <button
                 onClick={() => setActiveTab('forge')}
-                className={`flex-1 py-2 rounded-lg text-[8px] font-cinzel font-black tracking-widest flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-2 rounded-lg text-xs font-cinzel font-black tracking-widest flex items-center justify-center gap-2 transition-all ${
                     effectiveTab === 'forge' 
                     ? 'bg-gold-DEFAULT text-black shadow-lg' 
-                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
                 >
                 <Hammer size={10} /> ARCHIVES
@@ -189,7 +190,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="CHERCHER..."
-                    className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-xl py-2 pl-9 pr-3 text-[9px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/10 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
+                    className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-xl py-2 pl-9 pr-3 text-[11px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/40 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
                     />
                 </div>
                 {effectiveTab === 'forge' && isMJ && (
@@ -206,7 +207,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar shrink-0">
                 <button 
                     onClick={() => setSelectedTag(null)}
-                    className={`px-2.5 py-1 rounded-full text-[7px] font-cinzel font-black uppercase tracking-widest border transition-all whitespace-nowrap ${!selectedTag ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/20'}`}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-cinzel font-black uppercase tracking-widest border transition-all whitespace-nowrap ${!selectedTag ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'}`}
                 >
                     TOUT
                 </button>
@@ -214,7 +215,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                     <button 
                     key={tag.id}
                     onClick={() => setSelectedTag(tag.id)}
-                    className={`px-2.5 py-1 rounded-full text-[7px] font-cinzel font-black uppercase tracking-widest border transition-all whitespace-nowrap ${selectedTag === tag.id ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/20'}`}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-cinzel font-black uppercase tracking-widest border transition-all whitespace-nowrap ${selectedTag === tag.id ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'}`}
                     style={selectedTag === tag.id ? {} : { borderLeftColor: tag.color, borderLeftWidth: '2px' }}
                     >
                     {tag.name}
@@ -230,8 +231,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                     return (
                     <div 
                         key={skill.id}
-                        onClick={() => setSelectedSkill(skill, false)}
-                        className={`group relative rounded-xl p-2.5 transition-all cursor-pointer flex items-center gap-3 overflow-hidden ${
+                        className={`group relative rounded-xl p-2.5 transition-all flex items-center gap-3 overflow-hidden ${
                         isActive ? 'border-gold-bright bg-gold-DEFAULT/10 shadow-[0_0_15px_rgba(212,175,55,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-gold-DEFAULT/30'
                         }`}
                     >
@@ -244,29 +244,39 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                         </div>
 
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <h4 className={`text-[10px] font-cinzel font-black tracking-widest truncate uppercase transition-colors ${isEquipped ? 'text-gold-bright drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]' : (isActive ? 'text-gold-DEFAULT' : 'text-white/60 group-hover:text-white')}`}>
+                            <h4 className={`text-xs font-cinzel font-black tracking-widest truncate uppercase transition-colors ${isEquipped ? 'text-gold-bright drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]' : (isActive ? 'text-gold-DEFAULT' : 'text-white/60 group-hover:text-white')}`}>
                                 {skill.name}
                             </h4>
-                            <span className="text-[7px] font-mono text-white/20 uppercase tracking-tighter truncate">{skill.type || 'Compétence'}</span>
+                            <span className="text-[11px] font-mono text-white/60 uppercase tracking-tighter truncate">{skill.type || 'Compétence'}</span>
                         </div>
 
                         {/* ─── ACTIONS SUR LA BARRE ─── */}
                         <div className="flex items-center gap-1 shrink-0 z-10">
                             {effectiveTab === 'inventory' ? (
                                 <>
-                                    <div className={`transition-all duration-300 ${isEquipped ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                    <div className={`transition-all duration-300 ${isEquipped ? 'opacity-100' : 'opacity-30 group-hover:opacity-100'}`}>
                                         {skill.type === 'passive_toggle' && (
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); handleToggleSkillActive(skill); }}
-                                                className={`p-1.5 rounded-lg transition-all ${isEquipped ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/40' : 'bg-gold-DEFAULT text-black hover:bg-gold-bright'}`}
+                                                className={`p-1.5 rounded-lg transition-all ${isEquipped ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/40' : 'bg-gold-DEFAULT text-black group-hover:bg-gold-bright transition-colors'}`}
                                                 title={isEquipped ? "Désactiver" : "Activer"}
                                             >
                                                 <Power size={10} />
                                             </button>
                                         )}
                                     </div>
+
+                                    {/* Bouton Détails (Chevron) */}
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setSelectedSkill(skill, false); }}
+                                        className="p-1.5 rounded-lg text-white/60 hover:text-gold-bright hover:bg-white/5 transition-all opacity-30 group-hover:opacity-100"
+                                        title="Voir les détails"
+                                    >
+                                        <ChevronRight size={14} />
+                                    </button>
+
                                     {isMJ && (
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5 pl-0.5 border-l border-white/5">
+                                        <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-opacity ml-0.5 pl-0.5 border-l border-white/5">
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); handleRemoveFromCharacter(skill); }}
                                                 className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
@@ -280,7 +290,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                             ) : (
                                 <>
                                     {isMJ && (
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-opacity">
                                             {character && (
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); handleGiveSkillToCharacter(skill); }}
@@ -306,6 +316,13 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                                             </button>
                                         </div>
                                     )}
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setSelectedSkill(skill, false); }}
+                                        className="p-1.5 rounded-lg text-white/60 hover:text-gold-bright hover:bg-white/5 transition-all opacity-30 group-hover:opacity-100"
+                                        title="Voir les détails"
+                                    >
+                                        <ChevronRight size={14} />
+                                    </button>
                                 </>
                             )}
                         </div>
@@ -320,7 +337,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                 {(effectiveTab === 'inventory' ? characterSkills : filteredLibrary).length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 opacity-10 grayscale">
                         <BookOpen size={32} className="mb-2" />
-                        <span className="text-[8px] font-cinzel tracking-widest italic">VIDE...</span>
+                        <span className="text-xs font-cinzel tracking-widest italic">VIDE...</span>
                     </div>
                 )}
             </div>
@@ -332,8 +349,8 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
             {selectedSkill ? (
               <div className="h-full flex flex-col animate-in slide-in-from-right-4 duration-500 relative">
                  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
-                    <span className="text-[9px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails de la Maîtrise</span>
-                    <button onClick={() => setSelectedSkill(null)} className="p-1 rounded hover:bg-white/5 text-white/20 hover:text-white transition-colors">
+                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails de la Maîtrise</span>
+                    <button onClick={() => setSelectedSkill(null)} className="p-1 rounded hover:bg-white/5 text-white/60 hover:text-white transition-colors">
                         <X size={14} />
                     </button>
                  </div>
@@ -349,7 +366,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
             ) : (
               <div className="h-full flex flex-col items-center justify-center opacity-10 pointer-events-none">
                  <Sparkles size={64} className="mb-4 text-gold-DEFAULT" />
-                 <span className="text-[10px] font-cinzel font-black tracking-[0.4em] uppercase">Codex des Maîtrises</span>
+                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">Codex des Maîtrises</span>
               </div>
             )}
           </div>

@@ -60,7 +60,7 @@ export function AdminItemsView({ sessionId }: { sessionId: string }) {
             placeholder="Nom de l'artéfact" 
             value={newItemName} 
             onChange={e => setNewItemName(e.target.value)} 
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-gold-DEFAULT/50 outline-none transition-colors" 
+            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/50 focus:border-gold-DEFAULT/50 outline-none transition-colors" 
           />
           <select 
             value={newItemCat} 
@@ -74,14 +74,14 @@ export function AdminItemsView({ sessionId }: { sessionId: string }) {
             placeholder="Description (historique, effets, etc.)" 
             value={newItemDesc} 
             onChange={e => setNewItemDesc(e.target.value)} 
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-gold-DEFAULT/50 outline-none transition-colors" 
+            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/50 focus:border-gold-DEFAULT/50 outline-none transition-colors" 
           />
           <input 
             type="text" 
             placeholder="URL de l'image (optionnel)" 
             value={newItemImg} 
             onChange={e => setNewItemImg(e.target.value)} 
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-gold-DEFAULT/50 outline-none transition-colors" 
+            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/50 focus:border-gold-DEFAULT/50 outline-none transition-colors" 
           />
         </div>
 
@@ -102,7 +102,7 @@ export function AdminItemsView({ sessionId }: { sessionId: string }) {
             placeholder="Rechercher un artéfact dans les archives mondiales..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl py-3 pl-11 pr-4 text-xs font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-all shadow-inner"
+            className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl py-3 pl-11 pr-4 text-xs font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/40 focus:outline-none focus:border-gold-DEFAULT/50 transition-all shadow-inner"
           />
         </div>
 
@@ -121,12 +121,12 @@ export function AdminItemsView({ sessionId }: { sessionId: string }) {
                   <div className="flex-1 min-w-0 pt-1">
                     <div className="flex flex-col gap-1">
                       <h4 className="text-xs font-cinzel font-black text-gold-bright truncate uppercase tracking-wider">{item.name}</h4>
-                      <span className="inline-block w-fit text-[9px] font-bold border border-white/10 bg-black/40 px-2 py-0.5 rounded-md text-white/50 uppercase tracking-widest">{item.category}</span>
+                      <span className="inline-block w-fit text-[11px] font-bold border border-white/10 bg-black/40 px-2 py-0.5 rounded-md text-white/50 uppercase tracking-widest">{item.category}</span>
                     </div>
                   </div>
                 </div>
                 
-                <p className="text-[10px] text-white/40 italic line-clamp-3 mb-4 leading-relaxed bg-black/20 p-2 rounded-lg border border-white/5 flex-1">{item.description}</p>
+                <p className="text-xs text-white/60 italic line-clamp-3 mb-4 leading-relaxed bg-black/20 p-2 rounded-lg border border-white/5 flex-1">{item.description}</p>
                 
                 <div className="flex justify-end pt-3 border-t border-white/5 mt-auto">
                   <button 

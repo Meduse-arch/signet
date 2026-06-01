@@ -41,7 +41,7 @@ export function SkillDetailContent({
   }, [initialSkill, skills]);
 
   if (!skill) return (
-    <div className="flex flex-col items-center justify-center h-full opacity-20 py-20">
+    <div className="flex flex-col items-center justify-center h-full opacity-40 py-20">
       <Zap size={64} className="mb-4 text-gold-DEFAULT" />
       <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">Sélectionnez une maîtrise</span>
     </div>
@@ -58,7 +58,7 @@ export function SkillDetailContent({
       case 'heal': return <Heart size={12} className="text-green-500" />;
       case 'buff': return <Sparkles size={12} className="text-blue-400" />;
       case 'debuff': return <Droplets size={12} className="text-purple-400" />;
-      default: return <Wind size={12} className="text-white/40" />;
+      default: return <Wind size={12} className="text-white/60" />;
     }
   };
 
@@ -116,7 +116,7 @@ export function SkillDetailContent({
         
         {/* BLOCK DESCRIPTION (Scrollable, plus compact) */}
         <div className="shrink-0 px-4 py-3">
-           <div className="flex items-center gap-2 mb-2 opacity-20">
+           <div className="flex items-center gap-2 mb-2 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
               <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Arcanes</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
@@ -130,7 +130,7 @@ export function SkillDetailContent({
 
         {/* BLOCK EFFETS & MODIFICATEURS (Flexible) ─── */}
         <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
-           <div className="flex items-center gap-2 mb-3 opacity-20">
+           <div className="flex items-center gap-2 mb-3 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
               <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Manifestations</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
@@ -147,13 +147,13 @@ export function SkillDetailContent({
                           <div className="flex items-center justify-between">
                              <div className="flex items-center gap-1.5">
                                 {getEffectIcon(effect.type)}
-                                <span className="text-[7px] font-cinzel font-bold text-white/60 uppercase tracking-widest">{effect.type}</span>
+                                <span className="text-[11px] font-cinzel font-bold text-white/60 uppercase tracking-widest">{effect.type}</span>
                              </div>
-                             <span className="text-[8px] font-mono text-gold-bright">
+                             <span className="text-xs font-mono text-gold-bright">
                                 {effect.mode === 'dice' ? effect.formula : `${effect.valeur >= 0 ? '+' : ''}${effect.valeur}${effect.mode === 'percent' ? '%' : ''}`}
                              </span>
                           </div>
-                          <p className="text-[7px] font-serif italic text-white/30 leading-relaxed">
+                          <p className="text-[11px] font-serif italic text-white/50 leading-relaxed">
                              {effect.description}
                           </p>
                        </div>
@@ -167,12 +167,12 @@ export function SkillDetailContent({
                      {skill.modifiers.map((m, i) => (
                        <div key={i} className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-gold-DEFAULT/20 transition-all">
                          <div className="flex flex-col">
-                           <span className="text-[8px] font-cinzel font-black text-white/60 uppercase tracking-widest">
+                           <span className="text-xs font-cinzel font-black text-white/60 uppercase tracking-widest">
                              {getTargetName(m.target, m.targetId, m.targetProperty)}
                            </span>
                            <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase">{m.target === 'stat' ? 'Attribut' : 'Ressource'}</span>
                          </div>
-                         <span className="text-[10px] font-cinzel font-black text-gold-bright">
+                         <span className="text-xs font-cinzel font-black text-gold-bright">
                            {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`}
                          </span>
                        </div>
@@ -183,7 +183,7 @@ export function SkillDetailContent({
                  {/* Conditions */}
                  {skill.condition_type && (
                    <div className="p-2.5 rounded-xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/10">
-                      <p className="text-[7px] font-cinzel text-gold-DEFAULT/50 uppercase leading-relaxed text-center tracking-wider">
+                      <p className="text-[11px] font-cinzel text-gold-DEFAULT/50 uppercase leading-relaxed text-center tracking-wider">
                          Requiert {skill.condition_type === 'item' ? 'relique' : skill.condition_type === 'skill' ? 'maîtrise' : 'relique & maîtrise'}
                          {skill.condition_tags && skill.condition_tags.length > 0 && ` [${skill.condition_tags.join(', ')}]`}
                       </p>
@@ -201,7 +201,7 @@ export function SkillDetailContent({
                 {onEdit && (
                     <button 
                         onClick={onEdit}
-                        className="flex-1 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all font-cinzel text-[7px] font-black uppercase tracking-widest"
+                        className="flex-1 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all font-cinzel text-[11px] font-black uppercase tracking-widest"
                     >
                         Modifier
                     </button>

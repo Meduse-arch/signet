@@ -53,10 +53,8 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
             const updatedChar = { ...char, inventory: updatedInventory };
             charStore.addOrUpdateCharacter(updatedChar);
             
-            // Notification pour les autres composants
-            const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
-            channel.postMessage({ type: 'CHAR_UPDATE', payload: updatedChar });
-            channel.close();
+            // L'appel à addOrUpdateCharacter déclenche déjà la synchro interne du store.
+            // Pas besoin de BroadcastChannel manuel ici.
           });
         }
       } else {

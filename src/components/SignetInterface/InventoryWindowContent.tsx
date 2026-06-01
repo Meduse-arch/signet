@@ -212,7 +212,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
   return (
     <div ref={containerRef} className="flex flex-col h-full animate-in fade-in duration-500 relative bg-[#0D0D0F]">
       
-      {/* ─── MODALE DÉTAIL (Mode Mobile / Fenêtre étroite) ─── */}
+      {/* ─── MODALE DÉTAIL (Mode Mobile) ─── */}
       {!isWideView && selectedItem && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-md" onClick={() => setSelectedItem(null)}>
           <div className="w-full max-w-sm bg-[#0D0D0F]/95 border border-gold-DEFAULT/30 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-full" onClick={e => e.stopPropagation()}>
@@ -229,7 +229,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
             />
             <button 
               onClick={() => setSelectedItem(null)} 
-              className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/40 hover:text-white transition-colors z-50"
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/60 hover:text-white transition-colors z-50"
             >
               <X size={20} />
             </button>
@@ -246,20 +246,20 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
             <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5 shrink-0 shadow-inner">
                 <button
                 onClick={() => setActiveTab('inventory')}
-                className={`flex-1 py-2 rounded-lg text-[8px] font-cinzel font-black tracking-widest flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-2 rounded-lg text-xs font-cinzel font-black tracking-widest flex items-center justify-center gap-2 transition-all ${
                     effectiveTab === 'inventory' 
                     ? 'bg-gold-DEFAULT text-black shadow-lg' 
-                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
                 >
                 <User size={10} /> {character.name.toUpperCase()}
                 </button>
                 <button
                 onClick={() => setActiveTab('forge')}
-                className={`flex-1 py-2 rounded-lg text-[8px] font-cinzel font-black tracking-widest flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-2 rounded-lg text-xs font-cinzel font-black tracking-widest flex items-center justify-center gap-2 transition-all ${
                     effectiveTab === 'forge' 
                     ? 'bg-gold-DEFAULT text-black shadow-lg' 
-                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
                 >
                 <Hammer size={10} /> ARCHIVES
@@ -275,7 +275,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                 placeholder="RECHERCHER..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-xl py-2 pl-9 pr-3 text-[9px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/10 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
+                className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-xl py-2 pl-9 pr-3 text-[11px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/40 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
                 />
             </div>
             {effectiveTab === 'forge' && isMJ && (
@@ -294,6 +294,8 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                 {groupedInventory.map((item: any, idx: number) => {
                     const Icon = getIcon(item.category);
                     const isActive = selectedItem?.instanceId === item.instanceId || (item.isStack && selectedItem?.id === item.id && !selectedItem.equipped);
+                    const totalPossessed = character?.inventory?.filter((i: any) => i.id === item.id).length || item.quantity || 1;
+
                     return (
                     <div 
                         key={item.instanceId || `stack-${item.id}-${idx}`} 
@@ -306,24 +308,24 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                         {item.image_url ? (
                             <img src={item.image_url} alt="" className={`w-full h-full object-contain p-1 ${item.equipped ? 'opacity-100' : 'opacity-40 group-hover:opacity-60 transition-opacity'}`} />
                         ) : (
-                            <Icon size={18} className={item.equipped ? 'text-gold-DEFAULT' : 'text-white/10 group-hover:text-white/20'} />
-                        )}
-                        {item.quantity > 1 && (
-                            <div className="absolute bottom-0 right-0 bg-gold-DEFAULT text-black text-[7px] font-black px-1 rounded-tl-md shadow-sm border-t border-l border-black/10 z-20">x{item.quantity}</div>
+                            <Icon size={18} className={item.equipped ? 'text-gold-DEFAULT' : 'text-white/10 group-hover:text-white/60'} />
                         )}
                         </div>
                         
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <h4 className={`text-[10px] font-cinzel font-black tracking-widest truncate uppercase transition-colors ${item.equipped ? 'text-gold-bright drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]' : (isActive ? 'text-gold-DEFAULT' : 'text-white/60 group-hover:text-white')}`}>
-                            {item.name}
-                            </h4>
-                            <span className="text-[7px] font-mono text-white/20 uppercase tracking-tighter truncate">{item.category}</span>
+                            <div className="flex items-center gap-2">
+                                <h4 className={`text-xs font-cinzel font-black tracking-widest truncate uppercase transition-colors ${item.equipped ? 'text-gold-bright drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]' : (isActive ? 'text-gold-DEFAULT' : 'text-white/60 group-hover:text-white')}`}>
+                                {item.name}
+                                </h4>
+                                <span className="shrink-0 font-cinzel font-black text-xs px-1 py-0.5 rounded-sm text-black bg-gold-DEFAULT shadow-sm">x{totalPossessed}</span>
+                            </div>
+                            <span className="text-[11px] font-mono text-white/60 uppercase tracking-tighter truncate">{item.category}</span>
                         </div>
 
                         {/* ─── ACTIONS SUR LA BARRE ─── */}
                         <div className="flex items-center gap-1 shrink-0 z-10">
                             {/* Bouton Équiper/Utiliser : Toujours visible si ÉQUIPÉ (indicateur rouge), sinon HOVER */}
-                            <div className={`transition-all duration-300 ${item.equipped ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            <div className={`transition-all duration-300 ${item.equipped ? 'opacity-100' : 'opacity-30 group-hover:opacity-100'}`}>
                                 {item.category === 'Consommable' ? (
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); handleUseItem(item); }}
@@ -338,7 +340,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                                         className={`p-1.5 rounded-lg transition-all ${
                                             item.equipped 
                                             ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/40' 
-                                            : 'bg-gold-DEFAULT text-black hover:bg-gold-bright'
+                                            : 'bg-gold-DEFAULT text-black group-hover:bg-gold-bright transition-colors'
                                         }`}
                                         title={item.equipped ? "Déséquiper" : "Équiper"}
                                     >
@@ -346,10 +348,19 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                                     </button>
                                 )}
                             </div>
+
+                            {/* Bouton Détails (Chevron) */}
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setSelectedItem(item, false); }}
+                                className="p-1.5 rounded-lg text-white/60 hover:text-gold-bright hover:bg-white/5 transition-all opacity-30 group-hover:opacity-100"
+                                title="Voir les détails"
+                            >
+                                <ChevronRight size={14} />
+                            </button>
                             
                             {/* Actions MJ : Uniquement au hover strict pour ne pas encombrer le nom */}
                             {isMJ && (
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5 pl-0.5 border-l border-white/5">
+                                <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-opacity ml-0.5 pl-0.5 border-l border-white/5">
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); handleRemoveFromInventory(item); }}
                                         className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
@@ -371,7 +382,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                 {groupedInventory.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 opacity-10 grayscale">
                     <Package size={32} className="mb-2" />
-                    <span className="text-[8px] font-cinzel tracking-widest italic">VIDE...</span>
+                    <span className="text-xs font-cinzel tracking-widest italic">VIDE...</span>
                     </div>
                 )}
                 </>
@@ -380,11 +391,13 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                 {filteredForgeItems.map((item) => {
                     const Icon = getIcon(item.category);
                     const isActive = selectedItem?.id === item.id;
+                    const possessedCount = character?.inventory?.filter((i: any) => i.id === item.id).length || 0;
+
                     return (
                     <div 
                         key={item.id} 
                         onClick={() => setSelectedItem(item, false)}
-                        className={`group relative rounded-xl p-2.5 transition-all cursor-pointer flex items-center gap-3 ${
+                        className={`group relative rounded-xl p-2.5 transition-all cursor-pointer flex items-center gap-3 overflow-hidden ${
                         isActive ? 'border-gold-bright bg-gold-DEFAULT/10 shadow-[0_0_15px_rgba(212,175,55,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-gold-DEFAULT/30'
                         }`}
                     >
@@ -392,44 +405,58 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                         {item.image_url ? (
                             <img src={item.image_url} alt="" className="w-full h-full object-contain p-1 opacity-40 group-hover:opacity-60 transition-opacity" />
                         ) : (
-                            <Icon size={18} className="text-white/10 group-hover:text-white/20" />
+                            <Icon size={18} className="text-white/10 group-hover:text-white/60" />
                         )}
                         </div>                      
                         <div className="flex-1 min-w-0">
-                            <h4 className={`text-[10px] font-cinzel font-black truncate uppercase tracking-widest transition-colors ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-gold-bright'}`}>{item.name}</h4>
-                            <span className="text-[7px] text-white/20 uppercase font-cinzel tracking-widest">{item.category}</span>
+                            <div className="flex items-center gap-2">
+                                <h4 className={`text-xs font-cinzel font-black truncate uppercase tracking-widest transition-colors ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-white'}`}>{item.name}</h4>
+                                {possessedCount > 0 && (
+                                    <span className="shrink-0 font-cinzel font-black text-xs px-1 py-0.5 rounded-sm text-black bg-gold-DEFAULT shadow-sm">x{possessedCount}</span>
+                                )}
+                            </div>
+                            <span className="text-[11px] text-white/60 uppercase font-cinzel tracking-widest">{item.category}</span>
                         </div>
 
-                        {/* ─── ACTIONS MJ (FORGE) ─── */}
-                        {isMJ && (
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {character && (
+                        {/* ─── ACTIONS SUR LA BARRE ─── */}
+                        <div className="flex items-center gap-1 shrink-0 z-10">
+                            {isMJ && (
+                                <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-opacity">
+                                    {character && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleGiveItemToCharacter(item); }}
+                                            className="p-1.5 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-all"
+                                            title="Offrir"
+                                        >
+                                            <Plus size={10} />
+                                        </button>
+                                    )}
                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); handleGiveItemToCharacter(item); }}
-                                        className="p-1.5 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-all"
-                                        title="Offrir"
+                                        onClick={(e) => { e.stopPropagation(); handleEditForgeItem(item); }}
+                                        className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all"
+                                        title="Modifier"
                                     >
-                                        <Plus size={10} />
+                                        <PenTool size={10} />
                                     </button>
-                                )}
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleEditForgeItem(item); }}
-                                    className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all"
-                                    title="Modifier"
-                                >
-                                    <PenTool size={10} />
-                                </button>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteForgeItem(item.id); }}
-                                    className="p-1.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all"
-                                    title="Supprimer"
-                                >
-                                    <Trash2 size={10} />
-                                </button>
-                            </div>
-                        )}
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteForgeItem(item.id); }}
+                                        className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
+                                        title="Supprimer"
+                                    >
+                                        <Trash2 size={10} />
+                                    </button>
+                                </div>
+                            )}
 
-                        {!isWideView && <ChevronRight size={12} className="text-gold-DEFAULT/20 group-hover:text-gold-DEFAULT/60 transition-colors" />}
+                            {/* Bouton Détails (Chevron) */}
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setSelectedItem(item, false); }}
+                                className="p-1.5 rounded-lg text-white/60 hover:text-gold-bright hover:bg-white/5 transition-all opacity-30 group-hover:opacity-100"
+                                title="Voir les détails"
+                            >
+                                <ChevronRight size={14} />
+                            </button>
+                        </div>
                     </div>
                     );
                 })}
@@ -444,8 +471,8 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
             {selectedItem ? (
               <div className="h-full flex flex-col animate-in slide-in-from-right-4 duration-500 relative">
                  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
-                    <span className="text-[9px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails du Vestige</span>
-                    <button onClick={() => setSelectedItem(null)} className="p-1 rounded hover:bg-white/5 text-white/20 hover:text-white transition-colors">
+                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails du Vestige</span>
+                    <button onClick={() => setSelectedItem(null)} className="p-1 rounded hover:bg-white/5 text-white/60 hover:text-white transition-colors">
                         <X size={14} />
                     </button>
                  </div>
@@ -465,7 +492,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
             ) : (
               <div className="h-full flex flex-col items-center justify-center opacity-10 pointer-events-none">
                  <Sparkles size={64} className="mb-4 text-gold-DEFAULT" />
-                 <span className="text-[10px] font-cinzel font-black tracking-[0.4em] uppercase">Codex des Vestiges</span>
+                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">Codex des Vestiges</span>
               </div>
             )}
           </div>

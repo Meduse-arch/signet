@@ -266,7 +266,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       }
 
       if (app && isInitialized) {
-        app.destroy({ removeView: true, children: true, texture: true });
+        app.destroy({ removeView: true });
         app = null;
       }
       boardRef.current = null;

@@ -89,7 +89,7 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
               ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.6)]' 
               : 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)]'
           }`}
-          title={tokenStatus ? "Retirer votre figurine du plateau" : "Invoquer votre figurine"}
+          title={tokenStatus ? "Retirer votre figurine du plateau" : "Placer votre figurine sur le plateau"}
         >
             <Plus size={12} className={`text-white transition-transform ${tokenStatus ? 'rotate-45' : ''}`} />
         </button>
@@ -120,7 +120,7 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
             >
               {item.icon}
               {/* Tooltip Alchemy-style */}
-              <div className="absolute top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded bg-black/90 backdrop-blur-md border border-gold-DEFAULT/30 text-[9px] font-cinzel text-gold-bright drop-shadow-md whitespace-nowrap tracking-widest pointer-events-none">
+              <div className="absolute top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded bg-black/90 backdrop-blur-md border border-gold-DEFAULT/30 text-[11px] font-cinzel text-gold-bright drop-shadow-md whitespace-nowrap tracking-widest pointer-events-none">
                 {item.label}
               </div>
             </button>

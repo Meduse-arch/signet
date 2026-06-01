@@ -77,37 +77,8 @@ export function ExternalWindowPage() {
       initQuests(sessionId);
     }
   }, [sessionId, initChars, initItems, initSkills, initTags, initQuests]);
-
-  // Initialisation P2P pour rester synchronisé (Live Sync)
-  useEffect(() => {
-    let cancelled = false;
-    let timer: any;
-
-    const setup = async () => {
-      if (!sessionId || !type || sessionsLoading) return;
-      
-      const session = sessions.find(s => s.id === sessionId);
-      const hostId = session?.hostPeerId;
-      
-      if (hostId && !cancelled) {
-        console.log('[ExternalWindow] Syncing with host:', hostId);
-        
-        timer = setTimeout(async () => {
-          if (!cancelled) {
-             // Toujours se connecter comme client (false) pour les fenêtres externes
-             await init(false, hostId, `ext-${type}-${Math.random().toString(36).substr(2, 5)}`);
-          }
-        }, 50);
-      }
-    };
-    setup();
-
-    return () => {
-       cancelled = true;
-       if (timer) clearTimeout(timer);
-       destroy();
-    };
-  }, [sessionId, type, init, sessions, sessionsLoading, destroy]);
+  // P2P désactivé dans les pop-outs pour éviter la saturation réseau.
+  // La communication est déléguée à la fenêtre principale via BroadcastChannel.
 
   // Chargement initial des données statiques
   useEffect(() => {
@@ -152,25 +123,8 @@ export function ExternalWindowPage() {
     loadData();
   }, [sessionId]);
 
-  // Écoute des mises à jour temps réel (via P2P)
-  useEffect(() => {
-    const unsub = onData((data) => {
-      if (data.type === 'PLAYER_LIST') {
-        setPlayers(data.payload);
-      } else if (data.type === 'MAP_CHANGE') {
-        const targetUrl = data.payload.url;
-        const map = maps.find((m: MapItem) => m.url === targetUrl);
-        if (map) {
-          setCurrentMapId(map.id);
-        }
-      } else if (data.type === 'MAP_UPDATE') {
-        setMaps(data.payload);
-      } else if (data.type === 'CHAR_UPDATE') {
-        addOrUpdateCharacter(data.payload);
-      }
-    });
-    return () => unsub();
-  }, [onData, sessionId, maps, addOrUpdateCharacter]);
+  // Les mises à jour en temps réel (via P2P) sont maintenant gérées 
+  // par la fenêtre principale et relayées via signet_sync_ et les stores locaux.
 
   const handleSelectMap = (map: MapItem) => {
     if (!sessionId) return;
@@ -271,7 +225,9 @@ export function ExternalWindowPage() {
     const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
     channel.onmessage = (event) => {
       const { type, payload } = event.data;
-      if (type === 'MAP_CHANGE') {
+      if (type === 'PLAYER_LIST') {
+        setPlayers(payload);
+      } else if (type === 'MAP_CHANGE') {
         const map = maps.find((m: MapItem) => m.url === payload.url);
         if (map) {
            setCurrentMapId(map.id);

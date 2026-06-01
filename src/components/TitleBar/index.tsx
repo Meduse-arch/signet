@@ -106,7 +106,7 @@ export function TitleBar() {
       {/* Effet lumineux de ligne façon Jarvis */}
       <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />      <div className="flex items-center gap-2 px-3 relative z-10">
         <img src={logo} alt="Signet" className="w-4 h-4 object-contain" />
-        <span className="text-[10px] font-cinzel font-black tracking-widest text-gold-DEFAULT drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]">
+        <span className="text-xs font-cinzel font-black tracking-widest text-gold-DEFAULT drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]">
           {title}
         </span>
       </div>
@@ -115,7 +115,7 @@ export function TitleBar() {
         {externalInfo && (
           <button 
             onClick={handleReintegrate} 
-            className="px-4 hover:bg-gold-DEFAULT/20 text-gold-DEFAULT hover:text-gold-bright transition-all flex items-center justify-center gap-2 text-[8px] font-cinzel font-bold border-r border-gold-DEFAULT/20 drop-shadow-md"
+            className="px-4 hover:bg-gold-DEFAULT/20 text-gold-DEFAULT hover:text-gold-bright transition-all flex items-center justify-center gap-2 text-xs font-cinzel font-bold border-r border-gold-DEFAULT/20 drop-shadow-md"
             title="Réintégrer dans l'application principale"
           >
             <LogIn size={12} className="rotate-180" />

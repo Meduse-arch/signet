@@ -40,7 +40,7 @@ export function QuestDetailContent({
   }, [initialQuest, quests]);
 
   if (!quest) return (
-    <div className="flex flex-col items-center justify-center h-full opacity-20 py-20">
+    <div className="flex flex-col items-center justify-center h-full opacity-40 py-20">
       <Scroll size={64} className="mb-4 text-gold-DEFAULT" />
       <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">Sélectionnez un récit</span>
     </div>
@@ -95,7 +95,7 @@ export function QuestDetailContent({
         
         {/* BLOCK DESCRIPTION (Scrollable, plus compact) */}
         <div className="shrink-0 px-4 py-3">
-           <div className="flex items-center gap-2 mb-2 opacity-20">
+           <div className="flex items-center gap-2 mb-2 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
               <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Récit</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
@@ -109,7 +109,7 @@ export function QuestDetailContent({
 
         {/* BLOCK RÉCOMPENSES (Flexible) ─── */}
         <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
-           <div className="flex items-center gap-2 mb-3 opacity-20">
+           <div className="flex items-center gap-2 mb-3 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
               <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Récompenses</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
@@ -129,12 +129,12 @@ export function QuestDetailContent({
                            className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 transition-all hover:border-gold-DEFAULT/20"
                        >
                            <div className="flex flex-col">
-                               <span className="text-[8px] font-cinzel font-black text-white/60 uppercase tracking-widest">{reward.type}</span>
+                               <span className="text-xs font-cinzel font-black text-white/60 uppercase tracking-widest">{reward.type}</span>
                                <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase truncate max-w-[100px]">
                                    {reward.description || 'Valeur mystique'}
                                </span>
                            </div>
-                           <span className="text-[10px] font-cinzel font-black text-gold-bright">
+                           <span className="text-xs font-cinzel font-black text-gold-bright">
                                {reward.type === 'Experience' ? `+${reward.value} XP` : (reward.value ? `x${reward.value}` : 'UNIQUE')}
                            </span>
                        </div>
@@ -158,7 +158,7 @@ export function QuestDetailContent({
                 {onEdit && (
                     <button 
                         onClick={onEdit}
-                        className="flex-1 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all font-cinzel text-[7px] font-black uppercase tracking-widest"
+                        className="flex-1 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all font-cinzel text-[11px] font-black uppercase tracking-widest"
                     >
                         Modifier
                     </button>

@@ -52,11 +52,8 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
             const updatedChar = { ...char, custom_skills: updatedCustomSkills };
             charStore.addOrUpdateCharacter(updatedChar);
             
-            // On informe les autres via le canal de broadcast global des persos
-            const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
-
-            channel.postMessage({ type: 'CHAR_UPDATE', payload: updatedChar });
-            channel.close();
+            // L'appel à addOrUpdateCharacter déclenche déjà la synchro interne du store.
+            // Pas besoin de BroadcastChannel manuel ici.
           });
         }
       } else {

@@ -212,9 +212,13 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       const { type, payload } = event.data;
       if (type === 'MAP_CHANGE') {
         const map = maps.find(m => m.url === payload.url);
-        if (map) setCurrentMapId(map.id);
+        if (map) {
+          setCurrentMapId(map.id);
+          if (isHost) broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name, id: map.id, grid_size: map.grid_size } });
+        }
       } else if (type === 'MAP_UPDATE') {
         setMaps(payload);
+        if (isHost) broadcast({ type: 'MAP_UPDATE', payload });
       } else if (type === 'REQUEST_CURRENT_MAP') {
         // ✅ Répondre à une demande de synchronisation (ex: fenêtre pop-out)
         channel.postMessage({ type: 'CURRENT_MAP_REPLY', payload: { currentMapId } });

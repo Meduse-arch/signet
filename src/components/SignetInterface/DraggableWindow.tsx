@@ -19,7 +19,7 @@ interface DraggableWindowProps {
 }
 
 export function DraggableWindow({ 
-  id: _id,
+  id,
   title, 
   children, 
   onClose, 
@@ -35,13 +35,49 @@ export function DraggableWindow({
 }: DraggableWindowProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   
-  const initialWidth = variant === 'codex' ? '850px' : '320px';
-  const initialHeight = variant === 'codex' ? '600px' : '400px';
+  let initialWidth = '400px';
+  let initialHeight = '450px';
+
+  if (variant === 'codex') {
+    initialWidth = '850px';
+    initialHeight = '600px';
+  } else {
+    switch (id) {
+      case 'character':
+        initialWidth = '720px';
+        initialHeight = '560px';
+        break;
+      case 'bestiary':
+        initialWidth = '620px';
+        initialHeight = '500px';
+        break;
+      case 'scenes':
+        initialWidth = '520px';
+        initialHeight = '420px';
+        break;
+      case 'inventory':
+        initialWidth = '480px';
+        initialHeight = '450px';
+        break;
+      case 'skills':
+        initialWidth = '580px';
+        initialHeight = '480px';
+        break;
+      case 'quests':
+        initialWidth = '500px';
+        initialHeight = '450px';
+        break;
+      default:
+        initialWidth = '400px';
+        initialHeight = '450px';
+        break;
+    }
+  }
 
   const windowContent = (
     <div 
         ref={isExternal ? null : nodeRef}
-        className={`${className} bg-[#0D0D0F]/90 backdrop-blur-2xl rounded-sm border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col group pointer-events-auto overflow-hidden ${isExternal ? 'w-full h-full' : 'resize both min-w-[280px] min-h-[150px]'}`}
+        className={`${className} bg-[#0D0D0F]/90 backdrop-blur-2xl rounded-sm border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col group pointer-events-auto overflow-hidden ${isExternal ? 'w-full h-full' : 'resize both min-w-[380px] min-h-[250px]'}`}
         style={{ 
             zIndex: isExternal ? 1 : zIndex, 
             position: isExternal ? 'relative' : 'absolute', 
@@ -60,7 +96,7 @@ export function DraggableWindow({
             {/* Effet lumineux de ligne façon Jarvis */}
             <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />
             
-            <span className="text-[10px] font-cinzel font-black text-gold-DEFAULT drop-shadow-[0_0_8px_rgba(212,175,55,0.8)] tracking-[0.3em] uppercase pointer-events-none">
+            <span className="text-xs font-cinzel font-black text-gold-DEFAULT drop-shadow-[0_0_8px_rgba(212,175,55,0.8)] tracking-[0.3em] uppercase pointer-events-none">
               {title}
             </span>
             <div className="flex items-center gap-2 relative z-10">

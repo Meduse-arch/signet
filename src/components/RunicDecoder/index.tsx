@@ -17,7 +17,7 @@ export const RunicDecoder: React.FC<RunicDecoderProps> = ({ text }) => {
   return (
     <div className="flex flex-col items-center">
       <span className="text-gold-bright font-cinzel text-xs tracking-[0.2em]">{text}</span>
-      <span className="text-gold-DEFAULT opacity-40 text-[10px] tracking-[0.5em] mt-1">{runicText}</span>
+      <span className="text-gold-DEFAULT opacity-40 text-xs tracking-[0.5em] mt-1">{runicText}</span>
     </div>
   );
 };

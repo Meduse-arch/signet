@@ -6,6 +6,8 @@ import { usePeersStore } from '../../store/peers';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
 import { useQuestsStore } from '../../store/quests';
+import { useMapStore } from '../../store/map';
+import { useDiceStore } from '../../store/dice';
 import { peerService } from '../../services/peer.service';
 import {
   addSessionPlayer,
@@ -40,6 +42,15 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const [status, setStatus] = useState<ConnectionStatus>('initializing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string; role?: number }[]>([]);
+  
+  useEffect(() => {
+    if (sessionId) {
+      const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+      channel.postMessage({ type: 'PLAYER_LIST', payload: players });
+      channel.close();
+    }
+  }, [players, sessionId]);
+
   const [copied, setCopied] = useState(false);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [localMetadata, setLocalMetadata] = useState<{name?: string, id?: string, imageUrl?: string, system?: string, hostPeerId?: string, settings?: any} | null>(null);
@@ -80,6 +91,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
     if (sessionId) {
         localStorage.setItem('last_active_session', sessionId);
         useCharactersStore.getState().initialize(sessionId);
+        useMapStore.getState().initialize(sessionId);
+        useDiceStore.getState().initialize(sessionId);
     }
   }, [sessionId]);
 
@@ -169,6 +182,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                 useCharactersStore.getState().initialize(realId);
                 useItemsStore.getState().initialize(realId);
                 useQuestsStore.getState().initialize(realId);
+                useMapStore.getState().initialize(realId);
+                useDiceStore.getState().initialize(realId);
             } catch (err) { console.error('Switch UUID fail', err); }
         }
         const updatedSession = { ...data.payload, lastPlayed: Date.now(), isSummoned: true };

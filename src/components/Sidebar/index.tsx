@@ -60,7 +60,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
                 )}
               </div>
               <span 
-                className={`text-[10px] font-cinzel font-black tracking-[0.2em] uppercase whitespace-nowrap transition-all duration-300 ${
+                className={`text-xs font-cinzel font-black tracking-[0.2em] uppercase whitespace-nowrap transition-all duration-300 ${
                   sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
                 }`}
               >
@@ -80,7 +80,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
             <Key className="flex-shrink-0 w-5 h-5 transition-transform group-hover:scale-110" />
           </div>
           <span 
-            className={`text-[10px] font-cinzel font-black tracking-[0.2em] uppercase whitespace-nowrap transition-all duration-300 ${
+            className={`text-xs font-cinzel font-black tracking-[0.2em] uppercase whitespace-nowrap transition-all duration-300 ${
               sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
             }`}
           >
@@ -99,7 +99,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
               <Plus className="flex-shrink-0 w-5 h-5 transition-transform group-hover:scale-110" />
             </div>
             <span 
-              className={`text-[10px] font-cinzel font-black tracking-[0.2em] uppercase whitespace-nowrap transition-all duration-300 ${
+              className={`text-xs font-cinzel font-black tracking-[0.2em] uppercase whitespace-nowrap transition-all duration-300 ${
                 sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
               }`}
             >
@@ -114,11 +114,11 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
           <div className="px-3 py-2 mb-2 rounded-lg bg-gold-DEFAULT/5 border border-gold-DEFAULT/30">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-gold-bright animate-pulse shadow-[0_0_8px_rgba(212,160,23,0.6)]"></div>
-              <span className="text-[10px] font-cinzel font-black text-gold-bright tracking-widest truncate">
+              <span className="text-xs font-cinzel font-black text-gold-bright tracking-widest truncate">
                 {user.pseudo}
               </span>
             </div>
-            <div className="mt-1 text-[8px] font-mono text-gold-DEFAULT drop-shadow-md/60 uppercase tracking-tighter ml-5">
+            <div className="mt-1 text-xs font-mono text-gold-DEFAULT drop-shadow-md/60 uppercase tracking-tighter ml-5">
               Grade: {user.role}
             </div>
           </div>
@@ -131,7 +131,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
             title={!sidebarOpen ? "Se déconnecter" : undefined}
           >
             <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-            <span className={`text-[10px] font-cinzel font-black tracking-[0.1em] uppercase whitespace-nowrap transition-all duration-300 ${
+            <span className={`text-xs font-cinzel font-black tracking-[0.1em] uppercase whitespace-nowrap transition-all duration-300 ${
               sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
             }`}>
               Bannir la Session

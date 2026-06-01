@@ -60,7 +60,7 @@ export function GiveItemModal({ sessionId, targetCharacterName, onClose, onGive 
                   placeholder="Chercher un artefact..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl py-2 pl-9 pr-4 text-xs font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-all"
+                  className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl py-2 pl-9 pr-4 text-xs font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/40 focus:outline-none focus:border-gold-DEFAULT/50 transition-all"
                 />
               </div>
             </div>
@@ -84,12 +84,12 @@ export function GiveItemModal({ sessionId, targetCharacterName, onClose, onGive 
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-cinzel font-black text-gold-bright truncate uppercase">{item.name}</div>
-                    <div className="text-[10px] text-white/40 italic truncate">{item.category}</div>
+                    <div className="text-xs text-white/60 italic truncate">{item.category}</div>
                   </div>
                 </button>
               ))}
               {filteredItems.length === 0 && (
-                <div className="text-center py-8 text-white/30 text-xs italic font-serif">Aucun artefact trouvé dans la bibliothèque de session.</div>
+                <div className="text-center py-8 text-white/50 text-xs italic font-serif">Aucun artefact trouvé dans la bibliothèque de session.</div>
               )}
             </div>
           </div>
@@ -107,15 +107,15 @@ export function GiveItemModal({ sessionId, targetCharacterName, onClose, onGive 
                     )}
                   </div>
                   <h3 className="text-sm font-cinzel font-black text-gold-bright text-center uppercase tracking-widest mb-1">{selectedItem.name}</h3>
-                  <div className="text-[10px] text-center text-white/40 italic mb-4">{selectedItem.category}</div>
+                  <div className="text-xs text-center text-white/60 italic mb-4">{selectedItem.category}</div>
                   
-                  <p className="text-[10px] text-white/60 font-serif leading-relaxed line-clamp-4">
+                  <p className="text-xs text-white/60 font-serif leading-relaxed line-clamp-4">
                     {selectedItem.description}
                   </p>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gold-DEFAULT/20">
-                  <label className="block text-[10px] font-cinzel text-gold-DEFAULT/70 uppercase tracking-widest text-center mb-2">Quantité à transférer</label>
+                  <label className="block text-xs font-cinzel text-gold-DEFAULT/70 uppercase tracking-widest text-center mb-2">Quantité à transférer</label>
                   <div className="flex items-center justify-center gap-4 mb-6">
                     <button 
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -141,7 +141,7 @@ export function GiveItemModal({ sessionId, targetCharacterName, onClose, onGive 
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-white/20 p-6 text-center">
+              <div className="flex-1 flex flex-col items-center justify-center text-white/60 p-6 text-center">
                 <Package size={48} className="mb-4 opacity-50" />
                 <span className="font-cinzel text-xs uppercase tracking-widest">Sélectionnez un artefact</span>
               </div>

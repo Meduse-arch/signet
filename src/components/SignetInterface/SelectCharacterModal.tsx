@@ -54,17 +54,17 @@ export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectChar
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-cinzel font-black text-white truncate uppercase tracking-widest">{char.name}</div>
-                  <div className="text-[9px] text-white/40 italic truncate">{char.type || 'Joueur'}</div>
+                  <div className="text-[11px] text-white/60 italic truncate">{char.type || 'Joueur'}</div>
                 </div>
               </button>
             ))}
             {characters.length === 0 && (
-              <div className="text-center py-4 text-white/30 text-xs italic font-serif">Aucun voyageur dans l'archive.</div>
+              <div className="text-center py-4 text-white/50 text-xs italic font-serif">Aucun voyageur dans l'archive.</div>
             )}
           </div>
 
           <div className="flex flex-col items-center border-t border-gold-DEFAULT/20 pt-6">
-            <label className="block text-[10px] font-cinzel text-gold-DEFAULT/70 uppercase tracking-widest text-center mb-3">Quantité à transférer</label>
+            <label className="block text-xs font-cinzel text-gold-DEFAULT/70 uppercase tracking-widest text-center mb-3">Quantité à transférer</label>
             <div className="flex items-center justify-center gap-4 mb-6">
               <button 
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -87,7 +87,7 @@ export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectChar
               className={`w-full py-3 rounded-xl font-cinzel font-black text-xs tracking-widest uppercase transition-all shadow-lg active:scale-95 ${
                 selectedCharId && quantity > 0 
                 ? 'bg-gold-DEFAULT hover:bg-gold-bright text-black shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:shadow-[0_0_25px_rgba(212,175,55,0.5)]'
-                : 'bg-white/5 text-white/20 cursor-not-allowed'
+                : 'bg-white/5 text-white/60 cursor-not-allowed'
               }`}
             >
               Transférer l'Artefact

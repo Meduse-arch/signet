@@ -122,7 +122,7 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
                     {char?.image_url ? (
                       <img src={char.image_url} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <User className={isSelf ? 'text-gold-DEFAULT' : 'text-white/20'} size={24} />
+                      <User className={isSelf ? 'text-gold-DEFAULT' : 'text-white/60'} size={24} />
                     )}
                   </div>
                   {playerIsMJ && (
@@ -137,12 +137,12 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
                     <span className={`font-cinzel font-black text-sm uppercase tracking-widest ${isSelf ? 'text-gold-bright' : 'text-white/80'}`}>
                       {player.pseudo}
                     </span>
-                    <span className="text-[8px] px-1.5 py-0.5 rounded border border-white/20 text-white/40 font-black uppercase tracking-tighter">
+                    <span className="text-xs px-1.5 py-0.5 rounded border border-white/20 text-white/60 font-black uppercase tracking-tighter">
                       SEC: {player.role ?? 0}
                     </span>
-                    {isSelf && <span className="text-[8px] px-1.5 py-0.5 rounded bg-gold-DEFAULT text-black font-black uppercase tracking-tighter">Moi</span>}
+                    {isSelf && <span className="text-xs px-1.5 py-0.5 rounded bg-gold-DEFAULT text-black font-black uppercase tracking-tighter">Moi</span>}
                   </div>
-                  <span className="text-[10px] font-mono text-white/30 uppercase tracking-tighter">
+                  <span className="text-xs font-mono text-white/50 uppercase tracking-tighter">
                     {char ? char.name : 'En attente d\'incarnation...'}
                   </span>
                 </div>
@@ -153,7 +153,7 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
                   <>
                     <button 
                       onClick={() => handleToggleToken(char.id)}
-                      className={`p-3 rounded-xl transition-all ${tokenStatus[char.id] ? 'bg-gold-DEFAULT text-black' : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white'}`}
+                      className={`p-3 rounded-xl transition-all ${tokenStatus[char.id] ? 'bg-gold-DEFAULT text-black' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'}`}
                       title={tokenStatus[char.id] ? "Retirer de la carte" : "Placer sur la carte"}
                     >
                       <Plus size={20} className={`transition-transform duration-500 ${tokenStatus[char.id] ? 'rotate-45' : ''}`} />
@@ -174,7 +174,7 @@ export function PlayerWindowContent({ players, sessionId }: PlayerWindowContentP
                       return (
                         <div key={key} className="flex flex-col items-center gap-1">
                           <div className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: barDef.color, color: barDef.color }} />
-                          <span className="text-[10px] font-mono text-white/60">{val}</span>
+                          <span className="text-xs font-mono text-white/60">{val}</span>
                         </div>
                       );
                     })}

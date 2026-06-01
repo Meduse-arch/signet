@@ -36,7 +36,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap, onAddMap }: MapGal
             >
               <img src={map.url} alt={map.name} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1">
-                <span className="text-[8px] font-cinzel text-white truncate w-full">{map.name}</span>
+                <span className="text-xs font-cinzel text-white truncate w-full">{map.name}</span>
               </div>
               {currentMapId === map.id && (
                 <div className="absolute top-1 right-1 bg-gold-bright rounded-full p-0.5">
@@ -48,7 +48,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap, onAddMap }: MapGal
           
           {maps.length === 0 && (
             <div className="w-24 h-14 rounded-lg bg-white/5 border border-dashed border-white/20 flex items-center justify-center">
-              <ImageIcon className="w-4 h-4 text-white/20" />
+              <ImageIcon className="w-4 h-4 text-white/60" />
             </div>
           )}
         </div>
@@ -125,7 +125,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
               className="aspect-video rounded-2xl border-2 border-dashed border-gold-DEFAULT/40 hover:border-gold-DEFAULT/50 hover:bg-gold-DEFAULT/5 transition-all flex flex-col items-center justify-center gap-3 group"
             >
               <Plus className="w-8 h-8 text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright transition-colors" />
-              <span className="text-[10px] font-cinzel font-bold text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright tracking-widest">NOUVEL ANCRAGE</span>
+              <span className="text-xs font-cinzel font-bold text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright tracking-widest">NOUVEL ANCRAGE</span>
             </button>
 
             {maps.map((map) => (
@@ -144,7 +144,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
                 <div className="absolute inset-0 p-4 flex flex-col justify-end">
                   <span className="text-xs font-cinzel font-bold text-white tracking-widest uppercase truncate">{map.name}</span>
                   {currentMapId === map.id && (
-                    <span className="text-[8px] text-gold-bright font-black tracking-[0.2em] mt-1">CARTE ACTIVE</span>
+                    <span className="text-xs text-gold-bright font-black tracking-[0.2em] mt-1">CARTE ACTIVE</span>
                   )}
                 </div>
 
@@ -167,26 +167,26 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
             onSubmit={handleSubmit}
             className="relative w-full max-w-md bg-[#16161A] border border-gold-DEFAULT/30 rounded-3xl p-8 shadow-2xl space-y-6"
           >
-            <h3 className="text-lg font-black text-gold-bright tracking-widest uppercase text-center">Invoquer une Image</h3>
+            <h3 className="text-lg font-black text-gold-bright tracking-widest uppercase text-center">Ajouter une Carte / Image</h3>
             
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">Nom du Lieu</label>
+                <label className="text-xs font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">Nom du Lieu</label>
                 <input 
                   autoFocus
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   placeholder="ex: Donjon des Ombres"
-                  className="w-full bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-xl px-4 py-3 text-sm focus:border-gold-DEFAULT/50 outline-none transition-all placeholder:text-white/10"
+                  className="w-full bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-xl px-4 py-3 text-sm focus:border-gold-DEFAULT/50 outline-none transition-all placeholder:text-white/30"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">Lien du Grimoire (URL)</label>
+                <label className="text-xs font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">URL de l'image</label>
                 <input 
                   value={newUrl}
                   onChange={e => setNewUrl(e.target.value)}
                   placeholder="https://..."
-                  className="w-full bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-xl px-4 py-3 text-sm focus:border-gold-DEFAULT/50 outline-none transition-all placeholder:text-white/10"
+                  className="w-full bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-xl px-4 py-3 text-sm focus:border-gold-DEFAULT/50 outline-none transition-all placeholder:text-white/30"
                 />
               </div>
             </div>
@@ -195,16 +195,20 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
               <button 
                 type="button"
                 onClick={() => setIsAdding(false)}
-                className="flex-1 px-4 py-3 rounded-xl border border-white/10 text-[10px] font-cinzel font-bold hover:bg-white/5 transition-all"
+                className="flex-1 px-4 py-3 rounded-xl border border-white/10 text-xs font-cinzel font-bold hover:bg-white/5 transition-all"
               >
                 ANNULER
               </button>
               <button 
                 type="submit"
                 disabled={!newName || !newUrl}
-                className="flex-2 px-8 py-3 rounded-xl bg-gold-DEFAULT text-black text-[10px] font-cinzel font-bold hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all disabled:opacity-50 disabled:grayscale"
+                className={`flex-2 px-8 py-3 rounded-xl text-xs font-cinzel font-bold transition-all border-2 ${
+                  !newName || !newUrl
+                    ? 'bg-black/20 text-white/40 border-white/15 cursor-not-allowed'
+                    : 'bg-gold-DEFAULT text-black border-gold-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]'
+                }`}
               >
-                LIER LA CARTE
+                Ajouter la carte
               </button>
             </div>
           </form>

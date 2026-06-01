@@ -36,7 +36,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap }: MapGalleryProps)
           <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
             <div className="flex items-center gap-2">
               <Grid className="w-4 h-4 text-gold-bright" />
-              <span className="text-[10px] font-cinzel font-black text-gold-bright tracking-widest uppercase">Galerie des Cartes</span>
+              <span className="text-xs font-cinzel font-black text-gold-bright tracking-widest uppercase">Galerie des Cartes</span>
             </div>
             <button 
               onClick={() => setIsOpen(false)}
@@ -48,13 +48,13 @@ export function MapGallery({ maps, currentMapId, onSelectMap }: MapGalleryProps)
 
           <div className="p-3 border-b border-white/5 bg-black/20">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
               <input 
                 type="text"
                 placeholder="Rechercher une archive..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/30 transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white placeholder:text-white/60 focus:outline-none focus:border-gold-DEFAULT/30 transition-all"
               />
             </div>
           </div>
@@ -82,7 +82,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap }: MapGalleryProps)
                 )}
                 <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent transition-opacity ${currentMapId === map.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
                 <div className="absolute bottom-2 left-2 right-2">
-                  <span className="block text-[8px] font-bold text-white uppercase tracking-wider truncate">{map.name}</span>
+                  <span className="block text-xs font-bold text-white uppercase tracking-wider truncate">{map.name}</span>
                 </div>
               </button>
             ))}
@@ -94,7 +94,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap }: MapGalleryProps)
       <div className="flex items-center gap-3">
         {/* Search HUD (Integrated) */}
         <div className="h-12 bg-[#0D0D0F]/80 backdrop-blur-md border border-white/5 rounded-2xl flex items-center px-4 gap-3 group hover:border-white/10 transition-all">
-          <Search className="w-4 h-4 text-white/30 group-focus-within:text-gold-bright transition-colors" />
+          <Search className="w-4 h-4 text-white/50 group-focus-within:text-gold-bright transition-colors" />
           <input 
             type="text"
             placeholder={currentMap?.name || 'Explorer...'}
@@ -119,8 +119,8 @@ export function MapGallery({ maps, currentMapId, onSelectMap }: MapGalleryProps)
             <MapIcon className="w-4 h-4 text-gold-bright relative z-10" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[7px] font-black text-gold-DEFAULT drop-shadow-md uppercase tracking-[0.2em] leading-none mb-1">Localisation</span>
-            <span className="text-[10px] font-cinzel font-black text-white tracking-widest uppercase">
+            <span className="text-[11px] font-black text-gold-DEFAULT drop-shadow-md uppercase tracking-[0.2em] leading-none mb-1">Localisation</span>
+            <span className="text-xs font-cinzel font-black text-white tracking-widest uppercase">
               {currentMap?.name || 'Hub Spirituel'}
             </span>
           </div>

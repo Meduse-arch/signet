@@ -124,10 +124,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
     
     broadcast({ type: 'CHAR_UPDATE', payload: finalChar });
     
-    // Sync local pour les autres fenêtres
-    const syncChannel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
-    syncChannel.postMessage({ type: 'CHAR_UPDATE', payload: finalChar });
-    syncChannel.close();
+    // La synchro locale est déjà gérée en interne par addOrUpdateCharacter
 
     setHasChanges(false);
     onClose();
@@ -245,11 +242,11 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 {editedChar.name}
               </h2>
               <div className="flex items-center gap-3 mt-0.5">
-                <span className="text-[10px] font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase">GÉRER L'ENTITÉ</span>
+                <span className="text-xs font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase">GÉRER L'ENTITÉ</span>
                 <div className="w-1 h-1 rounded-full bg-gold-DEFAULT/20" />
                 <div className="flex items-center gap-1.5">
                     <div className={`w-1.5 h-1.5 rounded-full ${isTokenOnMap ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 opacity-50'}`} />
-                    <span className={`text-[8px] font-cinzel font-black uppercase tracking-tighter ${isTokenOnMap ? 'text-green-400' : 'text-white/20'}`}>
+                    <span className={`text-xs font-cinzel font-black uppercase tracking-tighter ${isTokenOnMap ? 'text-green-400' : 'text-white/60'}`}>
                         {isTokenOnMap ? 'Sur la carte' : 'Hors carte'}
                     </span>
                 </div>
@@ -273,7 +270,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id as Tab); setShowForge(false); setShowSkillArchive(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-cinzel text-[10px] font-black tracking-widest transition-all ${activeTab === tab.id ? 'bg-gold-DEFAULT text-black shadow-lg translate-x-1' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-cinzel text-xs font-black tracking-widest transition-all ${activeTab === tab.id ? 'bg-gold-DEFAULT text-black shadow-lg translate-x-1' : 'text-white/60 hover:text-white/60 hover:bg-white/5'}`}
               >
                 <tab.icon size={14} />
                 {tab.label}
@@ -286,22 +283,22 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
-                     <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Appellation de l'Entité</label>
+                     <label className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Appellation de l'Entité</label>
                      <input 
                        type="text" 
                        value={editedChar.name} 
                        onChange={e => { setEditedChar((prev: any) => ({ ...prev, name: e.target.value })); setHasChanges(true); }}
-                       className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-lg shadow-inner"
+                       className="w-full bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-white placeholder:text-white/60 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-serif italic text-lg shadow-inner"
                      />
                   </div>
                   <div className="space-y-4">
-                     <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Type d'Existence</label>
+                     <label className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Type d'Existence</label>
                      <div className="grid grid-cols-2 gap-2">
                         {ENTITY_TYPES.map(t => (
                           <button
                             key={t.id}
                             onClick={() => { setEditedChar((p: any) => ({ ...p, type: t.id })); setHasChanges(true); }}
-                            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-[9px] font-cinzel font-black uppercase transition-all ${editedChar.type === t.id ? 'bg-gold-DEFAULT/10 border-gold-DEFAULT text-gold-bright shadow-lg' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30'}`}
+                            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-[11px] font-cinzel font-black uppercase transition-all ${editedChar.type === t.id ? 'bg-gold-DEFAULT/10 border-gold-DEFAULT text-gold-bright shadow-lg' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30'}`}
                           >
                             <t.icon size={12} className={t.color} />
                             {t.label}
@@ -312,13 +309,13 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Illustration</label>
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Illustration</label>
                   <div className="flex gap-4">
                     <div className="w-16 h-16 rounded-2xl border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden shrink-0">
                         {previewUrl ? (
                             <img src={previewUrl} className="w-full h-full object-cover" alt="Portrait" />
                         ) : (
-                            <User className="text-white/20" size={24} />
+                            <User className="text-white/60" size={24} />
                         )}
                     </div>
                     <div className="flex-1 flex flex-col gap-2">
@@ -328,7 +325,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                 value={editedChar.image_url || ''} 
                                 onChange={e => { setEditedChar((p: any) => ({ ...p, image_url: e.target.value })); setHasChanges(true); }}
                                 placeholder="URL ou asset://..."
-                                className="flex-1 bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-[10px] text-white placeholder:text-white/20 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono shadow-inner"
+                                className="flex-1 bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/60 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono shadow-inner"
                             />
                             <button 
                                 onClick={() => fileInputRef.current?.click()}
@@ -359,7 +356,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                 }}
                             />
                         </div>
-                        <p className="text-[7px] font-cinzel text-white/20 uppercase tracking-widest px-1">Importez un portrait local (P2P)</p>
+                        <p className="text-[11px] font-cinzel text-white/60 uppercase tracking-widest px-1">Importez un portrait local (P2P)</p>
                     </div>
                   </div>
                 </div>
@@ -371,7 +368,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 {statDefs.map((stat: any) => (
                   <div key={stat.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-gold-DEFAULT/20 transition-all group">
                     <div className="flex flex-col">
-                      <span className="font-cinzel font-black uppercase text-[10px] text-white/60 tracking-widest group-hover:text-gold-DEFAULT transition-colors">{stat.name}</span>
+                      <span className="font-cinzel font-black uppercase text-xs text-white/60 tracking-widest group-hover:text-gold-DEFAULT transition-colors">{stat.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <button onClick={() => updateStat(stat.id, (editedChar.stats?.[stat.id] || 0) - 1)} className="w-8 h-8 rounded-lg border border-white/20 hover:bg-white/10 text-white/60 transition-colors flex items-center justify-center font-bold">-</button>
@@ -418,10 +415,10 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 {!showForge ? (
                   <>
                     <div className="flex items-center justify-between">
-                      <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Inventaire Actuel</h3>
+                      <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Inventaire Actuel</h3>
                       <button 
                         onClick={() => setShowForge(true)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest group shadow-lg"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-xs font-black uppercase tracking-widest group shadow-lg"
                       >
                         <Hammer size={14} className="group-hover:rotate-12 transition-transform" />
                         Ouvrir la Forge
@@ -430,9 +427,9 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
 
                     <div className="flex flex-col gap-2">
                       {groupedInventory.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 opacity-20">
+                        <div className="flex flex-col items-center justify-center py-20 opacity-40">
                           <Package size={48} className="mb-4 text-gold-DEFAULT" />
-                          <span className="font-cinzel text-[10px] uppercase tracking-widest">INVENTAIRE VIDE</span>
+                          <span className="font-cinzel text-xs uppercase tracking-widest">INVENTAIRE VIDE</span>
                         </div>
                       ) : (
                         groupedInventory.map((item: any, i: number) => (
@@ -442,10 +439,10 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                 {item.image_url ? (
                                   <InventoryItemImage url={item.image_url} />
                                 ) : (
-                                  <Package size={16} className="text-white/20" />
+                                  <Package size={16} className="text-white/60" />
                                 )}
                                 {item.quantity > 1 && (
-                                  <div className="absolute bottom-0 right-0 bg-gold-DEFAULT text-black text-[8px] font-black px-1 rounded-tl">
+                                  <div className="absolute bottom-0 right-0 bg-gold-DEFAULT text-black text-xs font-black px-1 rounded-tl">
                                     x{item.quantity}
                                   </div>
                                 )}
@@ -453,18 +450,18 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                               <div className="flex flex-col min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{item.name}</span>
-                                  {item.equipped && <span className="text-[7px] font-cinzel font-black uppercase bg-gold-DEFAULT/20 text-gold-bright px-1.5 py-0.5 rounded border border-gold-DEFAULT/30 shrink-0">Équipé</span>}
+                                  {item.equipped && <span className="text-[11px] font-cinzel font-black uppercase bg-gold-DEFAULT/20 text-gold-bright px-1.5 py-0.5 rounded border border-gold-DEFAULT/30 shrink-0">Équipé</span>}
                                 </div>
-                                <span className="text-[9px] font-mono text-white/30 uppercase">{item.category}</span>
+                                <span className="text-[11px] font-mono text-white/50 uppercase">{item.category}</span>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-4">
                               {item.isStack && (
-                                <div className="flex items-center gap-2 bg-black/40 rounded-lg border border-white/10 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-2 bg-black/40 rounded-lg border border-white/10 p-1 opacity-30 group-hover:opacity-100 transition-opacity">
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(item.id, item.quantity - 1); }}
-                                    className="w-6 h-6 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                                    className="w-6 h-6 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
                                   >
                                     -
                                   </button>
@@ -472,11 +469,11 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                     type="number" 
                                     value={item.quantity} 
                                     onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value) || 0)}
-                                    className="w-8 bg-transparent text-center font-mono text-[10px] text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    className="w-8 bg-transparent text-center font-mono text-xs text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   />
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(item.id, item.quantity + 1); }}
-                                    className="w-6 h-6 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                                    className="w-6 h-6 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
                                   >
                                     +
                                   </button>
@@ -489,7 +486,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                   if (item.isStack) handleRemoveStack(item.id);
                                   else handleRemoveInstance(item.instanceId);
                                 }}
-                                className="p-2 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100"
+                                className="p-2 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-colors opacity-30 group-hover:opacity-100"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -504,7 +501,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                     <div className="flex items-center justify-between">
                       <button 
                         onClick={() => setShowForge(false)}
-                        className="flex items-center gap-2 text-white/40 hover:text-gold-bright transition-colors text-[10px] font-cinzel font-black uppercase tracking-widest"
+                        className="flex items-center gap-2 text-white/60 hover:text-gold-bright transition-colors text-xs font-cinzel font-black uppercase tracking-widest"
                       >
                         <ArrowLeft size={14} /> Retour à l'Inventaire
                       </button>
@@ -515,7 +512,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                           value={searchForge}
                           onChange={e => setSearchForge(e.target.value)}
                           placeholder="Rechercher..."
-                          className="w-full bg-black/60 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-[10px] text-white focus:border-gold-DEFAULT/50 outline-none"
+                          className="w-full bg-black/60 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-xs text-white focus:border-gold-DEFAULT/50 outline-none"
                         />
                       </div>
                     </div>
@@ -528,12 +525,12 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                 {item.image_url ? (
                                   <InventoryItemImage url={item.image_url} />
                                 ) : (
-                                  <Package size={16} className="text-white/20" />
+                                  <Package size={16} className="text-white/60" />
                                 )}
                              </div>
                              <div className="flex flex-col min-w-0">
                                 <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{item.name}</span>
-                                <span className="text-[9px] font-mono text-white/30 uppercase">{item.category}</span>
+                                <span className="text-[11px] font-mono text-white/50 uppercase">{item.category}</span>
                              </div>
                           </div>
 
@@ -544,7 +541,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                max="99" 
                                value={forgeQuantities[item.id] || 1}
                                onChange={e => setForgeQuantities(prev => ({ ...prev, [item.id]: Math.max(1, parseInt(e.target.value) || 1) }))}
-                               className="w-10 bg-black/40 border border-white/10 rounded-lg py-1 text-center font-mono text-[10px] text-white"
+                               className="w-10 bg-black/40 border border-white/10 rounded-lg py-1 text-center font-mono text-xs text-white"
                              />
                              <button 
                                onClick={() => handleAddFromForge(item)}
@@ -566,10 +563,10 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 {!showSkillArchive ? (
                   <>
                     <div className="flex items-center justify-between">
-                      <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Maîtrises du Codex</h3>
+                      <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Maîtrises du Codex</h3>
                       <button 
                         onClick={() => setShowSkillArchive(true)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-[10px] font-black uppercase tracking-widest group shadow-lg"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-xs font-black uppercase tracking-widest group shadow-lg"
                       >
                         <Zap size={14} className="group-hover:scale-110 transition-transform" />
                         Ouvrir le Codex
@@ -578,9 +575,9 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
 
                     <div className="flex flex-col gap-2">
                       {(editedChar.custom_skills || []).length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 opacity-20">
+                        <div className="flex flex-col items-center justify-center py-20 opacity-40">
                           <Zap size={48} className="mb-4 text-gold-DEFAULT" />
-                          <span className="font-cinzel text-[10px] uppercase tracking-widest">AUCUNE MAÎTRISE</span>
+                          <span className="font-cinzel text-xs uppercase tracking-widest">AUCUNE MAÎTRISE</span>
                         </div>
                       ) : (
                         editedChar.custom_skills.map((skill: any) => (
@@ -595,12 +592,12 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                               </div>
                               <div className="flex flex-col min-w-0">
                                 <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{skill.name}</span>
-                                <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">Maîtrise Occulte</span>
+                                <span className="text-[11px] font-mono text-white/50 uppercase tracking-widest">Maîtrise Occulte</span>
                               </div>
                             </div>
                             <button 
                               onClick={() => handleRemoveSkill(skill.id)}
-                              className="p-2 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100"
+                              className="p-2 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-colors opacity-30 group-hover:opacity-100"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -614,7 +611,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                     <div className="flex items-center justify-between">
                       <button 
                         onClick={() => setShowSkillArchive(false)}
-                        className="flex items-center gap-2 text-white/40 hover:text-gold-bright transition-colors text-[10px] font-cinzel font-black uppercase tracking-widest"
+                        className="flex items-center gap-2 text-white/60 hover:text-gold-bright transition-colors text-xs font-cinzel font-black uppercase tracking-widest"
                       >
                         <ArrowLeft size={14} /> Retour au Codex
                       </button>
@@ -625,7 +622,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                           value={searchSkillArchive}
                           onChange={e => setSearchSkillArchive(e.target.value)}
                           placeholder="Rechercher..."
-                          className="w-full bg-black/60 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-[10px] text-white focus:border-gold-DEFAULT/50 outline-none"
+                          className="w-full bg-black/60 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-xs text-white focus:border-gold-DEFAULT/50 outline-none"
                         />
                       </div>
                     </div>
@@ -643,7 +640,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                              </div>
                              <div className="flex flex-col min-w-0">
                                 <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{skill.name}</span>
-                                <span className="text-[9px] font-mono text-white/30 uppercase">{skill.type}</span>
+                                <span className="text-[11px] font-mono text-white/50 uppercase">{skill.type}</span>
                              </div>
                           </div>
 
@@ -662,7 +659,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
             )}
 
             {activeTab === 'quetes' && (
-              <div className="flex flex-col items-center justify-center py-20 opacity-20 bg-black/20 rounded-3xl border border-dashed border-white/5">
+              <div className="flex flex-col items-center justify-center py-20 opacity-40 bg-black/20 rounded-3xl border border-dashed border-white/5">
                 <Plus size={64} className="mb-4 text-gold-DEFAULT" />
                 <span className="font-cinzel text-xs uppercase tracking-widest">GRIMOIRE DES QUÊTES BIENTÔT DISPONIBLE</span>
               </div>
@@ -675,23 +672,23 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
              {hasChanges && (
                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 animate-pulse">
                   <div className="w-1.5 h-1.5 rounded-full bg-gold-DEFAULT" />
-                  <span className="text-[8px] font-cinzel font-black text-gold-bright uppercase tracking-widest">Changements non gravés</span>
+                  <span className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-widest">Changements non enregistrés</span>
                </div>
              )}
           </div>
           <div className="flex gap-4">
              <button 
                onClick={onClose}
-               className="px-8 py-3 rounded-full text-[10px] font-cinzel font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+               className="px-8 py-3 rounded-full text-xs font-cinzel font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors"
              >
-               Renoncer
+               Annuler
              </button>
              <button 
                onClick={handleSave}
-               className="flex items-center gap-3 px-12 py-3 rounded-full bg-gold-DEFAULT text-black hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-105 transition-all group font-cinzel font-black text-[10px] uppercase tracking-[0.2em]"
+               className="flex items-center gap-3 px-12 py-3 rounded-full bg-gold-DEFAULT text-black hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-105 transition-all group font-cinzel font-black text-xs uppercase tracking-[0.2em]"
              >
                <Save size={14} className="group-hover:rotate-12 transition-transform" />
-               Graver dans l'Archive
+               Enregistrer
              </button>
           </div>
         </footer>

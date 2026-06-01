@@ -19,8 +19,8 @@ export function CreateSessionModal({
   onClose, 
   onSubmit, 
   initialData,
-  title = "Nouvelle Archive",
-  submitLabel = "Invoquer"
+  title = "Nouvelle Session",
+  submitLabel = "Créer"
 }: SessionModalProps) {
   const [name, setName] = useState('');
   const [system, setSystem] = useState('');
@@ -99,7 +99,7 @@ export function CreateSessionModal({
           </header>
 
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 sm:space-y-8 pb-4">
-            <p className="text-[10px] sm:text-xs font-serif italic text-gold-DEFAULT drop-shadow-md/80 leading-relaxed">
+            <p className="text-xs sm:text-xs font-serif italic text-gold-DEFAULT drop-shadow-md/80 leading-relaxed">
               {initialData 
                 ? "Altérez les runes de cette archive pour modifier le cours du destin." 
                 : "Inscrivez les premiers mots de cette nouvelle épopée dans le grand grimoire."}
@@ -107,7 +107,7 @@ export function CreateSessionModal({
 
             <div className="space-y-6">
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-cinzel font-black text-gold-muted tracking-widest uppercase ml-1">Titre de l'Archive</label>
+                <label className="block text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase ml-1">Titre de l'Archive</label>
                 <input
                   type="text"
                   value={name}
@@ -119,7 +119,7 @@ export function CreateSessionModal({
 
               {/* SYSTÈME DROPDOWN */}
               <div className="space-y-1.5 relative" ref={dropdownRef}>
-                <label className="block text-[10px] font-cinzel font-black text-gold-muted tracking-widest uppercase ml-1">Arcane / Système</label>
+                <label className="block text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase ml-1">Arcane / Système</label>
                 <div className="relative group">
                   <input
                     type="text"
@@ -157,7 +157,7 @@ export function CreateSessionModal({
                           </div>
                         ))
                       ) : (
-                        <div className="px-4 py-4 text-[10px] italic font-serif text-gold-muted/50 text-center">
+                        <div className="px-4 py-4 text-xs italic font-serif text-gold-muted/50 text-center">
                           Aucun rituel ne porte ce nom...
                         </div>
                       )}
@@ -170,7 +170,7 @@ export function CreateSessionModal({
                 <div className="animate-in fade-in slide-in-from-left-2 duration-300">
                   <button
                     onClick={() => setIsSettingsOpen(true)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-4 bg-gold-DEFAULT/5 border border-gold-DEFAULT/40 rounded-xl text-[10px] font-cinzel font-black text-gold-bright hover:bg-gold-DEFAULT/10 transition-all tracking-widest uppercase"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-4 bg-gold-DEFAULT/5 border border-gold-DEFAULT/40 rounded-xl text-xs font-cinzel font-black text-gold-bright hover:bg-gold-DEFAULT/10 transition-all tracking-widest uppercase"
                   >
                     <Settings2 className="w-3.5 h-3.5" />
                     Paramètres de l'Arcane
@@ -179,13 +179,13 @@ export function CreateSessionModal({
               )}
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-cinzel font-black text-gold-muted tracking-widest uppercase ml-1">Vision / URL Image</label>
+                <label className="block text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase ml-1">Vision / URL Image</label>
                 <input
                   type="text"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://images.ritual..."
-                  className="w-full bg-[#0D0D0F]/80 border border-gold-DEFAULT/30 rounded-xl py-2.5 sm:py-3 px-4 text-sm text-gold-bright focus:outline-none focus:border-gold-DEFAULT/50 focus:ring-1 focus:ring-gold-DEFAULT/30 transition-all placeholder:text-gold-DEFAULT drop-shadow-md/30 font-mono text-[9px] sm:text-[10px]"
+                  className="w-full bg-[#0D0D0F]/80 border border-gold-DEFAULT/30 rounded-xl py-2.5 sm:py-3 px-4 text-sm text-gold-bright focus:outline-none focus:border-gold-DEFAULT/50 focus:ring-1 focus:ring-gold-DEFAULT/30 transition-all placeholder:text-gold-DEFAULT drop-shadow-md/30 font-mono text-[11px] sm:text-xs"
                 />
               </div>
             </div>
@@ -194,14 +194,18 @@ export function CreateSessionModal({
           <div className="flex gap-4 mt-6 shrink-0">
             <button
               onClick={onClose}
-              className="flex-1 py-2.5 sm:py-3 text-[9px] sm:text-[10px] font-cinzel font-black tracking-widest border border-gold-DEFAULT/30 rounded-xl text-gold-DEFAULT drop-shadow-md hover:text-gold-bright hover:bg-white/5 transition-all"
+              className="flex-1 py-2.5 sm:py-3 text-[11px] sm:text-xs font-cinzel font-black tracking-widest border border-gold-DEFAULT/30 rounded-xl text-gold-DEFAULT drop-shadow-md hover:text-gold-bright hover:bg-white/5 transition-all"
             >
               ANNULER
             </button>
             <button
-              onClick={() => onSubmit(name || 'Chronique sans nom', system || 'Arcane Inconnue', imageUrl, settings)}
+              onClick={() => onSubmit(name || 'Session sans nom', system || 'Système Inconnu', imageUrl, settings)}
               disabled={!name.trim() || !system.trim()}
-              className="flex-1 py-2.5 sm:py-3 text-[9px] sm:text-[10px] font-cinzel font-black tracking-widest bg-gold-DEFAULT/10 hover:bg-gold-DEFAULT/20 text-gold-bright rounded-xl border border-gold-DEFAULT/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-rune-gold"
+              className={`flex-1 py-2.5 sm:py-3 text-[11px] sm:text-xs font-cinzel font-black tracking-widest rounded-xl transition-all border-2 ${
+                !name.trim() || !system.trim()
+                  ? 'bg-black/20 text-white/40 border-white/15 cursor-not-allowed'
+                  : 'bg-gold-DEFAULT text-black border-gold-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]'
+              }`}
             >
               {submitLabel}
             </button>

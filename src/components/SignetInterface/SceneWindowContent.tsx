@@ -91,7 +91,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
 
             {/* Content */}
             <div className="relative h-full flex items-center px-4 gap-4">
-              <span className={`text-[10px] font-cinzel font-black transition-colors ${
+              <span className={`text-xs font-cinzel font-black transition-colors ${
                 currentSceneId === scene.id ? 'text-gold-bright' : 'text-gold-DEFAULT drop-shadow-md/50'
               }`}>
                 {(index + 1).toString().padStart(2, '0')}
@@ -102,22 +102,22 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
                 </span>
                 <div className="flex gap-2 items-center">
                     {isMJ && scene.is_hidden && scene.id !== 'initial-scene' && (
-                        <span className="text-[7px] font-cinzel font-black text-red-500 uppercase tracking-widest">Cachée</span>
+                        <span className="text-[11px] font-cinzel font-black text-red-500 uppercase tracking-widest">Cachée</span>
                     )}
-                    <span className="text-[7px] font-cinzel font-black text-white/30 uppercase tracking-widest">Grille: {scene.grid_size || 50}px</span>
+                    <span className="text-[11px] font-cinzel font-black text-white/50 uppercase tracking-widest">Grille: {scene.grid_size || 50}px</span>
                 </div>
               </div>
             </div>
 
             {/* MJ Actions */}
             {isMJ && (
-              <div className="absolute right-12 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 z-20 transition-all">
+              <div className="absolute right-12 top-1/2 -translate-y-1/2 flex gap-1 opacity-30 group-hover:opacity-100 z-20 transition-all">
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         setEditingId(scene.id);
                     }}
-                    className="p-2 rounded-full bg-black/40 border border-white/10 text-white/40 hover:text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
+                    className="p-2 rounded-full bg-black/40 border border-white/10 text-white/60 hover:text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
                     title="Modifier les paramètres"
                 >
                     <Settings2 size={14} />
@@ -129,7 +129,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
                             e.stopPropagation();
                             onToggleHide?.(scene.id, !scene.is_hidden);
                         }}
-                        className="p-2 rounded-full bg-black/40 border border-white/10 text-white/40 hover:text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
+                        className="p-2 rounded-full bg-black/40 border border-white/10 text-white/60 hover:text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
                         title={scene.is_hidden ? "Rendre visible" : "Cacher aux joueurs"}
                     >
                         {scene.is_hidden ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -141,7 +141,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
                                 onRemoveScene?.(scene.id);
                             }
                         }}
-                        className="p-2 rounded-full bg-black/40 border border-white/10 text-white/40 hover:text-red-500 hover:border-red-500/40 transition-all"
+                        className="p-2 rounded-full bg-black/40 border border-white/10 text-white/60 hover:text-red-500 hover:border-red-500/40 transition-all"
                         title="Supprimer le plan"
                     >
                         <Trash2 size={14} />
@@ -165,12 +165,12 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
       {/* Forms for Add or Update */}
       {(isAdding || editingId) && isMJ && (
         <form onSubmit={editingId ? handleUpdateSubmit : handleAddSubmit} className="p-3 rounded-lg border border-gold-DEFAULT/40 bg-[#0D0D0F]/80 space-y-3 animate-in fade-in zoom-in-95 duration-200">
-            <h4 className="text-[8px] font-cinzel font-black text-gold-bright uppercase tracking-widest border-b border-white/5 pb-1">
+            <h4 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-widest border-b border-white/5 pb-1">
                 {editingId ? "Paramètres du Plan" : "Nouveau Plan"}
             </h4>
             <div className="grid grid-cols-2 gap-3">
                <div className="space-y-1 col-span-2">
-                  <label className="text-[8px] font-cinzel text-gold-muted uppercase tracking-widest">Nom du lieu</label>
+                  <label className="text-xs font-cinzel text-gold-muted uppercase tracking-widest">Nom du lieu</label>
                   <input 
                     autoFocus
                     type="text" 
@@ -181,7 +181,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
                   />
                </div>
                <div className="space-y-1 col-span-2">
-                  <label className="text-[8px] font-cinzel text-gold-muted uppercase tracking-widest">URL de l'image</label>
+                  <label className="text-xs font-cinzel text-gold-muted uppercase tracking-widest">URL de l'image</label>
                   <input 
                     type="text" 
                     value={newUrl}
@@ -191,7 +191,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
                   />
                </div>
                <div className="space-y-1 col-span-2">
-                  <label className="text-[8px] font-cinzel text-gold-muted uppercase tracking-widest">Taille de la Grille (Pixels)</label>
+                  <label className="text-xs font-cinzel text-gold-muted uppercase tracking-widest">Taille de la Grille (Pixels)</label>
                   <div className="flex items-center gap-3">
                     <input 
                         type="range"
@@ -202,7 +202,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
                         onChange={e => setGridSize(parseInt(e.target.value))}
                         className="flex-1 accent-gold-DEFAULT"
                     />
-                    <span className="text-[10px] font-mono text-gold-bright w-8 text-right">{gridSize}</span>
+                    <span className="text-xs font-mono text-gold-bright w-8 text-right">{gridSize}</span>
                   </div>
                </div>
             </div>
@@ -210,14 +210,14 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
                <button 
                  type="button"
                  onClick={() => { setIsAdding(false); setEditingId(null); resetForm(); }}
-                 className="flex-1 py-1.5 rounded bg-white/5 text-[9px] font-cinzel text-white/80 hover:bg-white/10"
+                 className="flex-1 py-1.5 rounded bg-white/5 text-[11px] font-cinzel text-white/80 hover:bg-white/10"
                >
                  ANNULER
                </button>
                <button 
                  type="submit"
                  disabled={!newName || !newUrl}
-                 className="flex-1 py-1.5 rounded bg-gold-DEFAULT/20 text-[9px] font-cinzel text-gold-bright border border-gold-DEFAULT/30 hover:bg-gold-DEFAULT/30 disabled:opacity-30"
+                 className="flex-1 py-1.5 rounded bg-gold-DEFAULT/20 text-[11px] font-cinzel text-gold-bright border border-gold-DEFAULT/30 hover:bg-gold-DEFAULT/30 disabled:opacity-50 disabled:cursor-not-allowed"
                >
                  {editingId ? "APPLIQUER" : "SCELLER"}
                </button>
@@ -232,7 +232,7 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
           className="w-full py-3 rounded-lg border border-dashed border-gold-DEFAULT/30 bg-gold-DEFAULT/5 hover:bg-gold-DEFAULT/10 text-gold-DEFAULT drop-shadow-md hover:text-gold-bright transition-all flex items-center justify-center gap-2 group"
         >
           <Plus size={16} className="group-hover:rotate-90 transition-transform" />
-          <span className="text-[10px] font-cinzel font-black tracking-widest uppercase">Nouvelle Scène</span>
+          <span className="text-xs font-cinzel font-black tracking-widest uppercase">Nouvelle Scène</span>
         </button>
       )}
     </div>

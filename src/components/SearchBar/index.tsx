@@ -58,7 +58,7 @@ export function SearchBar({
           `}
         >
           <Sliders className={`w-3.5 h-3.5 transition-transform duration-500 ${isFilteringActive ? 'rotate-90 text-gold-bright' : 'text-slate-400 group-hover:rotate-12'}`} />
-          <span className="text-[10px] font-cinzel tracking-[0.2em] uppercase">
+          <span className="text-xs font-cinzel tracking-[0.2em] uppercase">
             {isFilteringActive ? `Filtres (${activeFiltersCount + (value ? 1 : 0)})` : 'Filtres'}
           </span>
           {isFilteringActive && (
@@ -70,7 +70,7 @@ export function SearchBar({
       {/* 3. QUICK RESULTS LIST */}
       {results.length > 0 && (
         <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-500">
-          <h3 className="text-[9px] font-black text-gold-muted/50 tracking-[0.2em] uppercase mb-4 px-1">Résultats Rapides</h3>
+          <h3 className="text-[11px] font-black text-gold-muted/50 tracking-[0.2em] uppercase mb-4 px-1">Résultats Rapides</h3>
           <ul className="space-y-1">
             {results.slice(0, 10).map((res) => (
               <li key={res.id}>

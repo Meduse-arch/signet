@@ -103,14 +103,14 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
               </div>
               <div>
                 <h2 className="text-2xl font-cinzel font-black text-white uppercase tracking-[0.3em] leading-none mb-2">
-                  {questToEdit ? "RÉÉCRIRE LE DESTIN" : "INSCRIRE UNE CHRONIQUE"}
+                  {questToEdit ? "MODIFIER LA QUÊTE" : "CRÉER UNE QUÊTE"}
                 </h2>
-                <p className="text-[10px] font-cinzel text-gold-DEFAULT/40 uppercase tracking-[0.4em]">Le Livre des Hauts Faits et des Épopées</p>
+                <p className="text-xs font-cinzel text-gold-DEFAULT/60 uppercase tracking-[0.4em]">Gestion des quêtes de la session</p>
               </div>
            </div>
            <button 
              onClick={() => setShowQuestCreateModal(false)}
-             className="p-3 rounded-full hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-all border border-transparent hover:border-red-500/20"
+             className="p-3 rounded-full hover:bg-red-500/10 text-white/60 hover:text-red-400 transition-all border border-transparent hover:border-red-500/20"
            >
              <X size={24} />
            </button>
@@ -122,28 +122,28 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
           {/* COLONNE GAUCHE : IDENTITÉ */}
           <div className="space-y-10">
             <section className="space-y-6">
-               <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-[0.3em] flex items-center gap-3">
-                 <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> Identité du Récit
+               <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.3em] flex items-center gap-3">
+                 <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> Informations
                </h3>
                <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[9px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Titre de la Chronique</label>
+                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Titre de la quête</label>
                     <input 
                       type="text" 
                       value={title} 
                       onChange={e => setTitle(e.target.value)} 
                       placeholder="NOM DU RÉCIT..."
-                      className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-cinzel text-white placeholder:text-white/10 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner"
+                      className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-cinzel text-white placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[9px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Déroulement & Enjeux</label>
+                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Description</label>
                     <textarea 
                       value={description} 
                       onChange={e => setDescription(e.target.value)}
                       placeholder="DÉCRIVEZ LES ÉPREUVES ET LES MOTIVATIONS..."
                       rows={6}
-                      className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/10 focus:border-gold-bright focus:bg-black/80 outline-none transition-all shadow-inner custom-scrollbar resize-none"
+                      className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 outline-none transition-all shadow-inner custom-scrollbar resize-none"
                     />
                   </div>
                </div>
@@ -151,26 +151,26 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
 
             <section className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <label className="text-[9px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">État du Récit</label>
+                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Statut</label>
                     <select 
                       value={status} 
                       onChange={e => setStatus(e.target.value as any)}
-                      className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-[10px] font-cinzel text-white uppercase focus:border-gold-bright outline-none appearance-none cursor-pointer"
+                      className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-xs font-cinzel text-white uppercase focus:border-gold-bright outline-none appearance-none cursor-pointer"
                     >
-                        <option value="En cours">En cours de Récit</option>
-                        <option value="Terminée">Épopée Accomplie</option>
-                        <option value="Échouée">Tragédie Scellée</option>
+                        <option value="En cours">En cours</option>
+                        <option value="Terminée">Terminée</option>
+                        <option value="Échouée">Échouée</option>
                     </select>
                 </div>
                 <div className="space-y-2">
-                    <label className="text-[9px] font-cinzel font-black text-white/40 uppercase tracking-widest ml-1">Sceau de l'Épopée</label>
+                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Image</label>
                     <div className="flex gap-2">
                         <input 
                             type="text" 
                             value={imageUrl} 
                             onChange={e => setImageUrl(e.target.value)}
                             placeholder="URL DU SCEAU..."
-                            className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-4 py-4 text-[9px] font-mono text-white/40 focus:border-gold-bright outline-none"
+                            className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-4 py-4 text-[11px] font-mono text-white/60 focus:border-gold-bright outline-none"
                         />
                         <label className="p-4 rounded-2xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 cursor-pointer transition-all relative">
                             {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
@@ -187,8 +187,8 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
             {/* RÉCOMPENSES */}
             <section className="space-y-6">
                 <div className="flex items-center justify-between border-b border-gold-DEFAULT/20 pb-3">
-                    <h3 className="text-[10px] font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-3">
-                        <Gift size={16} className="text-gold-bright animate-pulse" /> Tributs Décernés
+                    <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-3">
+                        <Gift size={16} className="text-gold-bright animate-pulse" /> Récompenses
                     </h3>
                     <button onClick={addReward} className="p-2 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
                         <Plus size={16} />
@@ -199,7 +199,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
                         <div key={reward.id} className="p-5 rounded-[1.5rem] bg-white/[0.02] border border-white/5 space-y-4 relative group hover:border-gold-DEFAULT/30 transition-all animate-in slide-in-from-right-4 duration-300">
                             <button 
                                 onClick={() => setRewards(rewards.filter(r => r.id !== reward.id))}
-                                className="absolute -top-2 -right-2 p-2 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
+                                className="absolute -top-2 -right-2 p-2 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 opacity-30 group-hover:opacity-100 transition-all hover:scale-110"
                             >
                                 <Trash2 size={12} />
                             </button>
@@ -207,11 +207,11 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
                                 <select 
                                     value={reward.type} 
                                     onChange={e => updateReward(reward.id, { type: e.target.value })}
-                                    className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[10px] font-cinzel text-white uppercase outline-none focus:border-gold-bright"
+                                    className="bg-black border border-white/10 rounded-xl px-4 py-3 text-xs font-cinzel text-white uppercase outline-none focus:border-gold-bright"
                                 >
                                     <option value="Experience">Expérience (XP)</option>
-                                    <option value="Item">Relique de Pouvoir</option>
-                                    <option value="Autre">Faveur Divine</option>
+                                    <option value="Item">Objet</option>
+                                    <option value="Autre">Autre</option>
                                 </select>
                                 <input 
                                     type="number" 
@@ -225,13 +225,13 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
                                 value={reward.description} 
                                 onChange={e => updateReward(reward.id, { description: e.target.value })}
                                 placeholder="DÉTAILS DU TRIBUT..."
-                                className="w-full bg-black/40 border border-white/5 rounded-xl text-[10px] font-serif italic text-white/50 px-4 py-2.5 focus:outline-none focus:border-gold-DEFAULT/40"
+                                className="w-full bg-black/40 border border-white/5 rounded-xl text-xs font-serif italic text-white/50 px-4 py-2.5 focus:outline-none focus:border-gold-DEFAULT/40"
                             />
                         </div>
                     ))}
                     {rewards.length === 0 && (
-                        <div className="py-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.01]">
-                            <span className="text-[10px] font-cinzel text-white/10 uppercase tracking-[0.4em] italic">Aucun tribut n'est encore scellé</span>
+                        <div className="py-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/20 bg-white/[0.01]">
+                            <span className="text-xs font-cinzel text-white/50 uppercase tracking-[0.4em]">Aucune récompense ajoutée</span>
                         </div>
                     )}
                 </div>
@@ -247,20 +247,22 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
           <div className="flex gap-4">
               <button 
                 onClick={() => setShowQuestCreateModal(false)}
-                className="flex-1 py-4 rounded-2xl text-white/30 hover:text-white text-[10px] font-cinzel font-black uppercase tracking-[0.3em] transition-all border border-white/5 hover:border-white/20"
+                className="flex-1 py-4 rounded-2xl text-white/70 hover:text-white text-xs font-cinzel font-black uppercase tracking-[0.3em] transition-all border border-white/20 hover:border-white/40"
               >
-                Ignorer
+                Annuler
               </button>
               <button 
                 onClick={handleSave}
                 disabled={!title.trim()}
-                className="flex-[2] py-5 bg-gold-DEFAULT text-black text-[11px] font-cinzel font-black tracking-[0.4em] rounded-2xl hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] hover:bg-gold-bright disabled:opacity-10 disabled:grayscale transition-all flex justify-center items-center gap-4 relative group overflow-hidden"
+                className={`flex-[2] py-5 text-[11px] font-cinzel font-black tracking-[0.4em] rounded-2xl transition-all flex justify-center items-center gap-4 relative group overflow-hidden border-2 ${
+                  !title.trim()
+                    ? 'bg-black/20 text-white/40 border-white/15 cursor-not-allowed'
+                    : 'bg-gold-DEFAULT text-black border-gold-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_40px_rgba(212,175,55,0.4)]'
+                }`}
               >
-                <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                {title.trim() && <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />}
                 <Save size={20} className="relative z-10" />
-                <span className="relative z-10">
-                    {questToEdit ? "SCELLER LES MODIFICATIONS" : "INSCRIRE DANS LE LIVRE DU DESTIN"}
-                </span>
+                <span className="relative z-10">Enregistrer</span>
               </button>
           </div>
         </footer>

@@ -150,7 +150,7 @@ export const DiceRollModal: React.FC = () => {
                           return (
                             <div key={`${i}-${groupIdx}-${rollIdx}`} className="flex flex-col items-center gap-1 min-w-[30px]">
                               <DiceShape faces={group.faces} className="w-5 h-5 opacity-40" />
-                              <span className="font-cinzel text-[8px] text-gold-DEFAULT opacity-40 uppercase text-center">{label}</span>
+                              <span className="font-cinzel text-xs text-gold-DEFAULT opacity-40 uppercase text-center">{label}</span>
                               <span className="font-cinzel font-black text-sm text-gold-bright">{val}</span>
                             </div>
                           );
@@ -166,7 +166,7 @@ export const DiceRollModal: React.FC = () => {
                     return res.rolls.map((val: number, j: number) => (
                       <div key={`${i}-${j}`} className="flex flex-col items-center gap-1 min-w-[30px]">
                         <DiceShape faces={faces} className="w-5 h-5 opacity-40" />
-                        <span className="font-cinzel text-[8px] text-gold-DEFAULT opacity-40 uppercase text-center">{label}</span>
+                        <span className="font-cinzel text-xs text-gold-DEFAULT opacity-40 uppercase text-center">{label}</span>
                         <span className="font-cinzel font-black text-sm text-gold-bright">{val}</span>
                       </div>
                     ));
@@ -174,7 +174,7 @@ export const DiceRollModal: React.FC = () => {
                 </div>
                 <div className="flex flex-wrap justify-center gap-2 opacity-60 w-full pt-4 border-t border-gold-DEFAULT/10">
                   {diceResult.map((res, i: number) => (
-                    <div key={i} className="text-[9px] font-mono border border-gold-DEFAULT/20 px-2 py-0.5 text-gold-bright bg-gold-DEFAULT/5 text-center uppercase">
+                    <div key={i} className="text-[11px] font-mono border border-gold-DEFAULT/20 px-2 py-0.5 text-gold-bright bg-gold-DEFAULT/5 text-center uppercase">
                       {res.diceString} = {res.total}
                     </div>
                   ))}

@@ -312,10 +312,7 @@ export function CharacterSheetContent({
     // Broadcast via P2P
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
     
-    // Broadcast local
-    const channel = new BroadcastChannel(`signet_char_sync_${sessionId}`);
-    channel.postMessage({ type: 'CHAR_UPDATE', payload: updatedChar });
-    channel.close();
+    // La mise à jour locale est déjà gérée par le store Zustand (addOrUpdateCharacter)
     
     setShowAvatarPrompt(false);
   };
@@ -467,9 +464,9 @@ export function CharacterSheetContent({
             </button>
             <button 
               onClick={submitAvatarChange}
-              className="px-4 py-1.5 rounded-lg bg-gold-DEFAULT/20 border border-gold-DEFAULT/40 text-gold-bright hover:bg-gold-DEFAULT/40 hover:border-gold-bright text-xs font-cinzel font-black uppercase tracking-wider transition-all"
+              className="px-4 py-1.5 rounded-lg bg-gold-DEFAULT text-black border border-gold-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] text-xs font-cinzel font-black uppercase tracking-wider transition-all"
             >
-              Graver
+              Enregistrer
             </button>
           </div>
         </div>
@@ -813,7 +810,7 @@ export function CharacterSheetContent({
             {s.name}
           </span>
           {itemMod !== 0 && (
-            <span className="text-[7px] font-bold text-gold-DEFAULT/40 uppercase tracking-tighter">
+            <span className="text-[11px] font-bold text-gold-DEFAULT/40 uppercase tracking-tighter">
               BASE: {val}
             </span>
           )}
@@ -852,9 +849,9 @@ export function CharacterSheetContent({
       >
         <div className="flex items-center justify-between mb-1 gap-2">
           <div className="flex flex-col flex-1 min-w-0">
-            <span className="font-cinzel uppercase tracking-widest text-[8px] sm:text-[10px] truncate" title={b.name} style={{ color: b.color }}>{b.name}</span>
+            <span className="font-cinzel uppercase tracking-widest text-xs sm:text-xs truncate" title={b.name} style={{ color: b.color }}>{b.name}</span>
             {(itemMod.value !== 0 || itemMod.max !== 0) && (
-              <span className="text-[7px] font-bold opacity-50" style={{ color: b.color }}>
+              <span className="text-[11px] font-bold opacity-50" style={{ color: b.color }}>
                 {itemMod.value !== 0 && `ACTUEL JAUGE:${itemMod.value > 0 ? '+' : ''}${itemMod.value} `}
                 {itemMod.max !== 0 && `MAX JAUGE:${itemMod.max > 0 ? '+' : ''}${itemMod.max}`}
               </span>
@@ -864,14 +861,14 @@ export function CharacterSheetContent({
              {(isMJ || isOwner) && (
                <button 
                  onClick={() => handleManualBarUpdate(b.id, -1)}
-                 className="w-4 h-4 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-[10px] text-white/40 hover:text-white"
+                 className="w-4 h-4 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs text-white/60 hover:text-white"
                >-</button>
              )}
-             <span className="font-mono font-black text-[8px] sm:text-[10px] truncate" title={`${Math.floor(currentVal)}/${Math.floor(maxVal)}`} style={{ color: b.color }}>{Math.floor(currentVal)}/{Math.floor(maxVal)}</span>
+             <span className="font-mono font-black text-xs sm:text-xs truncate" title={`${Math.floor(currentVal)}/${Math.floor(maxVal)}`} style={{ color: b.color }}>{Math.floor(currentVal)}/{Math.floor(maxVal)}</span>
              {(isMJ || isOwner) && (
                <button 
                  onClick={() => handleManualBarUpdate(b.id, 1)}
-                 className="w-4 h-4 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-[10px] text-white/40 hover:text-white"
+                 className="w-4 h-4 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs text-white/60 hover:text-white"
                >+</button>
              )}
           </div>
@@ -903,7 +900,7 @@ export function CharacterSheetContent({
           >
             {s.name}
           </span>
-          <span className="text-[7px] font-mono text-gold-DEFAULT/40 uppercase">
+          <span className="text-[11px] font-mono text-gold-DEFAULT/40 uppercase">
             {s.type === 'active' ? 'Actif' : s.type === 'passive_auto' ? 'Passif' : 'Aura'}
           </span>
         </div>
@@ -919,7 +916,7 @@ export function CharacterSheetContent({
            {s.type === 'passive_toggle' && (
              <button 
                onClick={() => handleToggleSkill(s.id)}
-               className={`p-1 rounded transition-all ${s.is_active ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/40 hover:text-white'}`}
+               className={`p-1 rounded transition-all ${s.is_active ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/60 hover:text-white'}`}
              >
                <Settings size={10} />
              </button>
@@ -965,7 +962,7 @@ export function CharacterSheetContent({
               </button>
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-[10px] font-cinzel font-black text-gold-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
+              <h2 className="text-xs font-cinzel font-black text-gold-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
             </div>
           </div>
 

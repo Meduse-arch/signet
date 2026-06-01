@@ -98,7 +98,7 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
           
           {/* Dés Rapides */}
           <section className="liquid-glass-panel p-4 flex flex-col gap-3">
-            <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 tracking-widest uppercase border-b border-white/5 pb-2">Sceaux de Destin</h3>
+            <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 tracking-widest uppercase border-b border-white/5 pb-2">Sceaux de Destin</h3>
             <div className="flex flex-wrap gap-2">
               {DIE_TYPES.map(faces => (
                 <button
@@ -114,10 +114,10 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
 
           {/* Manuel */}
           <section className="liquid-glass-panel p-4 flex flex-col gap-4">
-            <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 tracking-widest uppercase border-b border-white/5 pb-2">Invocation Manuelle</h3>
+            <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 tracking-widest uppercase border-b border-white/5 pb-2">Invocation Manuelle</h3>
             <div className="flex items-center gap-4 justify-between">
               <div className="flex flex-col items-center gap-1">
-                <span className="text-[8px] font-cinzel text-white/40 uppercase">Qté</span>
+                <span className="text-xs font-cinzel text-white/60 uppercase">Qté</span>
                 <input 
                   type="number" 
                   value={nbDice} 
@@ -127,7 +127,7 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
               </div>
               <span className="text-xl font-cinzel text-gold-DEFAULT/40 mt-4">D</span>
               <div className="flex flex-col items-center gap-1">
-                <span className="text-[8px] font-cinzel text-white/40 uppercase">Faces</span>
+                <span className="text-xs font-cinzel text-white/60 uppercase">Faces</span>
                 <input 
                   type="number" 
                   value={facesDeInput} 
@@ -136,7 +136,7 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
                 />
               </div>
               <div className="flex flex-col items-center gap-1">
-                <span className="text-[8px] font-cinzel text-white/40 uppercase">Mod.</span>
+                <span className="text-xs font-cinzel text-white/60 uppercase">Mod.</span>
                 <input 
                   type="number" 
                   value={modifier} 
@@ -157,7 +157,7 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
           {/* SEAL Attributes */}
           {statDefs.length > 0 && (
             <section className="liquid-glass-panel p-4 flex flex-col gap-3">
-              <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 tracking-widest uppercase border-b border-white/5 pb-2">Jets d'Attributs</h3>
+              <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 tracking-widest uppercase border-b border-white/5 pb-2">Jets d'Attributs</h3>
               <div className="grid grid-cols-2 gap-2">
                 {statDefs.map((stat: any) => {
                   const val = character?.stats?.[stat.id] || 20;
@@ -167,11 +167,11 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
                       onClick={() => executerLancer(stat.name, val)}
                       className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex flex-col items-center hover:border-gold-DEFAULT/40 transition-all group"
                     >
-                      <span className="text-[8px] font-cinzel text-white/60 uppercase truncate w-full text-center group-hover:text-gold-bright">{stat.name}</span>
+                      <span className="text-xs font-cinzel text-white/60 uppercase truncate w-full text-center group-hover:text-gold-bright">{stat.name}</span>
                       <div className="flex items-center gap-1">
                         <span className="text-sm font-cinzel font-black text-gold-bright">{nbDice}D{val}</span>
                         {modifier !== 0 && (
-                          <span className={`text-[10px] font-black ${modifier > 0 ? 'text-gold-bright' : 'text-red-500'}`}>
+                          <span className={`text-xs font-black ${modifier > 0 ? 'text-gold-bright' : 'text-red-500'}`}>
                             {modifier > 0 ? `+${modifier}` : modifier}
                           </span>
                         )}
@@ -187,10 +187,10 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
         {/* Conteneur de Droite : Historique (Annales) */}
         <section className="liquid-glass-panel flex flex-col min-h-0 overflow-hidden">
           <div className="p-4 border-b border-white/5 bg-black/20 flex items-center justify-between">
-            <h3 className="text-[10px] font-cinzel font-black text-gold-DEFAULT/60 tracking-widest uppercase">Annales du Destin</h3>
+            <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 tracking-widest uppercase">Annales du Destin</h3>
             <button 
               onClick={() => setDiceSharingEnabled(!diceSharingEnabled)}
-              className={`p-1.5 rounded-full border transition-all ${diceSharingEnabled ? 'border-gold-DEFAULT/40 text-gold-bright bg-gold-DEFAULT/10' : 'border-white/10 text-white/20 hover:text-white/40'}`}
+              className={`p-1.5 rounded-full border transition-all ${diceSharingEnabled ? 'border-gold-DEFAULT/40 text-gold-bright bg-gold-DEFAULT/10' : 'border-white/10 text-white/60 hover:text-white/60'}`}
               title={diceSharingEnabled ? "Jet Public" : "Jet Secret"}
             >
               <Share2 size={12} />
@@ -199,9 +199,9 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
           
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
             {logs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full opacity-20 gap-2">
+              <div className="flex flex-col items-center justify-center h-full opacity-40 gap-2">
                 <History size={32} />
-                <span className="text-[10px] font-cinzel uppercase tracking-[0.2em]">Les pages sont vierges...</span>
+                <span className="text-xs font-cinzel uppercase tracking-[0.2em]">Les pages sont vierges...</span>
               </div>
             ) : (
               <AnimatePresence initial={false}>
@@ -213,13 +213,13 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
                     className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-1"
                   >
                     <div className="flex justify-between items-center">
-                      <span className="text-[8px] font-cinzel text-gold-DEFAULT/60 uppercase">{log.character_name}</span>
-                      <span className="text-[8px] font-mono text-white/20">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                      <span className="text-xs font-cinzel text-gold-DEFAULT/60 uppercase">{log.character_name}</span>
+                      <span className="text-xs font-mono text-white/60">{new Date(log.timestamp).toLocaleTimeString()}</span>
                     </div>
                     <div className="flex justify-between items-end">
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-cinzel font-black text-white/90 uppercase tracking-wider">{log.action.split('(')[0]}</span>
-                        <span className="text-[9px] font-mono text-white/30 italic">{(log.details?.rolls || []).join(' + ')}</span>
+                        <span className="text-xs font-cinzel font-black text-white/90 uppercase tracking-wider">{log.action.split('(')[0]}</span>
+                        <span className="text-[11px] font-mono text-white/50 italic">{(log.details?.rolls || []).join(' + ')}</span>
                       </div>
                       <span className="text-2xl font-cinzel font-black text-gold-bright leading-none">{log.details?.total}</span>
                     </div>

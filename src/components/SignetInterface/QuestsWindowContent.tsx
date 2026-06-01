@@ -80,7 +80,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
             />
             <button 
               onClick={() => setSelectedQuest(null)} 
-              className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/40 hover:text-white transition-colors z-50"
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/60 hover:text-white transition-colors z-50"
             >
               <X size={20} />
             </button>
@@ -101,7 +101,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="CHERCHER..."
-                    className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-xl py-2 pl-9 pr-3 text-[9px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/10 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
+                    className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-xl py-2 pl-9 pr-3 text-[11px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/40 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
                     />
                 </div>
                 {isMJ && (
@@ -117,13 +117,13 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
             <div className="flex gap-1 p-1 bg-black/40 rounded-lg border border-white/5 shadow-inner shrink-0 overflow-hidden">
                 <button 
                     onClick={() => setActiveTab('current')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[7px] font-cinzel font-black uppercase tracking-widest transition-all ${activeTab === 'current' ? 'bg-gold-DEFAULT text-black' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-cinzel font-black uppercase tracking-widest transition-all ${activeTab === 'current' ? 'bg-gold-DEFAULT text-black' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
                 >
                     <Clock size={10} /> En cours
                 </button>
                 <button 
                     onClick={() => setActiveTab('completed')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[7px] font-cinzel font-black uppercase tracking-widest transition-all ${activeTab === 'completed' ? 'bg-gold-DEFAULT text-black' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-cinzel font-black uppercase tracking-widest transition-all ${activeTab === 'completed' ? 'bg-gold-DEFAULT text-black' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
                 >
                     <History size={10} /> Archives
                 </button>
@@ -135,8 +135,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                     return (
                     <div 
                         key={quest.id}
-                        onClick={() => setSelectedQuest(quest, false)}
-                        className={`group relative p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 overflow-hidden ${
+                        className={`group relative p-3 rounded-xl border transition-all flex items-center gap-3 overflow-hidden ${
                         isActive ? 'border-gold-bright bg-gold-DEFAULT/10 shadow-[0_0_15px_rgba(212,175,55,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-gold-DEFAULT/30'
                         }`}
                     >
@@ -144,7 +143,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                             {quest.image_url ? (
                                 <img src={quest.image_url} alt="" className="w-full h-full object-cover" />
                             ) : (
-                                <Scroll size={18} className="text-white/10 group-hover:text-gold-DEFAULT/40" />
+                                <Scroll size={18} className="text-white/10 group-hover:text-gold-DEFAULT/40 transition-colors" />
                             )}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                             <div className="absolute top-0.5 right-0.5 scale-75">
@@ -153,36 +152,45 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                            <h4 className={`text-[10px] font-cinzel font-black tracking-widest truncate uppercase ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-white'}`}>
+                            <h4 className={`text-xs font-cinzel font-black tracking-widest truncate uppercase ${isActive ? 'text-gold-bright' : 'text-white/60 group-hover:text-white'}`}>
                                 {quest.title}
                             </h4>
-                            <p className="text-[8px] font-serif italic text-white/30 truncate mt-0.5">
+                            <p className="text-xs font-serif italic text-white/50 truncate mt-0.5">
                                 {quest.description || "Aucun détail..."}
                             </p>
-                            </div>
+                        </div>
 
-                            {/* ─── ACTIONS SUR LA BARRE (Apparaissent au hover) ─── */}
+                        {/* ─── ACTIONS SUR LA BARRE (Apparaissent au hover) ─── */}
+                        <div className="flex items-center gap-1 shrink-0 z-10">
+                            {/* Bouton Détails (Chevron) */}
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setSelectedQuest(quest, false); }}
+                                className="p-1.5 rounded-lg text-white/60 hover:text-gold-bright hover:bg-white/5 transition-all opacity-30 group-hover:opacity-100"
+                                title="Voir les détails"
+                            >
+                                <ChevronRight size={14} />
+                            </button>
+
                             {isMJ && (
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1 border-l border-white/10 pl-1 shrink-0">
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); if(window.confirm("Effacer ce récit ?")) removeQuest(sessionId, quest.id); }}
-                                    className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
-                                    title="Supprimer"
-                                >
-                                    <Trash2 size={10} />
-                                </button>
-                            </div>
+                                <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-opacity ml-1 border-l border-white/10 pl-1">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); if(window.confirm("Effacer ce récit ?")) removeQuest(sessionId, quest.id); }}
+                                        className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
+                                        title="Supprimer"
+                                    >
+                                        <Trash2 size={10} />
+                                    </button>
+                                </div>
                             )}
-
-                            {/* Chevron supprimé pour laisser place aux actions */}
-                            </div>
+                        </div>
+                    </div>
                     );
                 })}
 
                 {filteredQuests.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 opacity-10 grayscale">
                         <Scroll size={32} className="mb-2" />
-                        <span className="text-[8px] font-cinzel tracking-widest italic">VIDE...</span>
+                        <span className="text-xs font-cinzel tracking-widest italic">VIDE...</span>
                     </div>
                 )}
             </div>
@@ -194,8 +202,8 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
             {selectedQuest ? (
               <div className="h-full flex flex-col animate-in slide-in-from-right-4 duration-500 relative">
                  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
-                    <span className="text-[9px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Récit du Destin</span>
-                    <button onClick={() => setSelectedQuest(null)} className="p-1 rounded hover:bg-white/5 text-white/20 hover:text-white transition-colors">
+                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Récit du Destin</span>
+                    <button onClick={() => setSelectedQuest(null)} className="p-1 rounded hover:bg-white/5 text-white/60 hover:text-white transition-colors">
                         <X size={14} />
                     </button>
                  </div>
@@ -212,7 +220,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
             ) : (
               <div className="h-full flex flex-col items-center justify-center opacity-10 pointer-events-none">
                  <Scroll size={64} className="mb-4 text-gold-DEFAULT" />
-                 <span className="text-[10px] font-cinzel font-black tracking-[0.4em] uppercase">Chroniques du Monde</span>
+                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">Chroniques du Monde</span>
               </div>
             )}
           </div>
