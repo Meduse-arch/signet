@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { X, User, Sword, Heart, Package, Save, Trash2, Search, Hammer, Plus, ArrowLeft, Zap, Upload, Loader2, MapPin } from 'lucide-react';
+import { X, User, Sword, Heart, Package, Save, Trash2, Search, Hammer, Plus, ArrowLeft, Zap, Upload, Loader2, MapPin, Target } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
 import { useSkillsStore } from '../../store/skills';
+import { useQuestsStore } from '../../store/quests';
 import { useSessionStore } from '../../store/session';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
@@ -32,6 +33,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
   const { characters, addOrUpdateCharacter } = useCharactersStore();
   const { items } = useItemsStore();
   const { skills } = useSkillsStore();
+  const { quests } = useQuestsStore();
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId || s.hostPeerId === sessionId));
   const { broadcast } = usePeer();
   const { user } = useAuthStore();
@@ -42,6 +44,8 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
   const [hasChanges, setHasChanges] = useState(false);
   const [showForge, setShowForge] = useState(false);
   const [showSkillArchive, setShowSkillArchive] = useState(false);
+  const [showQuestArchive, setShowQuestArchive] = useState(false);
+  const [searchQuestArchive, setSearchQuestArchive] = useState('');
   const [searchForge, setSearchForge] = useState('');
   const [searchSkillArchive, setSearchSkillArchive] = useState('');
   const [forgeQuantities, setForgeQuantities] = useState<Record<string, number>>({});
@@ -71,6 +75,13 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
       item.category.toLowerCase().includes(searchForge.toLowerCase())
     );
   }, [items, searchForge]);
+
+  const filteredArchiveQuests = useMemo(() => {
+    return quests.filter(quest => 
+      quest.title.toLowerCase().includes(searchQuestArchive.toLowerCase()) ||
+      quest.description.toLowerCase().includes(searchQuestArchive.toLowerCase())
+    );
+  }, [quests, searchQuestArchive]);
 
   const filteredArchiveSkills = useMemo(() => {
     return skills.filter(skill => 
@@ -198,6 +209,27 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
     setHasChanges(true);
   };
 
+  const handleAddQuestFromArchive = (quest: any) => {
+    const existingQuests = editedChar.quests || [];
+    if (!existingQuests.find((q: any) => q.id === quest.id)) {
+      setEditedChar((prev: any) => ({
+        ...prev,
+        quests: [...existingQuests, { ...quest, customId: crypto.randomUUID() }]
+      }));
+      setHasChanges(true);
+      setAddedFeedback(quest.id);
+      setTimeout(() => setAddedFeedback(null), 1000);
+    }
+  };
+
+  const handleRemoveQuest = (questId: string) => {
+    setEditedChar((prev: any) => ({
+      ...prev,
+      quests: (prev.quests || []).filter((q: any) => q.id !== questId)
+    }));
+    setHasChanges(true);
+  };
+
   const handleRemoveSkill = (skillId: string) => {
     setEditedChar((prev: any) => ({
       ...prev,
@@ -272,12 +304,16 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
             {[
               { id: 'profil', label: 'PROFIL', icon: User },
               { id: 'stats', label: 'ATTRIBUTS', icon: Sword },
-              { id: 'ressources', label: 'VITALITÉS', icon: Heart },
+              { id: 'ressources', label: 'RESSOURCES', icon: Heart },
               { id: 'inventaire', label: 'INVENTAIRE', icon: Package },
+              ...(isMJ ? [
+                { id: 'competences', label: 'SKILLS', icon: Zap },
+                { id: 'quetes', label: 'QUÊTES', icon: Target }
+              ] : [])
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id as Tab); setShowForge(false); setShowSkillArchive(false); }}
+                onClick={() => { setActiveTab(tab.id as Tab); setShowForge(false); setShowSkillArchive(false); setShowQuestArchive(false); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-cinzel text-xs font-black tracking-widest transition-all ${activeTab === tab.id ? 'bg-gold-DEFAULT text-black shadow-lg translate-x-1' : 'text-white/60 hover:text-white/60 hover:bg-white/5'}`}
               >
                 <tab.icon size={14} />
@@ -555,9 +591,102 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
 
 
             {activeTab === 'quetes' && (
-              <div className="flex flex-col items-center justify-center py-20 opacity-40 bg-black/20 rounded-3xl border border-dashed border-white/5">
-                <Plus size={64} className="mb-4 text-gold-DEFAULT" />
-                <span className="font-cinzel text-xs uppercase tracking-widest">GRIMOIRE DES QUÊTES BIENTÔT DISPONIBLE</span>
+              <div className="flex flex-col gap-4">
+                {!showQuestArchive ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Quêtes Assignées</h3>
+                      <button 
+                        onClick={() => setShowQuestArchive(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-xs font-black uppercase tracking-widest group shadow-lg"
+                      >
+                        <Target size={14} className="group-hover:scale-110 transition-transform" />
+                        Ouvrir le Journal
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      {(editedChar.quests || []).length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 opacity-40">
+                          <Target size={48} className="mb-4 text-gold-DEFAULT" />
+                          <span className="font-cinzel text-xs uppercase tracking-widest">AUCUNE QUÊTE</span>
+                        </div>
+                      ) : (
+                        editedChar.quests.map((quest: any) => (
+                          <div key={quest.id} className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/[0.02] group hover:border-gold-DEFAULT/20 transition-all">
+                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                              <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                {quest.image_url ? (
+                                  <SkillItemImage url={quest.image_url} />
+                                ) : (
+                                  <Target size={18} className="text-gold-DEFAULT/40" />
+                                )}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{quest.title}</span>
+                                <span className="text-[11px] font-mono text-white/50 uppercase tracking-widest">Quête</span>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => handleRemoveQuest(quest.id)}
+                              className="p-2 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-colors opacity-30 group-hover:opacity-100"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-6 animate-in slide-in-from-right-4 duration-500">
+                    <div className="flex items-center justify-between">
+                      <button 
+                        onClick={() => setShowQuestArchive(false)}
+                        className="flex items-center gap-2 text-white/60 hover:text-gold-bright transition-colors text-xs font-cinzel font-black uppercase tracking-widest"
+                      >
+                        <ArrowLeft size={14} /> Retour
+                      </button>
+                      <div className="relative w-48">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-DEFAULT/40" />
+                        <input 
+                          type="text" 
+                          value={searchQuestArchive}
+                          onChange={e => setSearchQuestArchive(e.target.value)}
+                          placeholder="Rechercher..."
+                          className="w-full bg-black/60 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-xs text-white focus:border-gold-DEFAULT/50 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                      {filteredArchiveQuests.map(quest => (
+                        <div key={quest.id} className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/[0.02] group hover:border-gold-DEFAULT/20 transition-all">
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                             <div className="w-10 h-10 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                {quest.image_url ? (
+                                  <SkillItemImage url={quest.image_url} />
+                                ) : (
+                                  <Target size={18} className="text-gold-DEFAULT/40" />
+                                )}
+                             </div>
+                             <div className="flex flex-col min-w-0">
+                                <span className="font-cinzel font-black text-xs uppercase tracking-widest text-white/90 truncate">{quest.title}</span>
+                                <span className="text-[11px] font-mono text-white/50 uppercase">Quête {quest.status}</span>
+                             </div>
+                          </div>
+
+                          <button 
+                            onClick={() => handleAddQuestFromArchive(quest)}
+                            className={`p-2 rounded-lg transition-all ${addedFeedback === quest.id ? 'bg-green-500 text-white' : 'bg-gold-DEFAULT text-black hover:scale-105'}`}
+                          >
+                            {addedFeedback === quest.id ? <Plus size={14} className="animate-ping" /> : <Plus size={14} />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </main>
