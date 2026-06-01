@@ -116,6 +116,10 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     
     console.log('[useBoard] Loading map:', url, 'with grid size:', gridSize);
     setLoadingProgress({ loaded: 0, total: 100, active: true, status: 'painting_cache' });
+    
+    // Attendre 300ms pour que le brouillard masque l'écran avant de charger
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     await boardRef.current.loadMap(url, format, gridSize);
     setLoadingProgress({ loaded: 100, total: 100, active: false, status: 'complete' });
 
@@ -358,6 +362,15 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     let timeoutId: NodeJS.Timeout;
 
     const checkAndRequestMap = async () => {
+        // Déclencher le brouillard immédiatement
+        setLoadingProgress({ loaded: 0, total: 100, active: true, status: 'painting_cache' });
+        
+        // Attendre 300ms que le brouillard masque l'écran avant de changer la carte
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Si la map a rechangé entre temps, on abandonne
+        if (currentMapIdRef.current !== currentMapId) return;
+
         const existing = await dbStorage.getMap(currentMapId);
         if (existing) {
             console.log(`[useBoard] Map ${currentMapId} trouvée en cache, hydratation...`);

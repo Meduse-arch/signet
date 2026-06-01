@@ -52,7 +52,7 @@ export function MapTransitionOverlay({ progress, onRetry }: MapTransitionOverlay
 
   return (
     <div 
-      className={`absolute inset-0 pointer-events-none z-[10] transition-all ease-in-out flex items-center justify-center bg-[#050508]/95
+      className={`absolute inset-0 pointer-events-none z-[10] transition-all ease-in-out flex items-center justify-center bg-[#050508]/60
         ${showOverlay ? 'opacity-100 backdrop-blur-md duration-[300ms]' : 'opacity-0 backdrop-blur-none duration-[800ms]'}
       `}
     >
