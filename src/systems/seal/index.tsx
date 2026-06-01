@@ -24,7 +24,7 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { PlayerHUD } from '../../components/PlayerHUD';
 import { CharacterHUD } from '../../components/CharacterHUD';
-import { Pause } from 'lucide-react';
+import { Pause, MonitorPlay, Zap, ZapOff } from 'lucide-react';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
@@ -52,6 +52,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId || s.hostPeerId === sessionId));
   const characters = useCharactersStore(state => state.characters);
   const { addOrUpdateCharacter, removeCharacter } = useCharactersStore();
+  const { autoSync, setAutoSync } = useUIStore();
   
   const initItems = useItemsStore(state => state.initialize);
   const initSkills = useSkillsStore(state => state.initialize);
@@ -66,6 +67,16 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
     return (session as any)?.maps || [];
   });
   const [currentMapId, setCurrentMapId] = useState<string>('');
+
+  // Sync automatique quand on active le toggle
+  useEffect(() => {
+    if (autoSync && isMJ && currentMapId && maps.length > 0) {
+      const currentMap = maps.find(m => m.id === currentMapId);
+      if (currentMap) {
+        broadcast({ type: 'MAP_CHANGE', payload: { url: currentMap.url, name: currentMap.name, id: currentMap.id, grid_size: currentMap.grid_size } });
+      }
+    }
+  }, [autoSync, isMJ, currentMapId, maps, broadcast]);
 
   const playersList = players.length > 0 ? players : [
     ...(user ? [{ peer_id: user.id, pseudo: user.pseudo, role: user.role }] : []),
@@ -233,7 +244,17 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
 
   const handleSelectMap = (map: MapItem, global: boolean = false) => {
     setCurrentMapId(map.id);
-    if (global && isMJ) {
+    
+    // On détermine s'il faut synchroniser la scène (soit autoSync est ON, soit le MJ a fait un double-clic)
+    const shouldSync = (global || autoSync) && isMJ;
+    
+    if (shouldSync) {
+      // 1. Notifier la fenêtre de projection externe
+      const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+      channel.postMessage({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name, id: map.id, grid_size: map.grid_size } });
+      channel.close();
+
+      // 2. Diffuser aux joueurs distants
       broadcast({ type: 'MAP_CHANGE', payload: { url: map.url, name: map.name, id: map.id, grid_size: map.grid_size } });
     }
   };
@@ -326,26 +347,60 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
           <PlayerHUD players={playersList} sessionId={sessionId} />
           <CharacterHUD sessionId={sessionId} />
           <div className="absolute inset-0 pointer-events-none z-[200]">
-            {Object.entries(windows).map(([id, win]) => win.isOpen && (
-              <DraggableWindow
-                key={id} id={id} title={id} 
-                onClose={() => closeWindow(id as any)} 
-                onPopOut={() => handlePopOut(id)}
-                defaultPosition={win.position} 
-                onPositionChange={(x, y) => updatePosition(id as any, x, y)}
-                zIndex={win.zIndex + 200} 
-                onFocus={() => focusWindow(id as any)}
-              >
-                {id === 'scenes' && <SceneWindowContent sessionId={sessionId} scenes={maps} currentSceneId={currentMapId} onSelectScene={handleSelectMap} onAddScene={handleAddMap} onUpdateScene={handleUpdateMap} onToggleHide={handleToggleHideMap} onRemoveScene={handleRemoveMap} />}
-                {id === 'players' && <PlayerWindowContent players={playersList} sessionId={sessionId} />}
-                {id === 'inventaire' && <InventoryWindowContent sessionId={sessionId} />}
-                {id === 'bestiary' && <BestiaryWindowContent sessionId={sessionId} />}
-                {id === 'dice' && <DiceWindowContent sessionId={sessionId} />}
-                {id === 'quests' && <QuestsWindowContent sessionId={sessionId} />}
-                {id === 'skills' && <SkillsWindowContent sessionId={sessionId} />}
-                {id === 'character' && <CharacterSheetContent sessionId={sessionId} variant="window" />}
-              </DraggableWindow>
-            ))}
+            {Object.entries(windows).map(([id, win]) => {
+              const headerActions = id === 'scenes' && isMJ ? (
+                <div className="flex items-center gap-1.5 mr-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.electronAPI) {
+                        window.electronAPI.openExternalWindow('map', sessionId);
+                      }
+                    }}
+                    className="p-1.5 rounded-full bg-black/40 border border-white/10 text-white/60 hover:text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
+                    title="Ouvrir le mode projection"
+                  >
+                    <MonitorPlay size={12} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAutoSync(!autoSync);
+                    }}
+                    className={`p-1.5 rounded-full border transition-all ${
+                      autoSync 
+                        ? 'bg-green-500/20 border-green-500/50 text-green-400 hover:bg-green-500/30' 
+                        : 'bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30'
+                    }`}
+                    title={autoSync ? "Auto-Sync: Activé" : "Auto-Sync: Désactivé"}
+                  >
+                    {autoSync ? <Zap size={12} /> : <ZapOff size={12} />}
+                  </button>
+                </div>
+              ) : null;
+
+              return win.isOpen && (
+                <DraggableWindow
+                  key={id} id={id} title={id} 
+                  onClose={() => closeWindow(id as any)} 
+                  onPopOut={() => handlePopOut(id)}
+                  defaultPosition={win.position} 
+                  onPositionChange={(x, y) => updatePosition(id as any, x, y)}
+                  zIndex={win.zIndex + 200} 
+                  onFocus={() => focusWindow(id as any)}
+                  headerActions={headerActions}
+                >
+                  {id === 'scenes' && <SceneWindowContent sessionId={sessionId} scenes={maps} currentSceneId={currentMapId} onSelectScene={handleSelectMap} onAddScene={handleAddMap} onUpdateScene={handleUpdateMap} onToggleHide={handleToggleHideMap} onRemoveScene={handleRemoveMap} />}
+                  {id === 'players' && <PlayerWindowContent players={playersList} sessionId={sessionId} />}
+                  {id === 'inventaire' && <InventoryWindowContent sessionId={sessionId} />}
+                  {id === 'bestiary' && <BestiaryWindowContent sessionId={sessionId} />}
+                  {id === 'dice' && <DiceWindowContent sessionId={sessionId} />}
+                  {id === 'quests' && <QuestsWindowContent sessionId={sessionId} />}
+                  {id === 'skills' && <SkillsWindowContent sessionId={sessionId} />}
+                  {id === 'character' && <CharacterSheetContent sessionId={sessionId} variant="window" />}
+                </DraggableWindow>
+              );
+            })}
           </div>
           <DiceRollModal />
           <ItemCreationModal sessionId={sessionId} />

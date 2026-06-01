@@ -16,6 +16,7 @@ interface DraggableWindowProps {
   className?: string;
   variant?: 'default' | 'codex';
   isExternal?: boolean;
+  headerActions?: React.ReactNode;
 }
 
 export function DraggableWindow({ 
@@ -31,7 +32,8 @@ export function DraggableWindow({
   zIndex = 50,
   className = "",
   variant = 'default',
-  isExternal = false
+  isExternal = false,
+  headerActions
 }: DraggableWindowProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   
@@ -100,6 +102,7 @@ export function DraggableWindow({
               {title}
             </span>
             <div className="flex items-center gap-2 relative z-10">
+              {headerActions}
               {onReintegrate && (
                 <button 
                   type="button"

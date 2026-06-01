@@ -27,6 +27,10 @@ interface UIState {
   selectedQuest: any | null;
   questDetailOpen: boolean;
 
+  // Projection / Sync
+  autoSync: boolean;
+  setAutoSync: (sync: boolean) => void;
+
   setSidebarOpen: (open: boolean) => void;
   setActiveTab: (tab: 'library' | 'search' | 'key' | 'forge') => void;
   setShowModal: (show: boolean) => void;
@@ -74,6 +78,9 @@ export const useUIStore = create<UIState>((set) => ({
   questToEdit: null,
   selectedQuest: null,
   questDetailOpen: false,
+
+  autoSync: true,
+  setAutoSync: (autoSync) => set({ autoSync }),
 
   searchQuery: '',
 
