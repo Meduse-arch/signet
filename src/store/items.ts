@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Item, itemsService } from '../services/items.service';
+import { setupStoreSync, emitStoreSync } from './utils/storeSync';
 
 interface ItemsState {
   items: Item[];
@@ -18,15 +19,12 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
     const items = await itemsService.getItems(sessionId);
     set({ items });
 
-    const syncChannel = new BroadcastChannel(`signet_items_store_sync_${sessionId}`);
-
-    syncChannel.onmessage = async (event) => {
-      const { type, payload } = event.data;
+    setupStoreSync('items', sessionId, async (type, payload) => {
       if (type === 'ITEMS_UPDATE_INTERNAL') {
         const freshItems = await itemsService.getItems(sessionId);
         set({ items: freshItems });
       }
-    };
+    });
   },
 
   addItem: async (sessionId, item, skipSync = false) => {
@@ -63,9 +61,7 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
       set({ items: newItems });
 
       if (!skipSync) {
-        const syncChannel = new BroadcastChannel(`signet_items_store_sync_${sessionId}`);
-
-        syncChannel.postMessage({ type: 'ITEMS_UPDATE_INTERNAL', payload: item });
+        emitStoreSync('items', sessionId, 'ITEMS_UPDATE_INTERNAL', item);
       }
     }
   },
@@ -77,9 +73,7 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
       set({ items: state.items.filter(i => i.id !== id) });
 
       if (!skipSync) {
-        const syncChannel = new BroadcastChannel(`signet_items_store_sync_${sessionId}`);
-
-        syncChannel.postMessage({ type: 'ITEMS_UPDATE_INTERNAL', payload: { id, deleted: true } });
+        emitStoreSync('items', sessionId, 'ITEMS_UPDATE_INTERNAL', { id, deleted: true });
       }
     }
   }

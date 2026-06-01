@@ -8,8 +8,8 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { updateSessionCharacter } from '../../services/characters.service';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
-import { assetSyncService } from '../../services/asset-sync.service';
 import { useAssetUrl } from '../../hooks/useAssetUrl';
+import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { useMapStore } from '../../store/map';
 
 interface ManageCharacterModalProps {
@@ -49,9 +49,13 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
   const tokenStatuses = useMapStore(state => state.tokenStatuses);
   const isTokenOnMap = !!tokenStatuses[characterId];
 
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const previewUrl = useAssetUrl(editedChar?.image_url);
+  const { isUploading, fileInputRef, previewUrl, handleFileUpload } = useAssetUpload(
+    editedChar?.image_url || '',
+    (url) => {
+        setEditedChar((p: any) => ({ ...p, image_url: url }));
+        setHasChanges(true);
+    }
+  );
 
   useEffect(() => {
     const char = characters.find(c => c.id === characterId);
@@ -339,21 +343,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                 ref={fileInputRef} 
                                 className="hidden" 
                                 accept="image/*"
-                                onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        setIsUploading(true);
-                                        try {
-                                            const assetUrl = await assetSyncService.uploadLocalAsset(file);
-                                            setEditedChar((p: any) => ({ ...p, image_url: assetUrl }));
-                                            setHasChanges(true);
-                                        } catch (err) {
-                                            console.error('Upload failed', err);
-                                        } finally {
-                                            setIsUploading(false);
-                                        }
-                                    }
-                                }}
+                                onChange={handleFileUpload}
                             />
                         </div>
                         <p className="text-[11px] font-cinzel text-white/60 uppercase tracking-widest px-1">Importez un portrait local (P2P)</p>

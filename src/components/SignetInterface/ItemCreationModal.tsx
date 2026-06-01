@@ -9,8 +9,7 @@ import { Item, ItemModifier } from '../../services/items.service';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { addSessionCharacter } from '../../services/characters.service';
 import { useSessionStore } from '../../store/session';
-import { assetSyncService } from '../../services/asset-sync.service';
-import { useAssetUrl } from '../../hooks/useAssetUrl';
+import { useAssetUpload } from '../../hooks/useAssetUpload';
 
 interface ItemCreationModalProps {
   sessionId: string;
@@ -37,10 +36,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Divers');
-  const [imageUrl, setImageUrl] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const previewUrl = useAssetUrl(imageUrl);
+  const { imageUrl, setImageUrl, isUploading, fileInputRef, previewUrl, handleFileUpload } = useAssetUpload();
   const [modifiers, setModifiers] = useState<ItemModifier[]>([]);
 
   useEffect(() => {
@@ -254,20 +250,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                                 ref={fileInputRef} 
                                 className="hidden" 
                                 accept="image/*"
-                                onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        setIsUploading(true);
-                                        try {
-                                            const assetUrl = await assetSyncService.uploadLocalAsset(file);
-                                            setImageUrl(assetUrl);
-                                        } catch (err) {
-                                            console.error('Upload failed', err);
-                                        } finally {
-                                            setIsUploading(false);
-                                        }
-                                    }
-                                }}
+                                onChange={handleFileUpload}
                             />
                         </div>
                         <p className="text-xs font-cinzel text-white/60 uppercase tracking-[0.2em] leading-relaxed">

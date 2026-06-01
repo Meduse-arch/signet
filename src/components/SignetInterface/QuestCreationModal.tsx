@@ -6,8 +6,7 @@ import { useUIStore } from '../../store/ui';
 import { useAuthStore } from '../../store/auth';
 import { usePeersStore } from '../../store/peers';
 import { usePeer } from '../../hooks/usePeer';
-import { assetSyncService } from '../../services/asset-sync.service';
-
+import { useAssetUpload } from '../../hooks/useAssetUpload';
 interface QuestCreationModalProps {
   sessionId: string;
 }
@@ -21,12 +20,10 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const { imageUrl, setImageUrl, isUploading, handleFileUpload } = useAssetUpload();
   const [status, setStatus] = useState<'En cours' | 'Terminée' | 'Échouée'>('En cours');
   const [rewards, setRewards] = useState<any[]>([]);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
-  const [isUploading, setIsWideUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (showQuestCreateModal && questToEdit) {
@@ -72,19 +69,6 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
     setRewards(rewards.map(r => r.id === id ? { ...r, ...updates } : r));
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsWideUploading(true);
-    try {
-        const assetUrl = await assetSyncService.uploadLocalAsset(file);
-        setImageUrl(assetUrl);
-    } catch (err) {
-        console.error("Upload failed", err);
-    } finally {
-        setIsWideUploading(false);
-    }
-  };
 
   if (!showQuestCreateModal) return null;
 

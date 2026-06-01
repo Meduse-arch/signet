@@ -7,7 +7,7 @@ import { useAuthStore } from '../../store/auth';
 import { useTagsStore } from '../../store/tags';
 import { TagManagementModal } from './TagManagementModal';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
-import { assetSyncService } from '../../services/asset-sync.service';
+import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { useSessionStore } from '../../store/session';
 
 interface SkillCreationModalProps {
@@ -26,9 +26,8 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<'active' | 'passive_auto' | 'passive_toggle'>('active');
-  const [imageUrl, setImageUrl] = useState('');
+  const { imageUrl, setImageUrl, isUploading, handleFileUpload } = useAssetUpload();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [isUploading, setIsWideUploading] = useState(false);
 
   // Coût
   const [hasCost, setHasCost] = useState(false);
@@ -128,19 +127,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
     setModifiers(newMods);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsWideUploading(true);
-    try {
-        const assetUrl = await assetSyncService.uploadLocalAsset(file);
-        setImageUrl(assetUrl);
-    } catch (err) {
-        console.error("Upload failed", err);
-    } finally {
-        setIsWideUploading(false);
-    }
-  };
+
 
   if (!showSkillCreateModal) return null;
 

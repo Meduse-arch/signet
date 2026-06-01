@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { setupStoreSync, emitStoreSync } from './utils/storeSync';
 
 interface MapState {
   tokenStatuses: Record<string, boolean>; // characterId -> isOnMap
@@ -16,9 +17,7 @@ export const useMapStore = create<MapState>((set, get) => ({
     if (!skipSync) {
       // Pour éviter de chercher la session, on peut utiliser un nom générique ou localStorage
       const sessionId = localStorage.getItem('last_active_session') || 'default';
-      const channel = new BroadcastChannel(`signet_map_store_sync_${sessionId}`);
-      channel.postMessage({ type: 'MAP_UPDATE_INTERNAL', payload: { characterId, isOnMap } });
-      channel.close();
+      emitStoreSync('map', sessionId, 'MAP_UPDATE_INTERNAL', { characterId, isOnMap });
     }
   },
   updateTokenList: (characterIds, skipSync = false) => {
@@ -29,20 +28,16 @@ export const useMapStore = create<MapState>((set, get) => ({
     set({ tokenStatuses: newStatuses });
     if (!skipSync) {
       const sessionId = localStorage.getItem('last_active_session') || 'default';
-      const channel = new BroadcastChannel(`signet_map_store_sync_${sessionId}`);
-      channel.postMessage({ type: 'MAP_LIST_INTERNAL', payload: { characterIds } });
-      channel.close();
+      emitStoreSync('map', sessionId, 'MAP_LIST_INTERNAL', { characterIds });
     }
   },
   initialize: (sessionId: string) => {
-    const syncChannel = new BroadcastChannel(`signet_map_store_sync_${sessionId}`);
-    syncChannel.onmessage = (event) => {
-      const { type, payload } = event.data;
+    setupStoreSync('map', sessionId, (type, payload) => {
       if (type === 'MAP_UPDATE_INTERNAL') {
         get().setTokenStatus(payload.characterId, payload.isOnMap, true);
       } else if (type === 'MAP_LIST_INTERNAL') {
         get().updateTokenList(payload.characterIds, true);
       }
-    };
+    });
   }
 }));

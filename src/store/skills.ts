@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Skill, skillsService } from '../services/skills.service';
+import { setupStoreSync, emitStoreSync } from './utils/storeSync';
 
 interface SkillsState {
   skills: Skill[];
@@ -18,14 +19,12 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
     const skills = await skillsService.getSkills(sessionId);
     set({ skills });
 
-    const syncChannel = new BroadcastChannel(`signet_skills_store_sync_${sessionId}`);
-    syncChannel.onmessage = async (event) => {
-      const { type } = event.data;
+    setupStoreSync('skills', sessionId, async (type, payload) => {
       if (type === 'SKILLS_UPDATE_INTERNAL') {
         const freshSkills = await skillsService.getSkills(sessionId);
         set({ skills: freshSkills });
       }
-    };
+    });
   },
 
   addSkill: async (sessionId, skill, skipSync = false) => {
@@ -62,8 +61,7 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
       set({ skills: newSkills });
 
       if (!skipSync) {
-        const syncChannel = new BroadcastChannel(`signet_skills_store_sync_${sessionId}`);
-        syncChannel.postMessage({ type: 'SKILLS_UPDATE_INTERNAL', payload: skill });
+        emitStoreSync('skills', sessionId, 'SKILLS_UPDATE_INTERNAL', skill);
       }
     }
   },
@@ -75,8 +73,7 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
       set({ skills: state.skills.filter(s => s.id !== id) });
 
       if (!skipSync) {
-        const syncChannel = new BroadcastChannel(`signet_skills_store_sync_${sessionId}`);
-        syncChannel.postMessage({ type: 'SKILLS_UPDATE_INTERNAL', payload: { id, deleted: true } });
+        emitStoreSync('skills', sessionId, 'SKILLS_UPDATE_INTERNAL', { id, deleted: true });
       }
     }
   }
