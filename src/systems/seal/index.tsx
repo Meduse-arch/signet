@@ -404,9 +404,20 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
                 </div>
               ) : null;
 
+              const windowTitles: Record<string, string> = {
+                scenes: 'Scènes',
+                players: 'Liste',
+                inventaire: 'Inventaire',
+                bestiary: 'Bestiaire',
+                dice: 'Dés',
+                quests: 'Quêtes',
+                skills: 'Compétences',
+                character: 'Personnage'
+              };
+
               return win.isOpen && (
                 <DraggableWindow
-                  key={id} id={id} title={id} 
+                  key={id} id={id} title={windowTitles[id] || id} 
                   onClose={() => closeWindow(id as any)} 
                   onPopOut={() => handlePopOut(id)}
                   defaultPosition={win.position} 
