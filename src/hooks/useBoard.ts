@@ -446,5 +446,16 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
   }, []);
 
+  
+  useEffect(() => {
+    const handleZoom = (e: CustomEvent<{ id: string }>) => {
+      if (boardRef.current) {
+        boardRef.current.zoomToToken(e.detail.id);
+      }
+    };
+    window.addEventListener('ZOOM_TO_TOKEN', handleZoom as EventListener);
+    return () => window.removeEventListener('ZOOM_TO_TOKEN', handleZoom as EventListener);
+  }, []);
+
   return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad };
 }

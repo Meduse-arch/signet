@@ -6,6 +6,7 @@ import {
   Dices, 
   Package,
   Users,
+  List,
   X,
   Sparkles,
   Ghost,
@@ -72,7 +73,7 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
     { type: 'quests' as const, icon: <ScrollText size={18} />, label: 'Quêtes', minSecurity: SecurityLevel.PLAYER },
     { type: 'dice' as const, icon: <Dices size={18} />, label: 'Dés', minSecurity: SecurityLevel.PLAYER },
     { type: 'inventaire' as const, icon: <Package size={18} />, label: 'Inventaire', minSecurity: SecurityLevel.PLAYER },
-    { type: 'players' as const, icon: <Users size={18} />, label: 'Joueurs', minSecurity: SecurityLevel.PLAYER },
+    { type: 'players' as const, icon: <List size={18} />, label: 'Liste', minSecurity: SecurityLevel.PLAYER },
   ].filter(item => securityLevel >= item.minSecurity);
 
   // Calcul pour une disposition en quart de cercle (arc)

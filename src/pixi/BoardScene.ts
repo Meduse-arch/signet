@@ -235,6 +235,23 @@ export class BoardScene extends Container {
     }
   }
 
+  
+  zoomToToken(id: string) {
+    const token = this.tokens.get(id);
+    if (!token) return;
+    
+    const scale = 1.5;
+    this.scale.set(scale);
+    
+    const screenW = this.app.screen.width;
+    const screenH = this.app.screen.height;
+    
+    this.x = screenW / 2 - (token.x * scale);
+    this.y = screenH / 2 - (token.y * scale);
+    
+    this.constrainPan();
+  }
+
   override destroy(options?: any) {
     super.destroy(options);
   }

@@ -1,4 +1,53 @@
-import { useState, useMemo } from 'react';
+const fs = require('fs');
+
+// 1. BoardScene.ts - Add zoomToToken
+let boardScene = fs.readFileSync('src/pixi/BoardScene.ts', 'utf8');
+if (!boardScene.includes('zoomToToken(')) {
+    const zoomLogic = `
+  zoomToToken(id: string) {
+    const token = this.tokens.get(id);
+    if (!token) return;
+    
+    const scale = 1.5;
+    this.scale.set(scale);
+    
+    const screenW = this.app.screen.width;
+    const screenH = this.app.screen.height;
+    
+    this.x = screenW / 2 - (token.x * scale);
+    this.y = screenH / 2 - (token.y * scale);
+    
+    this.constrainPan();
+  }
+`;
+    // Insert before 'override destroy('
+    boardScene = boardScene.replace('override destroy(options?: any)', zoomLogic + '\n  override destroy(options?: any)');
+    fs.writeFileSync('src/pixi/BoardScene.ts', boardScene);
+    console.log("Patched BoardScene.ts");
+}
+
+// 2. useBoard.ts - Add event listener
+let useBoard = fs.readFileSync('src/hooks/useBoard.ts', 'utf8');
+if (!useBoard.includes('ZOOM_TO_TOKEN')) {
+    const listener = `
+  useEffect(() => {
+    const handleZoom = (e: CustomEvent<{ id: string }>) => {
+      if (boardRef.current) {
+        boardRef.current.zoomToToken(e.detail.id);
+      }
+    };
+    window.addEventListener('ZOOM_TO_TOKEN', handleZoom as EventListener);
+    return () => window.removeEventListener('ZOOM_TO_TOKEN', handleZoom as EventListener);
+  }, []);
+`;
+    // Insert before `return { addToken, ...`
+    useBoard = useBoard.replace('return { addToken, removeToken', listener + '\n  return { addToken, removeToken');
+    fs.writeFileSync('src/hooks/useBoard.ts', useBoard);
+    console.log("Patched useBoard.ts");
+}
+
+// 3. PlayerWindowContent.tsx - Rewrite completely
+const playerWindowContent = `import { useState, useMemo } from 'react';
 import { useCharactersStore } from '../../store/characters';
 import { useMapStore } from '../../store/map';
 import { AssetImage } from '../AssetImage';
@@ -59,3 +108,6 @@ export function PlayerWindowContent({ sessionId }: PlayerWindowContentProps) {
     </div>
   );
 }
+`;
+fs.writeFileSync('src/components/SignetInterface/PlayerWindowContent.tsx', playerWindowContent);
+console.log("Patched PlayerWindowContent.tsx");
