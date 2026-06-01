@@ -2,7 +2,7 @@ import { Application, Container } from 'pixi.js';
 import { MapLayer } from './MapLayer';
 import { FogOfWar } from './FogOfWar';
 import { TokenSprite, TokenData } from './TokenSprite';
-
+import { throttle } from '../utils/throttle';
 export class BoardScene extends Container {
   private app: Application;
   public mapLayer: MapLayer;
@@ -201,16 +201,11 @@ export class BoardScene extends Container {
     console.log('[BoardScene] Adding token:', data.name, 'at', data.x, data.y);
     
     // ✅ Optimisation : Throttle des mouvements pour éviter de saturer le réseau
-    let lastEmit = 0;
-    const throttleDelay = 33; // ~30 FPS max pour les updates réseau
+    const throttledMove = throttle((x: number, y: number) => {
+      if (this.onTokenMove) this.onTokenMove(data.id, x, y);
+    }, 33);
 
-    const token = new TokenSprite(data, this.app, (x, y) => {
-      const now = Date.now();
-      if (now - lastEmit > throttleDelay) {
-        if (this.onTokenMove) this.onTokenMove(data.id, x, y);
-        lastEmit = now;
-      }
-    });
+    const token = new TokenSprite(data, this.app, throttledMove);
     this.tokens.set(data.id, token);
     this.tokenLayer.addChild(token);
   }

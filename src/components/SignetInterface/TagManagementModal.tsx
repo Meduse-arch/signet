@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Tag as TagIcon, Plus, X, Trash2, Palette } from 'lucide-react';
+import { ModalContainer } from '../ModalContainer';
 import { useTagsStore } from '../../store/tags';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
@@ -39,19 +39,10 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
     broadcast({ type: 'TAG_DELETE', payload: { id } });
   };
 
-  return createPortal(
-    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col">
-        <header className="p-4 border-b border-white/10 flex items-center justify-between">
-          <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-widest flex items-center gap-2">
-            <Palette size={14} /> ARCHIVES DES SIGNES
-          </h3>
-          <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
-            <X size={18} />
-          </button>
-        </header>
-
-        <div className="p-6 space-y-6">
+  return (
+    <div className="fixed inset-0 z-[400]">
+      <ModalContainer onClose={onClose} title="ARCHIVES DES SIGNES">
+        <div className="space-y-6">
           <div className="flex gap-2">
             <div className="flex-1 space-y-1">
               <input 
@@ -66,11 +57,11 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
               type="color" 
               value={newColor} 
               onChange={e => setNewColor(e.target.value)}
-              className="w-10 h-8 rounded border border-white/10 bg-transparent cursor-pointer"
+              className="w-10 h-8 rounded border border-white/10 bg-transparent cursor-pointer self-center"
             />
             <button 
               onClick={handleAdd}
-              className="px-3 rounded-lg bg-gold-DEFAULT text-black hover:shadow-[0_0_10px_rgba(212,175,55,0.3)] transition-all"
+              className="px-3 rounded-lg bg-gold-DEFAULT text-black hover:shadow-[0_0_10px_rgba(212,175,55,0.3)] transition-all flex items-center justify-center self-center h-8"
             >
               <Plus size={16} />
             </button>
@@ -96,8 +87,7 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
             )}
           </div>
         </div>
-      </div>
-    </div>,
-    document.body
+      </ModalContainer>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCharactersStore } from '../../store/characters';
 import { X, User, Plus, Minus } from 'lucide-react';
+import { ModalContainer } from '../ModalContainer';
 
 interface SelectCharacterModalProps {
   onClose: () => void;
@@ -21,19 +22,9 @@ export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectChar
   };
 
   return (
-    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gold-DEFAULT/20 bg-black/40">
-          <h2 className="text-sm font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase">
-            Transférer {itemName}
-          </h2>
-          <button onClick={onClose} className="p-2 text-gold-DEFAULT/50 hover:text-gold-bright transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="p-6 flex flex-col gap-6">
+    <div className="fixed inset-0 z-[250]">
+      <ModalContainer onClose={onClose} title={`Transférer ${itemName}`}>
+        <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
             {characters.map(char => (
               <button
@@ -94,7 +85,7 @@ export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectChar
             </button>
           </div>
         </div>
-      </div>
+      </ModalContainer>
     </div>
   );
 }

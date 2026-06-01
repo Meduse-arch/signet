@@ -336,7 +336,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
                 zIndex={win.zIndex + 200} 
                 onFocus={() => focusWindow(id as any)}
               >
-                {id === 'scenes' && <SceneWindowContent scenes={maps} currentSceneId={currentMapId} onSelectScene={handleSelectMap} onAddScene={handleAddMap} onUpdateScene={handleUpdateMap} onToggleHide={handleToggleHideMap} onRemoveScene={handleRemoveMap} />}
+                {id === 'scenes' && <SceneWindowContent sessionId={sessionId} scenes={maps} currentSceneId={currentMapId} onSelectScene={handleSelectMap} onAddScene={handleAddMap} onUpdateScene={handleUpdateMap} onToggleHide={handleToggleHideMap} onRemoveScene={handleRemoveMap} />}
                 {id === 'players' && <PlayerWindowContent players={playersList} sessionId={sessionId} />}
                 {id === 'inventaire' && <InventoryWindowContent sessionId={sessionId} />}
                 {id === 'bestiary' && <BestiaryWindowContent sessionId={sessionId} />}

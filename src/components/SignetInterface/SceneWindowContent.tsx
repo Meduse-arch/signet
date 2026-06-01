@@ -1,9 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
-import { Plus, Check, X, Eye, EyeOff, Settings2, Trash2 } from 'lucide-react';
+import { Plus, Check, X, Eye, EyeOff, Settings2, Trash2, MonitorPlay } from 'lucide-react';
 import { MapItem } from '../BoardCanvas';
 import { SecurityLevel, useAuthStore } from '../../store/auth';
 
 interface SceneWindowContentProps {
+  sessionId: string;
   scenes: MapItem[];
   currentSceneId: string;
   onSelectScene: (scene: MapItem, global?: boolean) => void;
@@ -13,7 +14,7 @@ interface SceneWindowContentProps {
   onRemoveScene?: (id: string) => void;
 }
 
-export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAddScene, onUpdateScene, onToggleHide, onRemoveScene }: SceneWindowContentProps) {
+export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelectScene, onAddScene, onUpdateScene, onToggleHide, onRemoveScene }: SceneWindowContentProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -112,6 +113,18 @@ export function SceneWindowContent({ scenes, currentSceneId, onSelectScene, onAd
             {/* MJ Actions */}
             {isMJ && (
               <div className="absolute right-12 top-1/2 -translate-y-1/2 flex gap-1 opacity-30 group-hover:opacity-100 z-20 transition-all">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.electronAPI) {
+                            window.electronAPI.openExternalWindow('map', sessionId);
+                        }
+                    }}
+                    className="p-2 rounded-full bg-black/40 border border-white/10 text-white/60 hover:text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
+                    title="Ouvrir le mode projection"
+                >
+                    <MonitorPlay size={14} />
+                </button>
                 <button
                     onClick={(e) => {
                         e.stopPropagation();

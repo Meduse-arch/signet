@@ -26,7 +26,7 @@ interface BoardCanvasProps {
 
 export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, characters }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
+  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
   const { isHost } = usePeersStore();
   const { onData, broadcast, sendTo } = usePeer();
   const { user } = useAuthStore();
@@ -38,6 +38,8 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
 
   const [hasLoadedTokensForMap, setHasLoadedTokensForMap] = useState<string>('');
   const lastPreparedMapRef = useRef<string>('');
+
+  const isExternalMap = window.location.href.includes('/external/map');
 
   // Reset local state when sessionId changes to prevent leakage
   useEffect(() => {
@@ -155,6 +157,11 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       removeToken(char.id); // On l'enlève de Pixi pour le MJ
       broadcast({ type: 'TOKEN_REMOVE', payload: { id: char.id } }); // On previent les autres
       setTokenStatus(char.id, false); // Update UI
+      if (!isExternalMap) {
+         const syncChannel = new BroadcastChannel(`board_position_sync_${sessionId}`);
+         syncChannel.postMessage({ type: 'TOKEN_REMOVE', payload: { id: char.id } });
+         syncChannel.close();
+      }
     } else {
       // Ajouter le token au centre
       const center = getCenterView();
@@ -180,8 +187,13 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       addToken(tokenData); // Ajout Pixi pour le MJ
       broadcast({ type: 'TOKEN_ADD', payload: tokenData }); // Prevenir les autres
       setTokenStatus(char.id, true); // Update UI
+      if (!isExternalMap) {
+         const syncChannel = new BroadcastChannel(`board_position_sync_${sessionId}`);
+         syncChannel.postMessage({ type: 'TOKEN_ADD', payload: tokenData });
+         syncChannel.close();
+      }
     }
-  }, [isHost, currentMapId, mapTokens, sessionId, getCenterView, broadcast, addToken, updateTokenList, setTokenStatus, removeToken]);
+  }, [isHost, currentMapId, mapTokens, sessionId, getCenterView, broadcast, addToken, updateTokenList, setTokenStatus, removeToken, isExternalMap]);
 
   // Synchronisation des changements de map et tokens pour les joueurs
   useEffect(() => {
@@ -206,15 +218,30 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
           });
         }
         setTokenStatus(data.payload.id, true);
+        if (!isExternalMap) {
+            const syncChannel = new BroadcastChannel(`board_position_sync_${sessionId}`);
+            syncChannel.postMessage(data);
+            syncChannel.close();
+        }
       } else if (data.type === 'TOKEN_REMOVE') {
         if (!isHost) {
           removeToken(data.payload.id);
         }
         setTokenStatus(data.payload.id, false);
+        if (!isExternalMap) {
+            const syncChannel = new BroadcastChannel(`board_position_sync_${sessionId}`);
+            syncChannel.postMessage(data);
+            syncChannel.close();
+        }
       } else if (data.type === 'TOKEN_MOVE') {
         if (!isHost) {
           const { id, x, y } = data.payload;
           moveToken(id, x, y);
+        }
+        if (!isExternalMap) {
+            const syncChannel = new BroadcastChannel(`board_position_sync_${sessionId}`);
+            syncChannel.postMessage(data);
+            syncChannel.close();
         }
       } else if (data.type === 'TOKEN_MOVE_REQUEST' && isHost) {
         // ✅ Un joueur demande à bouger un token (Le MJ arbitre)
@@ -231,6 +258,11 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
         
         // 3. Diffusion de la position "officielle" à tous les autres
         broadcast({ type: 'TOKEN_MOVE', payload: { id, x, y } });
+        if (!isExternalMap) {
+            const syncChannel = new BroadcastChannel(`board_position_sync_${sessionId}`);
+            syncChannel.postMessage({ type: 'TOKEN_MOVE', payload: { id, x, y } });
+            syncChannel.close();
+        }
 
       } else if (data.type === 'TOKEN_SYNC_REQUEST' && isHost) {
         // Un joueur demande une synchro complète des tokens (Le MJ répond)
@@ -263,7 +295,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       }
     });
     return () => unsub();
-  }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, sendTo, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken, currentMapId, sessionId]);
+  }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, sendTo, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken, currentMapId, sessionId, isExternalMap]);
 
   // Exposer handleToggleToken via BroadcastChannel
   useEffect(() => {
@@ -292,9 +324,59 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
 
   }, [sessionId, isHost, characters, handleToggleToken, mapTokens]);
 
+  // Sync vers fenêtre externe (mode projecteur)
+  useEffect(() => {
+    if (!sessionId) return;
+    const syncChannel = new BroadcastChannel(`board_position_sync_${sessionId}`);
+
+    if (isExternalMap) {
+      syncChannel.onmessage = (event) => {
+        const { type, payload } = event.data;
+        if (type === 'TOKEN_ADD') addToken(payload);
+        else if (type === 'TOKEN_REMOVE') removeToken(payload.id);
+        else if (type === 'TOKEN_MOVE') moveToken(payload.id, payload.x, payload.y);
+        else if (type === 'INITIAL_STATE') {
+          clearTokens();
+          payload.tokens.forEach((t: any) => addToken(t));
+        }
+      };
+
+      if (isReady) {
+        syncChannel.postMessage({ type: 'REQUEST_INITIAL_STATE' });
+      }
+    } else {
+      syncChannel.onmessage = (event) => {
+        if (event.data.type === 'REQUEST_INITIAL_STATE') {
+          // Relayer l'état actuel
+          const fullTokens = mapTokens.map(t => {
+            const char = characters.find(c => c.id === t.character_id);
+            return char ? { id: char.id, name: char.name, image_url: char.image_url, x: t.x, y: t.y } : null;
+          }).filter(Boolean);
+          syncChannel.postMessage({ type: 'INITIAL_STATE', payload: { tokens: fullTokens } });
+        }
+      };
+    }
+
+    return () => syncChannel.close();
+  }, [sessionId, isExternalMap, isReady, mapTokens, characters, addToken, removeToken, moveToken, clearTokens]);
+
   return (
     <div className="relative w-full h-full overflow-hidden">
       <div ref={containerRef} className="absolute inset-0 z-0" />
+      
+      {loadingProgress?.active && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-4 bg-[#1a1a1a]/90 p-8 rounded-xl border border-[#d4af37] shadow-2xl">
+            <div className="w-16 h-16 border-4 border-[#d4af37]/20 border-t-[#d4af37] rounded-full animate-spin"></div>
+            <p className="text-white font-cinzel text-xl">
+              Summoning map... {Math.round((loadingProgress.loaded / loadingProgress.total) * 100) || 0}%
+            </p>
+            <p className="text-gray-300 text-sm">
+              ({loadingProgress.loaded}/{loadingProgress.total} fragments)
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

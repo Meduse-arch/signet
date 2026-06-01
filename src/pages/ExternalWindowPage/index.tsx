@@ -29,7 +29,7 @@ import { useUIStore } from '../../store/ui';
 import { getSessionPlayers } from '../../services/session.service';
 import { getSessionMaps, addSessionMap } from '../../services/maps.service';
 import { getSessionCharacters } from '../../services/characters.service';
-import { MapItem } from '../../components/BoardCanvas';
+import { BoardCanvas, MapItem } from '../../components/BoardCanvas';
 import { useSession } from '../../hooks/useSession';
 
 export function ExternalWindowPage() {
@@ -246,6 +246,14 @@ export function ExternalWindowPage() {
 
   if (!sessionId || !type) return null;
 
+  if (type === 'map') {
+    return (
+      <div className="w-full h-full bg-black relative">
+         <BoardCanvas sessionId={sessionId} maps={maps} currentMapId={currentMapId} characters={characters} />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full bg-transparent text-[#e8d5a0] p-4 overflow-hidden flex flex-col relative">
        {/* Golden Corners */}
@@ -255,6 +263,7 @@ export function ExternalWindowPage() {
        <div className="flex-1 custom-scrollbar overflow-y-auto flex flex-col">
           {type === 'scenes' && (
             <SceneWindowContent 
+              sessionId={sessionId}
               scenes={maps}
               currentSceneId={currentMapId}
               onSelectScene={handleSelectMap}

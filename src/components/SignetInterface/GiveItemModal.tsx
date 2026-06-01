@@ -36,16 +36,19 @@ export function GiveItemModal({ sessionId, targetCharacterName, onClose, onGive 
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[80vh]">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer animate-in fade-in duration-200" onClick={onClose} />
+
+      <div className="relative w-full max-w-2xl bg-[#0D0D0F] border border-gold-DEFAULT/30 rounded-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200" style={{ boxShadow: 'inset 0 0 20px rgba(212, 175, 55, 0.1), 0 20px 50px rgba(0, 0, 0, 0.5)' }}>
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gold-DEFAULT/20 bg-black/40">
-          <h2 className="text-lg font-cinzel font-black text-gold-DEFAULT tracking-widest uppercase">
+        <div className="flex items-center justify-between p-4 border-b border-gold-DEFAULT/10 bg-black/20">
+          <h3 className="text-gold-DEFAULT font-cinzel font-black uppercase tracking-widest text-xs">
             Transférer à {targetCharacterName}
-          </h2>
-          <button onClick={onClose} className="p-2 text-gold-DEFAULT/50 hover:text-gold-bright transition-colors">
-            <X size={20} />
+          </h3>
+          <button onClick={onClose} className="p-1 hover:bg-gold-DEFAULT/10 rounded-full transition-colors text-gold-DEFAULT/60 hover:text-gold-bright">
+            <X size={18} />
           </button>
         </div>
 

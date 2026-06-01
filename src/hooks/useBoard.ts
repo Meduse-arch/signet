@@ -19,6 +19,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const cachedMapBuffer = useRef<{ buffer: ArrayBuffer; type: string } | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0, active: false });
   const chunkQueue = useRef<{mapId: string, chunk: any, data: ArrayBuffer}[]>([]);
   const pendingManifest = useRef<{mapId: string, manifest: any, missingChunks: any[], hostPeerId: string} | null>(null);
 
@@ -59,6 +60,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     boardRef.current.loadManifest(width, height, gridSize);
 
     if (missingChunks.length > 0 && hostPeerId) {
+      setLoadingProgress({ loaded: manifest.chunks.length - missingChunks.length, total: manifest.chunks.length, active: true });
       const center = getCenterView();
       const camX = isNaN(center.x) ? width / 2 : center.x + width / 2;
       const camY = isNaN(center.y) ? height / 2 : center.y + height / 2;
@@ -72,6 +74,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       const chunkIds = sortedChunks.map(c => c.id);
       mapSyncService.requestChunks(mapId, chunkIds, hostPeerId);
     } else if (missingChunks.length === 0) {
+      setLoadingProgress({ loaded: manifest.chunks.length, total: manifest.chunks.length, active: false });
       console.log(`[useBoard] Map ${mapId} complete in cache, starting hydration...`);
       mapSyncService.hydrateMapFromCache(mapId);
     }
@@ -142,6 +145,16 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     const unsubChunk = mapSyncService.onChunkReady((mapId, chunk, data) => {
       if (mapId !== currentMapIdRef.current) return;
       
+      setLoadingProgress(prev => {
+        if (!prev.active) return prev;
+        const newLoaded = prev.loaded + 1;
+        return {
+          ...prev,
+          loaded: newLoaded,
+          active: newLoaded < prev.total
+        };
+      });
+
       if (boardRef.current && isReady) {
         boardRef.current.paintChunk(chunk.id, chunk.x, chunk.y, data);
       } else {
@@ -288,6 +301,9 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         if (isHost) {
           // ✅ MJ : On prévient tout le monde directement et on sauve en DB
           broadcast({ type: 'TOKEN_MOVE', payload: { id, x, y } });
+          const syncChannel = new BroadcastChannel(`board_position_sync_${sessionId}`);
+          syncChannel.postMessage({ type: 'TOKEN_MOVE', payload: { id, x, y } });
+          syncChannel.close();
           if (window.electronAPI && currentMapIdRef.current) {
             window.electronAPI.updateMapToken(sessionId, currentMapIdRef.current, id, x, y).catch(console.error);
           }
@@ -371,5 +387,5 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
   }, []);
 
-  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView };
+  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress };
 }
