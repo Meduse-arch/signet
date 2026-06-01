@@ -12,21 +12,15 @@ Ce rapport fait suite à ta demande concernant la réorganisation de la projecti
 - Suppression totale du bouton "Projection" (`MonitorPlay`) des cartes individuelles de la galerie.
 - Ajout d'un bouton unique de projection dans l'en-tête de la fenêtre (à côté de celui qui permet de pop-out/détacher la fenêtre des scènes). 
 
-## 3. Comportement de la Map sur l'Écran Externe (Question Ouverte)
+## 3. Comportement de la Map sur l'Écran Externe (Solution retenue)
 *Contexte : Comment l'écran externe doit-il réagir quand le Maître du Jeu change de carte sur son écran principal ?*
 
-Voici **deux approches possibles** pour lesquelles j'ai besoin de ton avis :
+Au lieu de choisir entre un mode purement automatique ou manuel, nous allons implémenter un interrupteur (**Toggle**) directement dans l'en-tête de la fenêtre :
 
-> [!TIP]
-> **Option A : Synchronisation Automatique ("Auto-Sync")**
-> Dès que le MJ clique sur une carte dans sa liste, l'écran de projection externe change instantanément de carte pour suivre le MJ.
-> **Avantage** : Rapide, fluide, aucune action supplémentaire.
-> **Inconvénient** : Si le MJ veut juste "regarder" ou préparer une carte en secret avant de l'envoyer aux joueurs, il ne peut pas le faire (car ça s'affichera direct sur l'écran des joueurs).
+- **Bouton Vert (Auto-Sync ON)** : L'écran de projection externe change instantanément de carte dès que le MJ sélectionne une nouvelle scène. C'est l'approche fluide et rapide.
+- **Bouton Rouge (Auto-Sync OFF)** : Le MJ peut naviguer librement entre les scènes pour préparer sa session en secret. L'écran de projection externe reste figé sur la scène actuelle jusqu'à ce que l'Auto-Sync soit réactivé.
 
-> [!TIP]
-> **Option B : Synchronisation Manuelle ("Push to Screen")**
-> L'écran externe reste sur la scène actuelle. Le MJ peut naviguer sur différentes cartes de son côté. Pour envoyer une carte spécifique à l'écran externe, le MJ doit appuyer sur un bouton "Projeter cette carte".
-> **Avantage** : Contrôle absolu du MJ. Possibilité de préparer des tokens/brouillard en secret.
-> **Inconvénient** : Nécessite un clic supplémentaire de la part du MJ pour changer l'affichage public.
+Cette solution offre la flexibilité totale au MJ directement depuis l'interface principale.
 
-**Quelle option préfères-tu pour le changement de carte (A ou B) ?** Dès que j'ai ta réponse, je lance le code pour la barre de chargement, l'UI du bouton, et la logique d'écran externe !
+**Je lance dès maintenant le code pour la barre de chargement, l'UI des boutons (projection et toggle auto-sync), ainsi que la logique de synchronisation !**
+
