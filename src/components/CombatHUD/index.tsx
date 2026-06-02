@@ -21,6 +21,11 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
   };
 
   const handleNext = () => {
+    if (!isHost) {
+      broadcast({ type: 'NEXT_TURN_REQUEST' });
+      return;
+    }
+
     nextTurn();
     const rawState = useCombatStore.getState();
     const payload = {
@@ -39,9 +44,7 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
     channel.close();
 
     // Synchro P2P joueurs
-    if (isHost) {
-      broadcast({ type: 'COMBAT_STATE_UPDATE', payload });
-    }
+    broadcast({ type: 'COMBAT_STATE_UPDATE', payload });
   };
 
   // Identifier le personnage du joueur local et s'il est dans le combat
@@ -104,11 +107,6 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
              <div className="flex flex-col">
                {(isActive || isHost || myCharInCombat) && (
                  <span className="font-cinzel font-bold tracking-widest text-sm text-gray-200">{currentActor.name}</span>
-               )}
-               {isActive && isMyTurn && (
-                 <span className={`text-[10px] font-bold tracking-[0.2em] uppercase text-gold-bright`}>
-                   À ton tour
-                 </span>
                )}
              </div>
           </div>

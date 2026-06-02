@@ -255,6 +255,30 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
         useQuestsStore.getState().removeQuest(sessionId, payload.id, true);
       } else if (type === 'COMBAT_STATE_UPDATE') {
         useCombatStore.getState()._applySync(payload);
+      } else if (type === 'NEXT_TURN_REQUEST') {
+        if (isHost) {
+          useCombatStore.getState().nextTurn();
+          
+          const rawState = useCombatStore.getState();
+          const syncPayload = {
+            isActive: rawState.isActive,
+            currentRound: rawState.currentRound,
+            activeActorId: rawState.activeActorId,
+            actors: rawState.actors,
+            isInitiativeWindowOpen: rawState.isInitiativeWindowOpen
+          };
+
+          if (window.electronAPI) {
+            window.electronAPI.saveCombatState(sessionId, syncPayload);
+          }
+          
+          broadcast({ type: 'COMBAT_STATE_UPDATE', payload: syncPayload });
+          
+          // Synchro locale pour les pop-outs du MJ
+          const syncChannel = new BroadcastChannel(`signet_sync_${sessionId}`);
+          syncChannel.postMessage({ type: 'COMBAT_STATE_UPDATE', payload: syncPayload });
+          syncChannel.close();
+        }
       }
     });
 

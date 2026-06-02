@@ -204,7 +204,39 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
   };
 
   if (!isHost) {
-    return <div className="p-4 text-center text-red-500 font-cinzel">Réservé au Maître de Jeu</div>;
+    return (
+      <div className="flex flex-col h-full bg-[#0D0D0F] text-gray-300 p-4 font-inter text-sm">
+        <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+          <h2 className="font-cinzel text-xl text-gold-DEFAULT tracking-wider">Ordre de Combat</h2>
+        </div>
+
+        <div className="mb-4 flex items-center justify-between text-xs text-gray-400 uppercase tracking-widest">
+          <span>Statut : {isActive ? <span className="text-green-400 font-bold">En cours</span> : 'Attente'}</span>
+          {isActive && <span className="font-bold text-gold-bright">Round {currentRound}</span>}
+        </div>
+
+        <div className="flex-1 overflow-y-auto mb-4 bg-black/20 rounded-xl p-2 border border-white/5 shadow-inner">
+          {actors.map((actor) => (
+            <div key={actor.id} className={`flex items-center gap-3 p-2 mb-2 rounded-lg border transition-all duration-300 ${actor.id === activeActorId ? 'border-gold-DEFAULT bg-gold-DEFAULT/10 shadow-[0_0_15px_rgba(240,192,64,0.15)] scale-[1.02]' : 'border-white/5 bg-black/40'}`}>
+              
+              <div className="relative">
+                {actor.image_url ? (
+                  <AssetImage src={actor.image_url} alt="" className="w-10 h-10 rounded-full border border-gray-700 object-cover" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full border border-gray-700 bg-gray-900 flex items-center justify-center font-cinzel text-xs text-gray-500">?</div>
+                )}
+                {actor.id === activeActorId && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0D0D0F]"></div>}
+              </div>
+              
+              <div className="flex-1 min-w-0 flex items-center justify-between pr-2">
+                <div className={`font-bold truncate ${actor.id === activeActorId ? 'text-gold-bright' : 'text-gray-300'}`}>{actor.name}</div>
+              </div>
+            </div>
+          ))}
+          {actors.length === 0 && <div className="text-center text-gray-600 mt-8 font-cinzel tracking-wider text-xs">Aucun combattant</div>}
+        </div>
+      </div>
+    );
   }
 
   return (
