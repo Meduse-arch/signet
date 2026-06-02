@@ -3,6 +3,8 @@ import { useCombatStore } from '../../store/combat';
 import { usePeer } from '../../hooks/usePeer';
 import { useCharactersStore } from '../../store/characters';
 import { usePeersStore } from '../../store/peers';
+import { useMapStore } from '../../store/map';
+import { AssetImage } from '../AssetImage';
 
 export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) => {
   const { isHost } = usePeersStore();
@@ -13,6 +15,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
   } = useCombatStore();
 
   const characters = useCharactersStore(state => state.characters);
+  const tokenStatuses = useMapStore(state => state.tokenStatuses);
 
   const saveAndBroadcast = async () => {
     setTimeout(async () => {
@@ -24,26 +27,74 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
     }, 50);
   };
 
-  const handleStart = async () => {
-    // Jet d'initiative automatique pour les PNJs / Monstres
-    const updatedActors = actors.map(actor => {
-      const char = characters.find(c => c.id === actor.character_id);
-      const isPlayer = char && char.user_id; // S'il a un user_id, c'est un joueur
-      if (!isPlayer) {
-        return { ...actor, initiative: Math.floor(Math.random() * 20) + 1 };
+  const resolveInitiativeAndSort = (actorsList: any[]) => {
+    // 1. Assigner un jet à ceux qui n'en ont pas
+    actorsList.forEach(a => {
+      if (!a.initiative) {
+        const roll = Math.floor(Math.random() * 20) + 1;
+        a.initiative = roll;
+        a.tiebreaker_rolls = []; // Initialiser les jets de départage
+        
+        // Diffuser le résultat aux joueurs
+        const char = characters.find(c => c.id === a.character_id);
+        if (char && char.user_id) { // Uniquement si c'est un joueur
+            broadcast({ 
+              type: 'DICE_ROLL', 
+              payload: {
+                rolls: [roll],
+                total: roll,
+                bonus: 0,
+                diceString: `1d20`,
+                label: `Initiative`,
+                color: '#d4af37',
+                secret: false,
+                timestamp: Date.now(),
+                sender_id: char.user_id,
+                sender_name: char.name
+              } 
+            });
+        }
       }
-      return actor;
     });
 
-    // Tri automatique (Initiative décroissante)
-    const sortedActors = [...updatedActors].sort((a, b) => b.initiative - a.initiative).map((a, index) => ({ ...a, turn_order: index }));
-    setActors(sortedActors);
+    // 2. Trier avec départage silencieux (Timsort)
+    actorsList.sort((a, b) => {
+      if (a.initiative !== b.initiative) return b.initiative - a.initiative;
+      
+      let i = 0;
+      while(true) {
+        a.tiebreaker_rolls = a.tiebreaker_rolls || [];
+        b.tiebreaker_rolls = b.tiebreaker_rolls || [];
+        
+        if (a.tiebreaker_rolls[i] === undefined) a.tiebreaker_rolls[i] = Math.floor(Math.random() * 20) + 1;
+        if (b.tiebreaker_rolls[i] === undefined) b.tiebreaker_rolls[i] = Math.floor(Math.random() * 20) + 1;
+        
+        if (a.tiebreaker_rolls[i] !== b.tiebreaker_rolls[i]) {
+          return b.tiebreaker_rolls[i] - a.tiebreaker_rolls[i];
+        }
+        i++;
+      }
+    });
 
-    startCombat();
+    return actorsList.map((a, index) => ({ ...a, turn_order: index }));
+  };
+
+  const handleStart = async () => {
+    const sortedActors = resolveInitiativeAndSort([...actors]);
+    
+    // Activer le premier acteur immédiatement (pas besoin d'appuyer sur Suivant)
+    const firstActor = sortedActors[0] ?? null;
+    const actorsWithActive = sortedActors.map((a, i) => ({ ...a, is_active: i === 0 }));
+    
+    setActors(actorsWithActive);
+    // On démarre avec le premier acteur déjà sélectionné
+    useCombatStore.getState().setCombatState({
+      isActive: true,
+      currentRound: 1,
+      activeActorId: firstActor?.id ?? null,
+      actors: actorsWithActive,
+    });
     await saveAndBroadcast();
-
-    // Envoi du signal aux joueurs pour jeter les dés
-    broadcast({ type: 'ROLL_INITIATIVE_PROMPT', payload: {} });
   };
 
   const handleEnd = async () => {
@@ -61,7 +112,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
     if (!char) return;
     if (actors.find(a => a.id === char.id)) return;
 
-    addActor({
+    let newActors = [...actors, {
       id: char.id,
       character_id: char.id,
       name: char.name,
@@ -70,20 +121,32 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
       is_active: false,
       conditions: [],
       image_url: char.image_url
-    });
+    }];
+
+    if (isActive) {
+      newActors = resolveInitiativeAndSort(newActors);
+      setActors(newActors);
+    } else {
+      setActors(newActors);
+    }
     saveAndBroadcast();
   };
 
   const handleAddAllCharacters = () => {
     let changed = false;
-    characters.forEach(char => {
-      if (!actors.find(a => a.id === char.id)) {
-        addActor({
+    let newActors = [...actors];
+    
+    // Seulement les personnages dont le token est posé sur la scène courante
+    const charsOnMap = characters.filter(char => tokenStatuses[char.id] === true);
+
+    charsOnMap.forEach(char => {
+      if (!newActors.find(a => a.id === char.id)) {
+        newActors.push({
           id: char.id,
           character_id: char.id,
           name: char.name,
           initiative: 0,
-          turn_order: actors.length, // L'ordre sera trié au lancement
+          turn_order: newActors.length,
           is_active: false,
           conditions: [],
           image_url: char.image_url
@@ -91,7 +154,14 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
         changed = true;
       }
     });
-    if (changed) saveAndBroadcast();
+
+    if (changed) {
+      if (isActive) {
+        newActors = resolveInitiativeAndSort(newActors);
+      }
+      setActors(newActors);
+      saveAndBroadcast();
+    }
   };
 
   const updateInitiative = (actorId: string, init: number) => {
@@ -150,7 +220,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
             
             <div className="relative">
               {actor.image_url ? (
-                <img src={actor.image_url} alt="" className="w-10 h-10 rounded-full border border-gray-700 object-cover" />
+                <AssetImage src={actor.image_url} alt="" className="w-10 h-10 rounded-full border border-gray-700 object-cover" />
               ) : (
                 <div className="w-10 h-10 rounded-full border border-gray-700 bg-gray-900 flex items-center justify-center font-cinzel text-xs text-gray-500">?</div>
               )}

@@ -1,28 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useCombatStore } from '../../store/combat';
 import { usePeer } from '../../hooks/usePeer';
 import { useSignetStore } from '../../store/signet';
 import { usePeersStore } from '../../store/peers';
 import { useCharactersStore } from '../../store/characters';
 import { Swords, ChevronRight } from 'lucide-react';
+import { AssetImage } from '../AssetImage';
 
 export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
   const { isActive, activeActorId, actors, nextTurn } = useCombatStore();
   const { isHost, peerId } = usePeersStore();
   const { onData } = usePeer();
-  const [showPrompt, setShowPrompt] = useState(false);
   const openWindow = useSignetStore(state => state.openWindow);
   const characters = useCharactersStore(state => state.characters);
-
-  useEffect(() => {
-    const unsub = onData((data) => {
-      if (data.type === 'ROLL_INITIATIVE_PROMPT') {
-        setShowPrompt(true);
-        setTimeout(() => setShowPrompt(false), 5000);
-      }
-    });
-    return () => unsub();
-  }, [onData]);
 
   const handleOpenManager = () => {
     openWindow('combat');
@@ -40,127 +30,111 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
     channel.close();
   };
 
-  if (!isActive && !isHost && !showPrompt) return null;
+  if (!isActive) return null;
 
   const sortedActors = [...actors].sort((a, b) => a.turn_order - b.turn_order);
   const currentIndex = sortedActors.findIndex(a => a.id === activeActorId);
   
   let currentActor = currentIndex !== -1 ? sortedActors[currentIndex] : null;
-  let prevActor = currentIndex > 0 ? sortedActors[currentIndex - 1] : (sortedActors.length > 0 ? sortedActors[sortedActors.length - 1] : null);
-  let nextActor = currentIndex < sortedActors.length - 1 ? sortedActors[currentIndex + 1] : (sortedActors.length > 0 ? sortedActors[0] : null);
+  const nextActor1 = sortedActors.length > 1 ? sortedActors[(currentIndex + 1) % sortedActors.length] : null;
+  const nextActor2 = sortedActors.length > 2 ? sortedActors[(currentIndex + 2) % sortedActors.length] : null;
 
+  // Si le combat est actif mais qu'aucun acteur n'est encore désigné (ne devrait plus arriver), on prend le premier
+  if (isActive && !currentActor && sortedActors.length > 0) {
+    currentActor = sortedActors[0];
+  }
+  // Avant le lancement (MJ en attente), on pré-affiche le premier
   if (!isActive && isHost && sortedActors.length > 0) {
     currentActor = sortedActors[0];
-    prevActor = null;
-    nextActor = null;
   }
 
   const zoomToToken = (actorId: string) => {
-    const channel = new BroadcastChannel(`board_actions_${sessionId}`);
-    channel.postMessage({ type: 'ZOOM_TO_TOKEN', payload: { id: actorId } });
-    channel.close();
+    window.dispatchEvent(new CustomEvent('ZOOM_TO_TOKEN', { detail: { id: actorId } }));
   };
 
-  // Déterminer si c'est le tour du joueur local
-  // On cherche le perso contrôlé par le joueur local
   const myChar = characters.find(c => c.user_id === peerId);
   const isMyTurn = isActive && currentActor && myChar && currentActor.character_id === myChar.id;
 
-  return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[150] flex flex-col items-center pointer-events-none">
-      
-      {showPrompt && !isHost && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-500">
-           <div className="text-6xl md:text-8xl font-cinzel font-black text-gold-bright drop-shadow-[0_0_30px_rgba(240,192,64,0.8)] tracking-widest text-center uppercase">
-              À VOS DÉS !
-           </div>
-        </div>
-      )}
-
-      {/* Banner / Title */}
-      {isActive && currentActor && (
-        <div className="mb-3 flex flex-col items-center">
-           <div className={`font-cinzel font-black tracking-[0.2em] text-sm px-6 py-1 rounded-full border bg-black/80 backdrop-blur-md shadow-lg ${
-             isMyTurn 
-              ? 'text-gold-bright border-gold-DEFAULT shadow-gold-DEFAULT/20' 
-              : 'text-gray-400 border-gray-700'
-           }`}>
-              {isMyTurn ? 'YOUR TURN' : 'WAIT !'}
-           </div>
-        </div>
-      )}
-
-      <div className="flex items-center gap-6 pointer-events-auto">
-        
-        {/* Previous */}
-        {isActive && prevActor && prevActor.id !== currentActor?.id && (
-          <div 
-            onClick={() => zoomToToken(prevActor!.id)}
-            className="flex flex-col items-center opacity-40 hover:opacity-100 transition-all cursor-pointer scale-75 origin-center hover:scale-90"
-          >
-            <div className="w-14 h-14 rounded-full border-2 border-gray-600 bg-gray-900 overflow-hidden shadow-black shadow-lg">
-              {prevActor.image_url ? <img src={prevActor.image_url} alt="" className="w-full h-full object-cover" /> : null}
+  const Avatar = ({ actor, size = "w-10 h-10", isActive = false, onClick }: any) => {
+    if (!actor) return null;
+    return (
+      <div 
+        onClick={onClick}
+        className={`relative rounded-full flex-shrink-0 cursor-pointer overflow-hidden bg-[#1A1A20] transition-all duration-300 border ${isActive ? 'border-gold-DEFAULT shadow-[0_0_15px_rgba(240,192,64,0.2)] scale-110 z-10' : 'border-white/10 opacity-60 hover:opacity-100 hover:scale-105'}`}
+      >
+        <div className={`${size}`}>
+          {actor.image_url ? (
+            <AssetImage src={actor.image_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-600">
+               <Swords size={size.includes('14') ? 24 : 16} />
             </div>
-          </div>
-        )}
-
-        {/* Current */}
-        <div className="relative flex items-center justify-center group">
-          <div 
-             onClick={() => currentActor && zoomToToken(currentActor.id)}
-             className="flex flex-col items-center cursor-pointer"
-          >
-             <div className={`w-24 h-24 rounded-full border-[3px] shadow-2xl overflow-hidden transition-all duration-300 bg-[#0D0D0F] flex items-center justify-center ${isActive ? 'border-gold-DEFAULT shadow-gold-DEFAULT/40 scale-110' : 'border-gray-700 opacity-60'}`}>
-                {currentActor?.image_url ? (
-                  <img src={currentActor.image_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <Swords size={32} className={isActive ? "text-gold-DEFAULT/50" : "text-gray-700"} />
-                )}
-             </div>
-             
-             {/* Name Tag (Only for current) */}
-             {(isActive || isHost) && currentActor && (
-               <div className="absolute -bottom-4 bg-black/90 border border-gold-DEFAULT/40 px-5 py-1.5 rounded-full text-gold-bright font-bold text-xs tracking-widest backdrop-blur-md shadow-lg whitespace-nowrap">
-                 {currentActor.name}
-               </div>
-             )}
-          </div>
+          )}
         </div>
+      </div>
+    );
+  };
 
-        {/* Next */}
-        {isActive && nextActor && nextActor.id !== currentActor?.id && (
-           <div 
-             onClick={() => zoomToToken(nextActor!.id)}
-             className="flex flex-col items-center opacity-40 hover:opacity-100 transition-all cursor-pointer scale-75 origin-center hover:scale-90"
-           >
-             <div className="w-14 h-14 rounded-full border-2 border-gray-600 bg-gray-900 overflow-hidden shadow-black shadow-lg">
-               {nextActor.image_url ? <img src={nextActor.image_url} alt="" className="w-full h-full object-cover" /> : null}
+  return (
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[150] pointer-events-auto">
+      <div className="flex items-center gap-3 bg-[#08080A]/70 backdrop-blur-2xl border border-white/5 rounded-full pl-3 pr-3 py-2 shadow-2xl transition-all duration-500">
+        
+        {/* Actuel */}
+        {currentActor && (
+          <div className="flex items-center gap-4 bg-white/5 pr-6 pl-2 py-1.5 rounded-full border border-white/5">
+             <Avatar actor={currentActor} size="w-14 h-14" isActive={isActive} onClick={() => zoomToToken(currentActor.id)} />
+             
+             <div className="flex flex-col">
+               {(isActive || isHost) && (
+                 <span className="font-cinzel font-bold tracking-widest text-sm text-gray-200">{currentActor.name}</span>
+               )}
+               {isActive && (
+                 <span className={`text-[10px] font-bold tracking-[0.2em] uppercase ${isMyTurn ? 'text-gold-bright' : 'text-gray-500'}`}>
+                   {isMyTurn ? 'À ton tour' : 'En attente'}
+                 </span>
+               )}
              </div>
-           </div>
-        )}
-
-        {/* Admin Controls (Right side of the carousel) */}
-        {isHost && (
-          <div className="flex flex-col gap-2 ml-4">
-            {isActive && (
-              <button 
-                onClick={handleNext}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-black/60 border border-gold-DEFAULT/30 text-gold-DEFAULT hover:bg-gold-DEFAULT/20 hover:border-gold-DEFAULT hover:scale-110 transition-all backdrop-blur-sm"
-                title="Tour Suivant"
-              >
-                <ChevronRight size={20} />
-              </button>
-            )}
-            <button 
-              onClick={handleOpenManager}
-              className={`flex items-center justify-center gap-2 px-4 h-10 rounded-full transition-all border backdrop-blur-sm ${isActive ? 'bg-black/60 border-red-500/30 text-red-400 hover:bg-red-900/40 hover:border-red-500 hover:scale-110' : 'bg-black/60 border-gold-DEFAULT/30 text-gold-DEFAULT hover:bg-gold-DEFAULT/20 hover:border-gold-DEFAULT hover:scale-110'}`}
-              title="Gestionnaire d'Initiative"
-            >
-              <Swords size={18} />
-              <span className="font-cinzel font-bold text-xs tracking-widest uppercase">Fight</span>
-            </button>
           </div>
         )}
+
+        {isActive && nextActor1 && nextActor1.id !== currentActor?.id && (
+           <ChevronRight size={16} className="text-white/20" />
+        )}
+
+        {/* Suivants */}
+        {isActive && nextActor1 && nextActor1.id !== currentActor?.id && (
+           <Avatar actor={nextActor1} size="w-10 h-10" onClick={() => zoomToToken(nextActor1.id)} />
+        )}
+
+        {isActive && nextActor2 && nextActor2.id !== currentActor?.id && nextActor2.id !== nextActor1?.id && (
+           <Avatar actor={nextActor2} size="w-8 h-8" onClick={() => zoomToToken(nextActor2.id)} />
+        )}
+
+        {/* Admin Controls */}
+        {isHost && (
+          <>
+            <div className="w-[1px] h-8 bg-white/10 mx-2"></div>
+            <div className="flex items-center gap-2">
+              {isActive && (
+                <button 
+                  onClick={handleNext}
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 border border-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/50 transition-all"
+                  title="Tour Suivant"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              )}
+              <button 
+                onClick={handleOpenManager}
+                className={`flex items-center justify-center w-10 h-10 rounded-full transition-all border ${isActive ? 'bg-red-900/20 border-red-500/20 text-red-400 hover:bg-red-900/40 hover:border-red-500/50' : 'bg-black/40 border-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/50'}`}
+                title="Gestionnaire d'Initiative"
+              >
+                <Swords size={18} />
+              </button>
+            </div>
+          </>
+        )}
+
       </div>
     </div>
   );
