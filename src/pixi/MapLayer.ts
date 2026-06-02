@@ -7,6 +7,7 @@ export class MapLayer extends Container {
   private chunkSprites: Map<string, Sprite> = new Map();
   private mapWidth: number = 0;
   private mapHeight: number = 0;
+  private currentGridSize: number = 50;
 
   constructor() {
     super();
@@ -60,7 +61,12 @@ export class MapLayer extends Container {
   }
 
   setGridSize(size: number) {
+    this.currentGridSize = size;
     this.drawDynamicGrid(size);
+  }
+
+  getGridSize(): number {
+    return this.currentGridSize;
   }
 
   public setMapDimensions(width: number, height: number, gridSize: number = 50) {

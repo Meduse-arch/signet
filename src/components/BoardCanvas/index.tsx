@@ -9,6 +9,7 @@ import { mapSyncService } from '../../services/map-sync.service';
 import { BrowserImageCompressor } from '../../services/browser-image-compressor';
 import { MapTransitionOverlay } from './MapTransitionOverlay';
 import { assetSyncService } from '../../services/asset-sync.service';
+import { useCharactersStore } from '../../store/characters';
 
 
 export interface MapItem {
@@ -29,7 +30,7 @@ interface BoardCanvasProps {
 
 export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, characters }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
+  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
   const { isHost } = usePeersStore();
   const { onData, broadcast, sendTo } = usePeer();
   const { user } = useAuthStore();
@@ -43,6 +44,10 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
   const lastPreparedMapRef = useRef<string>('');
 
   const isExternalMap = window.location.href.includes('/external/map');
+  const { controlledCharacterId } = useCharactersStore();
+  const currentCharacterId = controlledCharacterId;
+
+  const [mjMenu, setMjMenu] = useState<{ visible: boolean, x: number, y: number, tokenId: string }>({ visible: false, x: 0, y: 0, tokenId: '' });
 
   // Reset local state when sessionId changes to prevent leakage
   useEffect(() => {
@@ -119,12 +124,18 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
         const char = characters.find(c => c.id === t.character_id);
         if (char) {
           console.log(`[BoardCanvas] Restoring token for character: ${char.name}`);
+          const isOwned = char.id === currentCharacterId;
+          const isHidden = !!t.is_hidden;
+
           addToken({
             id: char.id,
             name: char.name,
             image_url: char.image_url,
             x: isNaN(t.x) ? 0 : t.x,
             y: isNaN(t.y) ? 0 : t.y,
+            isOwned,
+            isMJ: !!isMJ,
+            is_hidden: isHidden
           });
         } else {
           console.warn(`[BoardCanvas] Character not found for token: ${t.character_id}`);
@@ -180,7 +191,10 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
         name: char.name,
         image_url: resolvedImageUrl,
         x,
-        y
+        y,
+        isOwned: char.id === currentCharacterId,
+        isMJ: !!isMJ,
+        is_hidden: false
       };
 
       if (window.electronAPI) {
@@ -223,6 +237,9 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
             image_url: data.payload.image_url,
             x: data.payload.x,
             y: data.payload.y,
+            isOwned: data.payload.id === currentCharacterId,
+            isMJ: !!isMJ,
+            is_hidden: !!data.payload.is_hidden
           });
         }
         setTokenStatus(data.payload.id, true);
@@ -300,6 +317,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
                                 image_url: resolvedImageUrl,
                                 x: t.x,
                                 y: t.y,
+                                is_hidden: !!t.is_hidden
                             }
                         });
                     }
@@ -309,7 +327,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       }
     });
     return () => unsub();
-  }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, sendTo, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken, currentMapId, sessionId, isExternalMap]);
+  }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, sendTo, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken, currentMapId, sessionId, isExternalMap, currentCharacterId, isMJ]);
 
   // Exposer handleToggleToken via BroadcastChannel
   useEffect(() => {
@@ -334,7 +352,9 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
             name: payload.name,
             image_url: payload.image_url,
             x: NaN, // BoardScene gérera le maintien de la position actuelle si NaN
-            y: NaN
+            y: NaN,
+            isOwned: payload.id === currentCharacterId,
+            isMJ: !!isMJ
         });
       }
     };
@@ -354,7 +374,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
         else if (type === 'TOKEN_MOVE') moveToken(payload.id, payload.x, payload.y);
         else if (type === 'INITIAL_STATE') {
           clearTokens();
-          payload.tokens.forEach((t: any) => addToken(t));
+          payload.tokens.forEach((t: any) => addToken({...t, isOwned: t.id === currentCharacterId, isMJ: !!isMJ}));
         }
       };
 
@@ -377,10 +397,81 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
     return () => syncChannel.close();
   }, [sessionId, isExternalMap, isReady, mapTokens, characters, addToken, removeToken, moveToken, clearTokens]);
 
+  // Gestion du clic droit (HUD)
+  useEffect(() => {
+    if (setOnTokenRightClick && isMJ) {
+      setOnTokenRightClick((tokenId: string, x: number, y: number) => {
+        setMjMenu({ visible: true, x, y, tokenId });
+      });
+    }
+  }, [setOnTokenRightClick, isMJ]);
+
+  const closeMjMenu = () => setMjMenu(prev => ({ ...prev, visible: false }));
+
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div 
+      className="relative w-full h-full overflow-hidden" 
+      onPointerDown={closeMjMenu}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <div ref={containerRef} className="absolute inset-0 z-0" />
       <MapTransitionOverlay progress={loadingProgress} onRetry={retryLoad} />
+      
+      {/* Menu Contextuel du MJ (HUD) */}
+      {mjMenu.visible && (
+        <div 
+          className="absolute z-50 flex flex-col gap-1 p-2 bg-[#050508]/90 backdrop-blur-md border border-gold-DEFAULT/20 rounded-lg shadow-2xl"
+          style={{ left: mjMenu.x + 15, top: mjMenu.y - 15 }}
+          onPointerDown={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        >
+          <div className="text-xs text-gold-DEFAULT/70 uppercase tracking-wider mb-1 px-1 border-b border-gold-DEFAULT/10 pb-1">
+             Options (MJ)
+          </div>
+          <button 
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-300 hover:text-white hover:bg-white/5 rounded transition-colors"
+            onClick={() => {
+              // Logique de masquage
+              const token = characters.find(c => c.id === mjMenu.tokenId);
+              if (token) {
+                 // Pour l'instant on ne sauve pas en DB l'état caché, 
+                 // mais on met à jour le token localement et on broadcast pour un test rapide.
+                 addToken({
+                    id: token.id,
+                    name: token.name,
+                    x: NaN, y: NaN,
+                    is_hidden: true,
+                    isOwned: false,
+                    isMJ: !!isMJ
+                 });
+                 // broadcast({ type: 'TOKEN_UPDATE_VISIBILITY', payload: { id: token.id, is_hidden: true } });
+              }
+              closeMjMenu();
+            }}
+          >
+            👁️ Cacher
+          </button>
+          <button 
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-300 hover:text-white hover:bg-white/5 rounded transition-colors"
+            onClick={() => {
+               // Posséder (Mettre à jour SessionStore si nécessaire, ici simulation)
+               console.log("[HUD] Posséder: ", mjMenu.tokenId);
+               closeMjMenu();
+            }}
+          >
+            🔗 Posséder
+          </button>
+          <button 
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+            onClick={() => {
+              const char = characters.find(c => c.id === mjMenu.tokenId);
+              if (char) handleToggleToken(char);
+              closeMjMenu();
+            }}
+          >
+            🗑️ Supprimer
+          </button>
+        </div>
+      )}
     </div>
   );
 }

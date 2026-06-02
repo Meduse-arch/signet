@@ -13,6 +13,8 @@ export class BoardScene extends Container {
   private tokenLayer: Container;
   private tokens: Map<string, TokenSprite> = new Map();
   public onTokenMove?: (id: string, x: number, y: number) => void;
+  public onTokenRightClick?: (id: string, x: number, y: number) => void;
+  private selectedTokenId: string | null = null;
 
   private dragging = false;
   private dragStart = { x: 0, y: 0 };
@@ -29,6 +31,7 @@ export class BoardScene extends Container {
     this.addChild(this.fow);
 
     this.tokenLayer = new Container();
+    this.tokenLayer.sortableChildren = true;
     this.addChild(this.tokenLayer);
 
     // Center the board by default
@@ -101,7 +104,42 @@ export class BoardScene extends Container {
 
     this.app.stage.on('pointerup', () => this.dragging = false);
     this.app.stage.on('pointerupoutside', () => this.dragging = false);
+
+    // Keyboard (ZQSD)
+    window.addEventListener('keydown', this.handleKeyDown);
   }
+
+  private handleKeyDown = (e: KeyboardEvent) => {
+    if (!this.selectedTokenId) return;
+    const token = this.tokens.get(this.selectedTokenId);
+    // On ne bouge que si on a la permission
+    if (!token || (!token.isOwned && !token.isMJ)) return;
+
+    // Éviter de capturer si l'utilisateur tape dans un input
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+    let dx = 0;
+    let dy = 0;
+    const grid = token.gridSize || 50;
+
+    switch (e.key.toLowerCase()) {
+      case 'z': case 'arrowup': dy = -grid; break;
+      case 's': case 'arrowdown': dy = grid; break;
+      case 'q': case 'arrowleft': dx = -grid; break;
+      case 'd': case 'arrowright': dx = grid; break;
+      default: return;
+    }
+
+    if (dx !== 0 || dy !== 0) {
+      e.preventDefault();
+      const targetX = token.x + dx;
+      const targetY = token.y + dy;
+      token.moveTo(targetX, targetY, true); // Immediate
+      if (this.onTokenMove) {
+          this.onTokenMove(token.id, targetX, targetY);
+      }
+    }
+  };
 
   private constrainPan() {
     const bounds = this.mapLayer.getMapBounds();
@@ -138,6 +176,7 @@ export class BoardScene extends Container {
 
   setGridSize(size: number) {
     this.mapLayer.setGridSize(size);
+    this.tokens.forEach(t => t.gridSize = size);
   }
 
   async loadMap(url: string, format?: string, gridSize: number = 50) {
@@ -219,6 +258,17 @@ export class BoardScene extends Container {
     }, 33);
 
     const token = new TokenSprite(data, this.app, throttledMove);
+    token.gridSize = this.mapLayer.getGridSize();
+    
+    // Sélection pour clavier
+    token.on('pointerdown', () => {
+        this.selectedTokenId = data.id;
+    });
+
+    token.onRightClickCallback = (x: number, y: number) => {
+        if (this.onTokenRightClick) this.onTokenRightClick(data.id, x, y);
+    };
+
     this.tokens.set(data.id, token);
     this.tokenLayer.addChild(token);
   }
@@ -267,6 +317,7 @@ export class BoardScene extends Container {
 
   override destroy(options?: any) {
     if (this.unsubCombat) this.unsubCombat();
+    window.removeEventListener('keydown', this.handleKeyDown);
     super.destroy(options);
   }
 }

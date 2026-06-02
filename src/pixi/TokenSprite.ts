@@ -8,6 +8,9 @@ export interface TokenData {
   y: number;
   image_url?: string;
   color?: string;
+  isOwned?: boolean;
+  isMJ?: boolean;
+  is_hidden?: boolean;
 }
 
 export class TokenSprite extends Container {
@@ -24,6 +27,14 @@ export class TokenSprite extends Container {
   private isInterpolating = false;
   private lerpFactor = 0.2; // Vitesse de glissement (0.1 à 0.3 recommandé)
 
+  public id: string;
+  public isOwned = false;
+  public isMJ = false;
+  public is_hidden = false;
+  public gridSize = 50;
+  private glowRing: Graphics | null = null;
+  public onRightClickCallback?: (x: number, y: number) => void;
+
   constructor(data: TokenData, app: Application, onMove?: (x: number, y: number) => void) {
     super();
     this.app = app;
@@ -31,17 +42,42 @@ export class TokenSprite extends Container {
 
     console.log(`[TokenSprite] Init: ${data.name} (ID: ${data.id}) at ${data.x},${data.y}`);
 
+    this.isOwned = !!data.isOwned;
+    this.isMJ = !!data.isMJ;
+    this.is_hidden = !!data.is_hidden;
+
     this.x = Number(data.x) || 0;
     this.y = Number(data.y) || 0;
     this.targetPos = { x: this.x, y: this.y };
 
+    if (this.isOwned) {
+      this.zIndex = 100;
+    } else {
+      this.zIndex = 10;
+    }
+    
+    // Si caché, semi-transparent pour le MJ, ou totalement invisible (géré par React ou ici)
+    if (this.is_hidden) {
+      this.alpha = 0.4;
+      this.visible = this.isMJ; // Les joueurs ne le voient pas du tout
+    }
+
     this.eventMode = 'static';
     this.cursor = 'pointer';
+    this.sortableChildren = true;
 
     // 1. Fond doré (Immédiat)
     this.bgGraphics = new Graphics();
     this.drawBg(false);
+    this.bgGraphics.zIndex = 0;
     this.addChild(this.bgGraphics);
+
+    if (this.isOwned) {
+        this.glowRing = new Graphics();
+        this.glowRing.circle(0, 0, 24).stroke({ color: 0x40E0D0, width: 3, alpha: 0.8 });
+        this.glowRing.zIndex = -1;
+        this.addChild(this.glowRing);
+    }
 
     // 2. Initiales (Immédiat)
     const initials = (data.name || '??').substring(0, 2).toUpperCase();
@@ -55,6 +91,7 @@ export class TokenSprite extends Container {
       })
     });
     this.idText.anchor.set(0.5);
+    this.idText.zIndex = 2;
     this.addChild(this.idText);
 
     // 3. Label de Nom
@@ -69,9 +106,15 @@ export class TokenSprite extends Container {
     });
     this.labelText.anchor.set(0.5, 0);
     this.labelText.y = 22;
+    this.labelText.zIndex = 2;
     this.addChild(this.labelText);
 
     this.on('pointerdown', (e) => this.onDragStart(e));
+    this.on('rightdown', (e) => {
+        if (this.onRightClickCallback) {
+            this.onRightClickCallback(e.global.x, e.global.y);
+        }
+    });
 
     if (data.image_url) {
       this.loadImage(data.image_url);
@@ -144,7 +187,8 @@ export class TokenSprite extends Container {
       this.addChild(mask);
       this.sprite.mask = mask;
 
-      this.addChildAt(this.sprite, 1);
+      this.sprite.zIndex = 1;
+      this.addChild(this.sprite);
       this.idText.visible = false;
 
     } catch (e) {
@@ -165,6 +209,11 @@ export class TokenSprite extends Container {
   private dragOffset = { x: 0, y: 0 };
 
   private onDragStart(event: FederatedPointerEvent) {
+    if (!this.isOwned && !this.isMJ) {
+        // Permissions refusées
+        return;
+    }
+
     this.dragging = true;
     this.isInterpolating = false; // Désactiver l'interpolation pendant le drag
     this.setSelected(true);
@@ -182,8 +231,17 @@ export class TokenSprite extends Container {
   private onDragMove(event: FederatedPointerEvent) {
     if (this.dragging && this.parent) {
       const newPosition = this.parent.toLocal(event.global);
-      this.x = Math.round(newPosition.x + this.dragOffset.x);
-      this.y = Math.round(newPosition.y + this.dragOffset.y);
+      let targetX = newPosition.x + this.dragOffset.x;
+      let targetY = newPosition.y + this.dragOffset.y;
+
+      if (!event.shiftKey && this.gridSize > 0) {
+        // Snap au centre de la case
+        targetX = Math.round(targetX / this.gridSize) * this.gridSize;
+        targetY = Math.round(targetY / this.gridSize) * this.gridSize;
+      }
+
+      this.x = targetX;
+      this.y = targetY;
       this.targetPos = { x: this.x, y: this.y }; // Maintenir la cible à jour
       if (this.onMoveCallback) {
           this.onMoveCallback(this.x, this.y);
@@ -195,7 +253,7 @@ export class TokenSprite extends Container {
     if (this.dragging) {
       this.dragging = false;
       this.setSelected(false);
-      this.alpha = 1;
+      this.alpha = this.is_hidden ? 0.4 : 1;
       this.app.stage.off('pointermove', this.onDragMove, this);
       this.app.stage.off('pointerup', this.onDragEnd, this);
       this.app.stage.off('pointerupoutside', this.onDragEnd, this);
@@ -211,6 +269,16 @@ export class TokenSprite extends Container {
         this.labelText.text = data.name;
         const initials = data.name.substring(0, 2).toUpperCase();
         this.idText.text = initials;
+    }
+    if (data.is_hidden !== undefined) {
+        this.is_hidden = data.is_hidden;
+        if (this.is_hidden) {
+            this.alpha = 0.4;
+            this.visible = this.isMJ;
+        } else {
+            this.alpha = 1;
+            this.visible = true;
+        }
     }
   }
 

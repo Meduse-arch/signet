@@ -26,6 +26,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     status: 'idle' | 'waiting_manifest' | 'loading_chunks' | 'painting_cache' | 'complete' | 'error';
     error?: string;
   }>({ loaded: 0, total: 0, active: false, status: 'idle' });
+  const [onTokenRightClick, setOnTokenRightClick] = useState<((id: string, x: number, y: number) => void) | null>(null);
   const chunkQueue = useRef<{mapId: string, chunk: any, data: ArrayBuffer}[]>([]);
   const pendingManifest = useRef<{mapId: string, manifest: any, missingChunks: any[], hostPeerId: string} | null>(null);
 
@@ -352,8 +353,12 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
           }
         }
       };
+
+      boardRef.current.onTokenRightClick = (id, x, y) => {
+        if (onTokenRightClick) onTokenRightClick(id, x, y);
+      };
     }
-  }, [isReady, isHost, sessionId, broadcast, sendTo]);
+  }, [isReady, isHost, sessionId, broadcast, sendTo, onTokenRightClick]);
 
   // 2. Chargement initial et synchronisation
   useEffect(() => {
@@ -457,5 +462,5 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     return () => window.removeEventListener('ZOOM_TO_TOKEN', handleZoom as EventListener);
   }, []);
 
-  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad };
+  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick };
 }
