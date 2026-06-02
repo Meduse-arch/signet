@@ -10,7 +10,7 @@ import { BrowserImageCompressor } from '../../services/browser-image-compressor'
 import { MapTransitionOverlay } from './MapTransitionOverlay';
 import { assetSyncService } from '../../services/asset-sync.service';
 import { useCharactersStore } from '../../store/characters';
-import { Eye, EyeOff, Link, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Link, Unlink, Trash2 } from 'lucide-react';
 
 
 export interface MapItem {
@@ -458,15 +458,24 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
           
           <div className="w-px h-5 bg-white/10 mx-1" />
 
-          <button 
-            className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-all"
-            onClick={() => {
-               setPnjControle(sessionId, mjMenu.tokenId);
-               closeMjMenu();
-            }}
-          >
-            <Link size={18} />
-          </button>
+          {(() => {
+            const isLinked = currentCharacterId === mjMenu.tokenId;
+            return (
+              <button 
+                className={`p-2 rounded-full transition-all group relative ${isLinked ? 'text-amber-400 bg-amber-400/20 shadow-[0_0_10px_rgba(251,191,36,0.5)]' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
+                onClick={() => {
+                   if (isLinked) {
+                     setPnjControle(sessionId, null);
+                   } else {
+                     setPnjControle(sessionId, mjMenu.tokenId);
+                   }
+                   // On laisse le menu ouvert pour apprécier l'effet
+                }}
+              >
+                {isLinked ? <Unlink size={18} /> : <Link size={18} />}
+              </button>
+            );
+          })()}
           
           <div className="w-px h-5 bg-white/10 mx-1" />
 
