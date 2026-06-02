@@ -3,7 +3,10 @@ import { MapLayer } from './MapLayer';
 import { FogOfWar } from './FogOfWar';
 import { TokenSprite, TokenData } from './TokenSprite';
 import { throttle } from '../utils/throttle';
+import { useCombatStore } from '../store/combat';
+
 export class BoardScene extends Container {
+  private unsubCombat?: () => void;
   private app: Application;
   public mapLayer: MapLayer;
   private fow: FogOfWar;
@@ -33,6 +36,16 @@ export class BoardScene extends Container {
     this.y = app.screen.height / 2;
 
     this.setupInteractivity();
+
+    // Abonnement au store de combat pour les halos visuels
+    this.unsubCombat = useCombatStore.subscribe((state) => {
+      this.tokens.forEach((token, id) => {
+        // Gérer les cas où l'ID de combat est soit characterId soit mapId_characterId
+        const isActive = state.isActive && state.activeActorId && 
+          (id === state.activeActorId || id.endsWith(`_${state.activeActorId}`) || state.activeActorId.endsWith(`_${id}`));
+        token.setActiveTurnEffect(!!isActive);
+      });
+    });
   }
 
   private setupInteractivity() {
@@ -253,6 +266,7 @@ export class BoardScene extends Container {
   }
 
   override destroy(options?: any) {
+    if (this.unsubCombat) this.unsubCombat();
     super.destroy(options);
   }
 }

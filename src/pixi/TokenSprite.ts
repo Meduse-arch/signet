@@ -17,6 +17,7 @@ export class TokenSprite extends Container {
   private sprite: Sprite | null = null;
   private app: Application;
   private onMoveCallback?: (x: number, y: number) => void;
+  private activeRing: Container | null = null;
   
   // Interpolation (LERP)
   private targetPos = { x: 0, y: 0 };
@@ -232,8 +233,47 @@ export class TokenSprite extends Container {
     this.drawBg(bool);
   }
 
+  public setActiveTurnEffect(isActive: boolean) {
+    if (isActive) {
+      if (this.activeRing) return;
+
+      this.activeRing = new Container();
+      
+      const ring = new Graphics();
+      ring
+        .circle(0, 0, 24)
+        .stroke({ color: 0xF0C040, width: 2.5, alpha: 0.75 });
+        
+      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 3) {
+        ring
+          .circle(Math.cos(angle) * 24, Math.sin(angle) * 24, 2.5)
+          .fill({ color: 0xF0C040, alpha: 0.9 });
+      }
+
+      this.activeRing.addChild(ring);
+      this.addChildAt(this.activeRing, 0);
+
+      this.app.ticker.add(this.animateActiveRing, this);
+    } else {
+      if (!this.activeRing) return;
+
+      this.app.ticker.remove(this.animateActiveRing, this);
+      this.removeChild(this.activeRing);
+      this.activeRing.destroy({ children: true });
+      this.activeRing = null;
+    }
+  }
+
+  private animateActiveRing() {
+    if (!this.activeRing) return;
+    this.activeRing.rotation += 0.01;
+    const scale = 1.0 + Math.sin(this.app.ticker.lastTime * 0.005) * 0.05;
+    this.activeRing.scale.set(scale);
+  }
+
   override destroy(options?: any) {
     this.app.ticker.remove(this.updateInterpolation, this);
+    this.app.ticker.remove(this.animateActiveRing, this);
     super.destroy(options);
   }
 }

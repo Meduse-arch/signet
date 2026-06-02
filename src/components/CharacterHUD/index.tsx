@@ -64,10 +64,11 @@ const myCharacter = useMemo(() => {
 
   const handleToggleToken = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('[PlayerHUD] Click sur le bouton de jeton !', myCharacter?.name);
     if (!myCharacter) return;
     
-    // Si on retire, on peut le faire optimiste. Si on ajoute, on demande au MJ.
     const isCurrentlyOnMap = !!tokenStatuses[myCharacter.id];
+    console.log('[PlayerHUD] Statut actuel du jeton:', isCurrentlyOnMap, 'MJ:', isMJ);
 
     if (isMJ) {
         const channel = new BroadcastChannel(`board_actions_${sessionId}`);
@@ -75,8 +76,8 @@ const myCharacter = useMemo(() => {
         channel.close();
         setStoreTokenStatus(myCharacter.id, !isCurrentlyOnMap);
     } else {
+        console.log('[PlayerHUD] Envoi de TOGGLE_TOKEN_REQUEST via P2P...');
         broadcast({ type: 'TOGGLE_TOKEN_REQUEST', payload: { id: myCharacter.id } });
-        // Pour les joueurs, on attend le retour du MJ (BoardCanvas)
     }
   };
 

@@ -249,6 +249,12 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
             syncChannel.postMessage(data);
             syncChannel.close();
         }
+      } else if (data.type === 'TOGGLE_TOKEN_REQUEST' && isHost) {
+        const char = characters.find(c => c.id === data.payload.id);
+        console.log(`[Host] TOGGLE_TOKEN_REQUEST reçu pour le perso: ${char?.name || 'Inconnu'} (id: ${data.payload.id})`);
+        if (char) {
+            handleToggleToken(char);
+        }
       } else if (data.type === 'TOKEN_MOVE_REQUEST' && isHost) {
         // ✅ Un joueur demande à bouger un token (Le MJ arbitre)
         const { id, x, y } = data.payload;
@@ -311,13 +317,16 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
 
   // Exposer handleToggleToken via BroadcastChannel
   useEffect(() => {
-    if (!isHost) return;
     const channel = new BroadcastChannel(`board_actions_${sessionId}`);
     channel.onmessage = (event) => {
       const { type, payload } = event.data;
       if (type === 'TOGGLE_TOKEN') {
-        const char = characters.find(c => c.id === payload.id);
-        if (char) handleToggleToken(char);
+        if (isHost) {
+          const char = characters.find(c => c.id === payload.id);
+          if (char) handleToggleToken(char);
+        } else {
+          broadcast({ type: 'TOGGLE_TOKEN_REQUEST', payload: { id: payload.id } });
+        }
       } else if (type === 'GET_TOKEN_STATUS') {
         const isOnMap = mapTokens.some(t => t.character_id === payload.id);
         channel.postMessage({ type: 'TOKEN_STATUS_RESPONSE', payload: { id: payload.id, isOnMap } });
@@ -333,8 +342,8 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
         });
       }
     };
-
-  }, [sessionId, isHost, characters, handleToggleToken, mapTokens]);
+    return () => channel.close();
+  }, [sessionId, isHost, characters, handleToggleToken, mapTokens, broadcast, addToken]);
 
   // Sync vers fenêtre externe (mode projecteur)
   useEffect(() => {

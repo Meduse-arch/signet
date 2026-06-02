@@ -15,7 +15,8 @@ import {
   BestiaryWindowContent,
   PlayerWindowContent,
   QuestsWindowContent,
-  QuestCreationModal
+  QuestCreationModal,
+  InitiativeWindowContent
 } from '../../components/SignetInterface';
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { useSignetInterface } from '../../hooks/useSignetInterface';
@@ -24,6 +25,7 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
 import { PlayerHUD } from '../../components/PlayerHUD';
 import { CharacterHUD } from '../../components/CharacterHUD';
+import { CombatHUD } from '../../components/CombatHUD';
 import { Pause, MonitorPlay, Zap, ZapOff } from 'lucide-react';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
@@ -33,6 +35,7 @@ import { useSkillsStore } from '../../store/skills';
 import { useTagsStore } from '../../store/tags';
 import { useUIStore } from '../../store/ui';
 import { mapSyncService } from '../../services/map-sync.service';
+import { useCombatStore } from '../../store/combat';
 
 interface SealEngineProps {
   sessionId: string;
@@ -194,13 +197,24 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
         console.log(`[Host] Joueur ${fromPeerId} demande le manifest pour: ${payload.mapId}`);
         mapSyncService.syncCurrentMapToPeer(payload.mapId, fromPeerId);
       } else if (type === 'CHARACTER_LIST' && !isHost) {
-        console.log(`[Player] ${payload.length} personnages synchronisés.`);
+        console.log(`[Player] ${payload.length} personnages reçus du MJ.`);
+        const hostCharIds = new Set(payload.map((c: any) => c.id));
+        
         payload.forEach((char: any) => {
             addOrUpdateCharacter(char, true);
             const channel = new BroadcastChannel(`board_actions_${sessionId}`);
             channel.postMessage({ type: 'REFRESH_TOKEN_DATA', payload: char });
             channel.close();
         });
+
+        // Restaurer la synchronisation: si le joueur a des persos en cache que le MJ a perdu/ne connait pas
+        const localCharsToSync = characters.filter(c => !hostCharIds.has(c.id));
+        if (localCharsToSync.length > 0) {
+            console.log(`[Player] Envoi de ${localCharsToSync.length} personnages locaux manquants au MJ...`);
+            localCharsToSync.forEach(c => {
+                broadcast({ type: 'CHAR_UPDATE', payload: c });
+            });
+        }
       } else if (type === 'MAP_UPDATE') {
         setMaps(payload);
         if (!currentMapId && payload.length > 0) {
@@ -239,6 +253,8 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
         useQuestsStore.getState().addQuest(sessionId, payload, true);
       } else if (type === 'QUEST_DELETE') {
         useQuestsStore.getState().removeQuest(sessionId, payload.id, true);
+      } else if (type === 'COMBAT_STATE_UPDATE') {
+        useCombatStore.getState()._applySync(payload);
       }
     });
 
@@ -369,6 +385,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
             </button>
           )}
           <SignetLauncher sessionId={sessionId} onOpenWindow={openWindow} securityLevel={user?.role} />
+          <CombatHUD sessionId={sessionId} />
           <PlayerHUD players={playersList} sessionId={sessionId} />
           <CharacterHUD sessionId={sessionId} />
           <div className="absolute inset-0 pointer-events-none z-[200]">
@@ -412,7 +429,8 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
                 dice: 'Dés',
                 quests: 'Quêtes',
                 skills: 'Compétences',
-                character: 'Personnage'
+                character: 'Personnage',
+                combat: 'Initiative'
               };
 
               return win.isOpen && (
@@ -434,6 +452,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
                   {id === 'quests' && <QuestsWindowContent sessionId={sessionId} />}
                   {id === 'skills' && <SkillsWindowContent sessionId={sessionId} />}
                   {id === 'character' && <CharacterSheetContent sessionId={sessionId} variant="window" />}
+                  {id === 'combat' && <InitiativeWindowContent sessionId={sessionId} />}
                 </DraggableWindow>
               );
             })}

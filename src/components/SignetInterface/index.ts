@@ -14,3 +14,4 @@ export * from './SkillCreationModal';
 export * from './QuestsWindowContent';
 export * from './QuestCreationModal';
 export * from './TagManagementModal';
+export * from './InitiativeWindowContent';

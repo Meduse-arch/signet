@@ -131,10 +131,29 @@ function getSessionDb(inputId: string): Database.Database {
           participant_ids TEXT,
           created_at TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS combat_sessions (
+          session_id TEXT PRIMARY KEY,
+          is_active INTEGER DEFAULT 0,
+          current_round INTEGER DEFAULT 1,
+          active_actor_id TEXT DEFAULT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS combat_actors (
+          id TEXT PRIMARY KEY,
+          session_id TEXT NOT NULL,
+          character_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          initiative INTEGER DEFAULT 0,
+          turn_order INTEGER DEFAULT 0,
+          is_active INTEGER DEFAULT 0,
+          conditions TEXT DEFAULT '[]',
+          FOREIGN KEY(session_id) REFERENCES combat_sessions(session_id) ON DELETE CASCADE
+        );
       `);
 
       // Migration: Ajouter session_id si nécessaire (pour les bases existantes)
-      const tables = ['players', 'characters', 'items', 'skills', 'tags', 'maps', 'map_tokens', 'logs', 'quests'];
+      const tables = ['players', 'characters', 'items', 'skills', 'tags', 'maps', 'map_tokens', 'logs', 'quests', 'combat_actors'];
       tables.forEach(t => {
         const info = db.prepare(`PRAGMA table_info(${t})`).all() as any[];
         if (!info.some(col => col.name === 'session_id')) {
@@ -663,6 +682,63 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       return true;
     } catch (err) {
       console.error('[DB] Erreur quests:remove:', err);
+      return false;
+    }
+  });
+
+  // --- HANDLERS COMBAT (SESSION DB) ---
+
+  ipcMain.handle('combat:getState', (_, sessionId) => {
+    try {
+      const db = getSessionDb(sessionId);
+      let session = db.prepare('SELECT * FROM combat_sessions WHERE session_id = ?').get(sessionId) as any;
+      if (!session) {
+        db.prepare('INSERT INTO combat_sessions (session_id) VALUES (?)').run(sessionId);
+        session = { session_id: sessionId, is_active: 0, current_round: 1, active_actor_id: null };
+      }
+      const actors = db.prepare('SELECT * FROM combat_actors WHERE session_id = ? ORDER BY turn_order ASC').all(sessionId) as any[];
+      return {
+        ...session,
+        is_active: session.is_active === 1,
+        actors: actors.map(a => ({
+          ...a,
+          is_active: a.is_active === 1,
+          conditions: a.conditions ? JSON.parse(a.conditions) : []
+        }))
+      };
+    } catch (e) {
+      console.error('[DB] combat:getState error', e);
+      return null;
+    }
+  });
+
+  ipcMain.handle('combat:saveState', (_, sessionId, state) => {
+    try {
+      const db = getSessionDb(sessionId);
+      const updateStmt = db.prepare('UPDATE combat_sessions SET is_active = ?, current_round = ?, active_actor_id = ? WHERE session_id = ?');
+      updateStmt.run(state.is_active ? 1 : 0, state.current_round, state.active_actor_id || null, sessionId);
+      
+      const insertActor = db.prepare(`
+        INSERT OR REPLACE INTO combat_actors (id, session_id, character_id, name, initiative, turn_order, is_active, conditions)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      const currentActorIds = state.actors.map((a: any) => a.id);
+      if (currentActorIds.length > 0) {
+        const placeholders = currentActorIds.map(() => '?').join(',');
+        db.prepare(`DELETE FROM combat_actors WHERE session_id = ? AND id NOT IN (${placeholders})`).run(sessionId, ...currentActorIds);
+      } else {
+        db.prepare('DELETE FROM combat_actors WHERE session_id = ?').run(sessionId);
+      }
+
+      state.actors.forEach((a: any) => {
+        insertActor.run(
+          a.id, sessionId, a.character_id, a.name, a.initiative || 0, a.turn_order || 0, a.is_active ? 1 : 0, JSON.stringify(a.conditions || [])
+        );
+      });
+      return true;
+    } catch (e) {
+      console.error('[DB] combat:saveState error', e);
       return false;
     }
   });
