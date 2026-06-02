@@ -107,6 +107,10 @@ class DBStorageService {
       console.log(`[DB] Asset purgé: ${asset.hash}`);
     }
   }
+  async deleteAsset(hash: string): Promise<void> {
+    const db = await this.dbPromise;
+    await db.delete('assets', hash);
+  }
 
   // --- Chunk Management ---
 

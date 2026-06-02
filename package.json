@@ -37,6 +37,7 @@
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.9.0",
     "framer-motion": "^12.38.0",
+    "howler": "^2.2.4",
     "idb": "^8.0.3",
     "lucide-react": "^0.344.0",
     "peerjs": "^1.5.2",
@@ -50,6 +51,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^7.6.9",
+    "@types/howler": "^2.2.13",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",

@@ -338,6 +338,27 @@ class PeerService {
     }
   }
 
+  public getTransferBufferedAmount(targetPeerId?: string): number {
+    if (targetPeerId) {
+      const pc = this.connections.get(targetPeerId);
+      return pc?.transfer?.dataChannel?.bufferedAmount || 0;
+    } else {
+      // Find max buffered amount across all transfer connections
+      if (this.isHost) {
+        let max = 0;
+        this.connections.forEach(pc => {
+          if (pc.transfer?.open && pc.transfer.dataChannel) {
+             max = Math.max(max, pc.transfer.dataChannel.bufferedAmount);
+          }
+        });
+        return max;
+      } else if (this.hostTransferConnection?.open && this.hostTransferConnection.dataChannel) {
+        return this.hostTransferConnection.dataChannel.bufferedAmount;
+      }
+      return 0;
+    }
+  }
+
   public onData(cb: (data: PeerMessage, fromPeerId: string) => void) {
     this.dataCallbacks.add(cb);
     return () => this.dataCallbacks.delete(cb);

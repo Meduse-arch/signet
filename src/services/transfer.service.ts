@@ -6,7 +6,7 @@ export const CHUNK_SIZE = 16 * 1024; // 16KB
 import { toArrayBuffer } from '../utils/binary';
 
 // SHA-256 via crypto.subtle (sécurisé) avec fallback JS pur pour contextes LAN HTTP
-async function calculateHash(buffer: ArrayBuffer): Promise<string> {
+export async function calculateHash(buffer: ArrayBuffer): Promise<string> {
   if (typeof crypto !== 'undefined' && crypto.subtle) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -104,6 +104,57 @@ class TransferService {
       } else {
         peerService.broadcastTransfer(payload);
       }
+    }
+  }
+
+  public async sendChunkPaced(chunkId: string, rawData: ArrayBuffer | Blob | Uint8Array, expectedHash: string, targetPeerId?: string) {
+    let data: ArrayBuffer;
+    if (rawData instanceof Blob) data = await rawData.arrayBuffer();
+    else if (rawData instanceof Uint8Array) data = rawData.buffer.slice(rawData.byteOffset, rawData.byteOffset + rawData.byteLength) as ArrayBuffer;
+    else data = rawData;
+
+    const totalFrags = Math.ceil(data.byteLength / CHUNK_SIZE);
+    console.log(`[TransferService] Sending paced chunk ${chunkId} in ${totalFrags} fragments to ${targetPeerId || 'ALL'} (size: ${data.byteLength})`);
+    
+    const BUFFER_LIMIT = 64 * 1024; // 64 Ko
+    
+    for (let i = 0; i < totalFrags; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, data.byteLength);
+      const fragData = data.slice(start, end);
+      
+      let currentBuffer = peerService.getTransferBufferedAmount(targetPeerId);
+      while (currentBuffer > BUFFER_LIMIT) {
+         // Pause de 10ms si le tampon est trop plein
+         await new Promise(resolve => setTimeout(resolve, 10));
+         currentBuffer = peerService.getTransferBufferedAmount(targetPeerId);
+      }
+      
+      const header: FragmentHeader = {
+        chunk_id: chunkId,
+        frag_index: i,
+        total_frags: totalFrags,
+        expected_hash: expectedHash
+      };
+
+      const headerString = JSON.stringify(header);
+      const headerBytes = new TextEncoder().encode(headerString);
+      
+      const payload = new ArrayBuffer(4 + headerBytes.byteLength + fragData.byteLength);
+      const view = new DataView(payload);
+      
+      view.setUint32(0, headerBytes.byteLength);
+      new Uint8Array(payload, 4, headerBytes.byteLength).set(headerBytes);
+      new Uint8Array(payload, 4 + headerBytes.byteLength).set(new Uint8Array(fragData));
+
+      if (targetPeerId) {
+        peerService.sendTransferTo(targetPeerId, payload);
+      } else {
+        peerService.broadcastTransfer(payload);
+      }
+      
+      // Micro-pause pour laisser respirer l'Event Loop
+      await new Promise(resolve => setTimeout(resolve, 2));
     }
   }
 
