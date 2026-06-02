@@ -3,13 +3,15 @@ import { useCombatStore } from '../../store/combat';
 import { usePeer } from '../../hooks/usePeer';
 import { useSignetStore } from '../../store/signet';
 import { usePeersStore } from '../../store/peers';
+import { useAuthStore } from '../../store/auth';
 import { useCharactersStore } from '../../store/characters';
 import { Swords, ChevronRight } from 'lucide-react';
 import { AssetImage } from '../AssetImage';
 
 export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
   const { isActive, activeActorId, actors, nextTurn } = useCombatStore();
-  const { isHost, peerId } = usePeersStore();
+  const { isHost } = usePeersStore();
+  const { user } = useAuthStore();
   const { onData } = usePeer();
   const openWindow = useSignetStore(state => state.openWindow);
   const characters = useCharactersStore(state => state.characters);
@@ -30,7 +32,12 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
     channel.close();
   };
 
-  if (!isActive) return null;
+  // Identifier le personnage du joueur local et s'il est dans le combat
+  const myChar = characters.find(c => c.user_id === user?.id);
+  const myCharInCombat = myChar ? actors.some(a => a.character_id === myChar.id) : false;
+
+  // MJ : toujours visible. Joueur : visible si combat actif OU si son perso participe
+  if (!isHost && !isActive && !myCharInCombat) return null;
 
   const sortedActors = [...actors].sort((a, b) => a.turn_order - b.turn_order);
   const currentIndex = sortedActors.findIndex(a => a.id === activeActorId);
@@ -52,7 +59,6 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
     window.dispatchEvent(new CustomEvent('ZOOM_TO_TOKEN', { detail: { id: actorId } }));
   };
 
-  const myChar = characters.find(c => c.user_id === peerId);
   const isMyTurn = isActive && currentActor && myChar && currentActor.character_id === myChar.id;
 
   const Avatar = ({ actor, size = "w-10 h-10", isActive = false, onClick }: any) => {

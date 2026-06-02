@@ -172,6 +172,12 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         });
 
         if (isGameStarted) broadcastRef.current({ type: 'SESSION_START', payload: {} });
+        
+        // Pousser l'état du combat au joueur qui vient de rejoindre
+        const combatState = (await import('../../store/combat')).useCombatStore.getState();
+        if (combatState.isActive) {
+          broadcastRef.current({ type: 'COMBAT_STATE_UPDATE', payload: combatState });
+        }
       } 
       else if (data.type === 'SESSION_METADATA' && !isHostRef.current) {
         console.log(`[LobbyPage] Métadonnées reçues:`, data.payload);

@@ -188,11 +188,19 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
   };
 
   const filteredPNJs = useMemo(() => {
-    return characters.filter(c => 
-      !c.is_template && 
-      (activeTab === 'players' ? c.type === 'Joueur' : (activeTab === 'boss' ? c.type === 'Boss' : (activeTab === 'mobs' ? c.type === 'Monstre' : c.type === 'PNJ'))) &&
-      c.name.toLowerCase().includes(search.toLowerCase())
-    );
+    return characters.filter(c => {
+      if (c.is_template) return false;
+      const isJoueur = c.type === 'Joueur' || !!c.user_id;
+      const effectiveType = isJoueur ? 'Joueur' : (c.type || 'PNJ');
+      
+      let matchesTab = false;
+      if (activeTab === 'players') matchesTab = isJoueur;
+      else if (activeTab === 'boss') matchesTab = effectiveType === 'Boss';
+      else if (activeTab === 'mobs') matchesTab = effectiveType === 'Monstre';
+      else matchesTab = effectiveType === 'PNJ';
+
+      return matchesTab && c.name.toLowerCase().includes(search.toLowerCase());
+    });
   }, [characters, activeTab, search]);
 
   const templates = useMemo(() => {
@@ -322,7 +330,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                     <div className="flex flex-col">
                       <span className="font-cinzel font-black text-xs uppercase tracking-widest text-gold-bright/80 group-hover:text-gold-bright transition-colors">{npc.name}</span>
                       <div className="flex items-center gap-2">
-                         {npc.type === 'Joueur' && <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded uppercase font-black tracking-widest border border-blue-500/30">Joueur</span>}
+                         {(npc.type === 'Joueur' || !!npc.user_id) && <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded uppercase font-black tracking-widest border border-blue-500/30">Joueur</span>}
                          <div className="flex gap-2">
                              {Object.entries(npc.bars).filter(([key]) => !key.startsWith('max')).map(([key, val]) => {
                                  const barDef = session?.settings?.bars?.find((b: any) => b.id === key) || DEFAULT_BARS.find((b: any) => b.id === key);

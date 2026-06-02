@@ -28,8 +28,14 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
   };
 
   const resolveInitiativeAndSort = (actorsList: any[]) => {
+    // Cloner pour éviter de muter le store Zustand directement
+    const clonedActors = actorsList.map(a => ({
+      ...a,
+      tiebreaker_rolls: a.tiebreaker_rolls ? [...a.tiebreaker_rolls] : []
+    }));
+
     // 1. Assigner un jet à ceux qui n'en ont pas
-    actorsList.forEach(a => {
+    clonedActors.forEach(a => {
       if (!a.initiative) {
         const roll = Math.floor(Math.random() * 20) + 1;
         a.initiative = roll;
@@ -58,7 +64,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
     });
 
     // 2. Trier avec départage silencieux (Timsort)
-    actorsList.sort((a, b) => {
+    clonedActors.sort((a, b) => {
       if (a.initiative !== b.initiative) return b.initiative - a.initiative;
       
       let i = 0;
@@ -76,7 +82,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
       }
     });
 
-    return actorsList.map((a, index) => ({ ...a, turn_order: index }));
+    return clonedActors.map((a, index) => ({ ...a, turn_order: index }));
   };
 
   const handleStart = async () => {

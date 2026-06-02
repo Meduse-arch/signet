@@ -50,50 +50,54 @@ export const useCombatStore = create<CombatState>((set, get) => ({
 
   setCombatState: (state) => {
     set(state);
-    emitStoreSync('combat', state);
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    emitStoreSync('combat', sessionId, 'SET_STATE', state);
   },
 
   startCombat: () => {
     set({ isActive: true, currentRound: 1 });
-    emitStoreSync('combat', { isActive: true, currentRound: 1 });
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    emitStoreSync('combat', sessionId, 'START_COMBAT', { isActive: true, currentRound: 1 });
   },
 
   endCombat: () => {
     set({ isActive: false, actors: [], activeActorId: null, currentRound: 1 });
-    emitStoreSync('combat', { isActive: false, actors: [], activeActorId: null, currentRound: 1 });
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    emitStoreSync('combat', sessionId, 'END_COMBAT', { isActive: false, actors: [], activeActorId: null, currentRound: 1 });
   },
 
   addActor: (actor) => {
     const actors = [...get().actors, actor];
     set({ actors });
-    emitStoreSync('combat', { actors });
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    emitStoreSync('combat', sessionId, 'SET_ACTORS', { actors });
   },
 
   removeActor: (id) => {
     const actors = get().actors.filter(a => a.id !== id);
-    // Si l'acteur actif est supprimé, on passe au suivant logiquement, 
-    // mais on laisse le MJ gérer manuellement s'il le souhaite via nextTurn()
     set({ actors });
-    emitStoreSync('combat', { actors });
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    emitStoreSync('combat', sessionId, 'SET_ACTORS', { actors });
   },
 
   updateActor: (id, updates) => {
     const actors = get().actors.map(a => a.id === id ? { ...a, ...updates } : a);
     set({ actors });
-    emitStoreSync('combat', { actors });
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    emitStoreSync('combat', sessionId, 'SET_ACTORS', { actors });
   },
   
   setActors: (actors) => {
     set({ actors });
-    emitStoreSync('combat', { actors });
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    emitStoreSync('combat', sessionId, 'SET_ACTORS', { actors });
   },
 
   reorderActors: (actors) => {
-    // Les acteurs passés en argument doivent être dans le bon ordre.
-    // On met à jour leur turn_order en fonction de leur index.
     const reordered = actors.map((a, index) => ({ ...a, turn_order: index }));
     set({ actors: reordered });
-    emitStoreSync('combat', { actors: reordered });
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    emitStoreSync('combat', sessionId, 'SET_ACTORS', { actors: reordered });
   },
 
   nextTurn: () => {
@@ -122,7 +126,8 @@ export const useCombatStore = create<CombatState>((set, get) => ({
     }));
 
     set({ currentRound: nextRound, activeActorId: nextActor.id, actors: updatedActors });
-    emitStoreSync('combat', { currentRound: nextRound, activeActorId: nextActor.id, actors: updatedActors });
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    emitStoreSync('combat', sessionId, 'NEXT_TURN', { currentRound: nextRound, activeActorId: nextActor.id, actors: updatedActors });
   },
 
   _applySync: (state) => {
@@ -130,5 +135,16 @@ export const useCombatStore = create<CombatState>((set, get) => ({
   }
 }));
 
-// Activation de la synchronisation inter-fenêtres locales (entre HUD et Pop-up MJ)
-setupStoreSync('combat', useCombatStore);
+// Activation de la synchronisation inter-fenêtres locales avec un wrapper pour récupérer le sessionId au moment du message
+if (typeof window !== 'undefined') {
+  // On doit écouter sur 'default' et sur le sessionId courant pour capter tous les cas
+  const initSync = () => {
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    setupStoreSync('combat', sessionId, (type, payload) => {
+      useCombatStore.getState()._applySync(payload);
+    });
+  };
+  
+  // Exécuter l'initialisation après le montage complet
+  setTimeout(initSync, 100);
+}

@@ -154,8 +154,9 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       if (window.electronAPI) {
         await window.electronAPI.removeMapToken(sessionId, currentMapId, char.id);
       }
-      setMapTokens(prev => prev.filter(t => t.character_id !== char.id));
-      updateTokenList(mapTokens.filter(t => t.character_id !== char.id).map(t => t.character_id));
+      const newMapTokens = mapTokens.filter(t => t.character_id !== char.id);
+      setMapTokens(newMapTokens);
+      updateTokenList(newMapTokens.map(t => t.character_id));
       
       removeToken(char.id); // On l'enlève de Pixi pour le MJ
       broadcast({ type: 'TOKEN_REMOVE', payload: { id: char.id } }); // On previent les autres
@@ -187,8 +188,9 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       }
       
       const newMapToken = { character_id: char.id, x, y };
-      setMapTokens(prev => [...prev, newMapToken]);
-      updateTokenList([...mapTokens, newMapToken].map(t => t.character_id));
+      const newMapTokens = [...mapTokens, newMapToken];
+      setMapTokens(newMapTokens);
+      updateTokenList(newMapTokens.map(t => t.character_id));
 
       addToken(tokenData); // Ajout Pixi pour le MJ
       broadcast({ type: 'TOKEN_ADD', payload: tokenData }); // Prevenir les autres
@@ -303,12 +305,6 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
                     }
                 }
             });
-        }
-      } else if (data.type === 'TOGGLE_TOKEN_REQUEST' && isHost) {
-        // Un joueur demande à poser/retirer son token
-        const char = characters.find(c => c.id === data.payload.id);
-        if (char) {
-            handleToggleToken(char);
         }
       }
     });
