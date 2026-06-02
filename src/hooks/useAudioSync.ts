@@ -4,12 +4,20 @@ import { audioService } from '../services/audio.service';
 import { dbStorage } from '../services/db.storage';
 import { peerService } from '../services/peer.service';
 import { transferService } from '../services/transfer.service';
+import { usePeersStore } from '../store/peers';
 
 export function useAudioSync() {
   const { broadcast, onData, sendTo, isHost } = usePeer();
   const [currentTrackTitle, setCurrentTrackTitle] = useState<string | null>(null);
+  const [currentHash, setCurrentHash] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLooping, setIsLooping] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<Record<string, Record<string, boolean>>>({});
+  
+  const targetTrackRef = useRef<{hash: string, isPlaying: boolean, position: number} | null>(null);
+
+  // Reset le syncStatus d'un pair s'il se déconnecte (Optionnel mais recommandé)
+  // On ne gère pas les déconnexions ici directement mais le status indique juste qui l'a.
 
   useEffect(() => {
     const unsubData = onData(async (data, fromPeerId) => {
@@ -17,7 +25,9 @@ export function useAudioSync() {
       if (data.type === 'AUDIO_PLAY') {
         const { hash, title, position, mime } = data.payload;
         setCurrentTrackTitle(title);
+        setCurrentHash(hash);
         setIsPlaying(true);
+        targetTrackRef.current = { hash, isPlaying: true, position: position || 0 };
         
         const asset = await dbStorage.getAsset(hash);
         if (asset) {
@@ -31,6 +41,7 @@ export function useAudioSync() {
       else if (data.type === 'AUDIO_PAUSE') {
         audioService.pauseAmbiance();
         setIsPlaying(false);
+        if (targetTrackRef.current) targetTrackRef.current.isPlaying = false;
       }
       
       // Joueur reçoit SEEK
@@ -38,6 +49,9 @@ export function useAudioSync() {
         if (!isHost) {
           const { position } = data.payload;
           audioService.seekAmbiance(position);
+          if (targetTrackRef.current) {
+            targetTrackRef.current.position = position;
+          }
         }
       }
       
@@ -69,6 +83,8 @@ export function useAudioSync() {
                 type: isSfx ? 'AUDIO_REQUEST_SFX' : 'AUDIO_REQUEST', 
                 payload: { hash } 
               });
+            } else {
+              sendTo(fromPeerId, { type: 'AUDIO_READY', payload: { hash } });
             }
           });
         }
@@ -103,6 +119,41 @@ export function useAudioSync() {
             transferService.sendChunkPaced(`sfx_${hash}`, asset.data, hash, fromPeerId);
          }
       }
+      
+      // Sync initial pour un joueur qui rejoint
+      else if (isHost && data.type === 'INITIAL_SYNC_REQUEST') {
+         const savedTracks = localStorage.getItem('sigil_tracks');
+         if (savedTracks) {
+             const tracks = JSON.parse(savedTracks);
+             tracks.forEach((t: any) => {
+                 sendTo(fromPeerId, { type: 'AUDIO_PRELOAD', payload: { hash: t.hash, isSfx: false } });
+             });
+         }
+         const savedSfx = localStorage.getItem('sigil_sfx');
+         if (savedSfx) {
+             const sfxs = JSON.parse(savedSfx);
+             sfxs.forEach((t: any) => {
+                 sendTo(fromPeerId, { type: 'AUDIO_PRELOAD', payload: { hash: t.hash, isSfx: true } });
+             });
+         }
+         // Sync l'état de lecture actuel si ça joue
+         const currentHash = audioService.getAmbianceHash();
+         if (currentHash && isPlaying) {
+             sendTo(fromPeerId, { type: 'AUDIO_PLAY', payload: { hash: currentHash, title: currentTrackTitle, position: audioService.getAmbiancePosition(), mime: 'audio/mp3' } });
+         }
+      }
+
+      // MJ reçoit AUDIO_READY
+      else if (isHost && data.type === 'AUDIO_READY') {
+         const { hash } = data.payload;
+         setSyncStatus(prev => ({
+             ...prev,
+             [hash]: {
+                 ...(prev[hash] || {}),
+                 [fromPeerId]: true
+             }
+         }));
+      }
     });
 
     // Écoute de l'assemblage des transferts
@@ -118,11 +169,16 @@ export function useAudioSync() {
           last_accessed: Date.now()
         });
         
+        if (!isHost) {
+           const { usePeersStore } = await import('../store/peers');
+           const hostId = usePeersStore.getState().connections[0]; // Le joueur n'a qu'une connexion (MJ)
+           if (hostId) sendTo(hostId, { type: 'AUDIO_READY', payload: { hash } });
+        }
+        
         // On joue si c'est la piste en cours
-        const currentHash = audioService.getAmbianceHash();
-        if (!currentHash || currentHash !== hash) {
-            audioService.playAmbiance(hash, data, 'audio/mp3', 0);
-            setIsPlaying(true);
+        const target = targetTrackRef.current;
+        if (target && target.hash === hash && target.isPlaying) {
+            audioService.playAmbiance(hash, data, 'audio/mp3', target.position);
         }
       } else if (chunkId.startsWith('sfx_')) {
         const hash = chunkId.replace('sfx_', '');
@@ -133,6 +189,13 @@ export function useAudioSync() {
           size: data.byteLength,
           last_accessed: Date.now()
         });
+        
+        if (!isHost) {
+           const { usePeersStore } = await import('../store/peers');
+           const hostId = usePeersStore.getState().connections[0]; // Le joueur n'a qu'une connexion (MJ)
+           if (hostId) sendTo(hostId, { type: 'AUDIO_READY', payload: { hash } });
+        }
+        
         audioService.playSFX(hash, data, 'audio/mp3');
       }
     });
@@ -157,7 +220,9 @@ export function useAudioSync() {
     if (!asset) return;
 
     setCurrentTrackTitle(title);
+    setCurrentHash(hash);
     setIsPlaying(true);
+    targetTrackRef.current = { hash, isPlaying: true, position: 0 };
     
     audioService.playAmbiance(hash, asset.data, asset.mime, 0);
     broadcast({ type: 'AUDIO_PLAY', payload: { hash, title, position: 0, mime: asset.mime } });
@@ -167,6 +232,7 @@ export function useAudioSync() {
     if (!isHost) return;
     audioService.pauseAmbiance();
     setIsPlaying(false);
+    if (targetTrackRef.current) targetTrackRef.current.isPlaying = false;
     broadcast({ type: 'AUDIO_PAUSE', payload: {} });
   };
 
@@ -209,16 +275,26 @@ export function useAudioSync() {
     broadcast({ type: 'AUDIO_LOOP', payload: { loop: newLoop } });
   };
 
+  const isTrackReady = (hash: string) => {
+    if (!isHost) return true;
+    const connections = usePeersStore.getState().connections;
+    const readyCount = Object.keys(syncStatus[hash] || {}).length;
+    return readyCount >= connections.length || connections.length === 0;
+  };
+
   return {
+    currentTrackTitle,
+    currentHash,
+    isPlaying,
+    isLooping,
+    syncStatus,
     playAmbiance,
     pauseAmbiance,
+    seekAudio,
     playSFX,
     deleteAudio,
     preloadAudio,
-    seekAudio,
     toggleLoop,
-    currentTrackTitle,
-    isPlaying,
-    isLooping
+    isTrackReady
   };
 }

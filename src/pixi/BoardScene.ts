@@ -414,13 +414,13 @@ export class BoardScene extends Container {
             return;
         }
         
+        const safeAlpha = Math.max(0, alpha);
+        
         pingGfx.clear();
-        pingGfx.circle(0, 0, radius);
-        pingGfx.stroke({ color: color, width: 4, alpha: alpha });
+        pingGfx.circle(0, 0, radius).stroke({ color: color, width: 4, alpha: safeAlpha });
         
         // Inner circle
-        pingGfx.circle(0, 0, 6);
-        pingGfx.fill({ color: color, alpha: alpha });
+        pingGfx.circle(0, 0, 6).fill({ color: color, alpha: safeAlpha });
     };
     
     this.app.ticker.add(tickerFn);

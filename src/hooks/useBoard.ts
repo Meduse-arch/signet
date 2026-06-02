@@ -450,6 +450,12 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         boardRef.current.removeToken(data.payload.id);
       } else if (data.type === 'PING') {
         boardRef.current.triggerPing(data.payload.x, data.payload.y);
+        // Le MJ relaie le ping aux autres joueurs
+        if (isHost && fromPeerId) {
+          usePeersStore.getState().connections.forEach(peer => {
+            if (peer !== fromPeerId) sendTo(peer, data);
+          });
+        }
       }
     });
 

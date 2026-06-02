@@ -127,7 +127,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
         const char = characters.find(c => c.id === t.character_id);
         if (char) {
           console.log(`[BoardCanvas] Restoring token for character: ${char.name}`);
-          const isOwned = char.id === currentCharacterId;
+          const isOwned = char.id === currentCharacterId || char.user_id === user?.id;
           const isHidden = !!t.is_hidden;
 
           addToken({
@@ -195,7 +195,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
         image_url: resolvedImageUrl,
         x,
         y,
-        isOwned: char.id === currentCharacterId,
+        isOwned: char.id === currentCharacterId || char.user_id === user?.id,
         isMJ: !!isMJ,
         is_hidden: false
       };
@@ -240,7 +240,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
             image_url: data.payload.image_url,
             x: data.payload.x,
             y: data.payload.y,
-            isOwned: data.payload.id === currentCharacterId,
+            isOwned: data.payload.id === currentCharacterId || (characters.find(c => c.id === data.payload.id)?.user_id === user?.id),
             isMJ: !!isMJ,
             is_hidden: !!data.payload.is_hidden
           });
@@ -284,6 +284,14 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       } else if (data.type === 'TOKEN_MOVE_REQUEST' && isHost) {
         // ✅ Un joueur demande à bouger un token (Le MJ arbitre)
         const { id, x, y } = data.payload;
+        
+        // Validation de sécurité : le joueur émetteur doit posséder ce personnage
+        const char = characters.find(c => c.id === id);
+        if (!char || !fromPeerId || char.user_id !== fromPeerId) {
+            console.warn(`[Host] Tentative de déplacement non autorisée de ${id} par ${fromPeerId}`);
+            return;
+        }
+        
         console.log(`[Host] Autorisation de mouvement pour ${id} vers ${x},${y}`);
         
         // 1. Mise à jour locale du MJ
@@ -360,7 +368,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
             image_url: payload.image_url,
             x: NaN, // BoardScene gérera le maintien de la position actuelle si NaN
             y: NaN,
-            isOwned: payload.id === currentCharacterId,
+            isOwned: payload.id === currentCharacterId || payload.user_id === user?.id,
             isMJ: !!isMJ
         });
       }
@@ -381,7 +389,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
         else if (type === 'TOKEN_MOVE') moveToken(payload.id, payload.x, payload.y);
         else if (type === 'INITIAL_STATE') {
           clearTokens();
-          payload.tokens.forEach((t: any) => addToken({...t, isOwned: t.id === currentCharacterId, isMJ: !!isMJ}));
+          payload.tokens.forEach((t: any) => addToken({...t, isOwned: t.id === currentCharacterId || t.user_id === user?.id, isMJ: !!isMJ}));
         }
       };
 

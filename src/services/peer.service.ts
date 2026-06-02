@@ -308,6 +308,11 @@ class PeerService {
     return this.peer?.id;
   }
 
+  public isPeerConnected(peerId: string): boolean {
+    const pc = this.connections.get(peerId);
+    return !!pc?.transfer?.open || !!pc?.control?.open;
+  }
+
   public broadcast(data: PeerMessage) {
     if (this.isHost) {
       this.connections.forEach(pc => { if (pc.control?.open) pc.control.send(data); });

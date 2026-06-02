@@ -35,7 +35,7 @@ class DBStorageService {
   private dbPromise: Promise<IDBPDatabase<SigilDB>>;
 
   constructor() {
-    this.dbPromise = openDB<SigilDB>('sigil-vtt-db', 4, {
+    this.dbPromise = openDB<SigilDB>('sigil-vtt-db', 6, {
       upgrade(db, oldVersion, newVersion, transaction) {
         if (!db.objectStoreNames.contains('chunks')) {
           const chunkStore = db.createObjectStore('chunks', { keyPath: 'chunk_id' });

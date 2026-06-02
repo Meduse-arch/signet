@@ -90,9 +90,10 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
             {isMJ ? (
               <div className="flex items-center gap-3">
                 <button 
-                  onClick={() => audioSync.isPlaying ? audioSync.pauseAmbiance() : (audioSync.currentTrackTitle && audioSync.playAmbiance(audioService.getAmbianceHash()!, audioSync.currentTrackTitle))}
-                  disabled={!audioSync.currentTrackTitle}
+                  onClick={() => audioSync.isPlaying ? audioSync.pauseAmbiance() : (audioSync.currentHash && audioSync.playAmbiance(audioSync.currentHash, audioSync.currentTrackTitle!))}
+                  disabled={!audioSync.currentHash || !audioSync.isTrackReady(audioSync.currentHash)}
                   className="text-white hover:text-gold-DEFAULT hover:scale-110 transition-all disabled:opacity-30 disabled:hover:text-white disabled:hover:scale-100"
+                  title={!audioSync.currentHash ? '' : (!audioSync.isTrackReady(audioSync.currentHash) ? "En attente de transfert..." : (audioSync.isPlaying ? "Pause" : "Play"))}
                 >
                   {audioSync.isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
                 </button>
@@ -105,16 +106,23 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
                 </button>
               </div>
             ) : (
-               <div className="text-gold-DEFAULT flex h-5 items-end gap-[2px]">
-                 {audioSync.isPlaying ? (
-                    <>
-                      <div className="w-1 bg-current h-full animate-[pulse_1s_ease-in-out_infinite]" />
-                      <div className="w-1 bg-current h-2/3 animate-[pulse_1.2s_ease-in-out_infinite_0.2s]" />
-                      <div className="w-1 bg-current h-4/5 animate-[pulse_0.8s_ease-in-out_infinite_0.4s]" />
-                    </>
-                 ) : (
-                    <Pause size={18} className="opacity-50" />
-                 )}
+               <div className="flex items-center gap-2">
+                 <button 
+                    onClick={() => window.location.reload()} 
+                    className="text-white/40 hover:text-red-500 transition-colors"
+                    title="Quitter la session"
+                 >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                 </button>
+                 <div className="text-gold-DEFAULT flex h-5 items-end gap-[2px]">
+                   {audioSync.isPlaying && (
+                      <>
+                        <div className="w-1 bg-current h-full animate-[pulse_1s_ease-in-out_infinite]" />
+                        <div className="w-1 bg-current h-2/3 animate-[pulse_1.2s_ease-in-out_infinite_0.2s]" />
+                        <div className="w-1 bg-current h-4/5 animate-[pulse_0.8s_ease-in-out_infinite_0.4s]" />
+                      </>
+                   )}
+                 </div>
                </div>
             )}
             

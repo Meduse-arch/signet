@@ -125,9 +125,17 @@ class TransferService {
       
       let currentBuffer = peerService.getTransferBufferedAmount(targetPeerId);
       while (currentBuffer > BUFFER_LIMIT) {
-         // Pause de 10ms si le tampon est trop plein
+         if (!peerService.getPeerId() || (targetPeerId && !peerService.isPeerConnected(targetPeerId))) {
+             console.log(`[TransferService] Aborting transfer ${chunkId} because peer disconnected.`);
+             return; // abort
+         }
          await new Promise(resolve => setTimeout(resolve, 10));
          currentBuffer = peerService.getTransferBufferedAmount(targetPeerId);
+      }
+      
+      if (!peerService.getPeerId() || (targetPeerId && !peerService.isPeerConnected(targetPeerId))) {
+         console.log(`[TransferService] Aborting transfer ${chunkId} because peer disconnected.`);
+         return; // abort
       }
       
       const header: FragmentHeader = {

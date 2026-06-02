@@ -3,6 +3,7 @@ import { Upload, Play, Square, Volume2, X, Music, RadioReceiver } from 'lucide-r
 import { useAudioSync } from '../../hooks/useAudioSync';
 import { dbStorage } from '../../services/db.storage';
 import { calculateHash } from '../../services/transfer.service';
+import { usePeersStore } from '../../store/peers';
 
 interface JukeboxManagerProps {
   onClose: () => void;
@@ -20,7 +21,9 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
   const [tracks, setTracks] = useState<AudioFile[]>([]);
   const [sfxs, setSfxs] = useState<AudioFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadingState, setUploadingState] = useState<{type: 'track' | 'sfx', name: string} | null>(null);
+  
+  const { connections } = usePeersStore();
 
   useEffect(() => {
     // Load from IndexedDB
@@ -41,11 +44,12 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
     localStorage.setItem('sigil_sfx', JSON.stringify(s));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, isSfx: boolean) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isSfx: boolean) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
+    const name = file.name.replace(/\.[^/.]+$/, "");
+    setUploadingState({ type: isSfx ? 'sfx' : 'track', name });
     
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -53,7 +57,7 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
         const buffer = event.target?.result as ArrayBuffer;
         if (!buffer || buffer.byteLength === 0) {
           console.error("Buffer vide !");
-          setIsUploading(false);
+          setUploadingState(null);
           return;
         }
 
@@ -89,12 +93,13 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
       } catch (err) {
         console.error("Erreur upload audio", err);
       }
-      setIsUploading(false);
+      setUploadingState(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
     reader.onerror = () => {
       console.error("Erreur FileReader");
-      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setUploadingState(null);
     };
     reader.readAsArrayBuffer(file);
   };
@@ -137,16 +142,43 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
             <h4 className="text-xs text-white/60 font-bold uppercase tracking-widest">Ambiance</h4>
             <label className="cursor-pointer text-gold-DEFAULT/70 hover:text-gold-DEFAULT flex items-center gap-1 text-xs">
               <Upload size={14} /> Importer
-              <input type="file" accept="audio/*" className="hidden" onChange={(e) => handleFileUpload(e, false)} disabled={isUploading} />
+              <input type="file" ref={fileInputRef} accept="audio/*" className="hidden" onChange={(e) => handleFileUpload(e, false)} disabled={!!uploadingState} />
             </label>
           </div>
           
           <div className="flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-            {tracks.length === 0 && <span className="text-xs text-white/30 italic">Aucune musique</span>}
-            {tracks.map(t => (
-              <div key={t.hash} className="flex items-center justify-between bg-white/5 hover:bg-white/10 p-2 rounded transition-colors group">
-                <span className="text-sm text-white/80 truncate pr-2" title={t.title}>{t.title}</span>
-                <div className="flex items-center gap-2">
+            {uploadingState?.type === 'track' && (
+               <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 opacity-70">
+                 <div className="flex items-center gap-3 overflow-hidden">
+                   <div className="w-2 h-2 shrink-0 border border-white/50 border-t-transparent rounded-full animate-spin" title="Préparation..." />
+                   <div className="w-8 h-8 shrink-0 rounded-md bg-gold-DEFAULT/10 flex items-center justify-center">
+                     <Music size={14} className="text-gold-DEFAULT" />
+                   </div>
+                   <div className="flex flex-col min-w-0">
+                     <span className="text-xs text-white/90 font-cinzel truncate tracking-wide">{uploadingState.name}</span>
+                     <span className="text-[10px] text-white/50 tracking-widest uppercase">Préparation...</span>
+                   </div>
+                 </div>
+               </div>
+            )}
+            {tracks.length === 0 && uploadingState?.type !== 'track' && <span className="text-xs text-white/30 italic">Aucune musique</span>}
+            {tracks.map(t => {
+              const readyCount = Object.keys(audioSync.syncStatus[t.hash] || {}).length;
+              const isReady = readyCount >= connections.length || connections.length === 0;
+
+              return (
+              <div key={t.hash} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 hover:border-gold-DEFAULT/30 transition-all group">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className={`w-2 h-2 rounded-full ${isReady ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse'}`} title={isReady ? "Prêt pour tous" : "Transfert en cours..."} />
+                  <div className="w-8 h-8 rounded-md bg-gold-DEFAULT/10 flex items-center justify-center shrink-0 border border-gold-DEFAULT/20 group-hover:bg-gold-DEFAULT/20 transition-colors">
+                    <Music size={14} className="text-gold-DEFAULT" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-bold text-white/90 truncate">{t.title}</span>
+                    <span className="text-[10px] text-white/40 uppercase tracking-widest">{(t.size / 1024 / 1024).toFixed(1)} MB</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
                   <button 
                     onClick={() => handleDelete(t.hash, false)}
                     className="text-white/30 hover:text-red-500 transition-colors"
@@ -156,13 +188,15 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
                   </button>
                   <button 
                     onClick={() => audioSync.playAmbiance(t.hash, t.title)}
-                    className="w-6 h-6 flex items-center justify-center rounded-full bg-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT hover:text-black transition-all"
+                    disabled={!isReady}
+                    className={`w-6 h-6 flex items-center justify-center rounded-full transition-all ${isReady ? 'bg-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT hover:text-black' : 'bg-white/5 text-white/20 cursor-not-allowed'}`}
+                    title={isReady ? "Jouer" : "Attendez la fin du transfert..."}
                   >
                     <Play size={12} fill="currentColor" />
                   </button>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
 
@@ -172,18 +206,37 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
             <h4 className="text-xs text-white/60 font-bold uppercase tracking-widest flex items-center gap-1"><RadioReceiver size={14}/> Soundboard</h4>
             <label className="cursor-pointer text-cyan-400/70 hover:text-cyan-400 flex items-center gap-1 text-xs">
               <Upload size={14} /> Importer
-              <input type="file" accept="audio/*" className="hidden" onChange={(e) => handleFileUpload(e, true)} disabled={isUploading} />
+              <input type="file" accept="audio/*" className="hidden" onChange={(e) => handleFileUpload(e, true)} disabled={!!uploadingState} />
             </label>
           </div>
           
           <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-             {sfxs.length === 0 && <span className="text-xs text-white/30 italic col-span-2">Aucun son</span>}
-             {sfxs.map(s => (
-               <div key={s.hash} className="relative group">
+             {uploadingState?.type === 'sfx' && (
+                <div className="col-span-2 flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 opacity-70">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-2 h-2 shrink-0 border border-white/50 border-t-transparent rounded-full animate-spin" title="Préparation..." />
+                    <div className="w-8 h-8 shrink-0 rounded-md bg-cyan-500/10 flex items-center justify-center">
+                      <RadioReceiver size={14} className="text-cyan-400" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs text-white/90 font-cinzel truncate tracking-wide">{uploadingState.name}</span>
+                      <span className="text-[10px] text-white/50 tracking-widest uppercase">Préparation...</span>
+                    </div>
+                  </div>
+                </div>
+             )}
+             {sfxs.length === 0 && uploadingState?.type !== 'sfx' && <span className="text-xs text-white/30 italic col-span-2">Aucun son</span>}
+             {sfxs.map(s => {
+               const readyCount = Object.keys(audioSync.syncStatus[s.hash] || {}).length;
+               const isReady = readyCount >= connections.length || connections.length === 0;
+               return (
+               <div key={s.hash} className="relative group flex items-center gap-1">
+                 <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isReady ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
                  <button
                    onClick={() => audioSync.playSFX(s.hash)}
-                   className="w-full bg-cyan-500/10 border border-cyan-500/20 hover:border-cyan-500/50 hover:bg-cyan-500/20 text-cyan-100 text-xs py-1.5 px-2 rounded truncate transition-colors"
-                   title={s.title}
+                   disabled={!isReady}
+                   className={`w-full text-left text-xs py-1.5 px-2 rounded truncate transition-colors ${isReady ? 'bg-cyan-500/10 border border-cyan-500/20 hover:border-cyan-500/50 hover:bg-cyan-500/20 text-cyan-100' : 'bg-white/5 border border-white/10 text-white/30 cursor-not-allowed'}`}
+                   title={isReady ? s.title : "Transfert..."}
                  >
                    {s.title}
                  </button>
@@ -194,7 +247,7 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
                    <X size={10} />
                  </button>
                </div>
-             ))}
+             )})}
           </div>
         </div>
 
