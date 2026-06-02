@@ -109,10 +109,14 @@ export class TokenSprite extends Container {
     this.labelText.zIndex = 2;
     this.addChild(this.labelText);
 
-    this.on('pointerdown', (e) => this.onDragStart(e));
-    this.on('rightdown', (e) => {
-        if (this.onRightClickCallback) {
-            this.onRightClickCallback(e.global.x, e.global.y);
+    this.on('pointerdown', (e) => {
+        if (e.button === 2) {
+            console.log('[TokenSprite] Clic droit (pointerdown) détecté ! callback présent ?', !!this.onRightClickCallback);
+            if (this.onRightClickCallback) {
+                this.onRightClickCallback(e.global.x, e.global.y);
+            }
+        } else {
+            this.onDragStart(e);
         }
     });
 

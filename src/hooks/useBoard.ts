@@ -355,6 +355,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       };
 
       boardRef.current.onTokenRightClick = (id, x, y) => {
+        console.log('[useBoard] onTokenRightClick déclenché pour', id, 'callback React présent ?', !!onTokenRightClick);
         if (onTokenRightClick) onTokenRightClick(id, x, y);
       };
     }

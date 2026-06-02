@@ -10,6 +10,7 @@ import { BrowserImageCompressor } from '../../services/browser-image-compressor'
 import { MapTransitionOverlay } from './MapTransitionOverlay';
 import { assetSyncService } from '../../services/asset-sync.service';
 import { useCharactersStore } from '../../store/characters';
+import { EyeOff, Link, Trash2 } from 'lucide-react';
 
 
 export interface MapItem {
@@ -38,7 +39,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
   const updateTokenList = useMapStore(state => state.updateTokenList);
   const setTokenStatus = useMapStore(state => state.setTokenStatus);
 
-  const isMJ = user && user.role >= SecurityLevel.MJ;
+  const isMJ = user && Number(user.role) >= SecurityLevel.MJ;
 
   const [hasLoadedTokensForMap, setHasLoadedTokensForMap] = useState<string>('');
   const lastPreparedMapRef = useRef<string>('');
@@ -400,19 +401,24 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
   // Gestion du clic droit (HUD)
   useEffect(() => {
     if (setOnTokenRightClick && isMJ) {
-      setOnTokenRightClick((tokenId: string, x: number, y: number) => {
+      setOnTokenRightClick(() => (tokenId: string, x: number, y: number) => {
         setMjMenu({ visible: true, x, y, tokenId });
       });
     }
   }, [setOnTokenRightClick, isMJ]);
 
-  const closeMjMenu = () => setMjMenu(prev => ({ ...prev, visible: false }));
+  const closeMjMenu = (e: React.PointerEvent) => {
+    // Ne pas fermer le menu si on fait un clic droit, car c'est ce qui l'ouvre !
+    if (e.button === 2) return;
+    setMjMenu(prev => ({ ...prev, visible: false }));
+  };
 
   return (
     <div 
       className="relative w-full h-full overflow-hidden" 
       onPointerDown={closeMjMenu}
       onContextMenu={(e) => e.preventDefault()}
+      onWheel={closeMjMenu}
     >
       <div ref={containerRef} className="absolute inset-0 z-0" />
       <MapTransitionOverlay progress={loadingProgress} onRetry={retryLoad} />
@@ -420,21 +426,19 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
       {/* Menu Contextuel du MJ (HUD) */}
       {mjMenu.visible && (
         <div 
-          className="absolute z-50 flex flex-col gap-1 p-2 bg-[#050508]/90 backdrop-blur-md border border-gold-DEFAULT/20 rounded-lg shadow-2xl"
-          style={{ left: mjMenu.x + 15, top: mjMenu.y - 15 }}
-          onPointerDown={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+          className="absolute z-50 flex items-center gap-2 px-3 py-2 bg-black/60 backdrop-blur-md border border-gold-DEFAULT/30 rounded-full shadow-[0_0_15px_rgba(212,175,55,0.2)] origin-bottom"
+          style={{ 
+              left: mjMenu.x, 
+              top: mjMenu.y - 30, // Juste au-dessus du token
+              transform: 'translate(-50%, -100%)' // Centrage parfait
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
         >
-          <div className="text-xs text-gold-DEFAULT/70 uppercase tracking-wider mb-1 px-1 border-b border-gold-DEFAULT/10 pb-1">
-             Options (MJ)
-          </div>
           <button 
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-300 hover:text-white hover:bg-white/5 rounded transition-colors"
+            className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-all group relative"
             onClick={() => {
-              // Logique de masquage
               const token = characters.find(c => c.id === mjMenu.tokenId);
               if (token) {
-                 // Pour l'instant on ne sauve pas en DB l'état caché, 
-                 // mais on met à jour le token localement et on broadcast pour un test rapide.
                  addToken({
                     id: token.id,
                     name: token.name,
@@ -443,32 +447,36 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
                     isOwned: false,
                     isMJ: !!isMJ
                  });
-                 // broadcast({ type: 'TOKEN_UPDATE_VISIBILITY', payload: { id: token.id, is_hidden: true } });
               }
               closeMjMenu();
             }}
           >
-            👁️ Cacher
+            <EyeOff size={18} />
           </button>
+          
+          <div className="w-px h-5 bg-white/10 mx-1" />
+
           <button 
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-300 hover:text-white hover:bg-white/5 rounded transition-colors"
+            className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-all"
             onClick={() => {
-               // Posséder (Mettre à jour SessionStore si nécessaire, ici simulation)
                console.log("[HUD] Posséder: ", mjMenu.tokenId);
                closeMjMenu();
             }}
           >
-            🔗 Posséder
+            <Link size={18} />
           </button>
+          
+          <div className="w-px h-5 bg-white/10 mx-1" />
+
           <button 
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-full transition-all"
             onClick={() => {
               const char = characters.find(c => c.id === mjMenu.tokenId);
               if (char) handleToggleToken(char);
               closeMjMenu();
             }}
           >
-            🗑️ Supprimer
+            <Trash2 size={18} />
           </button>
         </div>
       )}

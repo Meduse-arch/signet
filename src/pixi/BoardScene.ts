@@ -266,6 +266,7 @@ export class BoardScene extends Container {
     });
 
     token.onRightClickCallback = (x: number, y: number) => {
+        console.log('[BoardScene] onRightClickCallback déclenché pour', data.id, 'onTokenRightClick présent ?', !!this.onTokenRightClick);
         if (this.onTokenRightClick) this.onTokenRightClick(data.id, x, y);
     };
 
