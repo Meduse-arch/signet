@@ -297,6 +297,18 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       } else if (type === 'REQUEST_CURRENT_MAP') {
         // ✅ Répondre à une demande de synchronisation (ex: fenêtre pop-out)
         channel.postMessage({ type: 'CURRENT_MAP_REPLY', payload: { currentMapId } });
+      } else if (type === 'REQUEST_COMBAT_STATE') {
+        const rawState = useCombatStore.getState();
+        channel.postMessage({ 
+          type: 'COMBAT_STATE_UPDATE', 
+          payload: {
+            isActive: rawState.isActive,
+            currentRound: rawState.currentRound,
+            activeActorId: rawState.activeActorId,
+            actors: rawState.actors,
+            isInitiativeWindowOpen: rawState.isInitiativeWindowOpen
+          } 
+        });
       } else if (type === 'COMBAT_STATE_UPDATE') {
         useCombatStore.getState()._applySync(payload);
         if (isHost) {

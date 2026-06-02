@@ -5,9 +5,12 @@ import { useCharactersStore } from '../../store/characters';
 import { usePeersStore } from '../../store/peers';
 import { useMapStore } from '../../store/map';
 import { AssetImage } from '../AssetImage';
+import { useAuthStore, SecurityLevel } from '../../store/auth';
 
 export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) => {
   const { isHost } = usePeersStore();
+  const { user } = useAuthStore();
+  const isMJ = !!user && user.role >= SecurityLevel.MJ;
   const { broadcast } = usePeer();
   const {
     isActive, currentRound, activeActorId, actors,
@@ -16,6 +19,34 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
 
   const characters = useCharactersStore(state => state.characters);
   const tokenStatuses = useMapStore(state => state.tokenStatuses);
+
+  React.useEffect(() => {
+    // Si on est en mode Electron, on peut récupérer l'état directement depuis le backend
+    if (window.electronAPI && window.electronAPI.getCombatState) {
+      window.electronAPI.getCombatState(sessionId).then((savedState) => {
+        if (savedState) {
+          useCombatStore.getState()._applySync({
+            isActive: savedState.is_active,
+            currentRound: savedState.current_round,
+            activeActorId: savedState.active_actor_id,
+            actors: savedState.actors.map((a: any) => {
+              const matchingChar = useCharactersStore.getState().characters.find(c => c.id === a.character_id);
+              return {
+                ...a,
+                image_url: matchingChar ? matchingChar.image_url : null
+              };
+            }),
+            isInitiativeWindowOpen: true
+          });
+        }
+      });
+    } else {
+      // Fallback web: Demander la synchronisation de l'état du combat à la fenêtre principale
+      const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+      channel.postMessage({ type: 'REQUEST_COMBAT_STATE' });
+      channel.close();
+    }
+  }, [sessionId]);
 
   const saveAndBroadcast = async () => {
     setTimeout(async () => {
@@ -29,7 +60,13 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
       };
 
       if (window.electronAPI && window.electronAPI.saveCombatState) {
-        await window.electronAPI.saveCombatState(sessionId, payload);
+        // Le backend attend du snake_case
+        await window.electronAPI.saveCombatState(sessionId, {
+          is_active: rawState.isActive,
+          current_round: rawState.currentRound,
+          active_actor_id: rawState.activeActorId,
+          actors: rawState.actors
+        });
       }
       
       // Relais via BroadcastChannel pour la fenêtre principale
@@ -203,7 +240,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
     saveAndBroadcast();
   };
 
-  if (!isHost) {
+  if (!isMJ) {
     return (
       <div className="flex flex-col h-full bg-[#0D0D0F] text-gray-300 p-4 font-inter text-sm">
         <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
@@ -220,8 +257,8 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
             <div key={actor.id} className={`flex items-center gap-3 p-2 mb-2 rounded-lg border transition-all duration-300 ${actor.id === activeActorId ? 'border-gold-DEFAULT bg-gold-DEFAULT/10 shadow-[0_0_15px_rgba(240,192,64,0.15)] scale-[1.02]' : 'border-white/5 bg-black/40'}`}>
               
               <div className="relative">
-                {actor.image_url ? (
-                  <AssetImage src={actor.image_url} alt="" className="w-10 h-10 rounded-full border border-gray-700 object-cover" />
+                {(characters.find(c => c.id === actor.character_id)?.image_url || actor.image_url) ? (
+                  <AssetImage src={characters.find(c => c.id === actor.character_id)?.image_url || actor.image_url} alt="" className="w-10 h-10 rounded-full border border-gray-700 object-cover" />
                 ) : (
                   <div className="w-10 h-10 rounded-full border border-gray-700 bg-gray-900 flex items-center justify-center font-cinzel text-xs text-gray-500">?</div>
                 )}
@@ -274,8 +311,8 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
             </div>
             
             <div className="relative">
-              {actor.image_url ? (
-                <AssetImage src={actor.image_url} alt="" className="w-10 h-10 rounded-full border border-gray-700 object-cover" />
+              {(characters.find(c => c.id === actor.character_id)?.image_url || actor.image_url) ? (
+                <AssetImage src={characters.find(c => c.id === actor.character_id)?.image_url || actor.image_url} alt="" className="w-10 h-10 rounded-full border border-gray-700 object-cover" />
               ) : (
                 <div className="w-10 h-10 rounded-full border border-gray-700 bg-gray-900 flex items-center justify-center font-cinzel text-xs text-gray-500">?</div>
               )}

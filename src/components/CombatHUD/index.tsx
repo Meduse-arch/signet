@@ -83,8 +83,8 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
         className={`relative rounded-full flex-shrink-0 cursor-pointer overflow-hidden bg-[#1A1A20] transition-all duration-300 border ${isActive ? 'border-gold-DEFAULT shadow-[0_0_15px_rgba(240,192,64,0.2)] scale-110 z-10' : 'border-white/10 opacity-60 hover:opacity-100 hover:scale-105'}`}
       >
         <div className={`${size}`}>
-          {actor.image_url ? (
-            <AssetImage src={actor.image_url} alt="" className="w-full h-full object-cover" />
+          {(characters.find(c => c.id === actor.character_id)?.image_url || actor.image_url) ? (
+            <AssetImage src={characters.find(c => c.id === actor.character_id)?.image_url || actor.image_url} alt="" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-600">
                <Swords size={size.includes('14') ? 24 : 16} />

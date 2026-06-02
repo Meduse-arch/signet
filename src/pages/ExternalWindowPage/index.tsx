@@ -13,7 +13,8 @@ import {
   SkillsWindowContent,
   SkillCreationModal,
   QuestsWindowContent,
-  QuestCreationModal
+  QuestCreationModal,
+  InitiativeWindowContent
 } from '../../components/SignetInterface';
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { usePeer } from '../../hooks/usePeer';
@@ -239,6 +240,8 @@ export function ExternalWindowPage() {
         if (payload.currentMapId) {
             setCurrentMapId(payload.currentMapId);
         }
+      } else if (type === 'COMBAT_STATE_UPDATE') {
+        useCombatStore.getState()._applySync(payload);
       }
     };
     return () => channel.close();
@@ -300,6 +303,10 @@ export function ExternalWindowPage() {
 
           {type === 'bestiary' && (
              <BestiaryWindowContent sessionId={sessionId} />
+          )}
+
+          {type === 'combat' && (
+             <InitiativeWindowContent sessionId={sessionId} />
           )}
        </div>
 

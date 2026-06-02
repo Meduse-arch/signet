@@ -69,6 +69,10 @@ export function DraggableWindow({
         initialWidth = '500px';
         initialHeight = '450px';
         break;
+      case 'combat':
+        initialWidth = '450px';
+        initialHeight = '600px';
+        break;
       default:
         initialWidth = '400px';
         initialHeight = '450px';
