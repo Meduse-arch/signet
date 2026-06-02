@@ -11,6 +11,7 @@ import { MapTransitionOverlay } from './MapTransitionOverlay';
 import { assetSyncService } from '../../services/asset-sync.service';
 import { useCharactersStore } from '../../store/characters';
 import { Eye, EyeOff, Link, Unlink, Trash2 } from 'lucide-react';
+import { ToolboxHUD, ToolType } from '../ToolboxHUD';
 
 
 export interface MapItem {
@@ -31,7 +32,8 @@ interface BoardCanvasProps {
 
 export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, characters }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
+  const [currentTool, setCurrentTool] = useState<ToolType>('cursor');
+  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken, setTool } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
   const { isHost } = usePeersStore();
   const { onData, broadcast, sendTo } = usePeer();
   const { user } = useAuthStore();
@@ -409,6 +411,13 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
     }
   }, [currentCharacterId, isReady, setControlledToken]);
 
+  // Appliquer l'outil courant
+  useEffect(() => {
+    if (isReady && setTool) {
+      setTool(currentTool);
+    }
+  }, [currentTool, isReady, setTool]);
+
   // Gestion du clic droit (HUD)
   useEffect(() => {
     if (setOnTokenRightClick && isMJ) {
@@ -434,6 +443,14 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
     >
       <div ref={containerRef} className="absolute inset-0 z-0" />
       <MapTransitionOverlay progress={loadingProgress} onRetry={retryLoad} />
+      
+      {!isExternalMap && (
+        <ToolboxHUD 
+          currentTool={currentTool} 
+          onToolChange={setCurrentTool} 
+          className="absolute top-8 left-8 z-50" // Remplaçant le PlayerHUD
+        />
+      )}
       
       {/* Menu Contextuel du MJ (HUD) */}
       {mjMenu.visible && (

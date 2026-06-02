@@ -1,4 +1,4 @@
-import { Application, Container } from 'pixi.js';
+import { Application, Container, Graphics, Text, Ticker } from 'pixi.js';
 import { MapLayer } from './MapLayer';
 import { FogOfWar } from './FogOfWar';
 import { TokenSprite, TokenData } from './TokenSprite';
@@ -20,21 +20,37 @@ export class BoardScene extends Container {
   private dragStart = { x: 0, y: 0 };
   private initialScenePos = { x: 0, y: 0 };
 
+  public onPing?: (x: number, y: number) => void;
+  private currentTool: string = 'cursor';
+  private currentGridSize: number = 50;
+  private rulerGraphics: Graphics;
+  private rulerText: Text;
+  private rulerStartPos: { x: number, y: number } | null = null;
+
   constructor(app: Application) {
     super();
     this.app = app;
 
     this.mapLayer = new MapLayer();
-    this.addChild(this.mapLayer);
-
+    
     this.fow = new FogOfWar();
-    this.addChild(this.fow);
-
     this.tokenLayer = new Container();
     this.tokenLayer.sortableChildren = true;
-    this.addChild(this.tokenLayer);
+    
+    this.rulerGraphics = new Graphics();
+    this.rulerGraphics.zIndex = 200;
+    
+    this.rulerText = new Text({ text: '', style: { fill: 0xffffff, fontSize: 16, stroke: { color: 0x000000, width: 4 } } });
+    this.rulerText.zIndex = 201;
+    this.rulerText.visible = false;
+    this.rulerText.anchor.set(0.5);
 
-    // Center the board by default
+    this.addChild(this.mapLayer);
+    this.addChild(this.tokenLayer);
+    this.addChild(this.rulerGraphics);
+    this.addChild(this.rulerText);
+    this.addChild(this.fow);
+    this.sortableChildren = true;
     this.x = app.screen.width / 2;
     this.y = app.screen.height / 2;
 
@@ -81,29 +97,67 @@ export class BoardScene extends Container {
       this.constrainPan();
     });
 
-    // Pan
+    // Pan and Tools
     this.app.stage.on('pointerdown', (e) => {
       if (e.target !== this.app.stage && e.target !== this.mapLayer) {
-        // If clicking on a token or something else, don't pan
         return;
       }
-      this.dragging = true;
-      this.dragStart = { x: e.global.x, y: e.global.y };
-      this.initialScenePos = { x: this.x, y: this.y };
+
+      if (this.currentTool === 'cursor') {
+        this.dragging = true;
+        this.dragStart = { x: e.global.x, y: e.global.y };
+        this.initialScenePos = { x: this.x, y: this.y };
+      } else if (this.currentTool === 'ruler') {
+        const pos = this.toLocal(e.global);
+        this.rulerStartPos = { x: pos.x, y: pos.y };
+        this.rulerGraphics.clear();
+        this.rulerText.visible = false;
+      } else if (this.currentTool === 'ping') {
+        const pos = this.toLocal(e.global);
+        this.triggerPing(pos.x, pos.y);
+        if (this.onPing) this.onPing(pos.x, pos.y);
+      }
     });
 
     this.app.stage.on('pointermove', (e) => {
-      if (!this.dragging) return;
-      const dx = e.global.x - this.dragStart.x;
-      const dy = e.global.y - this.dragStart.y;
-      this.x = this.initialScenePos.x + dx;
-      this.y = this.initialScenePos.y + dy;
-      
-      this.constrainPan();
+      if (this.currentTool === 'cursor') {
+        if (!this.dragging) return;
+        const dx = e.global.x - this.dragStart.x;
+        const dy = e.global.y - this.dragStart.y;
+        this.x = this.initialScenePos.x + dx;
+        this.y = this.initialScenePos.y + dy;
+        this.constrainPan();
+      } else if (this.currentTool === 'ruler') {
+        if (!this.rulerStartPos) return;
+        const pos = this.toLocal(e.global);
+        
+        this.rulerGraphics.clear();
+        this.rulerGraphics.moveTo(this.rulerStartPos.x, this.rulerStartPos.y);
+        this.rulerGraphics.lineTo(pos.x, pos.y);
+        this.rulerGraphics.stroke({ color: 0xF59E0B, width: 4, alpha: 0.8 });
+        
+        this.rulerGraphics.circle(this.rulerStartPos.x, this.rulerStartPos.y, 6).fill(0xF59E0B);
+        this.rulerGraphics.circle(pos.x, pos.y, 6).fill(0xF59E0B);
+
+        const distancePixels = Math.hypot(pos.x - this.rulerStartPos.x, pos.y - this.rulerStartPos.y);
+        const distanceCases = Math.round((distancePixels / this.currentGridSize) * 10) / 10;
+        
+        this.rulerText.text = `${distanceCases} cases`;
+        this.rulerText.x = (this.rulerStartPos.x + pos.x) / 2;
+        this.rulerText.y = (this.rulerStartPos.y + pos.y) / 2 - 15;
+        this.rulerText.visible = true;
+      }
     });
 
-    this.app.stage.on('pointerup', () => this.dragging = false);
-    this.app.stage.on('pointerupoutside', () => this.dragging = false);
+    const onPointerUp = () => {
+      this.dragging = false;
+      if (this.currentTool === 'ruler') {
+        this.rulerStartPos = null;
+      }
+    };
+
+    this.app.stage.on('pointerup', onPointerUp);
+    this.app.stage.on('pointerupoutside', onPointerUp);
 
     // Keyboard (ZQSD)
     window.addEventListener('keydown', this.handleKeyDown);
@@ -181,7 +235,8 @@ export class BoardScene extends Container {
     }
   }
 
-  setGridSize(size: number) {
+  public setGridSize(size: number) {
+    this.currentGridSize = size;
     this.mapLayer.setGridSize(size);
     this.tokens.forEach(t => t.gridSize = size);
   }
@@ -320,14 +375,55 @@ export class BoardScene extends Container {
     }
   }
 
-  getTokenVisibility(id: string): boolean {
-    return !!this.tokens.get(id)?.is_hidden;
+  public getTokenVisibility(id: string) {
+    const token = this.tokens.get(id);
+    return token ? token.is_hidden : false;
   }
 
   setControlledToken(id: string | null) {
     this.tokens.forEach((token, tokenId) => {
       token.zIndex = (tokenId === id) ? 100 : 1;
     });
+  }
+
+  public setTool(tool: string) {
+    this.currentTool = tool;
+    if (tool !== 'ruler') {
+      this.rulerGraphics.clear();
+      this.rulerText.visible = false;
+    }
+  }
+
+  public triggerPing(x: number, y: number, color: number = 0xF59E0B) {
+    const pingGfx = new Graphics();
+    pingGfx.x = x;
+    pingGfx.y = y;
+    pingGfx.zIndex = 200;
+    this.addChild(pingGfx);
+    
+    let radius = 0;
+    let alpha = 1;
+    
+    const tickerFn = (ticker: Ticker) => {
+        radius += 4 * ticker.deltaTime;
+        alpha -= 0.02 * ticker.deltaTime;
+        
+        if (alpha <= 0) {
+            this.app.ticker.remove(tickerFn);
+            pingGfx.destroy();
+            return;
+        }
+        
+        pingGfx.clear();
+        pingGfx.circle(0, 0, radius);
+        pingGfx.stroke({ color: color, width: 4, alpha: alpha });
+        
+        // Inner circle
+        pingGfx.circle(0, 0, 6);
+        pingGfx.fill({ color: color, alpha: alpha });
+    };
+    
+    this.app.ticker.add(tickerFn);
   }
 
   zoomToToken(id: string) {

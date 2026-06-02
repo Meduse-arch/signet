@@ -23,7 +23,7 @@ import { useSignetInterface } from '../../hooks/useSignetInterface';
 import { usePeersStore } from '../../store/peers';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
-import { PlayerHUD } from '../../components/PlayerHUD';
+
 import { CharacterHUD } from '../../components/CharacterHUD';
 import { CombatHUD } from '../../components/CombatHUD';
 import { Pause, MonitorPlay, Zap, ZapOff } from 'lucide-react';
@@ -427,7 +427,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
           )}
           <SignetLauncher sessionId={sessionId} onOpenWindow={openWindow} securityLevel={user?.role} />
           <CombatHUD sessionId={sessionId} />
-          <PlayerHUD players={playersList} sessionId={sessionId} />
+
           <CharacterHUD sessionId={sessionId} />
           <div className="absolute inset-0 pointer-events-none z-[200]">
             {Object.entries(windows).map(([id, win]) => {

@@ -124,62 +124,8 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
         </div>
       </div>
 
-      {/* Ligne séparatrice optionnelle si d'autres joueurs */}
-      {otherPlayers.length > 0 && (
-        <div className="w-[1px] h-4 bg-white/20 ml-6 drop-shadow-md" />
-      )}
-
-      {/* Other Players (Voyageurs) */}
-      <div className="flex flex-col gap-3">
-        {otherPlayers.map((p) => {
-          const char = characters.find(c => c.user_id === p.peer_id);
-          const initial = p.pseudo.substring(0, 1).toUpperCase();
-          return (
-            <div key={p.peer_id} className="flex items-center gap-4 pointer-events-auto group opacity-80 hover:opacity-100 transition-all">
-              <div className="relative ml-2">
-                <div className="w-9 h-9 rounded-full bg-[#0D0D0F]/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/90 text-sm font-cinzel group-hover:border-white/40 group-hover:text-white transition-all shadow-[0_2px_10px_rgba(0,0,0,0.5)] overflow-hidden">
-                  {char?.image_url ? (
-                      <AssetImage src={char.image_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                      initial
-                  )}
-                </div>
-                
-                {/* MJ Toggle Button on Other Players */}
-                {isMJ && char && (
-                    <button 
-                        onClick={() => handleToggleToken(char.id)}
-                        className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
-                            tokenStatus[char.id]
-                                ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
-                                : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
-                        }`}
-                        title={tokenStatus[char.id] ? "Retirer de la carte" : "Placer sur la carte"}
-                    >
-                        <Plus size={8} className={`transition-transform duration-500 ${tokenStatus[char.id] ? 'rotate-45' : ''}`} />
-                    </button>
-                )}
-
-                {!isMJ && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#0D0D0F] flex items-center justify-center border border-white/10">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#8ab040]" />
-                    </div>
-                )}
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-white/90 font-cinzel tracking-wider group-hover:text-white transition-colors drop-shadow-md">{p.pseudo}</span>
-                  {(p.role !== undefined || p.pseudo === 'MJ') && (
-                    <span className="text-xs border border-white/30 text-white/80 px-1 py-0.5 rounded-sm font-black uppercase drop-shadow-md">
-                        {p.role !== undefined ? `SEC: ${p.role}` : 'MJ'}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Ligne séparatrice optionnelle si d'autres joueurs retirée */}
+      {/* Autres joueurs retirés pour laisser place à la Boîte à Outils */}
     </div>
   );
 }

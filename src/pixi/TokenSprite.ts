@@ -41,6 +41,7 @@ export class TokenSprite extends Container {
     this.onMoveCallback = onMove;
 
     console.log(`[TokenSprite] Init: ${data.name} (ID: ${data.id}) at ${data.x},${data.y}`);
+    this.id = data.id;
 
     this.isOwned = !!data.isOwned;
     this.isMJ = !!data.isMJ;

@@ -253,6 +253,12 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
   }, []);
 
+  const setTool = useCallback((tool: string) => {
+    if (boardRef.current) {
+      boardRef.current.setTool(tool);
+    }
+  }, []);
+
   // 1. Initialisation de Pixi (Une seule fois)
   useEffect(() => {
     const container = containerRef.current;
@@ -374,6 +380,10 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         console.log('[useBoard] onTokenRightClick déclenché pour', id, 'callback React présent ?', !!onTokenRightClick);
         if (onTokenRightClick) onTokenRightClick(id, x, y);
       };
+
+      boardRef.current.onPing = (x, y) => {
+        broadcast({ type: 'PING', payload: { x, y } });
+      };
     }
   }, [isReady, isHost, sessionId, broadcast, sendTo, onTokenRightClick]);
 
@@ -438,6 +448,8 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         boardRef.current.moveToken(id, x, y);
       } else if (data.type === 'TOKEN_REMOVE') {
         boardRef.current.removeToken(data.payload.id);
+      } else if (data.type === 'PING') {
+        boardRef.current.triggerPing(data.payload.x, data.payload.y);
       }
     });
 
@@ -479,5 +491,5 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     return () => window.removeEventListener('ZOOM_TO_TOKEN', handleZoom as EventListener);
   }, []);
 
-  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad: () => paintMapFromCache(currentMapIdRef.current, pendingManifest.current?.manifest), setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken };
+  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad: () => paintMapFromCache(currentMapIdRef.current || '', pendingManifest.current?.manifest), setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken, setTool };
 }
