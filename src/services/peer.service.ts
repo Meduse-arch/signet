@@ -2,7 +2,7 @@ import Peer, { DataConnection } from 'peerjs';
 
 export type PeerMessage = {
   type: string;
-  payload: any;
+  payload?: any;
 };
 
 interface PeerConnections {

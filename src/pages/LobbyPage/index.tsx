@@ -8,7 +8,7 @@ import { useItemsStore } from '../../store/items';
 import { useQuestsStore } from '../../store/quests';
 import { useMapStore } from '../../store/map';
 import { useDiceStore } from '../../store/dice';
-import { peerService } from '../../services/peer.service';
+import { peerService, PeerMessage } from '../../services/peer.service';
 import {
   addSessionPlayer,
   clearSessionPlayers,
@@ -109,7 +109,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   }, []);
 
   useEffect(() => {
-    const handleMessage = async (data: { type: string, payload: any }, fromPeerId: string) => {
+    const handleMessage = async (data: PeerMessage, fromPeerId: string) => {
       console.log(`[LobbyPage] Message reçu: ${data.type} de ${fromPeerId}`);
       
       if (data.type === 'SESSION_START') {

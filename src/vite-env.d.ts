@@ -45,6 +45,8 @@ declare global {
       closeWindow: () => void;
       onFullscreen: (callback: (isFS: boolean) => void) => (() => void);
       fetchImage: (url: string) => Promise<string | null>;
+      getCombatState: (sessionId: string) => Promise<any>;
+      saveCombatState: (sessionId: string, state: any) => Promise<boolean>;
     };
   }
 }

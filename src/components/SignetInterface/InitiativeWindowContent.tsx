@@ -23,7 +23,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
   React.useEffect(() => {
     // Si on est en mode Electron, on peut récupérer l'état directement depuis le backend
     if (window.electronAPI && window.electronAPI.getCombatState) {
-      window.electronAPI.getCombatState(sessionId).then((savedState) => {
+      window.electronAPI.getCombatState(sessionId).then((savedState: any) => {
         if (savedState) {
           useCombatStore.getState()._applySync({
             isActive: savedState.is_active,

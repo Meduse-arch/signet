@@ -125,7 +125,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
     setShowCreateModal(true);
   };
 
-  const getTypeForCurrentTab = (): string => {
+  const getTypeForCurrentTab = (): "Joueur" | "PNJ" | "Monstre" | "Boss" | undefined => {
     if (activeTab === 'mobs') return 'Monstre';
     if (activeTab === 'boss') return 'Boss';
     if (activeTab === 'players') return 'Joueur';

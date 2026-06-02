@@ -19,6 +19,7 @@ import {
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
+import { useCombatStore } from '../../store/combat';
 import { usePeersStore } from '../../store/peers';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
