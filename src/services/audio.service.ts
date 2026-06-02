@@ -46,7 +46,6 @@ class AudioService {
     const newHowl = new Howl({
       src: [blobUrl],
       format: [mime.split('/')[1] || 'mp3'],
-      html5: true, // Optimisé pour les gros fichiers
       loop: true,
       volume: 0, // Commence à 0 pour le fade in
     });
@@ -95,18 +94,6 @@ class AudioService {
     if (this.ambianceTrack) {
       console.log(`[AudioService] Seeking ambiance to ${position}s with id ${this.ambianceTrack.soundId}`);
       this.ambianceTrack.howl.seek(position, this.ambianceTrack.soundId);
-      
-      // Fallback for Howler.js html5: true bug where seek is ignored during loading states
-      try {
-         const sounds = (this.ambianceTrack.howl as any)._sounds;
-         if (sounds && sounds.length > 0) {
-            const node = sounds[0]._node;
-            if (node && typeof node.currentTime !== 'undefined') {
-                node.currentTime = position;
-            }
-         }
-      } catch(e) {}
-      
     } else {
       console.warn(`[AudioService] Ignored seek to ${position}s because ambianceTrack is null`);
     }
