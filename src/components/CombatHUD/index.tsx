@@ -12,7 +12,7 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
   const { isActive, activeActorId, actors, nextTurn } = useCombatStore();
   const { isHost } = usePeersStore();
   const { user } = useAuthStore();
-  const { onData } = usePeer();
+  const { broadcast } = usePeer();
   const openWindow = useSignetStore(state => state.openWindow);
   const characters = useCharactersStore(state => state.characters);
 
@@ -22,14 +22,26 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
 
   const handleNext = () => {
     nextTurn();
-    const state = useCombatStore.getState();
-    if (window.electronAPI) window.electronAPI.saveCombatState(sessionId, state);
-    // Le P2P est géré soit via le bouton next global, soit via l'event de P2P
-    // Ici on envoie un event local qui sera rattrapé si nécessaire, mais nextTurn fait l'emitStoreSync local
-    // Pour que ce soit sûr, on le diffuse :
+    const rawState = useCombatStore.getState();
+    const payload = {
+      isActive: rawState.isActive,
+      currentRound: rawState.currentRound,
+      activeActorId: rawState.activeActorId,
+      actors: rawState.actors,
+      isInitiativeWindowOpen: rawState.isInitiativeWindowOpen
+    };
+
+    if (window.electronAPI) window.electronAPI.saveCombatState(sessionId, payload);
+    
+    // Synchro locale fenêtres MJ
     const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
-    channel.postMessage({ type: 'COMBAT_STATE_UPDATE', payload: state });
+    channel.postMessage({ type: 'COMBAT_STATE_UPDATE', payload });
     channel.close();
+
+    // Synchro P2P joueurs
+    if (isHost) {
+      broadcast({ type: 'COMBAT_STATE_UPDATE', payload });
+    }
   };
 
   // Identifier le personnage du joueur local et s'il est dans le combat
@@ -37,7 +49,8 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
   const myCharInCombat = myChar ? actors.some(a => a.character_id === myChar.id) : false;
 
   // MJ : toujours visible. Joueur : visible si combat actif OU si son perso participe
-  if (!isHost && !isActive && !myCharInCombat) return null;
+  const shouldShowHUD = isHost || isActive || myCharInCombat;
+  if (!shouldShowHUD) return null;
 
   const sortedActors = [...actors].sort((a, b) => a.turn_order - b.turn_order);
   const currentIndex = sortedActors.findIndex(a => a.id === activeActorId);
@@ -46,12 +59,10 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
   const nextActor1 = sortedActors.length > 1 ? sortedActors[(currentIndex + 1) % sortedActors.length] : null;
   const nextActor2 = sortedActors.length > 2 ? sortedActors[(currentIndex + 2) % sortedActors.length] : null;
 
-  // Si le combat est actif mais qu'aucun acteur n'est encore désigné (ne devrait plus arriver), on prend le premier
   if (isActive && !currentActor && sortedActors.length > 0) {
     currentActor = sortedActors[0];
   }
-  // Avant le lancement (MJ en attente), on pré-affiche le premier
-  if (!isActive && isHost && sortedActors.length > 0) {
+  if (!isActive && (isHost || myCharInCombat) && sortedActors.length > 0) {
     currentActor = sortedActors[0];
   }
 
@@ -91,12 +102,12 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
              <Avatar actor={currentActor} size="w-14 h-14" isActive={isActive} onClick={() => zoomToToken(currentActor.id)} />
              
              <div className="flex flex-col">
-               {(isActive || isHost) && (
+               {(isActive || isHost || myCharInCombat) && (
                  <span className="font-cinzel font-bold tracking-widest text-sm text-gray-200">{currentActor.name}</span>
                )}
-               {isActive && (
-                 <span className={`text-[10px] font-bold tracking-[0.2em] uppercase ${isMyTurn ? 'text-gold-bright' : 'text-gray-500'}`}>
-                   {isMyTurn ? 'À ton tour' : 'En attente'}
+               {isActive && isMyTurn && (
+                 <span className={`text-[10px] font-bold tracking-[0.2em] uppercase text-gold-bright`}>
+                   À ton tour
                  </span>
                )}
              </div>
@@ -116,30 +127,26 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
            <Avatar actor={nextActor2} size="w-8 h-8" onClick={() => zoomToToken(nextActor2.id)} />
         )}
 
-        {/* Admin Controls */}
-        {isHost && (
-          <>
-            <div className="w-[1px] h-8 bg-white/10 mx-2"></div>
-            <div className="flex items-center gap-2">
-              {isActive && (
-                <button 
-                  onClick={handleNext}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 border border-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/50 transition-all"
-                  title="Tour Suivant"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              )}
-              <button 
-                onClick={handleOpenManager}
-                className={`flex items-center justify-center w-10 h-10 rounded-full transition-all border ${isActive ? 'bg-red-900/20 border-red-500/20 text-red-400 hover:bg-red-900/40 hover:border-red-500/50' : 'bg-black/40 border-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/50'}`}
-                title="Gestionnaire d'Initiative"
-              >
-                <Swords size={18} />
-              </button>
-            </div>
-          </>
-        )}
+        {/* Controls */}
+        <div className="w-[1px] h-8 bg-white/10 mx-2"></div>
+        <div className="flex items-center gap-2">
+          {isActive && (isHost || isMyTurn) && (
+            <button 
+              onClick={handleNext}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 border border-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/50 transition-all"
+              title="Tour Suivant"
+            >
+              <ChevronRight size={20} />
+            </button>
+          )}
+          <button 
+            onClick={handleOpenManager}
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-all border ${isActive ? 'bg-red-900/20 border-red-500/20 text-red-400 hover:bg-red-900/40 hover:border-red-500/50' : 'bg-black/40 border-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/50'}`}
+            title={isHost ? "Gestionnaire d'Initiative" : "Ordre de Combat"}
+          >
+            <Swords size={18} />
+          </button>
+        </div>
 
       </div>
     </div>

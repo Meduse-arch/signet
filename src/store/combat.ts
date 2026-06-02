@@ -45,7 +45,8 @@ export const useCombatStore = create<CombatState>((set, get) => ({
   toggleInitiativeWindow: () => {
     const nextState = !get().isInitiativeWindowOpen;
     set({ isInitiativeWindowOpen: nextState });
-    emitStoreSync('combat', { isInitiativeWindowOpen: nextState });
+    const sessionId = window.location.hash.split('/').pop()?.split('?')[0] || 'default';
+    emitStoreSync('combat', sessionId, 'TOGGLE_WINDOW', { isInitiativeWindowOpen: nextState });
   },
 
   setCombatState: (state) => {

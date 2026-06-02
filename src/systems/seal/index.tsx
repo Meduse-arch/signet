@@ -273,6 +273,11 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
       } else if (type === 'REQUEST_CURRENT_MAP') {
         // ✅ Répondre à une demande de synchronisation (ex: fenêtre pop-out)
         channel.postMessage({ type: 'CURRENT_MAP_REPLY', payload: { currentMapId } });
+      } else if (type === 'COMBAT_STATE_UPDATE') {
+        useCombatStore.getState()._applySync(payload);
+        if (isHost) {
+          broadcast({ type: 'COMBAT_STATE_UPDATE', payload });
+        }
       }
     };
 

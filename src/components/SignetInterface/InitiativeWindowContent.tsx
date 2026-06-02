@@ -19,11 +19,28 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
 
   const saveAndBroadcast = async () => {
     setTimeout(async () => {
-      const state = useCombatStore.getState();
+      const rawState = useCombatStore.getState();
+      const payload = {
+        isActive: rawState.isActive,
+        currentRound: rawState.currentRound,
+        activeActorId: rawState.activeActorId,
+        actors: rawState.actors,
+        isInitiativeWindowOpen: rawState.isInitiativeWindowOpen
+      };
+
       if (window.electronAPI && window.electronAPI.saveCombatState) {
-        await window.electronAPI.saveCombatState(sessionId, state);
+        await window.electronAPI.saveCombatState(sessionId, payload);
       }
-      broadcast({ type: 'COMBAT_STATE_UPDATE', payload: state });
+      
+      // Relais via BroadcastChannel pour la fenêtre principale
+      const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
+      channel.postMessage({ type: 'COMBAT_STATE_UPDATE', payload });
+      channel.close();
+
+      // Broadcast P2P (utile si le gestionnaire n'est pas en mode pop-out)
+      if (isHost) {
+        broadcast({ type: 'COMBAT_STATE_UPDATE', payload });
+      }
     }, 50);
   };
 
