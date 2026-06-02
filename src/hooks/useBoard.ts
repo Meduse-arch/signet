@@ -237,6 +237,16 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
   }, [isReady, processManifest]);
 
+  const setTokenVisibility = useCallback((id: string, is_hidden: boolean, isMJ: boolean) => {
+    if (boardRef.current) {
+      boardRef.current.setTokenVisibility(id, is_hidden, isMJ);
+    }
+  }, []);
+
+  const getTokenVisibility = useCallback((id: string) => {
+    return boardRef.current ? boardRef.current.getTokenVisibility(id) : false;
+  }, []);
+
   // 1. Initialisation de Pixi (Une seule fois)
   useEffect(() => {
     const container = containerRef.current;
@@ -463,5 +473,5 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     return () => window.removeEventListener('ZOOM_TO_TOKEN', handleZoom as EventListener);
   }, []);
 
-  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick };
+  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick, setTokenVisibility, getTokenVisibility };
 }

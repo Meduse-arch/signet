@@ -10,7 +10,7 @@ import { BrowserImageCompressor } from '../../services/browser-image-compressor'
 import { MapTransitionOverlay } from './MapTransitionOverlay';
 import { assetSyncService } from '../../services/asset-sync.service';
 import { useCharactersStore } from '../../store/characters';
-import { EyeOff, Link, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Link, Trash2 } from 'lucide-react';
 
 
 export interface MapItem {
@@ -31,7 +31,7 @@ interface BoardCanvasProps {
 
 export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, characters }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
+  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick, setTokenVisibility, getTokenVisibility } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
   const { isHost } = usePeersStore();
   const { onData, broadcast, sendTo } = usePeer();
   const { user } = useAuthStore();
@@ -45,10 +45,10 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
   const lastPreparedMapRef = useRef<string>('');
 
   const isExternalMap = window.location.href.includes('/external/map');
-  const { controlledCharacterId } = useCharactersStore();
+  const { controlledCharacterId, setPnjControle } = useCharactersStore();
   const currentCharacterId = controlledCharacterId;
 
-  const [mjMenu, setMjMenu] = useState<{ visible: boolean, x: number, y: number, tokenId: string }>({ visible: false, x: 0, y: 0, tokenId: '' });
+  const [mjMenu, setMjMenu] = useState<{ visible: boolean, x: number, y: number, tokenId: string, isHidden: boolean }>({ visible: false, x: 0, y: 0, tokenId: '', isHidden: false });
 
   // Reset local state when sessionId changes to prevent leakage
   useEffect(() => {
@@ -249,6 +249,10 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
             syncChannel.postMessage(data);
             syncChannel.close();
         }
+      } else if (data.type === 'TOKEN_VISIBILITY') {
+        const { id, is_hidden } = data.payload;
+        // On update l'affichage Pixi directement sans recharger tout le token
+        setTokenVisibility(id, is_hidden, !!isMJ);
       } else if (data.type === 'TOKEN_REMOVE') {
         if (!isHost) {
           removeToken(data.payload.id);
@@ -402,14 +406,15 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
   useEffect(() => {
     if (setOnTokenRightClick && isMJ) {
       setOnTokenRightClick(() => (tokenId: string, x: number, y: number) => {
-        setMjMenu({ visible: true, x, y, tokenId });
+        const isHidden = getTokenVisibility(tokenId);
+        setMjMenu({ visible: true, x, y, tokenId, isHidden });
       });
     }
-  }, [setOnTokenRightClick, isMJ]);
+  }, [setOnTokenRightClick, isMJ, getTokenVisibility]);
 
-  const closeMjMenu = (e: React.PointerEvent) => {
+  const closeMjMenu = (e?: any) => {
     // Ne pas fermer le menu si on fait un clic droit, car c'est ce qui l'ouvre !
-    if (e.button === 2) return;
+    if (e?.button === 2) return;
     setMjMenu(prev => ({ ...prev, visible: false }));
   };
 
@@ -435,23 +440,20 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
           onPointerDown={(e) => e.stopPropagation()}
         >
           <button 
-            className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-all group relative"
+            className={`p-2 rounded-full transition-all group relative ${mjMenu.isHidden ? 'text-cyan-400 bg-cyan-400/20 shadow-[0_0_10px_rgba(34,211,238,0.5)]' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
             onClick={() => {
-              const token = characters.find(c => c.id === mjMenu.tokenId);
-              if (token) {
-                 addToken({
-                    id: token.id,
-                    name: token.name,
-                    x: NaN, y: NaN,
-                    is_hidden: true,
-                    isOwned: false,
-                    isMJ: !!isMJ
-                 });
+              const char = characters.find(c => c.id === mjMenu.tokenId);
+              if (char) {
+                 const newHidden = !mjMenu.isHidden;
+                 
+                 setTokenVisibility(mjMenu.tokenId, newHidden, !!isMJ);
+                 broadcast({ type: 'TOKEN_VISIBILITY', payload: { id: mjMenu.tokenId, is_hidden: newHidden } });
+                 setMjMenu(prev => ({ ...prev, isHidden: newHidden }));
               }
-              closeMjMenu();
+              // Ne pas fermer le menu pour laisser le MJ apprécier l'effet visuel !
             }}
           >
-            <EyeOff size={18} />
+            {mjMenu.isHidden ? <Eye size={18} /> : <EyeOff size={18} />}
           </button>
           
           <div className="w-px h-5 bg-white/10 mx-1" />
@@ -459,7 +461,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
           <button 
             className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-all"
             onClick={() => {
-               console.log("[HUD] Posséder: ", mjMenu.tokenId);
+               setPnjControle(sessionId, mjMenu.tokenId);
                closeMjMenu();
             }}
           >

@@ -72,13 +72,6 @@ export class TokenSprite extends Container {
     this.bgGraphics.zIndex = 0;
     this.addChild(this.bgGraphics);
 
-    if (this.isOwned) {
-        this.glowRing = new Graphics();
-        this.glowRing.circle(0, 0, 24).stroke({ color: 0x40E0D0, width: 3, alpha: 0.8 });
-        this.glowRing.zIndex = -1;
-        this.addChild(this.glowRing);
-    }
-
     // 2. Initiales (Immédiat)
     const initials = (data.name || '??').substring(0, 2).toUpperCase();
     this.idText = new Text({

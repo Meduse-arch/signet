@@ -299,7 +299,24 @@ export class BoardScene extends Container {
     }
   }
 
-  
+  setTokenVisibility(id: string, is_hidden: boolean, isMJ: boolean) {
+    const token = this.tokens.get(id);
+    if (token) {
+      token.is_hidden = is_hidden;
+      if (is_hidden) {
+        token.alpha = 0.4;
+        token.visible = isMJ;
+      } else {
+        token.alpha = 1;
+        token.visible = true;
+      }
+    }
+  }
+
+  getTokenVisibility(id: string): boolean {
+    return !!this.tokens.get(id)?.is_hidden;
+  }
+
   zoomToToken(id: string) {
     const token = this.tokens.get(id);
     if (!token) return;
