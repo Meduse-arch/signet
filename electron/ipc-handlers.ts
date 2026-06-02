@@ -148,6 +148,7 @@ function getSessionDb(inputId: string): Database.Database {
           turn_order INTEGER DEFAULT 0,
           is_active INTEGER DEFAULT 0,
           conditions TEXT DEFAULT '[]',
+          image_url TEXT,
           FOREIGN KEY(session_id) REFERENCES combat_sessions(session_id) ON DELETE CASCADE
         );
       `);
@@ -195,6 +196,11 @@ function getSessionDb(inputId: string): Database.Database {
       if (!itemTableInfo.some(col => col.name === 'modifiers')) {
         console.log(`[DB] Migration: Ajout de la colonne modifiers à la table items pour la session ${realSessionId}`);
         db.exec('ALTER TABLE items ADD COLUMN modifiers TEXT');
+      }
+
+      const combatActorsTableInfo = db.prepare("PRAGMA table_info(combat_actors)").all() as any[];
+      if (!combatActorsTableInfo.some(col => col.name === 'image_url')) {
+        db.exec('ALTER TABLE combat_actors ADD COLUMN image_url TEXT');
       }
       
       initializedDbs.add(dbPath);
@@ -719,8 +725,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       updateStmt.run(state.is_active ? 1 : 0, state.current_round, state.active_actor_id || null, sessionId);
       
       const insertActor = db.prepare(`
-        INSERT OR REPLACE INTO combat_actors (id, session_id, character_id, name, initiative, turn_order, is_active, conditions)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO combat_actors (id, session_id, character_id, name, initiative, turn_order, is_active, conditions, image_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
       const currentActorIds = state.actors.map((a: any) => a.id);
@@ -733,7 +739,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
 
       state.actors.forEach((a: any) => {
         insertActor.run(
-          a.id, sessionId, a.character_id, a.name, a.initiative || 0, a.turn_order || 0, a.is_active ? 1 : 0, JSON.stringify(a.conditions || [])
+          a.id, sessionId, a.character_id, a.name, a.initiative || 0, a.turn_order || 0, a.is_active ? 1 : 0, JSON.stringify(a.conditions || []), a.image_url || null
         );
       });
       return true;

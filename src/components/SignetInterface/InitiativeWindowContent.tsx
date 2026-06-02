@@ -33,7 +33,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
               const matchingChar = useCharactersStore.getState().characters.find(c => c.id === a.character_id);
               return {
                 ...a,
-                image_url: matchingChar ? matchingChar.image_url : null
+                image_url: matchingChar ? matchingChar.image_url : a.image_url
               };
             }),
             isInitiativeWindowOpen: true
