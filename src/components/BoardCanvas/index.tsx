@@ -31,7 +31,7 @@ interface BoardCanvasProps {
 
 export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, characters }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick, setTokenVisibility, getTokenVisibility } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
+  const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
   const { isHost } = usePeersStore();
   const { onData, broadcast, sendTo } = usePeer();
   const { user } = useAuthStore();
@@ -401,6 +401,13 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
 
     return () => syncChannel.close();
   }, [sessionId, isExternalMap, isReady, mapTokens, characters, addToken, removeToken, moveToken, clearTokens]);
+
+  // Dynamically update z-index for the controlled token
+  useEffect(() => {
+    if (isReady) {
+      setControlledToken(currentCharacterId);
+    }
+  }, [currentCharacterId, isReady, setControlledToken]);
 
   // Gestion du clic droit (HUD)
   useEffect(() => {

@@ -45,16 +45,10 @@ Intégrer une base de données de "Lore" ultra-rapide accessible sans casser le 
 - **Ambiance Multi-couches** : Jouer un fond sonore "Forêt" (oiseaux, vent) + une piste musicale par-dessus, gérables par des sliders séparés.
 - **Soundboard One-Shot** : Un panneau de boutons pour le MJ permettant de déclencher des bruitages instantanés ("Cri de loup", "Explosion", "Porte qui grince") envoyés en P2P sans délai.
 
-## 8. ♟️ Amélioration Avancée des Tokens
-Une refonte de la manipulation des jetons (tokens) sur la carte pour plus de fluidité et de contrôle :
-- **Mise en Évidence Personnelle** : Le token lié à l'utilisateur actuel est toujours rendu au-dessus des autres (premier plan), en plus de ressortir visuellement (lueur, contour ou saturation accentuée) dans sa propre vision.
-- **Déplacement Intelligent (Snap vs Libre)** : Par défaut, les tokens s'accrochent (snap) magnétiquement aux cases de la grille. En maintenant la touche `Maj` pendant le glisser-déposer, le déplacement devient totalement libre.
-- **Contrôle au Clavier (ZQSD)** : En cliquant sur un token pour le sélectionner, le joueur peut le déplacer de case en case de manière fluide en utilisant les touches de déplacement au clavier (ZQSD ou flèches).
-- **Gestion des Permissions** : Un joueur ne peut sélectionner et déplacer que le ou les tokens liés à ses propres personnages. Le MJ possède des droits absolus et peut déplacer n'importe quel token.
-- **Menu Contextuel MJ (HUD Token)** : Au clic sur un token par le MJ, un petit menu flottant (HUD) apparaît au-dessus avec des outils rapides :
-  - 👁️ **Caché** : Rend le token totalement invisible pour les joueurs, mais reste semi-transparent pour le MJ.
-  - 🔗 **Posséder** (Icône de chaîne) : Permet au MJ de se lier temporairement au personnage/monstre (pour modifier ses stats, ses jets ou parler en son nom).
-  - 🗑️ **Supprimer** : Retire instantanément le token de la carte.
+## 8. 🛠️ La "Boîte à Outils" Rapide (Toolbar)
+Une barre verticale très élégante contenant les outils d'interaction rapide sur la carte pour remplacer la liste des joueurs :
+- **Règle** : Pour mesurer facilement les distances en cases.
+- **Outil Ping** : Faire clignoter un endroit précis sur la carte pour attirer l'attention de tous les joueurs.
 
 
 ---

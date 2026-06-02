@@ -132,8 +132,15 @@ export class BoardScene extends Container {
 
     if (dx !== 0 || dy !== 0) {
       e.preventDefault();
-      const targetX = token.x + dx;
-      const targetY = token.y + dy;
+      let targetX = token.x + dx;
+      let targetY = token.y + dy;
+
+      if (!e.shiftKey && grid > 0) {
+        // Snap au centre de la case
+        targetX = Math.floor(targetX / grid) * grid + grid / 2;
+        targetY = Math.floor(targetY / grid) * grid + grid / 2;
+      }
+
       token.moveTo(targetX, targetY, true); // Immediate
       if (this.onTokenMove) {
           this.onTokenMove(token.id, targetX, targetY);
@@ -315,6 +322,12 @@ export class BoardScene extends Container {
 
   getTokenVisibility(id: string): boolean {
     return !!this.tokens.get(id)?.is_hidden;
+  }
+
+  setControlledToken(id: string | null) {
+    this.tokens.forEach((token, tokenId) => {
+      token.zIndex = (tokenId === id) ? 100 : 1;
+    });
   }
 
   zoomToToken(id: string) {

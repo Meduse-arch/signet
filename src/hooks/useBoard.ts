@@ -247,6 +247,12 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     return boardRef.current ? boardRef.current.getTokenVisibility(id) : false;
   }, []);
 
+  const setControlledToken = useCallback((id: string | null) => {
+    if (boardRef.current) {
+      boardRef.current.setControlledToken(id);
+    }
+  }, []);
+
   // 1. Initialisation de Pixi (Une seule fois)
   useEffect(() => {
     const container = containerRef.current;
@@ -473,5 +479,5 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     return () => window.removeEventListener('ZOOM_TO_TOKEN', handleZoom as EventListener);
   }, []);
 
-  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick, setTokenVisibility, getTokenVisibility };
+  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad: () => paintMapFromCache(currentMapIdRef.current, pendingManifest.current?.manifest), setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken };
 }

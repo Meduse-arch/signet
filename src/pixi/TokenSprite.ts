@@ -233,8 +233,8 @@ export class TokenSprite extends Container {
 
       if (!event.shiftKey && this.gridSize > 0) {
         // Snap au centre de la case
-        targetX = Math.round(targetX / this.gridSize) * this.gridSize;
-        targetY = Math.round(targetY / this.gridSize) * this.gridSize;
+        targetX = Math.floor(targetX / this.gridSize) * this.gridSize + this.gridSize / 2;
+        targetY = Math.floor(targetY / this.gridSize) * this.gridSize + this.gridSize / 2;
       }
 
       this.x = targetX;
