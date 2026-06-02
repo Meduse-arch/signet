@@ -4,6 +4,7 @@ interface AudioTrack {
   hash: string;
   howl: Howl;
   blobUrl: string;
+  soundId?: number;
 }
 
 class AudioService {
@@ -30,10 +31,11 @@ class AudioService {
   public playAmbiance(hash: string, audioData: ArrayBuffer, mime: string = 'audio/mp3', startTime: number = 0) {
     if (this.ambianceTrack && this.ambianceTrack.hash === hash) {
       if (!this.ambianceTrack.howl.playing()) {
-        this.ambianceTrack.howl.play();
-        this.ambianceTrack.howl.seek(startTime);
+        const id = this.ambianceTrack.howl.play();
+        this.ambianceTrack.soundId = id;
+        this.ambianceTrack.howl.seek(startTime, id);
       } else {
-        this.ambianceTrack.howl.seek(startTime);
+        this.ambianceTrack.howl.seek(startTime, this.ambianceTrack.soundId);
       }
       return;
     }
@@ -63,9 +65,10 @@ class AudioService {
     }
 
     this.ambianceTrack = newTrack;
-    newHowl.play();
-    newHowl.seek(startTime);
-    newHowl.fade(0, 1, 2000);
+    const id = newHowl.play();
+    newTrack.soundId = id;
+    newHowl.seek(startTime, id);
+    newHowl.fade(0, 1, 2000, id);
   }
 
   public pauseAmbiance() {
@@ -76,7 +79,7 @@ class AudioService {
 
   public getAmbiancePosition(): number {
     if (this.ambianceTrack && this.ambianceTrack.howl.playing()) {
-       return this.ambianceTrack.howl.seek() as number;
+       return this.ambianceTrack.howl.seek(this.ambianceTrack.soundId) as number;
     }
     return 0;
   }
@@ -86,6 +89,40 @@ class AudioService {
        return this.ambianceTrack.howl.duration();
     }
     return 0;
+  }
+
+  public seekAmbiance(position: number) {
+    if (this.ambianceTrack) {
+      console.log(`[AudioService] Seeking ambiance to ${position}s with id ${this.ambianceTrack.soundId}`);
+      this.ambianceTrack.howl.seek(position, this.ambianceTrack.soundId);
+      
+      // Fallback for Howler.js html5: true bug where seek is ignored during loading states
+      try {
+         const sounds = (this.ambianceTrack.howl as any)._sounds;
+         if (sounds && sounds.length > 0) {
+            const node = sounds[0]._node;
+            if (node && typeof node.currentTime !== 'undefined') {
+                node.currentTime = position;
+            }
+         }
+      } catch(e) {}
+      
+    } else {
+      console.warn(`[AudioService] Ignored seek to ${position}s because ambianceTrack is null`);
+    }
+  }
+
+  public setLoopAmbiance(loop: boolean) {
+    if (this.ambianceTrack) {
+      this.ambianceTrack.howl.loop(loop);
+    }
+  }
+
+  public getAmbianceLoop(): boolean {
+    if (this.ambianceTrack) {
+      return this.ambianceTrack.howl.loop();
+    }
+    return false;
   }
 
   public getAmbianceHash(): string | null {

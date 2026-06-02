@@ -141,7 +141,7 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
             </label>
           </div>
           
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar pr-1">
             {tracks.length === 0 && <span className="text-xs text-white/30 italic">Aucune musique</span>}
             {tracks.map(t => (
               <div key={t.hash} className="flex items-center justify-between bg-white/5 hover:bg-white/10 p-2 rounded transition-colors group">
@@ -176,7 +176,7 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
             </label>
           </div>
           
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
              {sfxs.length === 0 && <span className="text-xs text-white/30 italic col-span-2">Aucun son</span>}
              {sfxs.map(s => (
                <div key={s.hash} className="relative group">

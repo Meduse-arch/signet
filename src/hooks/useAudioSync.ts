@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { usePeer } from './usePeer';
 import { audioService } from '../services/audio.service';
 import { dbStorage } from '../services/db.storage';
@@ -9,22 +9,20 @@ export function useAudioSync() {
   const { broadcast, onData, sendTo, isHost } = usePeer();
   const [currentTrackTitle, setCurrentTrackTitle] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLooping, setIsLooping] = useState(true);
 
   useEffect(() => {
     const unsubData = onData(async (data, fromPeerId) => {
       // Joueur reçoit PLAY
       if (data.type === 'AUDIO_PLAY') {
-        const { hash, title, startTime, mime } = data.payload;
+        const { hash, title, position, mime } = data.payload;
         setCurrentTrackTitle(title);
         setIsPlaying(true);
         
         const asset = await dbStorage.getAsset(hash);
         if (asset) {
-          // Cache hit
-          const latency = (Date.now() - startTime) / 1000;
-          audioService.playAmbiance(hash, asset.data, asset.mime, latency);
+          audioService.playAmbiance(hash, asset.data, asset.mime, position || 0);
         } else {
-          // Cache miss
           sendTo(fromPeerId, { type: 'AUDIO_REQUEST', payload: { hash } });
         }
       } 
@@ -33,6 +31,21 @@ export function useAudioSync() {
       else if (data.type === 'AUDIO_PAUSE') {
         audioService.pauseAmbiance();
         setIsPlaying(false);
+      }
+      
+      // Joueur reçoit SEEK
+      else if (data.type === 'AUDIO_SEEK') {
+        if (!isHost) {
+          const { position } = data.payload;
+          audioService.seekAmbiance(position);
+        }
+      }
+      
+      // Joueur reçoit LOOP
+      else if (data.type === 'AUDIO_LOOP') {
+        const { loop } = data.payload;
+        audioService.setLoopAmbiance(loop);
+        setIsLooping(loop);
       }
       
       // Joueur reçoit DELETE
@@ -52,7 +65,7 @@ export function useAudioSync() {
         if (!isHost) {
           dbStorage.getAsset(hash).then(asset => {
             if (!asset) {
-              sendTo(session?.hostPeerId || '', { 
+              sendTo(fromPeerId, { 
                 type: isSfx ? 'AUDIO_REQUEST_SFX' : 'AUDIO_REQUEST', 
                 payload: { hash } 
               });
@@ -108,8 +121,7 @@ export function useAudioSync() {
         // On joue si c'est la piste en cours
         const currentHash = audioService.getAmbianceHash();
         if (!currentHash || currentHash !== hash) {
-            // On a reçu la piste, on suppose qu'elle doit être jouée.
-            audioService.playAmbiance(hash, data, 'audio/mp3', 0); // Latence brute ici car on n'a plus le startTime initial facilement
+            audioService.playAmbiance(hash, data, 'audio/mp3', 0);
             setIsPlaying(true);
         }
       } else if (chunkId.startsWith('sfx_')) {
@@ -131,6 +143,8 @@ export function useAudioSync() {
     };
   }, [onData, sendTo, isHost]);
 
+  // Plus de Heartbeat, on se repose sur la synchro NTP initiale
+
   const playAmbiance = async (hash: string, title: string, fileData?: ArrayBuffer, mime?: string) => {
     if (!isHost) return;
     
@@ -145,10 +159,8 @@ export function useAudioSync() {
     setCurrentTrackTitle(title);
     setIsPlaying(true);
     
-    const startTime = Date.now();
     audioService.playAmbiance(hash, asset.data, asset.mime, 0);
-    
-    broadcast({ type: 'AUDIO_PLAY', payload: { hash, title, startTime, mime: asset.mime } });
+    broadcast({ type: 'AUDIO_PLAY', payload: { hash, title, position: 0, mime: asset.mime } });
   };
 
   const pauseAmbiance = () => {
@@ -183,13 +195,30 @@ export function useAudioSync() {
     broadcast({ type: 'AUDIO_PRELOAD', payload: { hash, isSfx } });
   };
 
+  const seekAudio = (position: number) => {
+    if (!isHost) return;
+    audioService.seekAmbiance(position);
+    broadcast({ type: 'AUDIO_SEEK', payload: { position } });
+  };
+
+  const toggleLoop = () => {
+    if (!isHost) return;
+    const newLoop = !isLooping;
+    setIsLooping(newLoop);
+    audioService.setLoopAmbiance(newLoop);
+    broadcast({ type: 'AUDIO_LOOP', payload: { loop: newLoop } });
+  };
+
   return {
     playAmbiance,
     pauseAmbiance,
     playSFX,
     deleteAudio,
     preloadAudio,
+    seekAudio,
+    toggleLoop,
     currentTrackTitle,
-    isPlaying
+    isPlaying,
+    isLooping
   };
 }

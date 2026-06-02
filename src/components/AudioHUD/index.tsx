@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Music } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Music, Repeat } from 'lucide-react';
 import { useAudioSync } from '../../hooks/useAudioSync';
 import { useAuthStore } from '../../store/auth';
 import { audioService } from '../../services/audio.service';
@@ -21,15 +21,18 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
   
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (!audioSync.isPlaying) return;
     const interval = setInterval(() => {
-      setPosition(audioService.getAmbiancePosition());
-      setDuration(audioService.getAmbianceDuration());
+      if (!isDragging) {
+        setPosition(audioService.getAmbiancePosition());
+        setDuration(audioService.getAmbianceDuration());
+      }
     }, 1000);
     return () => clearInterval(interval);
-  }, [audioSync.isPlaying]);
+  }, [audioSync.isPlaying, isDragging]);
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
@@ -85,13 +88,22 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
           {/* Center: Play/Pause & Title */}
           <div className="flex flex-col items-center flex-[2]">
             {isMJ ? (
-              <button 
-                onClick={() => audioSync.isPlaying ? audioSync.pauseAmbiance() : (audioSync.currentTrackTitle && audioSync.playAmbiance(audioService.getAmbianceHash()!, audioSync.currentTrackTitle))}
-                disabled={!audioSync.currentTrackTitle}
-                className="text-white hover:text-gold-DEFAULT hover:scale-110 transition-all disabled:opacity-30 disabled:hover:text-white disabled:hover:scale-100"
-              >
-                {audioSync.isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-              </button>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => audioSync.isPlaying ? audioSync.pauseAmbiance() : (audioSync.currentTrackTitle && audioSync.playAmbiance(audioService.getAmbianceHash()!, audioSync.currentTrackTitle))}
+                  disabled={!audioSync.currentTrackTitle}
+                  className="text-white hover:text-gold-DEFAULT hover:scale-110 transition-all disabled:opacity-30 disabled:hover:text-white disabled:hover:scale-100"
+                >
+                  {audioSync.isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                </button>
+                <button
+                  onClick={audioSync.toggleLoop}
+                  className={`transition-all ${audioSync.isLooping ? 'text-gold-DEFAULT drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'text-white/40 hover:text-white'}`}
+                  title="Boucler"
+                >
+                  <Repeat size={14} />
+                </button>
+              </div>
             ) : (
                <div className="text-gold-DEFAULT flex h-5 items-end gap-[2px]">
                  {audioSync.isPlaying ? (
@@ -133,11 +145,38 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
         <div className="flex items-center gap-3 w-full opacity-60 group-hover:opacity-100 transition-opacity">
           <span className="text-[10px] text-white/50 font-mono w-8 text-right">{formatTime(position)}</span>
           
-          <div className="flex-1 h-0.5 bg-white/20 rounded-full relative overflow-hidden group-hover:h-1 transition-all">
-            <div 
-              className="absolute top-0 left-0 h-full bg-white transition-all duration-1000 ease-linear shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-              style={{ width: `${duration > 0 ? (position / duration) * 100 : 0}%` }}
-            />
+          <div className="flex-1 flex items-center relative group-hover:h-2 h-1 transition-all">
+            {isMJ ? (
+              <input
+                type="range"
+                min="0"
+                max={duration || 100}
+                value={position}
+                onMouseDown={() => setIsDragging(true)}
+                onTouchStart={() => setIsDragging(true)}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setPosition(val);
+                }}
+                onMouseUp={(e) => {
+                  setIsDragging(false);
+                  const val = parseFloat((e.target as HTMLInputElement).value);
+                  audioSync.seekAudio(val);
+                }}
+                onTouchEnd={(e) => {
+                  setIsDragging(false);
+                  const val = parseFloat((e.target as HTMLInputElement).value);
+                  audioSync.seekAudio(val);
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+            ) : null}
+            <div className="w-full h-0.5 group-hover:h-1 bg-white/20 rounded-full overflow-hidden transition-all pointer-events-none">
+              <div 
+                className="h-full bg-white transition-all duration-1000 ease-linear shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                style={{ width: `${duration > 0 ? (position / duration) * 100 : 0}%` }}
+              />
+            </div>
           </div>
           
           <span className="text-[10px] text-white/50 font-mono w-8">{formatTime(duration)}</span>
