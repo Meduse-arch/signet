@@ -1,5 +1,6 @@
 import { Session, formatRelativeDate } from '../../services/session.service';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Icons } from '../ui/Icons';
+import { useTranslation } from 'react-i18next';
 
 interface SessionCardProps {
   session: Session;
@@ -11,6 +12,7 @@ interface SessionCardProps {
 }
 
 export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canEdit }: SessionCardProps) {
+  const { t } = useTranslation();
   return (
     <div
       onClick={onClick}
@@ -55,7 +57,7 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
               className="p-2 rounded-lg bg-[#0D0D0F]/80 backdrop-blur-md border border-white/10 text-gold-bright hover:bg-gold-DEFAULT hover:text-black transition-all"
               title="Modifier"
             >
-              <Pencil className="w-3.5 h-3.5" />
+              <Icons.Pencil className="w-3.5 h-3.5" />
             </button>
           )}
           {onDelete && (
@@ -65,9 +67,9 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
                 onDelete?.(e);
               }}
               className="p-2 rounded-lg bg-[#0D0D0F]/80 backdrop-blur-md border border-white/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"
-              title="Supprimer"
+              title={t('common.delete', 'Supprimer')}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Icons.Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
@@ -77,7 +79,7 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
         <div className="flex items-center gap-2 mb-2">
           {session.isSummoned && (
             <div className="px-1.5 py-0.5 rounded-md bg-gold-DEFAULT/10 border border-gold-DEFAULT/40">
-              <span className="text-[11px] font-black text-gold-bright uppercase tracking-widest">Invoquée</span>
+              <span className="text-[11px] font-black text-gold-bright uppercase tracking-widest">{t('session.summoned', 'Invoquée')}</span>
             </div>
           )}
           <h3 className="text-xs font-cinzel text-white/90 tracking-widest truncate group-hover:text-gold-bright transition-colors">
@@ -86,7 +88,7 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
         </div>
         
         <div className="flex justify-between items-center text-[11px] font-medium tracking-wider">
-          <span className="text-gold-muted uppercase opacity-70">{session.system || 'Arcane Inconnue'}</span>
+          <span className="text-gold-muted uppercase opacity-70">{session.system || t('common.unknownSystem', 'Arcane Inconnue')}</span>
           <span className="text-white/70 italic font-serif">
             {formatRelativeDate(session.lastPlayed)}
           </span>

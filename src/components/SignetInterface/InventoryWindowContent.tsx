@@ -10,6 +10,7 @@ import { ItemDetailContent } from './ItemDetailContent';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { ItemCreationModal } from './ItemCreationModal';
 import { AssetImage } from '../AssetImage';
+import { useTranslation } from 'react-i18next';
 
 interface InventoryWindowContentProps {
   sessionId: string;
@@ -26,6 +27,7 @@ const CATEGORY_ICONS: Record<string, any> = {
 };
 
 export function InventoryWindowContent({ sessionId, variant = 'default' }: InventoryWindowContentProps) {
+  const { t } = useTranslation();
   const user = useAuthStore(state => state.user);
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   const { characters, controlledCharacterId, addOrUpdateCharacter } = useCharactersStore();
@@ -170,7 +172,10 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
   };
 
   const handleRemoveFromInventory = async (item: any) => {
-    if (!character || !isMJ || !window.confirm(`Détruire ${item.isStack ? 'tous les exemplaires de ' : ''}${item.name} ?`)) return;
+    const confirmMessage = item.isStack 
+        ? t('context.destroyAll', `Détruire tous les exemplaires de ${item.name} ?`, { name: item.name })
+        : t('context.destroyOne', `Détruire ${item.name} ?`, { name: item.name });
+    if (!character || !isMJ || !window.confirm(confirmMessage)) return;
 
     const updatedChar = {
       ...character,
@@ -188,7 +193,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
   };
 
   const handleDeleteForgeItem = async (id: string) => {
-    if (!isMJ || !window.confirm("Supprimer cet artefact de la forge ?")) return;
+    if (!isMJ || !window.confirm(t('context.deleteArtifact', "Supprimer cet artefact de la forge ?"))) return;
     await removeItem(sessionId, id);
   };
 
@@ -273,7 +278,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-DEFAULT/40" />
                 <input 
                 type="text" 
-                placeholder="RECHERCHER..."
+                placeholder={t('common.searchPlaceholder', 'Rechercher...').toUpperCase()}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-xl py-2 pl-9 pr-3 text-[11px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/40 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
@@ -331,7 +336,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); handleUseItem(item); }}
                                         className="p-1.5 rounded-lg bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all"
-                                        title="Utiliser"
+                                        title={t('common.use', "Utiliser")}
                                     >
                                         <Zap size={10} />
                                     </button>
@@ -343,7 +348,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                                             ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/40' 
                                             : 'bg-gold-DEFAULT text-black group-hover:bg-gold-bright transition-colors'
                                         }`}
-                                        title={item.equipped ? "Déséquiper" : "Équiper"}
+                                        title={item.equipped ? t('common.unequip', "Déséquiper") : t('common.equip', "Équiper")}
                                     >
                                         <Shield size={10} />
                                     </button>
@@ -354,7 +359,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                             <button 
                                 onClick={(e) => { e.stopPropagation(); setSelectedItem(item, false); }}
                                 className="p-1.5 rounded-lg text-white/60 hover:text-gold-bright hover:bg-white/5 transition-all opacity-30 group-hover:opacity-100"
-                                title="Voir les détails"
+                                title={t('common.seeDetails', "Voir les détails")}
                             >
                                 <ChevronRight size={14} />
                             </button>
@@ -365,7 +370,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); handleRemoveFromInventory(item); }}
                                         className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
-                                        title="Supprimer"
+                                        title={t('common.delete', "Supprimer")}
                                     >
                                         <Trash2 size={10} />
                                     </button>
@@ -383,7 +388,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                 {groupedInventory.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 opacity-10 grayscale">
                     <Package size={32} className="mb-2" />
-                    <span className="text-xs font-cinzel tracking-widest italic">VIDE...</span>
+                    <span className="text-xs font-cinzel tracking-widest italic">{t('common.empty', 'VIDE...')}</span>
                     </div>
                 )}
                 </>
@@ -427,7 +432,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handleGiveItemToCharacter(item); }}
                                             className="p-1.5 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-all"
-                                            title="Offrir"
+                                            title={t('common.give', "Offrir")}
                                         >
                                             <Plus size={10} />
                                         </button>
@@ -435,14 +440,14 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); handleEditForgeItem(item); }}
                                         className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all"
-                                        title="Modifier"
+                                        title={t('common.edit', "Modifier")}
                                     >
                                         <PenTool size={10} />
                                     </button>
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); handleDeleteForgeItem(item.id); }}
                                         className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
-                                        title="Supprimer"
+                                        title={t('common.delete', "Supprimer")}
                                     >
                                         <Trash2 size={10} />
                                     </button>
@@ -453,7 +458,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
                             <button 
                                 onClick={(e) => { e.stopPropagation(); setSelectedItem(item, false); }}
                                 className="p-1.5 rounded-lg text-white/60 hover:text-gold-bright hover:bg-white/5 transition-all opacity-30 group-hover:opacity-100"
-                                title="Voir les détails"
+                                title={t('common.seeDetails', "Voir les détails")}
                             >
                                 <ChevronRight size={14} />
                             </button>
@@ -472,7 +477,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
             {selectedItem ? (
               <div className="h-full flex flex-col animate-in slide-in-from-right-4 duration-500 relative">
                  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
-                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails du Vestige</span>
+                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">{t('context.itemDetails', 'Détails du Vestige')}</span>
                     <button onClick={() => setSelectedItem(null)} className="p-1 rounded hover:bg-white/5 text-white/60 hover:text-white transition-colors">
                         <X size={14} />
                     </button>
@@ -493,7 +498,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
             ) : (
               <div className="h-full flex flex-col items-center justify-center opacity-10 pointer-events-none">
                  <Sparkles size={64} className="mb-4 text-gold-DEFAULT" />
-                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">Codex des Vestiges</span>
+                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">{t('context.itemCodex', 'Codex des Vestiges')}</span>
               </div>
             )}
           </div>

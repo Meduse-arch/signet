@@ -1,3 +1,42 @@
+/* ============================================
+   SIGNET — Design Tokens (Variables CSS)
+   Modifiez les couleurs ici pour changer 
+   tout le thème de l'application.
+   ============================================ */
+:root {
+  /* --- Surfaces --- */
+  --color-surface:          #0D0D0F;
+  --color-surface-card:     #16161C;
+  --color-surface-sidebar:  #111115;
+  --color-surface-glass:    rgba(255, 255, 255, 0.04);
+  --color-surface-deep:     #050507;
+
+  /* --- Or (Gold) --- */
+  --color-gold-dim:          #6a5d3a;
+  --color-gold-muted:        #8a7040;
+  --color-gold-default:      #D4A017;
+  --color-gold-bright:       #F0C040;
+  --color-gold-glow:         #B8860B;
+  --color-gold-border:       rgba(212, 160, 23, 0.18);
+  --color-gold-border-hover: rgba(212, 160, 23, 0.45);
+
+  /* --- Argent (Silver) --- */
+  --color-silver-dim:          #5a5f6a;
+  --color-silver-muted:        #7a8090;
+  --color-silver-default:      #9DA8B8;
+  --color-silver-bright:       #C8D4E0;
+  --color-silver-glow:         #7890A8;
+  --color-silver-border:       rgba(157, 168, 184, 0.18);
+  --color-silver-border-hover: rgba(157, 168, 184, 0.40);
+
+  /* --- Bordures --- */
+  --color-border-subtle: #1e1e24;
+  --color-border-dark:   #252530;
+
+  /* --- Texte principal --- */
+  --color-text-primary: #e8d5a0;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

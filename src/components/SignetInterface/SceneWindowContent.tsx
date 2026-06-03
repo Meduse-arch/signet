@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { Plus, Check, X, Eye, EyeOff, Settings2, Trash2 } from 'lucide-react';
 import { MapItem } from '../BoardCanvas';
 import { SecurityLevel, useAuthStore } from '../../store/auth';
+import { useTranslation } from 'react-i18next';
 
 interface SceneWindowContentProps {
   sessionId: string;
@@ -15,6 +16,7 @@ interface SceneWindowContentProps {
 }
 
 export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelectScene, onAddScene, onUpdateScene, onToggleHide, onRemoveScene }: SceneWindowContentProps) {
+  const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -103,9 +105,9 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
                 </span>
                 <div className="flex gap-2 items-center">
                     {isMJ && scene.is_hidden && scene.id !== 'initial-scene' && (
-                        <span className="text-[11px] font-cinzel font-black text-red-500 uppercase tracking-widest">Cachée</span>
+                        <span className="text-[11px] font-cinzel font-black text-red-500 uppercase tracking-widest">{t('context.sceneHidden', 'Cachée')}</span>
                     )}
-                    <span className="text-[11px] font-cinzel font-black text-white/50 uppercase tracking-widest">Grille: {scene.grid_size || 50}px</span>
+                    <span className="text-[11px] font-cinzel font-black text-white/50 uppercase tracking-widest">{t('context.gridSize', 'Grille:')} {scene.grid_size || 50}px</span>
                 </div>
               </div>
             </div>
@@ -119,7 +121,7 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
                         setEditingId(scene.id);
                     }}
                     className="p-2 rounded-full bg-black/40 border border-white/10 text-white/60 hover:text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
-                    title="Modifier les paramètres"
+                    title={t('context.editSettings', "Modifier les paramètres")}
                 >
                     <Settings2 size={14} />
                 </button>
@@ -131,19 +133,19 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
                             onToggleHide?.(scene.id, !scene.is_hidden);
                         }}
                         className="p-2 rounded-full bg-black/40 border border-white/10 text-white/60 hover:text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
-                        title={scene.is_hidden ? "Rendre visible" : "Cacher aux joueurs"}
+                        title={scene.is_hidden ? t('context.makeVisible', "Rendre visible") : t('context.hideFromPlayers', "Cacher aux joueurs")}
                     >
                         {scene.is_hidden ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (window.confirm('Supprimer définitivement ce plan ?')) {
+                            if (window.confirm(t('context.confirmDeleteScene', 'Supprimer définitivement ce plan ?'))) {
                                 onRemoveScene?.(scene.id);
                             }
                         }}
                         className="p-2 rounded-full bg-black/40 border border-white/10 text-white/60 hover:text-red-500 hover:border-red-500/40 transition-all"
-                        title="Supprimer le plan"
+                        title={t('context.deleteScene', "Supprimer le plan")}
                     >
                         <Trash2 size={14} />
                     </button>
@@ -167,11 +169,11 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
       {(isAdding || editingId) && isMJ && (
         <form onSubmit={editingId ? handleUpdateSubmit : handleAddSubmit} className="p-3 rounded-lg border border-gold-DEFAULT/40 bg-[#0D0D0F]/80 space-y-3 animate-in fade-in zoom-in-95 duration-200">
             <h4 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-widest border-b border-white/5 pb-1">
-                {editingId ? "Paramètres du Plan" : "Nouveau Plan"}
+                {editingId ? t('context.sceneSettings', "Paramètres du Plan") : t('context.newScene', "Nouveau Plan")}
             </h4>
             <div className="grid grid-cols-2 gap-3">
                <div className="space-y-1 col-span-2">
-                  <label className="text-xs font-cinzel text-gold-muted uppercase tracking-widest">Nom du lieu</label>
+                  <label className="text-xs font-cinzel text-gold-muted uppercase tracking-widest">{t('context.locationName', "Nom du lieu")}</label>
                   <input 
                     autoFocus
                     type="text" 
@@ -182,7 +184,7 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
                   />
                </div>
                <div className="space-y-1 col-span-2">
-                  <label className="text-xs font-cinzel text-gold-muted uppercase tracking-widest">URL de l'image</label>
+                  <label className="text-xs font-cinzel text-gold-muted uppercase tracking-widest">{t('context.imageUrl', "URL de l'image")}</label>
                   <input 
                     type="text" 
                     value={newUrl}
@@ -192,7 +194,7 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
                   />
                </div>
                <div className="space-y-1 col-span-2">
-                  <label className="text-xs font-cinzel text-gold-muted uppercase tracking-widest">Taille de la Grille (Pixels)</label>
+                  <label className="text-xs font-cinzel text-gold-muted uppercase tracking-widest">{t('context.gridSizePixels', "Taille de la Grille (Pixels)")}</label>
                   <div className="flex items-center gap-3">
                     <input 
                         type="range"
@@ -213,14 +215,14 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
                  onClick={() => { setIsAdding(false); setEditingId(null); resetForm(); }}
                  className="flex-1 py-1.5 rounded bg-white/5 text-[11px] font-cinzel text-white/80 hover:bg-white/10"
                >
-                 ANNULER
+                 {t('common.cancel', "ANNULER").toUpperCase()}
                </button>
                <button 
                  type="submit"
                  disabled={!newName || !newUrl}
                  className="flex-1 py-1.5 rounded bg-gold-DEFAULT/20 text-[11px] font-cinzel text-gold-bright border border-gold-DEFAULT/30 hover:bg-gold-DEFAULT/30 disabled:opacity-50 disabled:cursor-not-allowed"
                >
-                 {editingId ? "APPLIQUER" : "SCELLER"}
+                 {editingId ? t('common.apply', "APPLIQUER").toUpperCase() : t('common.seal', "SCELLER").toUpperCase()}
                </button>
             </div>
         </form>
@@ -233,7 +235,7 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
           className="w-full py-3 rounded-lg border border-dashed border-gold-DEFAULT/30 bg-gold-DEFAULT/5 hover:bg-gold-DEFAULT/10 text-gold-DEFAULT drop-shadow-md hover:text-gold-bright transition-all flex items-center justify-center gap-2 group"
         >
           <Plus size={16} className="group-hover:rotate-90 transition-transform" />
-          <span className="text-xs font-cinzel font-black tracking-widest uppercase">Nouvelle Scène</span>
+          <span className="text-xs font-cinzel font-black tracking-widest uppercase">{t('context.newSceneBtn', "Nouvelle Scène")}</span>
         </button>
       )}
     </div>

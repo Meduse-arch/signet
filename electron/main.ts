@@ -2,6 +2,9 @@ import { app, BrowserWindow, session } from 'electron';
 import * as path from 'path';
 import { registerIpcHandlers } from './ipc-handlers';
 
+// ✅ Désactiver les avertissements de sécurité intempestifs d'Electron
+process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+
 // ✅ Désactive le masquage MDNS pour permettre le P2P en réseau local/loopback
 app.commandLine.appendSwitch('disable-features', 'WebRtcHideLocalIpsWithMdns');
 // ✅ Désactive globalement la sécurité web pour que les Web Workers (PixiJS) ignorent CORS

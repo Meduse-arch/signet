@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Image as ImageIcon, Plus, Grid, X, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface MapItem {
   id: string;
@@ -88,6 +89,7 @@ interface ModalProps {
 }
 
 function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: ModalProps) {
+  const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
@@ -109,8 +111,8 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
       <div className="relative w-full max-w-4xl bg-[#0D0D0F] border border-gold-DEFAULT/40 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
         <div className="p-8 border-b border-gold-DEFAULT/30 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-black text-gold-bright tracking-widest uppercase">Galerie des Cartographies</h2>
-            <p className="text-gold-DEFAULT drop-shadow-md/60 font-serif italic">Sélectionnez ou invoquez un nouveau royaume</p>
+            <h2 className="text-2xl font-black text-gold-bright tracking-widest uppercase">{t('modals.galleryTitle', 'Galerie des Cartographies')}</h2>
+            <p className="text-gold-DEFAULT drop-shadow-md/60 font-serif italic">{t('modals.gallerySubtitle', 'Sélectionnez ou invoquez un nouveau royaume')}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors">
             <X className="w-6 h-6 text-gold-DEFAULT drop-shadow-md" />
@@ -125,7 +127,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
               className="aspect-video rounded-2xl border-2 border-dashed border-gold-DEFAULT/40 hover:border-gold-DEFAULT/50 hover:bg-gold-DEFAULT/5 transition-all flex flex-col items-center justify-center gap-3 group"
             >
               <Plus className="w-8 h-8 text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright transition-colors" />
-              <span className="text-xs font-cinzel font-bold text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright tracking-widest">NOUVEL ANCRAGE</span>
+              <span className="text-xs font-cinzel font-bold text-gold-DEFAULT drop-shadow-md group-hover:text-gold-bright tracking-widest">{t('modals.newMap', 'NOUVEL ANCRAGE')}</span>
             </button>
 
             {maps.map((map) => (
@@ -144,7 +146,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
                 <div className="absolute inset-0 p-4 flex flex-col justify-end">
                   <span className="text-xs font-cinzel font-bold text-white tracking-widest uppercase truncate">{map.name}</span>
                   {currentMapId === map.id && (
-                    <span className="text-xs text-gold-bright font-black tracking-[0.2em] mt-1">CARTE ACTIVE</span>
+                    <span className="text-xs text-gold-bright font-black tracking-[0.2em] mt-1">{t('modals.activeMap', 'CARTE ACTIVE')}</span>
                   )}
                 </div>
 
@@ -167,11 +169,11 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
             onSubmit={handleSubmit}
             className="relative w-full max-w-md bg-[#16161A] border border-gold-DEFAULT/30 rounded-3xl p-8 shadow-2xl space-y-6"
           >
-            <h3 className="text-lg font-black text-gold-bright tracking-widest uppercase text-center">Ajouter une Carte / Image</h3>
+            <h3 className="text-lg font-black text-gold-bright tracking-widest uppercase text-center">{t('modals.addMap', 'Ajouter une Carte / Image')}</h3>
             
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">Nom du Lieu</label>
+                <label className="text-xs font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">{t('modals.namePlace', 'Nom du Lieu')}</label>
                 <input 
                   autoFocus
                   value={newName}
@@ -181,7 +183,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">URL de l'image</label>
+                <label className="text-xs font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">{t('modals.imageUrl', "URL de l'image")}</label>
                 <input 
                   value={newUrl}
                   onChange={e => setNewUrl(e.target.value)}
@@ -197,7 +199,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
                 onClick={() => setIsAdding(false)}
                 className="flex-1 px-4 py-3 rounded-xl border border-white/10 text-xs font-cinzel font-bold hover:bg-white/5 transition-all"
               >
-                ANNULER
+                {t('common.cancel', 'ANNULER')}
               </button>
               <button 
                 type="submit"
@@ -208,7 +210,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
                     : 'bg-gold-DEFAULT text-black border-gold-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]'
                 }`}
               >
-                Ajouter la carte
+                {t('common.add', 'Ajouter la carte')}
               </button>
             </div>
           </form>

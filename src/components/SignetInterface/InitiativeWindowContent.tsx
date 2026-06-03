@@ -6,8 +6,10 @@ import { usePeersStore } from '../../store/peers';
 import { useMapStore } from '../../store/map';
 import { AssetImage } from '../AssetImage';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
+import { useTranslation } from 'react-i18next';
 
 export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) => {
+  const { t } = useTranslation();
   const { isHost } = usePeersStore();
   const { user } = useAuthStore();
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
@@ -105,7 +107,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
                 total: roll,
                 bonus: 0,
                 diceString: `1d20`,
-                label: `Initiative`,
+                label: t('context.initiative', 'Initiative'),
                 color: '#d4af37',
                 secret: false,
                 timestamp: Date.now(),
@@ -244,12 +246,12 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
     return (
       <div className="flex flex-col h-full bg-[#0D0D0F] text-gray-300 p-4 font-inter text-sm">
         <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
-          <h2 className="font-cinzel text-xl text-gold-DEFAULT tracking-wider">Ordre de Combat</h2>
+          <h2 className="font-cinzel text-xl text-gold-DEFAULT tracking-wider">{t('context.combatOrder', 'Ordre de Combat')}</h2>
         </div>
 
         <div className="mb-4 flex items-center justify-between text-xs text-gray-400 uppercase tracking-widest">
-          <span>Statut : {isActive ? <span className="text-green-400 font-bold">En cours</span> : 'Attente'}</span>
-          {isActive && <span className="font-bold text-gold-bright">Round {currentRound}</span>}
+          <span>{t('context.status', 'Statut :')} {isActive ? <span className="text-green-400 font-bold">{t('context.inProgress', 'En cours')}</span> : t('context.waiting', 'Attente')}</span>
+          {isActive && <span className="font-bold text-gold-bright">{t('context.round', 'Round')} {currentRound}</span>}
         </div>
 
         <div className="flex-1 overflow-y-auto mb-4 bg-black/20 rounded-xl p-2 border border-white/5 shadow-inner">
@@ -270,7 +272,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
               </div>
             </div>
           ))}
-          {actors.length === 0 && <div className="text-center text-gray-600 mt-8 font-cinzel tracking-wider text-xs">Aucun combattant</div>}
+          {actors.length === 0 && <div className="text-center text-gray-600 mt-8 font-cinzel tracking-wider text-xs">{t('context.noFighter', 'Aucun combattant')}</div>}
         </div>
       </div>
     );
@@ -279,27 +281,27 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
   return (
     <div className="flex flex-col h-full bg-[#0D0D0F] text-gray-300 p-4 font-inter text-sm">
       <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
-        <h2 className="font-cinzel text-xl text-gold-DEFAULT tracking-wider">Gestion des Combats</h2>
+        <h2 className="font-cinzel text-xl text-gold-DEFAULT tracking-wider">{t('context.combatManagement', 'Gestion des Combats')}</h2>
         <div className="flex gap-2">
           {!isActive ? (
-            <button onClick={handleStart} className="px-4 py-1.5 bg-green-500/10 text-green-400 border border-green-500/30 rounded-lg hover:bg-green-500/20 transition-all font-semibold uppercase text-xs tracking-wider">Lancer</button>
+            <button onClick={handleStart} className="px-4 py-1.5 bg-green-500/10 text-green-400 border border-green-500/30 rounded-lg hover:bg-green-500/20 transition-all font-semibold uppercase text-xs tracking-wider">{t('context.startCombat', 'Lancer')}</button>
           ) : (
-            <button onClick={handleEnd} className="px-4 py-1.5 bg-red-500/10 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/20 transition-all font-semibold uppercase text-xs tracking-wider">Terminer</button>
+            <button onClick={handleEnd} className="px-4 py-1.5 bg-red-500/10 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/20 transition-all font-semibold uppercase text-xs tracking-wider">{t('context.endCombat', 'Terminer')}</button>
           )}
         </div>
       </div>
 
       <div className="mb-4 flex items-center justify-between text-xs text-gray-400 uppercase tracking-widest">
-        <span>Statut : {isActive ? <span className="text-green-400 font-bold">En cours</span> : 'Attente'}</span>
-        {isActive && <span className="font-bold text-gold-bright">Round {currentRound}</span>}
+        <span>{t('context.status', 'Statut :')} {isActive ? <span className="text-green-400 font-bold">{t('context.inProgress', 'En cours')}</span> : t('context.waiting', 'Attente')}</span>
+        {isActive && <span className="font-bold text-gold-bright">{t('context.round', 'Round')} {currentRound}</span>}
       </div>
 
       <div className="flex gap-2 mb-6">
         <select onChange={(e) => { if(e.target.value) handleAddCharacter(e.target.value); e.target.value=''; }} className="bg-black/40 border border-white/10 rounded-lg p-2 flex-1 outline-none focus:border-gold-DEFAULT/50 text-gray-300">
-          <option value="">+ Ajouter un Personnage / Monstre...</option>
+          <option value="">{t('context.addActor', '+ Ajouter un Personnage / Monstre...')}</option>
           {characters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <button onClick={handleAddAllCharacters} className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-xs font-semibold whitespace-nowrap">Tout Ajouter</button>
+        <button onClick={handleAddAllCharacters} className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-xs font-semibold whitespace-nowrap">{t('context.addAll', 'Tout Ajouter')}</button>
       </div>
 
       <div className="flex-1 overflow-y-auto mb-4 bg-black/20 rounded-xl p-2 border border-white/5 shadow-inner">
@@ -322,7 +324,7 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
             <div className="flex-1 min-w-0 flex items-center justify-between pr-2">
               <div className={`font-bold truncate ${actor.id === activeActorId ? 'text-gold-bright' : 'text-gray-300'}`}>{actor.name}</div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 tracking-wider">Init:</span>
+                <span className="text-xs text-gray-500 tracking-wider">{t('context.init', 'Init:')}</span>
                 <input 
                   type="number" 
                   value={actor.initiative} 
@@ -335,12 +337,12 @@ export const InitiativeWindowContent = ({ sessionId }: { sessionId: string }) =>
             <button onClick={() => { removeActor(actor.id); saveAndBroadcast(); }} className="text-gray-600 hover:text-red-400 px-2 transition-colors">✕</button>
           </div>
         ))}
-        {actors.length === 0 && <div className="text-center text-gray-600 mt-8 font-cinzel tracking-wider text-xs">Aucun combattant</div>}
+        {actors.length === 0 && <div className="text-center text-gray-600 mt-8 font-cinzel tracking-wider text-xs">{t('context.noFighter', 'Aucun combattant')}</div>}
       </div>
 
       {isActive && (
         <button onClick={handleNextTurn} className="w-full py-4 mt-auto bg-gradient-to-r from-gold-DEFAULT/10 via-gold-DEFAULT/20 to-gold-DEFAULT/10 text-gold-bright border border-gold-DEFAULT/50 rounded-xl hover:from-gold-DEFAULT/20 hover:via-gold-DEFAULT/30 hover:to-gold-DEFAULT/20 transition-all font-cinzel font-bold tracking-[0.2em] uppercase shadow-[0_0_20px_rgba(240,192,64,0.15)] flex justify-center items-center gap-2">
-          Tour Suivant <span>➔</span>
+          {t('context.nextTurn', 'Tour Suivant')} <span>➔</span>
         </button>
       )}
     </div>

@@ -3,6 +3,7 @@ import { useCharactersStore } from '../../store/characters';
 import { X, User, Plus, Minus } from 'lucide-react';
 import { ModalContainer } from '../ModalContainer';
 import { AssetImage } from '../AssetImage';
+import { useTranslation } from 'react-i18next';
 
 interface SelectCharacterModalProps {
   onClose: () => void;
@@ -11,6 +12,7 @@ interface SelectCharacterModalProps {
 }
 
 export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectCharacterModalProps) {
+  const { t } = useTranslation();
   const characters = useCharactersStore(state => state.characters);
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -24,7 +26,7 @@ export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectChar
 
   return (
     <div className="fixed inset-0 z-[250]">
-      <ModalContainer onClose={onClose} title={`Transférer ${itemName}`}>
+      <ModalContainer onClose={onClose} title={t('context.transferItem', 'Transférer {{itemName}}', { itemName })}>
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
             {characters.map(char => (
@@ -46,17 +48,22 @@ export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectChar
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-cinzel font-black text-white truncate uppercase tracking-widest">{char.name}</div>
-                  <div className="text-[11px] text-white/60 italic truncate">{char.type || 'Joueur'}</div>
+                  <div className="text-[11px] text-white/60 italic truncate">{char.type ? (
+                    char.type === 'Joueur' ? t('context.player', "Joueur") :
+                    char.type === 'PNJ' ? t('context.npc', "PNJ") :
+                    char.type === 'Monstre' ? t('context.monster', "Monstre") :
+                    char.type === 'Boss' ? t('context.boss', "Boss") : char.type
+                  ) : t('context.player', 'Joueur')}</div>
                 </div>
               </button>
             ))}
             {characters.length === 0 && (
-              <div className="text-center py-4 text-white/50 text-xs italic font-serif">Aucun voyageur dans l'archive.</div>
+              <div className="text-center py-4 text-white/50 text-xs italic font-serif">{t('context.noTravelerInArchive', "Aucun voyageur dans l'archive.")}</div>
             )}
           </div>
 
           <div className="flex flex-col items-center border-t border-gold-DEFAULT/20 pt-6">
-            <label className="block text-xs font-cinzel text-gold-DEFAULT/70 uppercase tracking-widest text-center mb-3">Quantité à transférer</label>
+            <label className="block text-xs font-cinzel text-gold-DEFAULT/70 uppercase tracking-widest text-center mb-3">{t('context.transferQuantity', "Quantité à transférer")}</label>
             <div className="flex items-center justify-center gap-4 mb-6">
               <button 
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -82,7 +89,7 @@ export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectChar
                 : 'bg-white/5 text-white/60 cursor-not-allowed'
               }`}
             >
-              Transférer l'Artefact
+              {t('context.transferArtifact', "Transférer l'Artefact")}
             </button>
           </div>
         </div>

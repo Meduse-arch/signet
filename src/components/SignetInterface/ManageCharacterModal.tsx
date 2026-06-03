@@ -13,6 +13,7 @@ import { useAssetUrl } from '../../hooks/useAssetUrl';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { useMapStore } from '../../store/map';
 import { AssetImage } from '../AssetImage';
+import { useTranslation } from 'react-i18next';
 
 interface ManageCharacterModalProps {
   sessionId: string;
@@ -30,6 +31,7 @@ const ENTITY_TYPES = [
 ];
 
 export function ManageCharacterModal({ sessionId, characterId, onClose }: ManageCharacterModalProps) {
+  const { t } = useTranslation();
   const { characters, addOrUpdateCharacter } = useCharactersStore();
   const { items } = useItemsStore();
   const { skills } = useSkillsStore();
@@ -283,12 +285,12 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 {editedChar.name}
               </h2>
               <div className="flex items-center gap-3 mt-0.5">
-                <span className="text-xs font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase">GÉRER L'ENTITÉ</span>
+                <span className="text-xs font-cinzel text-gold-DEFAULT/60 tracking-widest uppercase">{t('context.manageEntity', "GÉRER L'ENTITÉ")}</span>
                 <div className="w-1 h-1 rounded-full bg-gold-DEFAULT/20" />
                 <div className="flex items-center gap-1.5">
                     <div className={`w-1.5 h-1.5 rounded-full ${isTokenOnMap ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 opacity-50'}`} />
                     <span className={`text-xs font-cinzel font-black uppercase tracking-tighter ${isTokenOnMap ? 'text-green-400' : 'text-white/60'}`}>
-                        {isTokenOnMap ? 'Sur la carte' : 'Hors carte'}
+                        {isTokenOnMap ? t('context.onMap', 'Sur la carte') : t('context.offMap', 'Hors carte')}
                     </span>
                 </div>
               </div>
@@ -317,7 +319,12 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-cinzel text-xs font-black tracking-widest transition-all ${activeTab === tab.id ? 'bg-gold-DEFAULT text-black shadow-lg translate-x-1' : 'text-white/60 hover:text-white/60 hover:bg-white/5'}`}
               >
                 <tab.icon size={14} />
-                {tab.label}
+                {tab.id === 'profil' ? t('context.profile', "PROFIL") :
+                 tab.id === 'stats' ? t('context.attributes', "ATTRIBUTS") :
+                 tab.id === 'ressources' ? t('context.resources', "RESSOURCES") :
+                 tab.id === 'inventaire' ? t('context.inventory', "INVENTAIRE") :
+                 tab.id === 'competences' ? t('context.skills', "SKILLS") :
+                 tab.id === 'quetes' ? t('context.quests', "QUÊTES") : tab.label}
               </button>
             ))}
           </aside>
@@ -327,7 +334,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
-                     <label className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Appellation de l'Entité</label>
+                     <label className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">{t('context.entityName', "Appellation de l'Entité")}</label>
                      <input 
                        type="text" 
                        value={editedChar.name} 
@@ -336,16 +343,19 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                      />
                   </div>
                   <div className="space-y-4">
-                     <label className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Type d'Existence</label>
+                     <label className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">{t('context.entityType', "Type d'Existence")}</label>
                      <div className="grid grid-cols-2 gap-2">
-                        {ENTITY_TYPES.map(t => (
+                        {ENTITY_TYPES.map(entityType => (
                           <button
-                            key={t.id}
-                            onClick={() => { setEditedChar((p: any) => ({ ...p, type: t.id })); setHasChanges(true); }}
-                            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-[11px] font-cinzel font-black uppercase transition-all ${editedChar.type === t.id ? 'bg-gold-DEFAULT/10 border-gold-DEFAULT text-gold-bright shadow-lg' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30'}`}
+                            key={entityType.id}
+                            onClick={() => { setEditedChar((p: any) => ({ ...p, type: entityType.id })); setHasChanges(true); }}
+                            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-[11px] font-cinzel font-black uppercase transition-all ${editedChar.type === entityType.id ? 'bg-gold-DEFAULT/10 border-gold-DEFAULT text-gold-bright shadow-lg' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30'}`}
                           >
-                            <t.icon size={12} className={t.color} />
-                            {t.label}
+                            <entityType.icon size={12} className={entityType.color} />
+                            {entityType.id === 'Joueur' ? t('context.player', "Joueur") :
+                             entityType.id === 'PNJ' ? t('context.npc', "PNJ") :
+                             entityType.id === 'Monstre' ? t('context.monster', "Monstre") :
+                             entityType.id === 'Boss' ? t('context.boss', "Boss") : entityType.label}
                           </button>
                         ))}
                      </div>
@@ -353,7 +363,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">Illustration</label>
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest ml-1">{t('context.illustration', "Illustration")}</label>
                   <div className="flex gap-4">
                     <div className="w-16 h-16 rounded-2xl border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden shrink-0">
                         {previewUrl ? (
@@ -368,7 +378,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                 type="text" 
                                 value={editedChar.image_url || ''} 
                                 onChange={e => { setEditedChar((p: any) => ({ ...p, image_url: e.target.value })); setHasChanges(true); }}
-                                placeholder="URL ou asset://..."
+                                placeholder={t('context.urlOrAssetPlaceholder', "URL ou asset://...")}
                                 className="flex-1 bg-white/5 border border-gold-DEFAULT/20 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/60 focus:outline-none focus:border-gold-DEFAULT/50 transition-colors font-mono shadow-inner"
                             />
                             <button 
@@ -386,7 +396,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                                 onChange={handleFileUpload}
                             />
                         </div>
-                        <p className="text-[11px] font-cinzel text-white/60 uppercase tracking-widest px-1">Importez un portrait local (P2P)</p>
+                        <p className="text-[11px] font-cinzel text-white/60 uppercase tracking-widest px-1">{t('context.importLocalPortrait', "Importez un portrait local (P2P)")}</p>
                     </div>
                   </div>
                 </div>
@@ -445,13 +455,13 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 {!showForge ? (
                   <>
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Inventaire Actuel</h3>
+                      <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">{t('context.currentInventory', "Inventaire Actuel")}</h3>
                       <button 
                         onClick={() => setShowForge(true)}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-xs font-black uppercase tracking-widest group shadow-lg"
                       >
                         <Hammer size={14} className="group-hover:rotate-12 transition-transform" />
-                        Ouvrir la Forge
+                        {t('context.openForge', "Ouvrir la Forge")}
                       </button>
                     </div>
 
@@ -459,7 +469,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                       {groupedInventory.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20 opacity-40">
                           <Package size={48} className="mb-4 text-gold-DEFAULT" />
-                          <span className="font-cinzel text-xs uppercase tracking-widest">INVENTAIRE VIDE</span>
+                          <span className="font-cinzel text-xs uppercase tracking-widest">{t('context.emptyInventory', "INVENTAIRE VIDE")}</span>
                         </div>
                       ) : (
                         groupedInventory.map((item: any, i: number) => (
@@ -533,7 +543,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                         onClick={() => setShowForge(false)}
                         className="flex items-center gap-2 text-white/60 hover:text-gold-bright transition-colors text-xs font-cinzel font-black uppercase tracking-widest"
                       >
-                        <ArrowLeft size={14} /> Retour à l'Inventaire
+                        <ArrowLeft size={14} /> {t('context.backToInventory', "Retour à l'Inventaire")}
                       </button>
                       <div className="relative w-48">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-DEFAULT/40" />
@@ -541,7 +551,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                           type="text" 
                           value={searchForge}
                           onChange={e => setSearchForge(e.target.value)}
-                          placeholder="Rechercher..."
+                          placeholder={t('common.search', "Rechercher...")}
                           className="w-full bg-black/60 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-xs text-white focus:border-gold-DEFAULT/50 outline-none"
                         />
                       </div>
@@ -595,13 +605,13 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                 {!showQuestArchive ? (
                   <>
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">Quêtes Assignées</h3>
+                      <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/60 uppercase tracking-widest">{t('context.assignedQuests', "Quêtes Assignées")}</h3>
                       <button 
                         onClick={() => setShowQuestArchive(true)}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-xs font-black uppercase tracking-widest group shadow-lg"
                       >
                         <Target size={14} className="group-hover:scale-110 transition-transform" />
-                        Ouvrir le Journal
+                        {t('context.openJournal', "Ouvrir le Journal")}
                       </button>
                     </div>
 
@@ -609,7 +619,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                       {(editedChar.quests || []).length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20 opacity-40">
                           <Target size={48} className="mb-4 text-gold-DEFAULT" />
-                          <span className="font-cinzel text-xs uppercase tracking-widest">AUCUNE QUÊTE</span>
+                          <span className="font-cinzel text-xs uppercase tracking-widest">{t('context.noQuests', "AUCUNE QUÊTE")}</span>
                         </div>
                       ) : (
                         editedChar.quests.map((quest: any) => (
@@ -645,7 +655,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                         onClick={() => setShowQuestArchive(false)}
                         className="flex items-center gap-2 text-white/60 hover:text-gold-bright transition-colors text-xs font-cinzel font-black uppercase tracking-widest"
                       >
-                        <ArrowLeft size={14} /> Retour
+                        <ArrowLeft size={14} /> {t('common.back', "Retour")}
                       </button>
                       <div className="relative w-48">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-DEFAULT/40" />
@@ -653,7 +663,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                           type="text" 
                           value={searchQuestArchive}
                           onChange={e => setSearchQuestArchive(e.target.value)}
-                          placeholder="Rechercher..."
+                          placeholder={t('common.search', "Rechercher...")}
                           className="w-full bg-black/60 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-xs text-white focus:border-gold-DEFAULT/50 outline-none"
                         />
                       </div>
@@ -697,7 +707,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
              {hasChanges && (
                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 animate-pulse">
                   <div className="w-1.5 h-1.5 rounded-full bg-gold-DEFAULT" />
-                  <span className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-widest">Changements non enregistrés</span>
+                  <span className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-widest">{t('context.unsavedChanges', "Changements non enregistrés")}</span>
                </div>
              )}
           </div>
@@ -706,14 +716,14 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
                onClick={onClose}
                className="px-8 py-3 rounded-full text-xs font-cinzel font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors"
              >
-               Annuler
+               {t('common.cancel', "Annuler")}
              </button>
              <button 
                onClick={handleSave}
                className="flex items-center gap-3 px-12 py-3 rounded-full bg-gold-DEFAULT text-black hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-105 transition-all group font-cinzel font-black text-xs uppercase tracking-[0.2em]"
              >
                <Save size={14} className="group-hover:rotate-12 transition-transform" />
-               Enregistrer
+               {t('common.save', "Enregistrer")}
              </button>
           </div>
         </footer>

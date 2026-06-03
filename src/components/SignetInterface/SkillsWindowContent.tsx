@@ -23,6 +23,7 @@ import { SkillCreationModal } from './SkillCreationModal';
 import { SkillDetailContent } from './SkillDetailContent';
 import { addSessionCharacter } from '../../services/characters.service';
 import { AssetImage } from '../AssetImage';
+import { useTranslation } from 'react-i18next';
 
 interface SkillsWindowContentProps {
   sessionId: string;
@@ -30,6 +31,7 @@ interface SkillsWindowContentProps {
 }
 
 export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWindowContentProps) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
   const { characters, controlledCharacterId, addOrUpdateCharacter } = useCharactersStore();
@@ -97,7 +99,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
   const handleGiveSkillToCharacter = async (skill: any) => {
     if (!character || !isMJ) return;
     if (character.custom_skills?.some((s: any) => s.id === skill.id)) {
-        alert("Ce voyageur skill déjà cet arcane.");
+        alert(t('context.alreadyHasSkill', "Ce voyageur skill déjà cet arcane."));
         return;
     }
     const updatedChar = {
@@ -110,7 +112,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
   };
 
   const handleRemoveFromCharacter = async (skill: any) => {
-    if (!character || !isMJ || !window.confirm(`Oublier ${skill.name} ?`)) return;
+    if (!character || !isMJ || !window.confirm(t('context.forgetSkill', `Oublier ${skill.name} ?`, { name: skill.name }))) return;
     const updatedChar = {
       ...character,
       custom_skills: (character.custom_skills || []).filter((s: any) => s.id !== skill.id)
@@ -122,7 +124,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
   };
 
   const handleDeleteSkillTemplate = async (id: string) => {
-    if (!isMJ || !window.confirm("Supprimer cette skill du codex ?")) return;
+    if (!isMJ || !window.confirm(t('context.deleteSkill', "Supprimer cette compétence du codex ?"))) return;
     await removeSkill(sessionId, id);
     if (selectedSkill?.id === id) setSelectedSkill(null);
   };
@@ -190,7 +192,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                     type="text" 
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    placeholder="CHERCHER..."
+                    placeholder={t('common.searchPlaceholder', "CHERCHER...").toUpperCase()}
                     className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-xl py-2 pl-9 pr-3 text-[11px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/40 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
                     />
                 </div>
@@ -210,7 +212,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                     onClick={() => setSelectedTag(null)}
                     className={`px-2.5 py-1 rounded-full text-[11px] font-cinzel font-black uppercase tracking-widest border transition-all whitespace-nowrap ${!selectedTag ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'}`}
                 >
-                    TOUT
+                    {t('common.all', 'TOUT').toUpperCase()}
                 </button>
                 {tags.map(tag => (
                     <button 
@@ -248,7 +250,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                             <h4 className={`text-xs font-cinzel font-black tracking-widest truncate uppercase transition-colors ${isEquipped ? 'text-gold-bright drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]' : (isActive ? 'text-gold-DEFAULT' : 'text-white/60 group-hover:text-white')}`}>
                                 {skill.name}
                             </h4>
-                            <span className="text-[11px] font-mono text-white/60 uppercase tracking-tighter truncate">{skill.type || 'Compétence'}</span>
+                            <span className="text-[11px] font-mono text-white/60 uppercase tracking-tighter truncate">{skill.type || t('context.skillType', 'Compétence')}</span>
                         </div>
 
                         {/* ─── ACTIONS SUR LA BARRE ─── */}
@@ -260,7 +262,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); handleToggleSkillActive(skill); }}
                                                 className={`p-1.5 rounded-lg transition-all ${isEquipped ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/40' : 'bg-gold-DEFAULT text-black group-hover:bg-gold-bright transition-colors'}`}
-                                                title={isEquipped ? "Désactiver" : "Activer"}
+                                                title={isEquipped ? t('context.deactivate', "Désactiver") : t('context.activate', "Activer")}
                                             >
                                                 <Power size={10} />
                                             </button>
@@ -271,7 +273,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); setSelectedSkill(skill, false); }}
                                         className="p-1.5 rounded-lg text-white/60 hover:text-gold-bright hover:bg-white/5 transition-all opacity-30 group-hover:opacity-100"
-                                        title="Voir les détails"
+                                        title={t('common.seeDetails', "Voir les détails")}
                                     >
                                         <ChevronRight size={14} />
                                     </button>
@@ -281,7 +283,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); handleRemoveFromCharacter(skill); }}
                                                 className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
-                                                title="Supprimer"
+                                                title={t('common.delete', "Supprimer")}
                                             >
                                                 <Trash2 size={10} />
                                             </button>
@@ -296,7 +298,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); handleGiveSkillToCharacter(skill); }}
                                                     className="p-1.5 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-all"
-                                                    title="Offrir"
+                                                    title={t('common.give', "Offrir")}
                                                 >
                                                     <Plus size={10} />
                                                 </button>
@@ -304,14 +306,14 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setShowSkillCreateModal(true, skill, 'forge'); }}
                                                 className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all"
-                                                title="Modifier"
+                                                title={t('common.edit', "Modifier")}
                                             >
                                                 <PenTool size={10} />
                                             </button>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); handleDeleteSkillTemplate(skill.id); }}
                                                 className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
-                                                title="Supprimer"
+                                                title={t('common.delete', "Supprimer")}
                                             >
                                                 <Trash2 size={10} />
                                             </button>
@@ -320,7 +322,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); setSelectedSkill(skill, false); }}
                                         className="p-1.5 rounded-lg text-white/60 hover:text-gold-bright hover:bg-white/5 transition-all opacity-30 group-hover:opacity-100"
-                                        title="Voir les détails"
+                                        title={t('common.seeDetails', "Voir les détails")}
                                     >
                                         <ChevronRight size={14} />
                                     </button>
@@ -338,7 +340,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
                 {(effectiveTab === 'inventory' ? characterSkills : filteredLibrary).length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 opacity-10 grayscale">
                         <BookOpen size={32} className="mb-2" />
-                        <span className="text-xs font-cinzel tracking-widest italic">VIDE...</span>
+                        <span className="text-xs font-cinzel tracking-widest italic">{t('common.empty', "VIDE...")}</span>
                     </div>
                 )}
             </div>
@@ -350,7 +352,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
             {selectedSkill ? (
               <div className="h-full flex flex-col animate-in slide-in-from-right-4 duration-500 relative">
                  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
-                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Détails de la Skill</span>
+                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">{t('context.skillDetails', "Détails de la Skill")}</span>
                     <button onClick={() => setSelectedSkill(null)} className="p-1 rounded hover:bg-white/5 text-white/60 hover:text-white transition-colors">
                         <X size={14} />
                     </button>
@@ -367,7 +369,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
             ) : (
               <div className="h-full flex flex-col items-center justify-center opacity-10 pointer-events-none">
                  <Sparkles size={64} className="mb-4 text-gold-DEFAULT" />
-                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">Codex des Skills</span>
+                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">{t('context.skillCodex', "Codex des Skills")}</span>
               </div>
             )}
           </div>

@@ -15,13 +15,9 @@ import {
   getSessionPlayers,
   removeSessionPlayer,
 } from '../../services/session.service';
-import { 
-  Users, 
-  WifiOff, 
-  Loader2,
-  Zap,
-  Play
-} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Icons } from '../../components/ui/Icons';
+import { Button } from '../../components/ui/Button';
 import logo from '../../assets/logo.png';
 import { SystemRouter } from '../../systems/core/SystemRouter';
 
@@ -40,6 +36,7 @@ type ConnectionStatus = 'initializing' | 'connecting' | 'connected' | 'relay' | 
 export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
   const { init, broadcast, onData, destroy, peerId } = usePeer();
   const [status, setStatus] = useState<ConnectionStatus>('initializing');
+  const { t } = useTranslation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ peer_id: string; pseudo: string; role?: number }[]>([]);
   
@@ -127,7 +124,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
           payload: {
             peer_id: myActualId,
             userId: currentUserState?.id,
-            pseudo: currentUserState?.pseudo || 'Joueur',
+            pseudo: currentUserState?.pseudo || t('lobby.defaultPlayer'),
             role: currentUserState?.role || 0
           }
         };
@@ -329,9 +326,9 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
 
   const getRoleLabelLocal = (role?: number) => {
     const level = role ?? 0;
-    if (level === SecurityLevel.ADMIN) return 'ADMIN';
-    if (level === SecurityLevel.MJ) return 'MJ';
-    return 'INITIÉ';
+    if (level === SecurityLevel.ADMIN) return t('lobby.roleAdmin');
+    if (level === SecurityLevel.MJ) return t('lobby.roleMJ');
+    return t('lobby.rolePlayer');
   };
 
   return (
@@ -374,41 +371,65 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {isHost && <button onClick={copyId} className="px-4 py-1.5 rounded-lg border border-gold-DEFAULT/30 text-[9px] font-bold text-gold-bright hover:bg-gold-DEFAULT/10 transition-all">{copied ? 'COPIÉ' : 'PARTAGER'}</button>}
-              <button onClick={onLeave} className="px-4 py-1.5 rounded-lg border border-red-500/30 text-[9px] font-bold text-red-500 hover:bg-red-500/10 transition-all">QUITTER</button>
+              {isHost && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={copied ? <Icons.Check className="w-3 h-3" /> : <Icons.Share2 className="w-3 h-3" />}
+                  onClick={copyId}
+                >
+                  {copied ? t('lobby.copied') : t('lobby.share')}
+                </Button>
+              )}
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={onLeave}
+              >
+                {t('lobby.leave')}
+              </Button>
             </div>
           </header>
 
           <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-12">
             {status === 'error' ? (
               <div className="text-center space-y-4">
-                <WifiOff size={48} className="mx-auto text-red-500 opacity-50" />
-                <h2 className="text-xl font-bold">Lien Rompu</h2>
+                <Icons.WifiOff size={48} className="mx-auto text-red-500 opacity-50" />
+                <h2 className="text-xl font-bold">{t('lobby.linkBroken')}</h2>
                 <p className="text-sm text-white/60 italic">{errorMessage}</p>
-                <button onClick={() => window.location.reload()} className="px-6 py-2 rounded-full border border-white/20 text-xs font-bold uppercase tracking-widest">Ré-Invocation</button>
+                <Button variant="tertiary" size="sm" onClick={() => window.location.reload()}>
+                  {t('lobby.retryButton')}
+                </Button>
               </div>
             ) : (status !== 'connected' && status !== 'relay') ? (
               <div className="text-center space-y-4 animate-pulse">
-                <Loader2 size={48} className="mx-auto text-gold-DEFAULT animate-spin" />
-                <h2 className="text-sm font-cinzel tracking-[0.3em] text-gold-DEFAULT uppercase">Établissement du Signet...</h2>
+                <Icons.Loader2 size={48} className="mx-auto text-gold-DEFAULT animate-spin" />
+                <h2 className="text-sm font-cinzel tracking-[0.3em] text-gold-DEFAULT uppercase">{t('lobby.connecting')}</h2>
               </div>
             ) : (
               <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <span className="text-[10px] font-black text-gold-muted tracking-[0.3em] uppercase">Chroniques en attente</span>
+                    <span className="text-[10px] font-black text-gold-muted tracking-[0.3em] uppercase">{t('lobby.waitingChronicles')}</span>
                     <h2 className="text-5xl font-black text-white uppercase tracking-tighter leading-none">{sessionData?.name}</h2>
-                    <p className="text-gold-muted italic font-serif">Les récits du système {sessionData?.system} s'apprêtent à naître.</p>
+                    <p className="text-gold-muted italic font-serif">{t('lobby.systemStory', { system: sessionData?.system })}</p>
                   </div>
                   {isHost && (
-                    <button onClick={handleLaunchSession} className="w-full py-5 rounded-2xl bg-gold-DEFAULT text-black font-black uppercase tracking-widest hover:bg-gold-bright transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3">
-                      <Play size={20} fill="currentColor" /> LANCER LA SESSION
-                    </button>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      fullWidth
+                      hasSheen
+                      leftIcon={<Icons.Play size={20} fill="currentColor" />}
+                      onClick={handleLaunchSession}
+                    >
+                      {t('lobby.launchSession')}
+                    </Button>
                   )}
                 </div>
                 <div className="bg-black/40 border border-gold-DEFAULT/20 rounded-[2.5rem] p-8 backdrop-blur-xl relative overflow-hidden">
                   <div className="absolute inset-0 bg-grimoire-texture opacity-[0.03] pointer-events-none" />
-                  <h3 className="text-[10px] font-black text-gold-muted uppercase tracking-[0.3em] mb-6 flex items-center gap-2 relative z-10"><Users size={14}/> Cercle d'Initiés</h3>
+                  <h3 className="text-[10px] font-black text-gold-muted uppercase tracking-[0.3em] mb-6 flex items-center gap-2 relative z-10"><Icons.Users size={14}/> {t('lobby.playerCircle')}</h3>
                   <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar relative z-10 pr-2">
                     {players.map(p => (
                       <div key={p.peer_id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5 group hover:border-gold-DEFAULT/30 transition-all">
@@ -419,7 +440,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
                             <span className="text-[8px] text-gold-muted/60 uppercase font-black tracking-widest">{getRoleLabelLocal(p.role)}</span>
                           </div>
                         </div>
-                        {p.pseudo === 'MJ' && <Zap size={12} className="text-gold-bright animate-pulse" />}
+                        {p.pseudo === 'MJ' && <Icons.Zap size={12} className="text-gold-bright animate-pulse" />}
                       </div>
                     ))}
                   </div>

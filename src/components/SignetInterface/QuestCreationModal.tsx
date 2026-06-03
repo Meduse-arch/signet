@@ -7,11 +7,14 @@ import { useAuthStore } from '../../store/auth';
 import { usePeersStore } from '../../store/peers';
 import { usePeer } from '../../hooks/usePeer';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
+import { useTranslation } from 'react-i18next';
+
 interface QuestCreationModalProps {
   sessionId: string;
 }
 
 export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
+  const { t } = useTranslation();
   const { showQuestCreateModal, setShowQuestCreateModal, questToEdit } = useUIStore();
   const { addQuest } = useQuestsStore();
   const { connections } = usePeersStore();
@@ -62,7 +65,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
   };
 
   const addReward = () => {
-    setRewards([...rewards, { id: crypto.randomUUID(), type: 'Experience', value: 50, description: 'Récompense de quête' }]);
+    setRewards([...rewards, { id: crypto.randomUUID(), type: 'Experience', value: 50, description: t('context.questRewardDefault', "Récompense de quête") }]);
   };
 
   const updateReward = (id: string, updates: any) => {
@@ -87,9 +90,9 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
               </div>
               <div>
                 <h2 className="text-2xl font-cinzel font-black text-white uppercase tracking-[0.3em] leading-none mb-2">
-                  {questToEdit ? "MODIFIER LA QUÊTE" : "CRÉER UNE QUÊTE"}
+                  {questToEdit ? t('context.editQuest', "MODIFIER LA QUÊTE") : t('context.createQuest', "CRÉER UNE QUÊTE")}
                 </h2>
-                <p className="text-xs font-cinzel text-gold-DEFAULT/60 uppercase tracking-[0.4em]">Gestion des quêtes de la session</p>
+                <p className="text-xs font-cinzel text-gold-DEFAULT/60 uppercase tracking-[0.4em]">{t('context.questsManagement', "Gestion des quêtes de la session")}</p>
               </div>
            </div>
            <button 
@@ -107,25 +110,25 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
           <div className="space-y-10">
             <section className="space-y-6">
                <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.3em] flex items-center gap-3">
-                 <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> Informations
+                 <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> {t('context.informations', "Informations")}
                </h3>
                <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Titre de la quête</label>
+                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">{t('context.questTitle', "Titre de la quête")}</label>
                     <input 
                       type="text" 
                       value={title} 
                       onChange={e => setTitle(e.target.value)} 
-                      placeholder="NOM DU RÉCIT..."
+                      placeholder={t('context.questTitlePlaceholder', "NOM DU RÉCIT...")}
                       className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-cinzel text-white placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Description</label>
+                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">{t('common.description', "Description")}</label>
                     <textarea 
                       value={description} 
                       onChange={e => setDescription(e.target.value)}
-                      placeholder="DÉCRIVEZ LES ÉPREUVES ET LES MOTIVATIONS..."
+                      placeholder={t('context.questDescPlaceholder', "DÉCRIVEZ LES ÉPREUVES ET LES MOTIVATIONS...")}
                       rows={6}
                       className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 outline-none transition-all shadow-inner custom-scrollbar resize-none"
                     />
@@ -135,25 +138,25 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
 
             <section className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Statut</label>
+                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">{t('context.status', "Statut")}</label>
                     <select 
                       value={status} 
                       onChange={e => setStatus(e.target.value as any)}
                       className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-xs font-cinzel text-white uppercase focus:border-gold-bright outline-none appearance-none cursor-pointer"
                     >
-                        <option value="En cours">En cours</option>
-                        <option value="Terminée">Terminée</option>
-                        <option value="Échouée">Échouée</option>
+                        <option value="En cours">{t('context.inProgress', "En cours")}</option>
+                        <option value="Terminée">{t('context.completed', "Terminée")}</option>
+                        <option value="Échouée">{t('context.failed', "Échouée")}</option>
                     </select>
                 </div>
                 <div className="space-y-2">
-                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Image</label>
+                    <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">{t('context.image', "Image")}</label>
                     <div className="flex gap-2">
                         <input 
                             type="text" 
                             value={imageUrl} 
                             onChange={e => setImageUrl(e.target.value)}
-                            placeholder="URL DU SCEAU..."
+                            placeholder={t('context.questImagePlaceholder', "URL DU SCEAU...")}
                             className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-4 py-4 text-[11px] font-mono text-white/60 focus:border-gold-bright outline-none"
                         />
                         <label className="p-4 rounded-2xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 cursor-pointer transition-all relative">
@@ -172,7 +175,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
             <section className="space-y-6">
                 <div className="flex items-center justify-between border-b border-gold-DEFAULT/20 pb-3">
                     <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-3">
-                        <Gift size={16} className="text-gold-bright animate-pulse" /> Récompenses
+                        <Gift size={16} className="text-gold-bright animate-pulse" /> {t('context.rewards', "Récompenses")}
                     </h3>
                     <button onClick={addReward} className="p-2 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
                         <Plus size={16} />
@@ -193,9 +196,9 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
                                     onChange={e => updateReward(reward.id, { type: e.target.value })}
                                     className="bg-black border border-white/10 rounded-xl px-4 py-3 text-xs font-cinzel text-white uppercase outline-none focus:border-gold-bright"
                                 >
-                                    <option value="Experience">Expérience (XP)</option>
-                                    <option value="Item">Objet</option>
-                                    <option value="Autre">Autre</option>
+                                    <option value="Experience">{t('context.experience', "Expérience (XP)")}</option>
+                                    <option value="Item">{t('context.item', "Objet")}</option>
+                                    <option value="Autre">{t('context.other', "Autre")}</option>
                                 </select>
                                 <input 
                                     type="number" 
@@ -208,14 +211,14 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
                                 type="text" 
                                 value={reward.description} 
                                 onChange={e => updateReward(reward.id, { description: e.target.value })}
-                                placeholder="DÉTAILS DU TRIBUT..."
+                                placeholder={t('context.rewardDescPlaceholder', "DÉTAILS DU TRIBUT...")}
                                 className="w-full bg-black/40 border border-white/5 rounded-xl text-xs font-serif italic text-white/50 px-4 py-2.5 focus:outline-none focus:border-gold-DEFAULT/40"
                             />
                         </div>
                     ))}
                     {rewards.length === 0 && (
                         <div className="py-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/20 bg-white/[0.01]">
-                            <span className="text-xs font-cinzel text-white/50 uppercase tracking-[0.4em]">Aucune récompense ajoutée</span>
+                            <span className="text-xs font-cinzel text-white/50 uppercase tracking-[0.4em]">{t('context.noRewards', "Aucune récompense ajoutée")}</span>
                         </div>
                     )}
                 </div>
@@ -233,7 +236,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
                 onClick={() => setShowQuestCreateModal(false)}
                 className="flex-1 py-4 rounded-2xl text-white/70 hover:text-white text-xs font-cinzel font-black uppercase tracking-[0.3em] transition-all border border-white/20 hover:border-white/40"
               >
-                Annuler
+                {t('common.cancel', "Annuler")}
               </button>
               <button 
                 onClick={handleSave}
@@ -246,7 +249,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
               >
                 {title.trim() && <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />}
                 <Save size={20} className="relative z-10" />
-                <span className="relative z-10">Enregistrer</span>
+                <span className="relative z-10">{t('common.save', "Enregistrer")}</span>
               </button>
           </div>
         </footer>

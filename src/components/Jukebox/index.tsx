@@ -31,43 +31,40 @@ export const Jukebox: React.FC = () => {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !window.electronAPI) return;
+    if (!file) return;
 
     try {
       setIsConverting(true);
-      // We pass the absolute path of the file to the electron backend
-      const inputPath = (file as any).path; 
       
-      const result = await window.electronAPI.convertAudioToOpus(inputPath);
+      const arrayBuffer = await file.arrayBuffer();
       
-      if (result.success && result.hash && result.buffer) {
-        const audioData = result.buffer; // In the renderer, IPC Buffer usually comes as Uint8Array
-        
-        const arrayBuffer = (audioData as any).buffer ? (audioData as any).buffer : new Uint8Array(audioData as unknown as ArrayBufferLike).buffer;
+      // Generate SHA-256 hash
+      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-        // Store in IndexedDB
-        await dbStorage.putAudio({
-          hash: result.hash,
-          data: arrayBuffer,
-          size: arrayBuffer.byteLength,
-          last_accessed: Date.now()
-        });
+      // Store in IndexedDB
+      await dbStorage.putAudio({
+        hash: hashHex,
+        data: arrayBuffer,
+        size: arrayBuffer.byteLength,
+        last_accessed: Date.now(),
+        mime: file.type || 'audio/ogg'
+      });
 
-        // Add to state
-        addTrack({
-          id: result.hash,
-          name: file.name.replace(/\.[^/.]+$/, "") + " (Opus)",
-          size: arrayBuffer.byteLength
-        });
+      // Add to state
+      addTrack({
+        id: hashHex,
+        name: file.name,
+        size: arrayBuffer.byteLength
+      });
 
-        // Inform peers that we have a new track
-        peerService.broadcast({
-          type: 'AUDIO_TRACK_ADDED',
-          payload: { hash: result.hash, size: arrayBuffer.byteLength }
-        });
-      } else {
-        console.error("Conversion failed:", result.error);
-      }
+      // Inform peers that we have a new track
+      peerService.broadcast({
+        type: 'AUDIO_TRACK_ADDED',
+        payload: { hash: hashHex, size: arrayBuffer.byteLength }
+      });
+      
     } catch (err) {
       console.error("Error uploading audio:", err);
     } finally {

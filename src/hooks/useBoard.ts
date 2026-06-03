@@ -26,7 +26,18 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     status: 'idle' | 'waiting_manifest' | 'loading_chunks' | 'painting_cache' | 'complete' | 'error';
     error?: string;
   }>({ loaded: 0, total: 0, active: false, status: 'idle' });
-  const [onTokenRightClick, setOnTokenRightClick] = useState<((id: string, x: number, y: number) => void) | null>(null);
+  const onTokenRightClickRef = useRef<((id: string, x: number, y: number) => void) | null>(null);
+  const setOnTokenRightClick = useCallback((fn: ((id: string, x: number, y: number) => void) | null) => {
+    // Si on nous passe une fonction d'update (pattern setState), on l'exécute pour récupérer la vraie fonction
+    if (typeof fn === 'function') {
+      const actualFn = (fn as any)();
+      if (typeof actualFn === 'function') {
+        onTokenRightClickRef.current = actualFn;
+        return;
+      }
+    }
+    onTokenRightClickRef.current = fn as any;
+  }, []);
   const chunkQueue = useRef<{mapId: string, chunk: any, data: ArrayBuffer}[]>([]);
   const pendingManifest = useRef<{mapId: string, manifest: any, missingChunks: any[], hostPeerId: string} | null>(null);
 
@@ -377,15 +388,14 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       };
 
       boardRef.current.onTokenRightClick = (id, x, y) => {
-        console.log('[useBoard] onTokenRightClick déclenché pour', id, 'callback React présent ?', !!onTokenRightClick);
-        if (onTokenRightClick) onTokenRightClick(id, x, y);
+        if (onTokenRightClickRef.current) onTokenRightClickRef.current(id, x, y);
       };
 
       boardRef.current.onPing = (x, y) => {
         broadcast({ type: 'PING', payload: { x, y } });
       };
     }
-  }, [isReady, isHost, sessionId, broadcast, sendTo, onTokenRightClick]);
+  }, [isReady, isHost, sessionId, broadcast, sendTo]);
 
   // 2. Chargement initial et synchronisation
   useEffect(() => {

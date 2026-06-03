@@ -11,6 +11,7 @@ import { addSessionCharacter } from '../../services/characters.service';
 import { useSessionStore } from '../../store/session';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { AssetImage } from '../AssetImage';
+import { useTranslation } from 'react-i18next';
 
 interface ItemCreationModalProps {
   sessionId: string;
@@ -26,6 +27,7 @@ const CATEGORIES = [
 ];
 
 export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
+  const { t } = useTranslation();
   const { showCreateModal, itemCreationType, itemCreationCharacterId, setShowCreateModal, itemToEdit } = useUIStore();
   const { addItem } = useItemsStore();
   const { characters, addOrUpdateCharacter } = useCharactersStore();
@@ -104,7 +106,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
     const newItem: Item = {
       id: itemToEdit?.id || crypto.randomUUID(),
       name,
-      description: description || 'Un objet mystérieux...',
+      description: description || t('context.mysteriousItem', 'Un objet mystérieux...'),
       category,
       image_url: imageUrl,
       effects: [],
@@ -155,10 +157,10 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
             </div>
             <div>
               <h3 className="text-2xl font-cinzel font-black text-white uppercase tracking-[0.3em] leading-none mb-2">
-                {itemCreationType === 'forge' ? "CRÉER UN OBJET" : "AJOUTER UN OBJET"}
+                {itemCreationType === 'forge' ? t('context.createItem', "CRÉER UN OBJET") : t('context.addItem', "AJOUTER UN OBJET")}
               </h3>
               <p className="text-xs font-cinzel text-gold-DEFAULT/60 uppercase tracking-[0.4em]">
-                {itemCreationType === 'forge' ? "Forge d'objets — Archives" : "Ajouter à l'inventaire du personnage"}
+                {itemCreationType === 'forge' ? t('context.forgeDesc', "Forge d'objets — Archives") : t('context.addToInventory', "Ajouter à l'inventaire du personnage")}
               </p>
             </div>
           </div>
@@ -179,11 +181,11 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
             <div className="space-y-8">
                 <div className="flex flex-col gap-3">
                   <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                     <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> Nom de l'objet
+                     <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> {t('context.itemName', "Nom de l'objet")}
                   </label>
                   <input 
                     type="text" 
-                    placeholder="NOM DE L'ARTEFACT..." 
+                    placeholder={t('context.itemNamePlaceholder', "NOM DE L'ARTÉFACT...")} 
                     value={name} 
                     onChange={e => setName(e.target.value)} 
                     className="bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-cinzel text-white placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner" 
@@ -192,7 +194,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1">Type d'objet</label>
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1">{t('context.itemType', "Type d'objet")}</label>
                   <select 
                     value={category} 
                     onChange={e => setCategory(e.target.value)}
@@ -207,9 +209,9 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1">Description</label>
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1">{t('common.description', "Description")}</label>
                   <textarea 
-                    placeholder="Récitez ici la légende qui entoure cet artefact..." 
+                    placeholder={t('context.itemDescPlaceholder', "Récitez ici la légende qui entoure cet artefact...")} 
                     value={description} 
                     onChange={e => setDescription(e.target.value)} 
                     className="bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 outline-none transition-all resize-none h-32 shadow-inner custom-scrollbar" 
@@ -220,7 +222,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
             {/* Colonne Droite : Apparence & Modificateurs */}
             <div className="space-y-8">
                 <div className="flex flex-col gap-4">
-                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1">Image</label>
+                  <label className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.2em] ml-1">{t('context.image', "Image")}</label>
                   <div className="flex gap-6 items-start">
                     <div className="w-24 h-24 rounded-3xl border-2 border-gold-DEFAULT/20 bg-black/40 flex items-center justify-center overflow-hidden shrink-0 shadow-2xl relative group">
                         {previewUrl ? (
@@ -234,7 +236,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                         <div className="flex gap-2">
                             <input 
                                 type="text" 
-                                placeholder="URL OU IDENTIFIANT..." 
+                                placeholder={t('context.urlPlaceholder', "URL OU IDENTIFIANT...")} 
                                 value={imageUrl} 
                                 onChange={e => setImageUrl(e.target.value)} 
                                 className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-xl px-4 py-3 text-xs font-mono text-gold-bright/60 placeholder:text-white/30 focus:border-gold-bright outline-none transition-all" 
@@ -255,7 +257,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                             />
                         </div>
                         <p className="text-xs font-cinzel text-white/60 uppercase tracking-[0.2em] leading-relaxed">
-                          Utilisez une image locale pour la synchroniser avec tous les joueurs.
+                          {t('context.localImageTip', "Utilisez une image locale pour la synchroniser avec tous les joueurs.")}
                         </p>
                     </div>
                   </div>
@@ -265,10 +267,10 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                 <div className="space-y-4">
                     <div className="flex justify-between items-center border-b border-gold-DEFAULT/30 pb-3">
                         <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-2">
-                            <Sparkles size={16} className="text-gold-bright animate-pulse" /> Modificateurs de stats
+                            <Sparkles size={16} className="text-gold-bright animate-pulse" /> {t('context.statModifiers', "Modificateurs de stats")}
                         </h3>
                         <button onClick={addModifier} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-DEFAULT text-black font-cinzel text-[11px] font-black tracking-widest border-2 border-gold-DEFAULT hover:bg-gold-bright transition-all">
-                            <Plus size={14} /> Ajouter
+                            <Plus size={14} /> {t('common.add', "Ajouter")}
                         </button>
                     </div>
                     
@@ -281,8 +283,8 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                                         onChange={e => updateModifier(i, { target: e.target.value as any })}
                                         className="flex-1 bg-black border border-gold-DEFAULT/30 rounded-xl px-3 py-2.5 text-[11px] text-gold-DEFAULT font-cinzel font-black outline-none appearance-none cursor-pointer text-center"
                                     >
-                                        <option value="stat">ATTRIBUT</option>
-                                        <option value="bar">RESSOURCE</option>
+                                        <option value="stat">{t('context.attribute', "ATTRIBUT").toUpperCase()}</option>
+                                        <option value="bar">{t('context.resource', "RESSOURCE").toUpperCase()}</option>
                                     </select>
                                     <select 
                                         value={m.targetId} 
@@ -303,9 +305,9 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                                         onChange={e => updateModifier(i, { mode: e.target.value as any })}
                                         className="flex-[2] bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[11px] text-white/60 font-cinzel outline-none appearance-none cursor-pointer text-center"
                                     >
-                                        <option value="flat">VALEUR FIXE</option>
-                                        <option value="percent">POURCENTAGE</option>
-                                        <option value="dice">JET DE DÉS</option>
+                                        <option value="flat">{t('context.flatValue', "VALEUR FIXE")}</option>
+                                        <option value="percent">{t('context.percent', "POURCENTAGE")}</option>
+                                        <option value="dice">{t('context.diceRoll', "JET DE DÉS")}</option>
                                     </select>
 
                                     <div className="flex-1">
@@ -335,7 +337,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                         ))}
                         {modifiers.length === 0 && (
                             <div className="py-10 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/20 bg-white/[0.02]">
-                                <span className="text-xs font-cinzel text-white/50 uppercase tracking-[0.4em]">Aucun modificateur ajouté</span>
+                                <span className="text-xs font-cinzel text-white/50 uppercase tracking-[0.4em]">{t('context.noModifiers', "Aucun modificateur ajouté")}</span>
                             </div>
                         )}
                     </div>
@@ -357,7 +359,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                 onClick={handleClose}
                 className="flex-1 py-4 rounded-2xl text-white/70 hover:text-white text-xs font-cinzel font-black uppercase tracking-[0.3em] transition-all border border-white/20 hover:border-white/40"
               >
-                Annuler
+                {t('common.cancel', "Annuler")}
               </button>
               <button 
                 onClick={handleSubmit} 
@@ -371,7 +373,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
                 {name.trim() && <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />}
                 <Save size={20} className="relative z-10" />
                 <span className="relative z-10">
-                  {itemCreationType === 'forge' ? 'Enregistrer' : "Ajouter à l'inventaire"}
+                  {itemCreationType === 'forge' ? t('common.save', 'Enregistrer') : t('context.addToInventory', "Ajouter à l'inventaire")}
                 </span>
               </button>
           </div>

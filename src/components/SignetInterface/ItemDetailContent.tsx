@@ -5,6 +5,7 @@ import { useItemsStore } from '../../store/items';
 import { useCharactersStore } from '../../store/characters';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { AssetImage } from '../AssetImage';
+import { useTranslation } from 'react-i18next';
 
 interface ItemDetailContentProps {
   item: any;
@@ -29,6 +30,7 @@ export function ItemDetailContent({
   isMJ,
   showActions = true 
 }: ItemDetailContentProps) {
+  const { t } = useTranslation();
   const { items } = useItemsStore();
   const { characters } = useCharactersStore();
 
@@ -55,7 +57,7 @@ export function ItemDetailContent({
   if (!item) return (
     <div className="flex flex-col items-center justify-center h-full opacity-40 py-20">
       <Package size={64} className="mb-4 text-gold-DEFAULT" />
-      <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">Sélectionnez une relique</span>
+      <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">{t('context.selectRelic', 'Sélectionnez une relique')}</span>
     </div>
   );
 
@@ -117,12 +119,12 @@ export function ItemDetailContent({
         <div className="shrink-0 px-4 py-3">
            <div className="flex items-center gap-2 mb-2 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
-              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Chroniques</span>
+              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">{t('context.chroniclesTitle', 'Chroniques')}</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
            </div>
            <div className="max-h-20 overflow-y-auto custom-scrollbar pr-2">
               <p className="font-garamond italic text-xs text-white/50 leading-relaxed text-center">
-                "{item.description || "Aucun récit n'accompagne cet objet..."}"
+                "{item.description || t('context.noItemStory', "Aucun récit n'accompagne cet objet...")}"
               </p>
            </div>
         </div>
@@ -131,7 +133,7 @@ export function ItemDetailContent({
         <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
            <div className="flex items-center gap-2 mb-3 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
-              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Arithmancie</span>
+              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">{t('context.arithmancyTitle', 'Arithmancie')}</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
            </div>
            
@@ -148,7 +150,7 @@ export function ItemDetailContent({
                           <div className="flex flex-col">
                             <span className="text-xs font-cinzel font-black text-white/60 uppercase tracking-widest">{getTargetName(m)}</span>
                             <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase">
-                              {m.target === 'stat' ? 'Attribut' : 'Ressource'}
+                              {m.target === 'stat' ? t('context.attribute', 'Attribut') : t('context.resource', 'Ressource')}
                             </span>
                           </div>
                           <span className="text-xs font-cinzel font-black text-gold-bright">
@@ -160,7 +162,7 @@ export function ItemDetailContent({
                  ) : (
                    <div className="flex flex-col items-center justify-center opacity-5 py-4">
                       <Sparkles size={20} />
-                      <span className="text-[6px] font-cinzel uppercase tracking-widest mt-1">Neutre</span>
+                      <span className="text-[6px] font-cinzel uppercase tracking-widest mt-1">{t('context.neutral', 'Neutre')}</span>
                    </div>
                  )}
               </div>
@@ -180,7 +182,7 @@ export function ItemDetailContent({
                     onClick={onUse}
                     className="w-full py-2.5 rounded-xl font-cinzel font-black text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 border bg-gold-bright text-black border-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]"
                   >
-                    <Zap size={12} /> UTILISER
+                    <Zap size={12} /> {t('common.use', 'Utiliser').toUpperCase()}
                   </button>
                 ) : onToggleEquip && (
                   <button 
@@ -192,7 +194,7 @@ export function ItemDetailContent({
                     }`}
                   >
                     {isEquipped ? <Trash2 size={12} /> : <Shield size={12} />}
-                    {isEquipped ? 'DÉSÉQUIPER' : 'ÉQUIPER'}
+                    {isEquipped ? t('common.unequip', 'Déséquiper').toUpperCase() : t('common.equip', 'Équiper').toUpperCase()}
                   </button>
                 )}
               </>
@@ -206,7 +208,7 @@ export function ItemDetailContent({
                     onClick={onGive}
                     className="flex-1 py-2 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all font-cinzel text-[11px] font-black uppercase tracking-widest"
                   >
-                    Offrir
+                    {t('common.give', 'Offrir')}
                   </button>
                 )}
                 {onEdit && (
@@ -214,7 +216,7 @@ export function ItemDetailContent({
                     onClick={onEdit}
                     className="flex-1 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all font-cinzel text-[11px] font-black uppercase tracking-widest"
                   >
-                    Modifier
+                    {t('common.edit', 'Modifier')}
                   </button>
                 )}
                 {onDelete && (

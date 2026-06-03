@@ -17,12 +17,14 @@ import {
 import { QuestCreationModal } from './QuestCreationModal';
 import { QuestDetailContent } from './QuestDetailContent';
 import { AssetImage } from '../AssetImage';
+import { useTranslation } from 'react-i18next';
 
 interface QuestsWindowContentProps {
   sessionId: string;
 }
 
 export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
+  const { t } = useTranslation();
   const { quests, removeQuest, selectedQuest, setSelectedQuest } = useQuestsStore();
   const { user } = useAuthStore();
   const { setShowQuestCreateModal } = useUIStore();
@@ -76,7 +78,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
               sessionId={sessionId} 
               isMJ={isMJ}
               onEdit={isMJ ? () => setShowQuestCreateModal(true, selectedQuest) : undefined}
-              onDelete={isMJ ? () => { if(window.confirm("Effacer ce récit ?")) removeQuest(sessionId, selectedQuest.id); setSelectedQuest(null); } : undefined}
+              onDelete={isMJ ? () => { if(window.confirm(t('context.deleteQuest', "Effacer ce récit ?"))) { removeQuest(sessionId, selectedQuest.id); setSelectedQuest(null); } } : undefined}
               showActions={false}
             />
             <button 
@@ -101,7 +103,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                     type="text" 
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    placeholder="CHERCHER..."
+                    placeholder={t('common.searchPlaceholder', "CHERCHER...").toUpperCase()}
                     className="w-full bg-black/60 border border-gold-DEFAULT/10 rounded-xl py-2 pl-9 pr-3 text-[11px] font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/40 focus:outline-none focus:border-gold-DEFAULT/30 transition-all shadow-inner uppercase tracking-widest"
                     />
                 </div>
@@ -120,13 +122,13 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                     onClick={() => setActiveTab('current')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-cinzel font-black uppercase tracking-widest transition-all ${activeTab === 'current' ? 'bg-gold-DEFAULT text-black' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
                 >
-                    <Clock size={10} /> En cours
+                    <Clock size={10} /> {t('context.inProgress', 'En cours')}
                 </button>
                 <button 
                     onClick={() => setActiveTab('completed')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-cinzel font-black uppercase tracking-widest transition-all ${activeTab === 'completed' ? 'bg-gold-DEFAULT text-black' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
                 >
-                    <History size={10} /> Archives
+                    <History size={10} /> {t('context.archives', 'Archives')}
                 </button>
             </div>
 
@@ -157,7 +159,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                                 {quest.title}
                             </h4>
                             <p className="text-xs font-serif italic text-white/50 truncate mt-0.5">
-                                {quest.description || "Aucun détail..."}
+                                {quest.description || t('context.noDetails', "Aucun détail...")}
                             </p>
                         </div>
 
@@ -167,7 +169,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                             <button 
                                 onClick={(e) => { e.stopPropagation(); setSelectedQuest(quest, false); }}
                                 className="p-1.5 rounded-lg text-white/60 hover:text-gold-bright hover:bg-white/5 transition-all opacity-30 group-hover:opacity-100"
-                                title="Voir les détails"
+                                title={t('common.seeDetails', "Voir les détails")}
                             >
                                 <ChevronRight size={14} />
                             </button>
@@ -175,9 +177,9 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                             {isMJ && (
                                 <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-opacity ml-1 border-l border-white/10 pl-1">
                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); if(window.confirm("Effacer ce récit ?")) removeQuest(sessionId, quest.id); }}
+                                        onClick={(e) => { e.stopPropagation(); if(window.confirm(t('context.deleteQuest', "Effacer ce récit ?"))) removeQuest(sessionId, quest.id); }}
                                         className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
-                                        title="Supprimer"
+                                        title={t('common.delete', "Supprimer")}
                                     >
                                         <Trash2 size={10} />
                                     </button>
@@ -191,7 +193,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                 {filteredQuests.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 opacity-10 grayscale">
                         <Scroll size={32} className="mb-2" />
-                        <span className="text-xs font-cinzel tracking-widest italic">VIDE...</span>
+                        <span className="text-xs font-cinzel tracking-widest italic">{t('common.empty', "VIDE...")}</span>
                     </div>
                 )}
             </div>
@@ -203,7 +205,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
             {selectedQuest ? (
               <div className="h-full flex flex-col animate-in slide-in-from-right-4 duration-500 relative">
                  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
-                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">Récit du Destin</span>
+                    <span className="text-[11px] font-cinzel font-black text-gold-DEFAULT tracking-[0.3em] uppercase">{t('context.questDetails', "Récit du Destin")}</span>
                     <button onClick={() => setSelectedQuest(null)} className="p-1 rounded hover:bg-white/5 text-white/60 hover:text-white transition-colors">
                         <X size={14} />
                     </button>
@@ -214,14 +216,14 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
                       sessionId={sessionId} 
                       isMJ={isMJ}
                       onEdit={isMJ ? () => setShowQuestCreateModal(true, selectedQuest) : undefined}
-                      onDelete={isMJ ? () => { if(window.confirm("Effacer ce récit ?")) removeQuest(sessionId, selectedQuest.id); setSelectedQuest(null); } : undefined}
+                      onDelete={isMJ ? () => { if(window.confirm(t('context.deleteQuest', "Effacer ce récit ?"))) { removeQuest(sessionId, selectedQuest.id); setSelectedQuest(null); } } : undefined}
                     />
                  </div>
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center opacity-10 pointer-events-none">
                  <Scroll size={64} className="mb-4 text-gold-DEFAULT" />
-                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">Chroniques du Monde</span>
+                 <span className="text-xs font-cinzel font-black tracking-[0.4em] uppercase">{t('context.worldChronicles', "Chroniques du Monde")}</span>
               </div>
             )}
           </div>

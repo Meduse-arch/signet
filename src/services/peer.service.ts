@@ -110,8 +110,16 @@ class PeerService {
         this.connectToHost(hostId, resolve, reject);
       });
 
-      this.peer.on('error', (err) => {
+      this.peer.on('error', (err: any) => {
         if (this.isDestroying) return;
+        
+        // Ne pas rejeter la promesse globale si c'est juste un problème de connexion temporaire,
+        // car connectToHost() possède sa propre boucle de retry (timeout/tryConnect).
+        if (err.type === 'peer-unavailable' || err.type === 'network' || err.type === 'server-error') {
+            console.warn(`[PeerService] Player Peer Connection Warning: ${err.type}`);
+            return;
+        }
+
         console.error('[PeerService] Player Peer Error:', err);
         reject(err);
       });

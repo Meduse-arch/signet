@@ -17,6 +17,7 @@ import { Skill } from '../../services/skills.service';
 import { useSkillsStore } from '../../store/skills';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { AssetImage } from '../AssetImage';
+import { useTranslation } from 'react-i18next';
 
 interface SkillDetailContentProps {
   skill: Skill;
@@ -33,6 +34,7 @@ export function SkillDetailContent({
   isMJ,
   showActions = true
 }: SkillDetailContentProps) {
+  const { t } = useTranslation();
   const { skills } = useSkillsStore();
   
   // On dérive la compétence la plus à jour depuis le store
@@ -44,7 +46,7 @@ export function SkillDetailContent({
   if (!skill) return (
     <div className="flex flex-col items-center justify-center h-full opacity-40 py-20">
       <Zap size={64} className="mb-4 text-gold-DEFAULT" />
-      <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">Sélectionnez une skill</span>
+      <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">{t('context.selectSkill', 'Sélectionnez une compétence')}</span>
     </div>
   );
 
@@ -65,10 +67,10 @@ export function SkillDetailContent({
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'active': return 'Active';
-      case 'passive_auto': return 'Passif';
-      case 'passive_toggle': return 'Bascule';
-      default: return 'Skill';
+      case 'active': return t('context.typeActive', 'Active');
+      case 'passive_auto': return t('context.typePassive', 'Passif');
+      case 'passive_toggle': return t('context.typeToggle', 'Bascule');
+      default: return t('context.skillType', 'Compétence');
     }
   };
 
@@ -119,12 +121,12 @@ export function SkillDetailContent({
         <div className="shrink-0 px-4 py-3">
            <div className="flex items-center gap-2 mb-2 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
-              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Arcanes</span>
+              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">{t('context.arcanes', 'Arcanes')}</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
            </div>
            <div className="max-h-20 overflow-y-auto custom-scrollbar pr-2">
               <p className="font-garamond italic text-xs text-white/50 leading-relaxed text-center">
-                "{skill.description || "Une technique sans nom, perdue dans les âges..."}"
+                "{skill.description || t('context.noSkillDescription', "Une technique sans nom, perdue dans les âges...")}"
               </p>
            </div>
         </div>
@@ -133,7 +135,7 @@ export function SkillDetailContent({
         <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
            <div className="flex items-center gap-2 mb-3 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
-              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Manifestations</span>
+              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">{t('context.manifestations', 'Manifestations')}</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
            </div>
            
@@ -171,7 +173,7 @@ export function SkillDetailContent({
                            <span className="text-xs font-cinzel font-black text-white/60 uppercase tracking-widest">
                              {getTargetName(m.target, m.targetId, m.targetProperty)}
                            </span>
-                           <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase">{m.target === 'stat' ? 'Attribut' : 'Ressource'}</span>
+                           <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase">{m.target === 'stat' ? t('context.attribute', 'Attribut') : t('context.resource', 'Ressource')}</span>
                          </div>
                          <span className="text-xs font-cinzel font-black text-gold-bright">
                            {m.mode === 'dice' ? m.formula : `${m.value >= 0 ? '+' : ''}${m.value}${m.mode === 'percent' ? '%' : ''}`}
@@ -185,7 +187,7 @@ export function SkillDetailContent({
                  {skill.condition_type && (
                    <div className="p-2.5 rounded-xl bg-gold-DEFAULT/5 border border-gold-DEFAULT/10">
                       <p className="text-[11px] font-cinzel text-gold-DEFAULT/50 uppercase leading-relaxed text-center tracking-wider">
-                         Requiert {skill.condition_type === 'item' ? 'relique' : skill.condition_type === 'skill' ? 'skill' : 'relique & skill'}
+                         {t('context.requires', 'Requiert')} {skill.condition_type === 'item' ? t('context.relic', 'Relique').toLowerCase() : skill.condition_type === 'skill' ? t('context.skillType', 'Compétence').toLowerCase() : t('context.relicAndSkill', 'Relique & Compétence').toLowerCase()}
                          {skill.condition_tags && skill.condition_tags.length > 0 && ` [${skill.condition_tags.join(', ')}]`}
                       </p>
                    </div>
@@ -204,7 +206,7 @@ export function SkillDetailContent({
                         onClick={onEdit}
                         className="flex-1 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all font-cinzel text-[11px] font-black uppercase tracking-widest"
                     >
-                        Modifier
+                        {t('common.edit', 'Modifier')}
                     </button>
                 )}
                 {onDelete && (

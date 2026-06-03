@@ -142,6 +142,11 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
           });
         } else {
           console.warn(`[BoardCanvas] Character not found for token: ${t.character_id}`);
+          // Nettoyage automatique du token orphelin en DB
+          if (isHost && window.electronAPI) {
+             console.log(`[BoardCanvas] Suppression automatique du token orphelin ${t.character_id}`);
+             window.electronAPI.removeMapToken(sessionId, currentMapId, t.character_id).catch(console.error);
+          }
         }
       });
       setHasLoadedTokensForMap(currentMapId);

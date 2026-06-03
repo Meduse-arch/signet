@@ -9,12 +9,14 @@ import { TagManagementModal } from './TagManagementModal';
 import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { useSessionStore } from '../../store/session';
+import { useTranslation } from 'react-i18next';
 
 interface SkillCreationModalProps {
   sessionId: string;
 }
 
 export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
+  const { t } = useTranslation();
   const { showSkillCreateModal, setShowSkillCreateModal, skillToEdit, skillCreationType } = useUIStore();
   const { addSkill } = useSkillsStore();
   const { tags } = useTagsStore();
@@ -146,9 +148,9 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
               </div>
               <div>
                 <h2 className="text-2xl font-cinzel font-black text-white uppercase tracking-[0.3em] leading-none mb-2">
-                  {skillToEdit ? "MODIFIER LA COMPÉTENCE" : "CRÉER UNE COMPÉTENCE"}
+                  {skillToEdit ? t('context.editSkill', "MODIFIER LA COMPÉTENCE") : t('context.createSkill', "CRÉER UNE COMPÉTENCE")}
                 </h2>
-                <p className="text-xs font-cinzel text-gold-DEFAULT/60 uppercase tracking-[0.4em]">Gestion des compétences</p>
+                <p className="text-xs font-cinzel text-gold-DEFAULT/60 uppercase tracking-[0.4em]">{t('context.skillsManagement', "Gestion des compétences")}</p>
               </div>
            </div>
            <button 
@@ -166,25 +168,25 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
           <div className="space-y-10">
             <section className="space-y-6">
                <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.3em] flex items-center gap-3">
-                 <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> Informations
+                 <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> {t('context.informations', "Informations")}
                </h3>
                <div className="space-y-6">
                   <div className="space-y-2">
-                     <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Nom de la compétence</label>
+                     <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">{t('context.skillName', "Nom de la compétence")}</label>
                     <input 
                       type="text" 
                       value={name} 
                       onChange={e => setName(e.target.value)} 
-                      placeholder="NOM DE L'ARCANE..."
+                      placeholder={t('context.skillNamePlaceholder', "NOM DE L'ARCANE...")}
                       className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-cinzel text-white placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner"
                     />
                   </div>
                   <div className="space-y-2">
-                     <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Description</label>
+                     <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">{t('common.description', "Description")}</label>
                     <textarea 
                       value={description} 
                       onChange={e => setDescription(e.target.value)}
-                      placeholder="DÉCRIVEZ LA NATURE DE CET ARCANNE..."
+                      placeholder={t('context.skillDescPlaceholder', "DÉCRIVEZ LA NATURE DE CET ARCANNE...")}
                       rows={4}
                       className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 outline-none transition-all shadow-inner custom-scrollbar resize-none"
                     />
@@ -194,25 +196,25 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
 
             <section className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                     <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Type de compétence</label>
+                     <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">{t('context.skillType', "Type de compétence")}</label>
                     <select 
                       value={type} 
                       onChange={e => setType(e.target.value as any)}
                       className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-xs font-cinzel text-white uppercase focus:border-gold-bright outline-none appearance-none cursor-pointer"
                     >
-                        <option value="active">Compétence Active</option>
-                        <option value="passive_auto">Passif Permanent</option>
-                        <option value="passive_toggle">Aura Activable</option>
+                        <option value="active">{t('context.activeSkill', "Compétence Active")}</option>
+                        <option value="passive_auto">{t('context.passiveSkill', "Passif Permanent")}</option>
+                        <option value="passive_toggle">{t('context.auraSkill', "Aura Activable")}</option>
                     </select>
                 </div>
                 <div className="space-y-2">
-                     <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">Image</label>
+                     <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">{t('context.image', "Image")}</label>
                     <div className="flex gap-2">
                         <input 
                             type="text" 
                             value={imageUrl} 
                             onChange={e => setImageUrl(e.target.value)}
-                            placeholder="URL OU SCEAU..."
+                            placeholder={t('context.urlOrSeal', "URL OU SCEAU...")}
                             className="flex-1 bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-4 py-4 text-[11px] font-mono text-white/60 focus:border-gold-bright outline-none"
                         />
                         <label className="p-4 rounded-2xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 cursor-pointer transition-all relative">
@@ -227,13 +229,13 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
             <section className="space-y-6 p-6 rounded-[2rem] bg-white/[0.02] border border-white/5">
                 <div className="flex items-center justify-between">
                     <h3 className="text-xs font-cinzel font-black text-gold-DEFAULT/70 uppercase tracking-[0.3em] flex items-center gap-3">
-                        <Power size={14} /> Coût
+                        <Power size={14} /> {t('context.cost', "Coût")}
                     </h3>
                     <button 
                         onClick={() => setHasCost(!hasCost)}
                         className={`px-4 py-1.5 rounded-full text-[11px] font-cinzel font-black uppercase transition-all ${hasCost ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}
                     >
-                        {hasCost ? 'Retirer' : 'Ajouter un coût'}
+                        {hasCost ? t('common.remove', 'Retirer') : t('context.addCost', 'Ajouter un coût')}
                     </button>
                 </div>
                 {hasCost && (
@@ -265,7 +267,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
             <section className="space-y-6">
                 <div className="flex items-center justify-between border-b border-gold-DEFAULT/20 pb-3">
                     <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-3">
-                        <Zap size={16} className="text-gold-bright animate-pulse" /> Effets actifs
+                        <Zap size={16} className="text-gold-bright animate-pulse" /> {t('context.activeEffects', "Effets actifs")}
                     </h3>
                     <button onClick={addEffect} className="p-2 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
                         <Plus size={16} />
@@ -286,11 +288,11 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                     onChange={e => updateEffect(eff.id, { type: e.target.value })}
                                     className="col-span-1 bg-black border border-white/10 rounded-xl px-3 py-2 text-[11px] font-cinzel text-white uppercase outline-none focus:border-gold-bright"
                                 >
-                                    <option value="damage">Dégâts</option>
-                                    <option value="heal">Soin</option>
-                                    <option value="buff">Bonus</option>
-                                    <option value="debuff">Malus</option>
-                                    <option value="utility">Utilité</option>
+                                    <option value="damage">{t('context.damage', "Dégâts")}</option>
+                                    <option value="heal">{t('context.heal', "Soin")}</option>
+                                    <option value="buff">{t('context.buff', "Bonus")}</option>
+                                    <option value="debuff">{t('context.debuff', "Malus")}</option>
+                                    <option value="utility">{t('context.utility', "Utilité")}</option>
                                 </select>
                                 <div className="col-span-2 flex gap-2">
                                     <select 
@@ -298,8 +300,8 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                         onChange={e => updateEffect(eff.id, { mode: e.target.value })}
                                         className="w-24 bg-black border border-white/10 rounded-xl px-3 py-2 text-[11px] font-cinzel text-white outline-none"
                                     >
-                                        <option value="dice">Dés</option>
-                                        <option value="flat">Fixe</option>
+                                        <option value="dice">{t('context.dice', "Dés")}</option>
+                                        <option value="flat">{t('context.flat', "Fixe")}</option>
                                     </select>
                                     <input 
                                         type="text" 
@@ -314,14 +316,14 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                 type="text" 
                                 value={eff.description} 
                                 onChange={e => updateEffect(eff.id, { description: e.target.value })}
-                                placeholder="PROPRIÉTÉ DE LA MANIFESTATION..."
+                                placeholder={t('context.effectDescPlaceholder', "PROPRIÉTÉ DE LA MANIFESTATION...")}
                                 className="w-full bg-black/40 border border-white/5 rounded-xl text-xs font-serif italic text-white/50 px-4 py-2.5 focus:outline-none focus:border-gold-DEFAULT/40"
                             />
                         </div>
                     ))}
                     {effects.length === 0 && (
                         <div className="py-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.01]">
-                            <span className="text-xs font-cinzel text-white/10 uppercase tracking-[0.4em] italic">Aucun effet actif</span>
+                            <span className="text-xs font-cinzel text-white/10 uppercase tracking-[0.4em] italic">{t('context.noActiveEffect', "Aucun effet actif")}</span>
                         </div>
                     )}
                 </div>
@@ -331,7 +333,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
             <section className="space-y-6">
                 <div className="flex items-center justify-between border-b border-gold-DEFAULT/20 pb-3">
                     <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-3">
-                        <BarChart2 size={16} className="text-gold-bright" /> Modificateurs de stats
+                        <BarChart2 size={16} className="text-gold-bright" /> {t('context.statModifiers', "Modificateurs de stats")}
                     </h3>
                     <button onClick={addModifier} className="p-2 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
                         <Plus size={16} />
@@ -345,8 +347,8 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                 onChange={e => updateModifier(i, { target: e.target.value })}
                                 className="w-28 bg-black border border-white/10 rounded-xl px-3 py-2.5 text-[11px] font-cinzel font-black text-gold-DEFAULT uppercase outline-none"
                             >
-                                <option value="stat">ATTRIBUT</option>
-                                <option value="bar">RESSOURCE</option>
+                                <option value="stat">{t('context.attribute', "ATTRIBUT").toUpperCase()}</option>
+                                <option value="bar">{t('context.resource', "RESSOURCE").toUpperCase()}</option>
                             </select>
                             <select 
                                 value={m.targetId} 
@@ -381,7 +383,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                 onClick={() => setShowSkillCreateModal(false)}
                 className="flex-1 py-4 rounded-2xl text-white/70 hover:text-white text-xs font-cinzel font-black uppercase tracking-[0.3em] transition-all border border-white/20 hover:border-white/40"
               >
-                Annuler
+                {t('common.cancel', "Annuler")}
               </button>
               <button 
                 onClick={handleSave}
@@ -394,7 +396,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
               >
                 {name.trim() && <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />}
                 <Save size={20} className="relative z-10" />
-                <span className="relative z-10">Enregistrer</span>
+                <span className="relative z-10">{t('common.save', "Enregistrer")}</span>
               </button>
           </div>
         </footer>

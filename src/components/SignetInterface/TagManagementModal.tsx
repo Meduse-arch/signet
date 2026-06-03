@@ -4,6 +4,7 @@ import { ModalContainer } from '../ModalContainer';
 import { useTagsStore } from '../../store/tags';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { usePeer } from '../../hooks/usePeer';
+import { useTranslation } from 'react-i18next';
 
 interface TagManagementModalProps {
   sessionId: string;
@@ -11,6 +12,7 @@ interface TagManagementModalProps {
 }
 
 export function TagManagementModal({ sessionId, onClose }: TagManagementModalProps) {
+  const { t } = useTranslation();
   const { tags, addTag, removeTag } = useTagsStore();
   const { user } = useAuthStore();
   const { broadcast } = usePeer();
@@ -34,14 +36,14 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Supprimer ce signe des archives ?")) return;
+    if (!window.confirm(t('context.deleteTagConfirm', "Supprimer ce signe des archives ?"))) return;
     await removeTag(sessionId, id);
     broadcast({ type: 'TAG_DELETE', payload: { id } });
   };
 
   return (
     <div className="fixed inset-0 z-[400]">
-      <ModalContainer onClose={onClose} title="ARCHIVES DES SIGNES">
+      <ModalContainer onClose={onClose} title={t('context.tagsArchive', "ARCHIVES DES SIGNES")}>
         <div className="space-y-6">
           <div className="flex gap-2">
             <div className="flex-1 space-y-1">
@@ -49,7 +51,7 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
                 type="text" 
                 value={newName} 
                 onChange={e => setNewName(e.target.value)} 
-                placeholder="Nom du signe..."
+                placeholder={t('context.tagNamePlaceholder', "Nom du signe...")}
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/60 focus:border-gold-DEFAULT/50 outline-none transition-all"
               />
             </div>
@@ -83,7 +85,7 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
               </div>
             ))}
             {tags.length === 0 && (
-              <p className="text-xs font-garamond italic text-white/60 text-center py-4">Aucun signe gravé...</p>
+              <p className="text-xs font-garamond italic text-white/60 text-center py-4">{t('context.noTags', "Aucun signe gravé...")}</p>
             )}
           </div>
         </div>

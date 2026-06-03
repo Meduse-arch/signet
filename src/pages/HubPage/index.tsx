@@ -11,7 +11,10 @@ import { SecurityLevel, useAuthStore } from '../../store/auth';
 import { generateSessionKey } from '../../services/peer.service';
 import { Session } from '../../services/session.service';
 import { AdminItemsView } from '../../components/Admin/AdminItemsView';
-import { Search, ChevronDown, Check, Play, Loader2, WifiOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Icons } from '../../components/ui/Icons';
+import { Button } from '../../components/ui/Button';
+import { Select } from '../../components/ui/Select';
 import logo from '../../assets/logo.png';
 
 interface HubPageProps {
@@ -25,6 +28,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
   const { searchQuery, setSearchQuery, showModal, setShowModal, showCreateModal, setShowCreateModal, activeTab } = useUIStore();
   const { sessions = [], addSession, removeSession, isLoading } = useSession();
   const { user } = useAuthStore();
+  const { t, i18n } = useTranslation();
 
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('all');
   const [activeSystem, setActiveSystem] = useState<string | null>(null);
@@ -39,22 +43,15 @@ export function HubPage({ onEnterSession }: HubPageProps) {
   const isSearchOpen = activeTab === 'search';
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (sysDropdownRef.current && !sysDropdownRef.current.contains(event.target as Node)) {
-        setIsSysDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Les fermetures de clics hors zone sont gérées par les composants Select
+  useEffect(() => {}, []);
 
   const filteredSessions = useMemo(() => {
     if (!Array.isArray(sessions)) return [];
 
     const result = sessions.filter(s => {
       if (!s) return false;
-      const sName = s.name || 'Sans nom';
+      const sName = s.name || t('common.noName');
       const matchesSearch = sName.toLowerCase().includes((searchQuery || '').toLowerCase());
       const matchesSystem = !activeSystem || s.system === activeSystem;
       const matchesCategory =
@@ -104,7 +101,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
   };
 
   const handleDeleteSession = (session: Session) => {
-    if (window.confirm(`Voulez-vous vraiment bannir cette archive ?`)) {
+    if (window.confirm(t('hub.confirmDelete'))) {
       removeSession(session.id);
     }
   };
@@ -135,81 +132,49 @@ export function HubPage({ onEnterSession }: HubPageProps) {
 
               {showFilterMenu && (
                 <div className="p-6 rounded-[1.5rem] bg-white/[0.03] border border-gold-DEFAULT/40 animate-in zoom-in-95 duration-200 space-y-6">
-                  <div className="relative" ref={sysDropdownRef}>
-                    <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Système</h3>
-                    <button
-                      onClick={() => setIsSysDropdownOpen(!isSysDropdownOpen)}
-                      className="w-full flex items-center justify-between bg-[#0D0D0F]/80 border border-white/10 rounded-xl py-3 px-4 text-[10px] font-cinzel text-gold-bright hover:border-gold-DEFAULT/40 transition-all"
-                    >
-                      <span className="tracking-widest uppercase">{activeSystem || 'Tous'}</span>
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isSysDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isSysDropdownOpen && (
-                      <div className="absolute top-full left-0 w-full mt-2 bg-[#121216] border border-gold-DEFAULT/40 rounded-xl shadow-2xl z-[60] overflow-hidden">  
-                        {['Seal'].map(sys => (
-                          <div
-                            key={sys}
-                            onClick={() => { setActiveSystem(activeSystem === sys ? null : sys); setIsSysDropdownOpen(false); }}
-                            className="flex items-center justify-between px-4 py-3 text-[10px] font-cinzel text-gold-DEFAULT drop-shadow-md hover:text-gold-bright hover:bg-gold-DEFAULT/5 cursor-pointer border-b border-white/5 last:border-0"
-                          >
-                            <span className="tracking-widest uppercase">{sys}</span>
-                            {activeSystem === sys && <Check className="w-3 h-3 text-gold-bright" />}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  
+                  <Select
+                    label={t('filters.system')}
+                    value={activeSystem || ''}
+                    onChange={(val) => setActiveSystem(val === '' ? null : val)}
+                    options={[
+                      { value: '', label: t('filters.all') },
+                      { value: 'Seal', label: 'Seal' }
+                    ]}
+                  />
 
                   {isMJ && (
-                    <div>
-                      <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Rôles</h3>
-                      <div className="flex bg-[#0D0D0F]/80 p-1 rounded-xl border border-white/5 gap-1">
-                        <button
-                          onClick={() => setActiveCategory(activeCategory === 'mine' ? 'all' : 'mine')}
-                          className={`flex-1 py-2 text-[8px] font-cinzel font-bold rounded-lg transition-all border ${
-                            activeCategory === 'mine' ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'text-white/70 border-transparent hover:text-white'        
-                          }`}
-                        >
-                          MES CAMPAGNES
-                        </button>
-                        <button
-                          onClick={() => setActiveCategory(activeCategory === 'public' ? 'all' : 'public')}
-                          className={`flex-1 py-2 text-[8px] font-cinzel font-bold rounded-lg transition-all border ${
-                            activeCategory === 'public' ? 'bg-gold-DEFAULT text-black border-gold-DEFAULT' : 'text-white/70 border-transparent hover:text-white'      
-                          }`}
-                        >
-                          JE PARTICIPE
-                        </button>
-                      </div>
-                    </div>
+                    <Select
+                      label={t('filters.roles')}
+                      value={activeCategory}
+                      onChange={(val) => setActiveCategory(val as FilterCategory)}
+                      options={[
+                        { value: 'all', label: t('filters.all', 'Toutes') },
+                        { value: 'mine', label: t('filters.myCampaigns') },
+                        { value: 'public', label: t('filters.iParticipate') }
+                      ]}
+                    />
                   )}
 
-                  <div>
-                    <h3 className="text-[9px] font-black text-gold-muted tracking-[0.2em] uppercase mb-3 px-1">Trier par</h3>
-                    <div className="flex bg-[#0D0D0F]/80 p-1 rounded-xl border border-white/5 gap-1">
-                      {[
-                        { id: 'date', label: 'Récents' },
-                        { id: 'name', label: 'A-Z' },
-                      ].map(opt => (
-                        <button
-                          key={opt.id}
-                          onClick={() => setSortBy(opt.id as SortOption)}
-                          className={`flex-1 py-2 text-[9px] font-cinzel font-bold rounded-lg transition-all ${
-                            sortBy === opt.id ? 'bg-white/10 text-white border border-white/10' : 'text-white/70 hover:text-white border border-transparent'
-                          }`}
-                        >
-                          {opt.label.toUpperCase()}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <Select
+                    label={t('filters.sortBy')}
+                    value={sortBy}
+                    onChange={(val) => setSortBy(val as SortOption)}
+                    options={[
+                      { value: 'date', label: t('filters.recent') },
+                      { value: 'name', label: t('filters.az') }
+                    ]}
+                  />
 
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    fullWidth
                     onClick={() => {setActiveSystem(null); setSortBy('date'); setActiveCategory('all'); setSearchQuery('');}}
-                    className="w-full py-2 text-[8px] font-black text-gold-DEFAULT drop-shadow-md hover:text-gold-bright uppercase tracking-[0.2em] transition-colors border-t border-white/5 pt-4"
+                    className="border-t border-white/5 pt-4 mt-2 rounded-none"
                   >
-                    Réinitialiser
-                  </button>
+                    {t('filters.reset')}
+                  </Button>
                 </div>
               )}
             </div>
@@ -231,7 +196,7 @@ export function HubPage({ onEnterSession }: HubPageProps) {
                   <div className="flex items-center justify-center gap-4">
                     <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
                     <span className="text-xs font-cinzel text-gold-DEFAULT drop-shadow-md tracking-[0.2em] uppercase italic">
-                      {filteredSessions.length} Archive{filteredSessions.length > 1 ? 's' : ''} Révélée{filteredSessions.length > 1 ? 's' : ''}
+                      {t('hub.archivesRevealed', { count: filteredSessions.length })}
                     </span>
                     <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
                   </div>
@@ -240,11 +205,11 @@ export function HubPage({ onEnterSession }: HubPageProps) {
 
               <div className="flex-1 overflow-y-auto px-12 pb-12 relative z-10 custom-scrollbar">
                 {isLoading ? (
-                  <div className="flex items-center justify-center h-full font-cinzel text-gold-DEFAULT drop-shadow-md animate-pulse tracking-widest text-[10px]">ÉVEIL DES ARCHIVES...</div>
+                  <div className="flex items-center justify-center h-full font-cinzel text-gold-DEFAULT drop-shadow-md animate-pulse tracking-widest text-[10px]">{t('hub.awakening')}</div>
                 ) : filteredSessions.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40">
-                    <Search className="w-16 h-16 text-gold-DEFAULT drop-shadow-md mb-4" />
-                    <p className="font-serif italic text-xl text-gold-DEFAULT drop-shadow-md">Aucune rune ne correspond à votre recherche...</p>
+                    <Icons.Search className="w-16 h-16 text-gold-DEFAULT drop-shadow-md mb-4" />
+                    <p className="font-serif italic text-xl text-gold-DEFAULT drop-shadow-md">{t('hub.noResults')}</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 content-start animate-page-enter">
@@ -273,8 +238,8 @@ export function HubPage({ onEnterSession }: HubPageProps) {
         onClose={() => { setShowCreateModal(false); setEditingSession(null); }}
         onSubmit={editingSession ? handleUpdateSession : handleCreateSession}
         initialData={editingSession || undefined}
-        title={editingSession ? "Modifier la Session" : "Nouvelle Session"}
-        submitLabel={editingSession ? "Enregistrer" : "Créer"}
+        title={editingSession ? t('hub.editSessionTitle') : t('hub.newSessionTitle')}
+        submitLabel={editingSession ? t('hub.editSubmitLabel') : t('hub.createSubmitLabel')}
       />
       <KeyModal isOpen={showModal} onClose={() => setShowModal(false)} onJoin={(key) => { onEnterSession(key); setShowModal(false); }} />
     </div>

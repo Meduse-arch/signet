@@ -112,6 +112,25 @@ class DBStorageService {
     await db.delete('assets', hash);
   }
 
+  // --- Audio Management (Aliases for Assets) ---
+
+  async putAudio(asset: Omit<AssetRecord, 'mime'> & { mime?: string }): Promise<void> {
+    return this.putAsset({
+      ...asset,
+      mime: asset.mime || 'audio/ogg'
+    });
+  }
+
+  async getAudio(hash: string): Promise<AssetRecord | undefined> {
+    return this.getAsset(hash);
+  }
+
+  async getAllAudioHashes(): Promise<string[]> {
+    const db = await this.dbPromise;
+    const all = await db.getAllKeys('assets');
+    return all as string[];
+  }
+
   // --- Chunk Management ---
 
   async putChunk(chunk: ChunkRecord): Promise<void> {

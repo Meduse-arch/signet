@@ -14,6 +14,7 @@ import {
 import { Quest } from '../../services/quests.service';
 import { useQuestsStore } from '../../store/quests';
 import { AssetImage } from '../AssetImage';
+import { useTranslation } from 'react-i18next';
 
 interface QuestDetailContentProps {
   quest: Quest;
@@ -32,6 +33,7 @@ export function QuestDetailContent({
   isMJ,
   showActions = true 
 }: QuestDetailContentProps) {
+  const { t } = useTranslation();
   const { quests } = useQuestsStore();
   
   // On dérive la quête la plus à jour depuis le store
@@ -43,15 +45,15 @@ export function QuestDetailContent({
   if (!quest) return (
     <div className="flex flex-col items-center justify-center h-full opacity-40 py-20">
       <Scroll size={64} className="mb-4 text-gold-DEFAULT" />
-      <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">Sélectionnez un récit</span>
+      <span className="font-cinzel tracking-widest uppercase text-gold-bright text-xs">{t('context.selectQuest', 'Sélectionnez un récit')}</span>
     </div>
   );
 
   const getStatusInfo = (status: string) => {
     switch (status) {
-      case 'Terminée': return { icon: <CheckCircle2 className="text-green-500" size={14} />, label: 'Accomplie', color: 'text-green-500' };
-      case 'Échouée': return { icon: <XCircle className="text-red-500" size={14} />, label: 'Échouée', color: 'text-red-500' };
-      default: return { icon: <Clock className="text-gold-DEFAULT animate-pulse" size={14} />, label: 'En cours', color: 'text-gold-DEFAULT' };
+      case 'Terminée': return { icon: <CheckCircle2 className="text-green-500" size={14} />, label: t('context.questCompleted', 'Accomplie'), color: 'text-green-500' };
+      case 'Échouée': return { icon: <XCircle className="text-red-500" size={14} />, label: t('context.questFailed', 'Échouée'), color: 'text-red-500' };
+      default: return { icon: <Clock className="text-gold-DEFAULT animate-pulse" size={14} />, label: t('context.questInProgress', 'En cours'), color: 'text-gold-DEFAULT' };
     }
   };
 
@@ -98,12 +100,12 @@ export function QuestDetailContent({
         <div className="shrink-0 px-4 py-3">
            <div className="flex items-center gap-2 mb-2 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
-              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Récit</span>
+              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">{t('context.questStory', 'Récit')}</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
            </div>
            <div className="max-h-24 overflow-y-auto custom-scrollbar pr-2">
               <p className="font-garamond italic text-xs text-white/50 leading-relaxed text-center">
-                "{quest.description || "Les chroniques sont muettes sur ce récit..."}"
+                "{quest.description || t('context.questNoStory', "Les chroniques sont muettes sur ce récit...")}"
               </p>
            </div>
         </div>
@@ -112,7 +114,7 @@ export function QuestDetailContent({
         <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
            <div className="flex items-center gap-2 mb-3 opacity-40">
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
-              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">Récompenses</span>
+              <span className="text-[6px] font-cinzel font-black uppercase tracking-[0.3em]">{t('context.rewards', 'Récompenses')}</span>
               <div className="h-px flex-1 bg-gold-DEFAULT/30" />
            </div>
            
@@ -132,11 +134,11 @@ export function QuestDetailContent({
                            <div className="flex flex-col">
                                <span className="text-xs font-cinzel font-black text-white/60 uppercase tracking-widest">{reward.type}</span>
                                <span className="text-[6px] font-mono text-gold-DEFAULT/30 uppercase truncate max-w-[100px]">
-                                   {reward.description || 'Valeur mystique'}
+                                   {reward.description || t('context.mysticValue', 'Valeur mystique')}
                                </span>
                            </div>
                            <span className="text-xs font-cinzel font-black text-gold-bright">
-                               {reward.type === 'Experience' ? `+${reward.value} XP` : (reward.value ? `x${reward.value}` : 'UNIQUE')}
+                               {reward.type === 'Experience' ? `+${reward.value} XP` : (reward.value ? `x${reward.value}` : t('context.unique', 'UNIQUE').toUpperCase())}
                            </span>
                        </div>
                      ))}
@@ -144,7 +146,7 @@ export function QuestDetailContent({
                  ) : (
                    <div className="h-full flex flex-col items-center justify-center py-4 opacity-5">
                        <Sparkles size={20} className="mb-1" />
-                       <span className="text-[6px] font-cinzel uppercase tracking-widest">Néant</span>
+                       <span className="text-[6px] font-cinzel uppercase tracking-widest">{t('context.nothing', 'Néant')}</span>
                    </div>
                  )}
               </div>
@@ -161,7 +163,7 @@ export function QuestDetailContent({
                         onClick={onEdit}
                         className="flex-1 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all font-cinzel text-[11px] font-black uppercase tracking-widest"
                     >
-                        Modifier
+                        {t('common.edit', 'Modifier')}
                     </button>
                 )}
                 {onDelete && (

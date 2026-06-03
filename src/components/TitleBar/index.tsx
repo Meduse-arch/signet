@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Minus, Square, LogIn } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Icons } from '../ui/Icons';
 import logo from '../../assets/logo.png';
 
 export function TitleBar() {
   const isElectron = !!window.electronAPI;
+  const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [title, setTitle] = useState("SIGNET");
   const [externalInfo, setExternalInfo] = useState<{ type: string, sessionId: string } | null>(null);
@@ -18,12 +20,12 @@ export function TitleBar() {
         const type = parts[typeIndex];
         const sessionId = parts[typeIndex + 1];
         setExternalInfo({ type, sessionId });
-        const translatedType = type === 'scenes' ? 'SCÈNES' : 
-                               type === 'quests' ? 'QUÊTES' :
+        const translatedType = type === 'scenes' ? t('titlebar.scenes') : 
+                               type === 'quests' ? t('titlebar.quests') :
  
-                               type === 'dice' ? 'DÉS' : 
-                               type === 'inventaire' ? 'INVENTAIRE' : 
-                               type === 'players' ? 'JOUEURS' : type.toUpperCase();
+                               type === 'dice' ? t('titlebar.dice') : 
+                               type === 'inventaire' ? t('titlebar.inventory') : 
+                               type === 'players' ? t('titlebar.players') : type.toUpperCase();
         setTitle(`SIGNET - ${translatedType}`);
       }
     }
@@ -116,29 +118,29 @@ export function TitleBar() {
           <button 
             onClick={handleReintegrate} 
             className="px-4 hover:bg-gold-DEFAULT/20 text-gold-DEFAULT hover:text-gold-bright transition-all flex items-center justify-center gap-2 text-xs font-cinzel font-bold border-r border-gold-DEFAULT/20 drop-shadow-md"
-            title="Réintégrer dans l'application principale"
+            title={t('titlebar.reintegrate')}
           >
-            <LogIn size={12} className="rotate-180" />
-            <span className="tracking-[0.2em] uppercase pt-0.5">Réintégrer</span>
+            <Icons.LogIn size={12} className="rotate-180" />
+            <span className="tracking-[0.2em] uppercase pt-0.5">{t('titlebar.reintegrate')}</span>
           </button>
         )}
         <button 
           onClick={() => window.electronAPI.minimizeWindow()} 
           className="px-3 hover:bg-white/10 text-gold-DEFAULT hover:text-gold-bright transition-colors flex items-center justify-center drop-shadow-md"
         >
-          <Minus size={14} />
+          <Icons.Minus size={14} />
         </button>
         <button 
           onClick={() => window.electronAPI.maximizeWindow()} 
           className="px-3 hover:bg-white/10 text-gold-DEFAULT hover:text-gold-bright transition-colors flex items-center justify-center drop-shadow-md"
         >
-          <Square size={12} />
+          <Icons.Square size={12} />
         </button>
         <button 
           onClick={() => window.electronAPI.closeWindow()} 
           className="px-3 hover:bg-red-500/20 text-gold-DEFAULT hover:text-red-400 transition-colors flex items-center justify-center drop-shadow-md"
         >
-          <X size={14} />
+          <Icons.X size={14} />
         </button>
       </div>
     </div>
