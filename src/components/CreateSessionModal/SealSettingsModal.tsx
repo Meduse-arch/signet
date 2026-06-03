@@ -41,7 +41,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
 
   const handleAddStat = () => {
     const id = Math.random().toString(36).substring(2, 9);
-    const newStat: StatDefinition = { id, name: 'Nouvelle Stat' };
+    const newStat: StatDefinition = { id, name: t('seal.newStat', 'Nouvelle Stat') };
     setLocalSettings({ ...localSettings, stats: [...(localSettings.stats || []), newStat] });
   };
 
@@ -65,7 +65,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
 
   const handleAddBar = () => {
     const id = Math.random().toString(36).substring(2, 9);
-    const newBar: BarDefinition = { id, name: 'Nouvelle Ressource', color: '#ffffff', formula: '10' };
+    const newBar: BarDefinition = { id, name: t('seal.newResource', 'Nouvelle Ressource'), color: '#ffffff', formula: '10' };
     setLocalSettings({ ...localSettings, bars: [...(localSettings.bars || []), newBar] });
   };
 
@@ -93,7 +93,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Paramètres Seal"
+      title={t('seal.settingsTitle', 'Paramètres du Système')}
       footer={footer}
       maxWidth="2xl"
     >
@@ -102,19 +102,19 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
           onClick={() => setActiveTab('creation')}
           className={`px-4 py-3 text-[11px] font-cinzel font-black tracking-widest uppercase transition-all border-b-2 whitespace-nowrap ${activeTab === 'creation' ? 'border-gold-DEFAULT text-gold-bright' : 'border-transparent text-gold-muted hover:text-gold-DEFAULT'}`}
         >
-          Création
+          {t('seal.creation', 'Création')}
         </button>
         <button 
           onClick={() => setActiveTab('stats')}
           className={`px-4 py-3 text-[11px] font-cinzel font-black tracking-widest uppercase transition-all border-b-2 whitespace-nowrap ${activeTab === 'stats' ? 'border-gold-DEFAULT text-gold-bright' : 'border-transparent text-gold-muted hover:text-gold-DEFAULT'}`}
         >
-          Attributs
+          {t('seal.attributes', 'Attributs')}
         </button>
         <button 
           onClick={() => setActiveTab('bars')}
           className={`px-4 py-3 text-[11px] font-cinzel font-black tracking-widest uppercase transition-all border-b-2 whitespace-nowrap ${activeTab === 'bars' ? 'border-gold-DEFAULT text-gold-bright' : 'border-transparent text-gold-muted hover:text-gold-DEFAULT'}`}
         >
-          Ressources
+          {t('seal.resources', 'Ressources')}
         </button>
       </div>
 
@@ -124,7 +124,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
             <div className="flex flex-col gap-6">
               <div className="flex items-center gap-2 mb-2">
                 <Icons.ScrollText className="w-4 h-4 text-gold-muted" />
-                <h3 className="text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase">Méthode de Genèse</h3>
+                <h3 className="text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase">{t('seal.creationMethod', 'Méthode de Création')}</h3>
               </div>
 
               <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-gold-DEFAULT/20 w-fit">
@@ -136,7 +136,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                       : 'text-gold-muted hover:text-gold-DEFAULT'
                   }`}
                 >
-                  Manuel
+                  {t('seal.manual', 'Manuel')}
                 </button>
                 <button
                   onClick={() => setLocalSettings({ ...localSettings, sheetMode: 'roll' })}
@@ -146,7 +146,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                       : 'text-gold-muted hover:text-gold-DEFAULT'
                   }`}
                 >
-                  Tirage
+                  {t('seal.roll', 'Tirage')}
                 </button>
               </div>
               
@@ -158,7 +158,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                     <div className="flex flex-col items-center gap-4">
                       <Icons.UserCog className="w-8 h-8 text-gold-bright opacity-50" />
                       <div className="text-center">
-                        <label className="block text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase mb-4">Réserve de Points de Destin</label>
+                        <label className="block text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase mb-4">{t('seal.pointPool', 'Réserve de Points')}</label>
                         <div className="flex items-center justify-center gap-6">
                           <button 
                             onClick={() => setLocalSettings({ ...localSettings, manualPoints: Math.max(0, (localSettings.manualPoints || 0) - 5) })}
@@ -181,7 +181,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                           </button>
                         </div>
                         <p className="mt-4 text-[11px] text-gold-muted/50 font-serif italic leading-relaxed">
-                          Les points que les joueurs pourront répartir librement entre leurs attributs.
+                          {t('seal.pointPoolDesc', 'Les points que les joueurs pourront répartir librement entre leurs attributs.')}
                         </p>
                       </div>
                     </div>
@@ -191,11 +191,11 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                     <div className="flex flex-col items-center gap-4">
                       <Icons.Dices className="w-8 h-8 text-gold-bright opacity-50" />
                       <div className="text-center w-full">
-                        <label className="block text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase mb-6 text-center">Formule de Manifestation</label>
+                        <label className="block text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase mb-6 text-center">{t('seal.rollFormula', 'Formule de Tirage')}</label>
                         
                         <div className="flex items-center justify-center gap-6 text-gold-bright font-cinzel font-black">
                           <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs text-gold-muted uppercase tracking-tighter">Nombre</span>
+                            <span className="text-xs text-gold-muted uppercase tracking-tighter">{t('seal.number', 'Nombre')}</span>
                             <Input
                               type="number"
                               value={localSettings.rollFormula?.diceCount}
@@ -209,7 +209,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                           </div>
                           <span className="text-4xl mt-4 opacity-30">D</span>
                           <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs text-gold-muted uppercase tracking-tighter">Faces</span>
+                            <span className="text-xs text-gold-muted uppercase tracking-tighter">{t('seal.sides', 'Faces')}</span>
                             <Input
                               type="number"
                               value={localSettings.rollFormula?.diceSides}
@@ -223,7 +223,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                           </div>
                           <div className="w-px h-8 bg-gold-DEFAULT/20 mx-2 self-end mb-4" />
                           <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs text-gold-muted uppercase tracking-tighter">Relances</span>
+                            <span className="text-xs text-gold-muted uppercase tracking-tighter">{t('seal.rerolls', 'Relances')}</span>
                             <Input
                               type="number"
                               value={localSettings.rollFormula?.rerolls}
@@ -238,15 +238,15 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                         </div>
 
                         <p className="mt-8 text-[11px] text-gold-muted/50 font-serif italic leading-relaxed max-w-sm mx-auto">
-                          Définit le jet de dés automatique lors de la création d'un voyageur.
+                          {t('seal.rollFormulaDesc', "Définit le jet de dés automatique lors de la création d'un personnage.")}
                         </p>
                       </div>
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-gold-DEFAULT/10 flex items-center justify-between">
                       <div className="space-y-1">
-                        <h4 className="text-xs font-cinzel font-black text-gold-bright tracking-widest uppercase">Rite de Purification</h4>
-                        <p className="text-xs text-gold-muted font-serif italic">Permettre de relancer toute la fiche d'un coup.</p>
+                        <h4 className="text-xs font-cinzel font-black text-gold-bright tracking-widest uppercase">{t('seal.rerollAll', 'Relancer tout')}</h4>
+                        <p className="text-xs text-gold-muted font-serif italic">{t('seal.rerollAllDesc', "Permettre de relancer toute la fiche d'un coup.")}</p>
                       </div>
                       <button
                         onClick={() => setLocalSettings({ ...localSettings, rerollAllAllowed: !localSettings.rerollAllAllowed })}
@@ -273,14 +273,14 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
         {activeTab === 'stats' && (
           <div className="space-y-4 animate-in fade-in duration-300">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase">Attributs Personnalisés</h3>
+              <h3 className="text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase">{t('seal.customAttributes', 'Attributs Personnalisés')}</h3>
               <Button 
                 size="sm"
                 variant="ghost"
                 leftIcon={<Icons.Plus size={14} />}
                 onClick={handleAddStat}
               >
-                AJOUTER
+                {t('common.add', 'AJOUTER')}
               </Button>
             </div>
 
@@ -308,14 +308,14 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
         {activeTab === 'bars' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase">Formules de Calcul (Runes)</h3>
+              <h3 className="text-xs font-cinzel font-black text-gold-muted tracking-widest uppercase">{t('seal.formulas', 'Formules de Calcul (Ressources)')}</h3>
               <Button 
                 size="sm"
                 variant="ghost"
                 leftIcon={<Icons.Plus size={14} />}
                 onClick={handleAddBar}
               >
-                AJOUTER
+                {t('common.add', 'AJOUTER')}
               </Button>
             </div>
             
@@ -346,7 +346,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
                 
                 <div className="space-y-1">
                   <Input 
-                    label="Équation de calcul"
+                    label={t('seal.equation', 'Équation de calcul')}
                     value={bar.formula}
                     onChange={(e) => handleUpdateBar(bar.id, 'formula', e.target.value)}
                     mono
@@ -357,7 +357,7 @@ export function SealSettingsModal({ isOpen, onClose, settings, onSave }: SealSet
 
             <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
               <p className="text-[11px] text-blue-300/70 font-serif italic leading-relaxed">
-                Utilisez les IDs des attributs (ex: force, intelligence) pour créer vos formules.
+                {t('seal.equationDesc', 'Utilisez les IDs des attributs (ex: force, intelligence) pour créer vos formules.')}
               </p>
             </div>
           </div>

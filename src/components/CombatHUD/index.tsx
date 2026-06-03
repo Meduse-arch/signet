@@ -7,8 +7,10 @@ import { useAuthStore } from '../../store/auth';
 import { useCharactersStore } from '../../store/characters';
 import { Swords, ChevronRight } from 'lucide-react';
 import { AssetImage } from '../AssetImage';
+import { useTranslation } from 'react-i18next';
 
 export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
+  const { t } = useTranslation();
   const { isActive, activeActorId, actors, nextTurn } = useCombatStore();
   const { isHost } = usePeersStore();
   const { user } = useAuthStore();
@@ -132,7 +134,7 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
             <button 
               onClick={handleNext}
               className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 border border-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/50 transition-all"
-              title="Tour Suivant"
+              title={t('context.nextTurn', 'Tour Suivant')}
             >
               <ChevronRight size={20} />
             </button>
@@ -140,7 +142,7 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
           <button 
             onClick={handleOpenManager}
             className={`flex items-center justify-center w-10 h-10 rounded-full transition-all border ${isActive ? 'bg-red-900/20 border-red-500/20 text-red-400 hover:bg-red-900/40 hover:border-red-500/50' : 'bg-black/40 border-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT/10 hover:border-gold-DEFAULT/50'}`}
-            title={isHost ? "Gestionnaire d'Initiative" : "Ordre de Combat"}
+            title={isHost ? t('context.combatManagement', "Gestion des Combats") : t('context.combatOrder', "Ordre de Combat")}
           >
             <Swords size={18} />
           </button>

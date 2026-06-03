@@ -10,6 +10,7 @@ import { CreateCharacterModal } from '../CreateCharacterModal';
 import { CharacterSheetContent } from './CharacterSheetContent';
 import { DEFAULT_BARS, DEFAULT_STATS } from '../../systems/seal/constants';
 import { useAssetUrl } from '../../hooks/useAssetUrl';
+import { useTranslation } from 'react-i18next';
 
 function BestiaryImage({ url, className }: { url: string; className?: string }) {
   const assetUrl = useAssetUrl(url);
@@ -22,6 +23,7 @@ interface BestiaryWindowContentProps {
 }
 
 export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps) {
+  const { t } = useTranslation();
   const { characters, controlledCharacterId, setPnjControle, removeCharacter, addOrUpdateCharacter } = useCharactersStore();
   const { user } = useAuthStore();
   const { setCharacterManagement } = useUIStore();
@@ -211,8 +213,8 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 opacity-40">
         <Ghost size={64} className="mb-6 text-gold-DEFAULT" />
-        <h2 className="font-cinzel text-xl uppercase tracking-widest mb-2">Accès Restreint</h2>
-        <p className="text-xs font-garamond italic text-center">Seul le Maître de Jeu peut consulter le Bestiaire de l'Archive.</p>
+        <h2 className="font-cinzel text-xl uppercase tracking-widest mb-2">{t('bestiary.restrictedAccess', 'Accès Restreint')}</h2>
+        <p className="text-xs font-garamond italic text-center">{t('bestiary.restrictedDesc', 'Seul le Maître de Jeu peut consulter cette page.')}</p>
       </div>
     );
   }
@@ -225,7 +227,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gold-DEFAULT/40 group-focus-within:text-gold-DEFAULT transition-colors" />
           <input 
             type="text" 
-            placeholder="RECHERCHER DANS LE BESTIAIRE..."
+            placeholder={t('bestiary.searchPlaceholder', 'RECHERCHER...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-black/40 border border-gold-DEFAULT/20 rounded-xl py-2.5 pl-10 pr-4 text-xs font-cinzel text-gold-bright placeholder:text-gold-DEFAULT/40 focus:outline-none focus:border-gold-DEFAULT/50 transition-all uppercase tracking-widest shadow-inner"
@@ -236,18 +238,18 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all font-cinzel text-xs font-black uppercase tracking-widest shadow-lg group"
         >
           <Plus size={14} className="group-hover:rotate-90 transition-transform" />
-          Créer
+          {t('common.create', 'Créer')}
         </button>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-black/20 p-1 rounded-xl border border-white/5 shrink-0 shadow-inner">
         {[
-          { id: 'pnj', label: 'PNJ', icon: User },
-          { id: 'mobs', label: 'Monstres', icon: Sword },
-          { id: 'boss', label: 'Boss', icon: Skull },
-          { id: 'players', label: 'Joueurs', icon: Ghost },
-          { id: 'models', label: 'Modèles', icon: BookOpen },
+          { id: 'pnj', label: t('bestiary.tabPnj', 'PNJ'), icon: User },
+          { id: 'mobs', label: t('bestiary.tabMobs', 'Monstres'), icon: Sword },
+          { id: 'boss', label: t('bestiary.tabBoss', 'Boss'), icon: Skull },
+          { id: 'players', label: t('bestiary.tabPlayers', 'Joueurs'), icon: Ghost },
+          { id: 'models', label: t('bestiary.tabModels', 'Modèles'), icon: BookOpen },
         ].map(tab => (
           <button
             key={tab.id}
@@ -271,7 +273,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                 <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                     <Plus size={24} className="text-purple-400" />
                 </div>
-                <span className="font-cinzel text-xs font-black uppercase tracking-widest text-purple-400">Nouveau Modèle</span>
+                <span className="font-cinzel text-xs font-black uppercase tracking-widest text-purple-400">{t('bestiary.newModel', 'Nouveau Modèle')}</span>
             </button>
 
             {templates.map(template => (
@@ -286,7 +288,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                   </div>
                   <div className="flex flex-col">
                     <span className="font-cinzel font-black text-xs uppercase tracking-widest text-purple-300">{template.name}</span>
-                    <span className="text-[11px] text-purple-400/60 uppercase font-mono">Modèle Neutre</span>
+                    <span className="text-[11px] text-purple-400/60 uppercase font-mono">{t('bestiary.neutralModel', 'Modèle Neutre')}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -324,7 +326,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                         )}
                         </div>
                         {tokenStatus[npc.id] && (
-                            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-[#0D0D0F] shadow-[0_0_8px_#22c55e]" title="Présent sur la carte" />
+                            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-[#0D0D0F] shadow-[0_0_8px_#22c55e]" title={t('bestiary.presentOnMap', 'Présent sur la carte')} />
                         )}
                     </div>
                     <div className="flex flex-col">
@@ -354,7 +356,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                         handleToggleToken(npc.id);
                       }}
                       className={`p-2 rounded-lg transition-all ${tokenStatus[npc.id] ? 'bg-gold-DEFAULT text-black' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'}`}
-                      title={tokenStatus[npc.id] ? "Retirer de la carte" : "Placer sur la carte"}
+                      title={tokenStatus[npc.id] ? t('bestiary.removeFromMap', 'Retirer de la carte') : t('bestiary.placeOnMap', 'Placer sur la carte')}
                     >
                       <Plus size={16} className={`transition-transform duration-500 ${tokenStatus[npc.id] ? 'rotate-45' : ''}`} />
                     </button>
@@ -364,21 +366,21 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                         setCharacterManagement(npc.id);
                       }}
                       className="p-2 rounded-lg bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-                      title="Configurer l'entité"
+                      title={t('bestiary.configureEntity', "Configurer l'entité")}
                     >
                       <Settings size={16} />
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); setPnjControle(sessionId, controlledCharacterId === npc.id ? null : npc.id); }}
                       className={`p-2 rounded-lg transition-all ${controlledCharacterId === npc.id ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'bg-white/5 text-white/60 hover:bg-purple-500/20 hover:text-purple-400'}`}
-                      title={controlledCharacterId === npc.id ? "Libérer l'entité" : "Prendre possession"}
+                      title={controlledCharacterId === npc.id ? t('bestiary.freeEntity', "Libérer l'entité") : t('bestiary.possessEntity', 'Prendre possession')}
                     >
                       <Zap size={16} />
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleDeleteNPC(npc); }}
                       className="p-2 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-colors"
-                      title="Bannir"
+                      title={t('bestiary.banish', 'Supprimer')}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -397,7 +399,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
             {filteredPNJs.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 opacity-40 bg-black/20 rounded-2xl border border-dashed border-white/5">
                 <Search size={48} className="mb-4 text-gold-DEFAULT" />
-                <span className="font-cinzel text-xs uppercase tracking-widest">AUCUNE ENTITÉ TROUVÉE</span>
+                <span className="font-cinzel text-xs uppercase tracking-widest">{t('bestiary.noEntityFound', 'AUCUNE ENTITÉ TROUVÉE')}</span>
               </div>
             )}
           </div>
@@ -409,8 +411,8 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
         <div className="absolute inset-0 z-50 bg-[#0D0D0F]/95 backdrop-blur-md flex flex-col p-6 animate-in fade-in duration-300 border border-gold-DEFAULT/20 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)]">
           <div className="flex items-center justify-between mb-8">
             <div className="flex flex-col">
-              <h3 className="text-gold-bright font-cinzel font-black uppercase tracking-widest text-sm">Créer une Entité</h3>
-              <p className="text-[11px] text-gold-DEFAULT/40 uppercase tracking-wider font-mono">Choisissez un modèle ou commencez de zéro</p>
+              <h3 className="text-gold-bright font-cinzel font-black uppercase tracking-widest text-sm">{t('bestiary.createEntity', 'Créer une Entité')}</h3>
+              <p className="text-[11px] text-gold-DEFAULT/40 uppercase tracking-wider font-mono">{t('bestiary.createEntityDesc', 'Choisissez un modèle ou commencez de zéro')}</p>
             </div>
             <button onClick={() => setShowTemplateSelector(false)} className="p-2 hover:bg-white/5 rounded-full text-white/60 transition-colors">
               <X size={20} />
@@ -440,8 +442,8 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                 <Plus size={32} className="text-gold-bright" />
               </div>
               <div className="text-center">
-                <span className="block font-cinzel font-black text-xs uppercase tracking-[0.2em] text-gold-bright">Page Blanche</span>
-                <span className="text-xs text-gold-DEFAULT/40 uppercase font-mono mt-1 block">Création manuelle complète</span>
+                <span className="block font-cinzel font-black text-xs uppercase tracking-[0.2em] text-gold-bright">{t('bestiary.blankPage', 'Page Blanche')}</span>
+                <span className="text-xs text-gold-DEFAULT/40 uppercase font-mono mt-1 block">{t('bestiary.blankPageDesc', 'Création manuelle complète')}</span>
               </div>
             </button>
 
@@ -460,7 +462,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="font-cinzel font-black text-xs uppercase tracking-widest text-purple-300 truncate">{t.name}</span>
-                  <span className="text-xs text-purple-400/40 uppercase font-mono mt-0.5">Utiliser ce modèle</span>
+                  <span className="text-xs text-purple-400/40 uppercase font-mono mt-0.5">{t('bestiary.useModel', 'Utiliser ce modèle')}</span>
                 </div>
                 <ChevronRight size={16} className="ml-auto text-purple-500/40 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -469,7 +471,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
 
           {templates.length === 0 && (
             <div className="mt-12 text-center py-8 opacity-40">
-                <p className="font-cinzel text-xs tracking-widest uppercase">AUCUN MODÈLE DISPONIBLE</p>
+                <p className="font-cinzel text-xs tracking-widest uppercase">{t('bestiary.noModelAvailable', 'AUCUN MODÈLE DISPONIBLE')}</p>
             </div>
           )}
         </div>
@@ -485,7 +487,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
           initialType={editingNPC?.type}
           initialIsTemplate={editingNPC?.is_template}
           initialMode={creationMode}
-          title={editingNPC ? (editingNPC.is_template ? "Façonner le Modèle" : "Façonner l'Entité") : (activeTab === 'models' ? "Éveiller un Nouveau Modèle" : "Éveiller une Entité")}
+          title={editingNPC ? (editingNPC.is_template ? t('bestiary.editModel', "Modifier le Modèle") : t('bestiary.editEntity', "Modifier l'Entité")) : (activeTab === 'models' ? t('bestiary.wakeNewModel', "Créer un Nouveau Modèle") : t('bestiary.wakeEntity', "Créer une Entité"))}
           settings={session?.settings}
         />
       )}
