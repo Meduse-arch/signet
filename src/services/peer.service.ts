@@ -232,6 +232,7 @@ class PeerService {
     const onOpen = () => {
       if (this.isDestroying) return;
       if (conn.label !== 'transfer') {
+        this.notifyConnectionChange();
         this.dataCallbacks.forEach(cb => cb({ type: 'CONN_READY', payload: { peerId: conn.peer } }, conn.peer));
       }
     };

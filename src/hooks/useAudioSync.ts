@@ -257,22 +257,21 @@ export function useAudioSync(sessionId: string) {
       await dbStorage.putAsset({ hash, data: fileData, mime, size: fileData.byteLength, last_accessed: Date.now() });
     }
 
+    const memFile = audioService.memoryAudioFiles.get(hash);
     const asset = await dbStorage.getAsset(hash);
-    if (!asset) return;
+    
+    if (!asset && !memFile) return;
 
     setCurrentTrackTitle(title);
     setCurrentHash(hash);
     setIsPlaying(true);
     targetTrackRef.current = { hash, isPlaying: true, position: 0 };
 
-    const isLong = asset.size >= LONG_TRACK_THRESHOLD_BYTES;
+    const isLong = (memFile !== undefined) || (asset && asset.size >= LONG_TRACK_THRESHOLD_BYTES);
 
-    // ── ASTUCE : Reconstruire l'objet File si manquant ─────────────────────
-    // Si on clique sur "Play" depuis l'UI, on a perdu l'objet File original.
-    // Mais on a le buffer et le mime dans IndexedDB ! On recrée un objet File
-    // virtuel pour tromper buildStreamPlan et éviter le fallback Howler.
-    let streamFile = file;
-    if (isLong && !streamFile) {
+    // ── ASTUCE : Récupérer l'objet File ─────────────────────
+    let streamFile = memFile || file;
+    if (isLong && !streamFile && asset) {
       const ext = asset.mime === 'audio/wav' ? 'wav' : 'mp3';
       const safeMime = asset.mime === 'audio/mp3' ? 'audio/mpeg' : asset.mime;
       streamFile = new File([asset.data], `track.${ext}`, { type: safeMime });
@@ -282,10 +281,10 @@ export function useAudioSync(sessionId: string) {
       // ── Piste longue : MSE streaming ──────────────────────────────────────
       const validation = validateAudioFormat(streamFile);
       if (!validation.valid) {
-        // Format non supporté pour MSE → fallback Howler avec avertissement
-        console.warn(`[AudioSync] ${validation.error} — fallback Howler.`);
-        audioService.playAmbiance(hash, asset.data, asset.mime, 0);
-        broadcast({ type: 'AUDIO_PLAY', payload: { hash, title, position: 0, mime: asset.mime, isLong: false } });
+        // [FIX] Piste longue invalide → PAS DE FALLBACK Howler ! Cela crasherait le P2P avec un envoi massif.
+        console.error(`[AudioSync] ❌ Piste longue invalide : ${validation.error} (Aucun fallback Howler autorisé)`);
+        // On stop tout
+        setIsPlaying(false);
         return;
       }
 
@@ -293,11 +292,19 @@ export function useAudioSync(sessionId: string) {
       activeStream.aborted = true;
       activeStream.hash = null;
 
-      // Joue localement via Howler (le MJ a le fichier complet)
-      audioService.playAmbiance(hash, asset.data, asset.mime, 0);
+      // Joue localement :
+      // Si on l'a en mémoire (memFile), on doit le convertir en Blob/ArrayBuffer pour Howler
+      // car Howler ne prend pas directement de File sans URL.
+      if (asset) {
+         audioService.playAmbiance(hash, asset.data, asset.mime, 0);
+      } else if (memFile) {
+         const ab = await memFile.arrayBuffer();
+         audioService.playAmbiance(hash, ab, memFile.type, 0);
+      }
 
       // Annonce aux joueurs qu'une piste longue MSE arrive
-      broadcast({ type: 'AUDIO_PLAY', payload: { hash, title, position: 0, mime: asset.mime, isLong: true } });
+      const announceMime = asset ? asset.mime : memFile!.type;
+      broadcast({ type: 'AUDIO_PLAY', payload: { hash, title, position: 0, mime: announceMime, isLong: true } });
 
       // Construit le plan et streame
       try {
@@ -351,7 +358,7 @@ export function useAudioSync(sessionId: string) {
         // Fallback silencieux : le joueur aura peut-être déjà le fichier en cache
       }
 
-    } else {
+    } else if (asset) {
       // ── Piste courte : Howler classique ───────────────────────────────────
       audioService.playAmbiance(hash, asset.data, asset.mime, 0);
       broadcast({ type: 'AUDIO_PLAY', payload: { hash, title, position: 0, mime: asset.mime, isLong: false } });
@@ -410,6 +417,9 @@ export function useAudioSync(sessionId: string) {
 
   const isTrackReady = useCallback((hash: string) => {
     if (!isHost) return true;
+    // Les pistes longues en mémoire sont streamées en live, donc toujours prêtes
+    if (audioService.memoryAudioFiles.has(hash)) return true;
+    
     const connections = usePeersStore.getState().connections;
     const readyCount = Object.keys(syncStatus[hash] || {}).length;
     return readyCount >= connections.length || connections.length === 0;

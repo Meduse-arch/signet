@@ -74,6 +74,22 @@ class ActivityLogService {
           }
           break;
 
+        case 'SECRET_DICE_ROLL':
+          // Log uniquement reçu par le MJ ou explicitement loggé
+          this.addLog({
+            type: 'des',
+            action: `Lance ${msg.payload.label || msg.payload.diceString} (Secret)`,
+            details: {
+              rolls: msg.payload.rolls,
+              total: msg.payload.total,
+              diceString: msg.payload.diceString,
+              formula: msg.payload.diceString,
+            },
+            character_id: msg.payload.sender_id,
+            character_name: msg.payload.sender_name,
+          });
+          break;
+
         // ── Compétences ──────────────────────────────────────────────────────
         case 'SKILL_USED':
           this.addLog({

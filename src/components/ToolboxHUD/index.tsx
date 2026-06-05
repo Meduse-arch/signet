@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { MousePointer2, Ruler, RadioReceiver, ScrollText } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { ActivityLogPanel } from '../ActivityLog';
 
 export type ToolType = 'cursor' | 'ruler' | 'ping';
 
@@ -16,7 +15,6 @@ interface ToolboxHUDProps {
 
 export function ToolboxHUD({ currentTool, onToolChange, className, isMJ, sessionId }: ToolboxHUDProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [showLogs, setShowLogs] = useState(false);
 
   const tools: { id: ToolType; icon: any; label: string }[] = [
     { id: 'cursor', icon: MousePointer2, label: 'Curseur' },
@@ -65,29 +63,8 @@ export function ToolboxHUD({ currentTool, onToolChange, className, isMJ, session
               </button>
             );
           })}
-
-          {/* Bouton Annales — MJ uniquement */}
-          {isMJ && sessionId && (
-            <button
-              onClick={() => { setShowLogs(true); setIsOpen(false); }}
-              className="flex flex-col items-center justify-center gap-1 p-2 transition-all text-gold-DEFAULT/60 hover:text-gold-bright hover:bg-gold-DEFAULT/10 border-t border-gold-DEFAULT/20"
-              title="Annales de Session"
-            >
-              <ScrollText size={16} />
-              <span className="text-[10px] font-cinzel tracking-wider uppercase font-bold">Annales</span>
-            </button>
-          )}
         </div>
       )}
-
-      {/* Pop-up Annales */}
-      <AnimatePresence>
-        {showLogs && sessionId && (
-          <div className="absolute bottom-14 right-0 z-[200]">
-            <ActivityLogPanel sessionId={sessionId} onClose={() => setShowLogs(false)} />
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

@@ -27,7 +27,7 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
     setModifier
   } = useDiceStore();
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
-  const { broadcast } = usePeer();
+  const { broadcast, sendTo } = usePeer();
 
   const isMJ = !!user && user.role >= SecurityLevel.MJ;
 
@@ -85,6 +85,11 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
     // Broadcast via P2P
     if (diceSharingEnabled) {
       broadcast({ type: 'DICE_ROLL', payload: result });
+    } else {
+      // Envoi du jet secret au MJ pour les annales (si on n'est pas déjà le MJ)
+      if (!isMJ && session?.hostPeerId) {
+        sendTo(session.hostPeerId, { type: 'SECRET_DICE_ROLL', payload: result });
+      }
     }
 
     // Log local toujours (même en secret, le MJ voit tout dans ses Annales)

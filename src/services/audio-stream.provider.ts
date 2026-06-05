@@ -51,7 +51,7 @@ const SUPPORTED_MIME: Record<SupportedFormat, string> = {
 };
 
 // Formats refusés explicitement (MSE ne peut pas les streamer sans fragmentation)
-const REJECTED_EXTENSIONS = ["m4a", "aac", "flac", "wma", "mp4", "ogg"];
+const REJECTED_EXTENSIONS = ["m4a", "aac", "flac", "wma", "mp4", "ogg", "opus"];
 
 // ─── Validation du format ─────────────────────────────────────────────────────
 

@@ -19,6 +19,7 @@ import {
   InitiativeWindowContent
 } from '../../components/SignetInterface';
 import { DiceRollModal } from '../../components/DiceRollModal';
+import { ActivityLogWindowContent } from '../../components/ActivityLog';
 import { useSignetInterface } from '../../hooks/useSignetInterface';
 import { usePeersStore } from '../../store/peers';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
@@ -472,7 +473,8 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
                 quests: 'Quêtes',
                 skills: 'Compétences',
                 character: 'Personnage',
-                combat: 'Initiative'
+                combat: 'Initiative',
+                logs: 'Annales'
               };
 
               return win.isOpen && (
@@ -495,6 +497,7 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
                   {id === 'skills' && <SkillsWindowContent sessionId={sessionId} />}
                   {id === 'character' && <CharacterSheetContent sessionId={sessionId} variant="window" />}
                   {id === 'combat' && <InitiativeWindowContent sessionId={sessionId} />}
+                  {id === 'logs' && <ActivityLogWindowContent sessionId={sessionId} />}
                 </DraggableWindow>
               );
             })}

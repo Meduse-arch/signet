@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Upload, Play, Square, Volume2, X, Music, RadioReceiver } from 'lucide-react';
 import { useAudioSync } from '../../hooks/useAudioSync';
 import { dbStorage } from '../../services/db.storage';
+import { audioService } from '../../services/audio.service';
 import { calculateHash } from '../../services/transfer.service';
 import { usePeersStore } from '../../store/peers';
 
@@ -52,6 +53,40 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
     const name = file.name.replace(/\.[^/.]+$/, "");
     setUploadingState({ type: isSfx ? 'sfx' : 'track', name });
     
+    // Seuil de fichier lourd (4.8 Mo)
+    const LONG_TRACK_THRESHOLD_BYTES = 5 * 60 * (128_000 / 8); 
+
+    // --- Si fichier LOURD (> 4.8 Mo) : PAS de lecture ArrayBuffer, PAS d'IndexedDB ---
+    if (file.size >= LONG_TRACK_THRESHOLD_BYTES) {
+      // Hash simple basé sur le nom et la taille pour identifier le File
+      const hash = "mem_" + btoa(file.name + file.size).substring(0, 16).replace(/[^a-zA-Z0-9]/g, '');
+      
+      const newFile: AudioFile = {
+        hash,
+        title: name,
+        mime: file.type || 'audio/mp3',
+        size: file.size
+      };
+
+      // On garde l'objet File en mémoire vive (perdu au refresh de la page, mais évite le crash RAM)
+      audioService.memoryAudioFiles.set(hash, file);
+
+      if (isSfx) {
+        const newSfxs = [...sfxs.filter(s => s.hash !== hash), newFile];
+        setSfxs(newSfxs);
+        saveToLocal(tracks, newSfxs);
+      } else {
+        const newTracks = [...tracks.filter(t => t.hash !== hash), newFile];
+        setTracks(newTracks);
+        saveToLocal(newTracks, sfxs);
+      }
+
+      setUploadingState(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // --- Si fichier LEGER (< 4.8 Mo) : Lecture ArrayBuffer normale et IndexedDB ---
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
@@ -164,8 +199,10 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
             )}
             {tracks.length === 0 && uploadingState?.type !== 'track' && <span className="text-xs text-white/30 italic">Aucune musique</span>}
             {tracks.map(t => {
+              const isLong = t.size >= 5 * 60 * (128_000 / 8);
               const readyCount = Object.keys(audioSync.syncStatus[t.hash] || {}).length;
-              const isReady = readyCount >= connections.length || connections.length === 0;
+              // Les pistes longues (MSE) sont toujours prêtes car elles se streament en live !
+              const isReady = isLong || readyCount >= connections.length || connections.length === 0;
 
               return (
               <div key={t.hash} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 hover:border-gold-DEFAULT/30 transition-all group">

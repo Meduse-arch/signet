@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type WindowType = 'scenes' | 'quests' | 'dice' | 'inventaire' | 'players' | 'character' | 'bestiary' | 'skills' | 'combat';
+export type WindowType = 'scenes' | 'quests' | 'dice' | 'inventaire' | 'players' | 'character' | 'bestiary' | 'skills' | 'combat' | 'logs';
 
 interface WindowState {
   isOpen: boolean;
@@ -30,6 +30,7 @@ const DEFAULT_WINDOWS: Record<WindowType, WindowState> = {
   skills: { isOpen: false, zIndex: 50, position: getCenterPosition(90) },
   character: { isOpen: false, zIndex: 50, position: getCenterPosition(100) },
   combat: { isOpen: false, zIndex: 50, position: getCenterPosition(110) },
+  logs: { isOpen: false, zIndex: 50, position: getCenterPosition(120) },
 };
 
 interface SignetInterfaceState {

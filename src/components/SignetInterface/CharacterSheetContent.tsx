@@ -244,7 +244,7 @@ export function CharacterSheetContent({
   const session = useSessionStore(state =>
     state.sessions.find(s => s.id === sessionId)
   );
-  const { broadcast, onData } = usePeer();
+  const { broadcast, sendTo, onData } = usePeer();
   const { nbDice, modifier, setDiceResult, diceSharingEnabled } = useDiceStore();
   const { setCharacterManagement } = useUIStore();
 
@@ -546,6 +546,10 @@ export function CharacterSheetContent({
 
     if (diceSharingEnabled) {
       broadcast({ type: 'DICE_ROLL', payload: result });
+    } else {
+      if (!isMJ && session?.hostPeerId) {
+        sendTo(session.hostPeerId, { type: 'SECRET_DICE_ROLL', payload: result });
+      }
     }
   };
 
@@ -677,7 +681,13 @@ export function CharacterSheetContent({
 
         if (diceResults.length > 0) {
           setDiceResult(diceResults);
-          if (diceSharingEnabled) diceResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+          if (diceSharingEnabled) {
+            diceResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+          } else {
+            if (!isMJ && session?.hostPeerId) {
+              diceResults.forEach(r => sendTo(session.hostPeerId, { type: 'SECRET_DICE_ROLL', payload: r }));
+            }
+          }
         }
 
         return { ...s, is_active: isActive, modifiers: updatedModifiers };
@@ -798,7 +808,13 @@ export function CharacterSheetContent({
     };
 
     if (window.electronAPI) await addSessionLog(sessionId, logEntry as any);
-    if (diceSharingEnabled) finalResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+    if (diceSharingEnabled) {
+      finalResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+    } else {
+      if (!isMJ && session?.hostPeerId) {
+        finalResults.forEach(r => sendTo(session.hostPeerId, { type: 'SECRET_DICE_ROLL', payload: r }));
+      }
+    }
   };
 
   // ── renderers ──────────────────────────────────

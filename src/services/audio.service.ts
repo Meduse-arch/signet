@@ -12,6 +12,9 @@ class AudioService {
   private sfxTracks: Map<string, AudioTrack> = new Map();
   private _masterVolume: number = 0.5;
 
+  // Stockage en RAM des très gros fichiers (évite IndexedDB et FileReader massifs)
+  public memoryAudioFiles: Map<string, File> = new Map();
+
   constructor() {
     Howler.volume(this._masterVolume);
   }
