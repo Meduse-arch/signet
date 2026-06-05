@@ -16,6 +16,7 @@ import {
   QuestCreationModal,
   InitiativeWindowContent
 } from '../../components/SignetInterface';
+import { ActivityLogWindowContent } from '../../components/ActivityLog';
 import { DiceRollModal } from '../../components/DiceRollModal';
 import { usePeer } from '../../hooks/usePeer';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
@@ -256,6 +257,11 @@ export function ExternalWindowPage() {
          <BoardCanvas sessionId={sessionId} maps={maps} currentMapId={currentMapId} characters={characters} />
       </div>
     );
+  }
+
+  // ─── Fenêtre Annales ────────────────────────────────────────────────────────
+  if (type === 'logs') {
+    return <ActivityLogWindowContent sessionId={sessionId} />;
   }
 
   return (

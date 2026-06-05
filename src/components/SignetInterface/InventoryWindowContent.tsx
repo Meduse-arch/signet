@@ -4,6 +4,7 @@ import { useItemsStore } from '../../store/items';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
 import { usePeer } from '../../hooks/usePeer';
+import { activityLogService } from '../../services/activity-log.service';
 import { Package, Plus, Trash2, Search, Hammer, User, Shield, Star, Sword, Sparkles, Gem, FlaskConical, ChevronRight, PenTool, Zap, X } from 'lucide-react';
 import { addSessionCharacter } from '../../services/characters.service';
 import { ItemDetailContent } from './ItemDetailContent';
@@ -105,6 +106,24 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     const updatedItem = updatedChar.inventory.find((i: any) => i.instanceId === targetInstanceId);
     if (updatedItem) {
       setSelectedItem(updatedItem, false);
+
+      // Log + Broadcast ITEM_EQUIPPED
+      const logPayload = {
+        item_id: updatedItem.id,
+        item_name: updatedItem.name,
+        item_type: updatedItem.category,
+        equipped: updatedItem.equipped,
+        sender_id: user?.id,
+        sender_name: character.name,
+      };
+      broadcast({ type: 'ITEM_EQUIPPED', payload: logPayload });
+      activityLogService.addLog({
+        type: 'item',
+        action: `${updatedItem.equipped ? 'Équipe' : 'Déséquipe'} : ${updatedItem.name}`,
+        details: logPayload,
+        character_id: user?.id,
+        character_name: character.name,
+      });
     }
   };
 

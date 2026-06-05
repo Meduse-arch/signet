@@ -24,6 +24,7 @@ import { SystemRouter } from '../../systems/core/SystemRouter';
 import { mapSyncService } from '../../services/map-sync.service';
 import { dbStorage } from '../../services/db.storage';
 import { BrowserImageCompressor } from '../../services/browser-image-compressor';
+import { activityLogService } from '../../services/activity-log.service';
 import { useSession } from '../../hooks/useSession';
 
 interface LobbyPageProps {
@@ -90,6 +91,8 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
         useCharactersStore.getState().initialize(sessionId);
         useMapStore.getState().initialize(sessionId);
         useDiceStore.getState().initialize(sessionId);
+        // Charge l'historique des Annales de la session
+        activityLogService.initialize(sessionId);
     }
   }, [sessionId]);
 

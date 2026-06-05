@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { MousePointer2, Ruler, RadioReceiver } from 'lucide-react';
+import { MousePointer2, Ruler, RadioReceiver, ScrollText } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { ActivityLogPanel } from '../ActivityLog';
 
 export type ToolType = 'cursor' | 'ruler' | 'ping';
 
@@ -7,10 +9,14 @@ interface ToolboxHUDProps {
   currentTool: ToolType;
   onToolChange: (tool: ToolType) => void;
   className?: string;
+  /** Affiche le bouton Annales (MJ uniquement) */
+  isMJ?: boolean;
+  sessionId?: string;
 }
 
-export function ToolboxHUD({ currentTool, onToolChange, className }: ToolboxHUDProps) {
+export function ToolboxHUD({ currentTool, onToolChange, className, isMJ, sessionId }: ToolboxHUDProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
 
   const tools: { id: ToolType; icon: any; label: string }[] = [
     { id: 'cursor', icon: MousePointer2, label: 'Curseur' },
@@ -29,12 +35,12 @@ export function ToolboxHUD({ currentTool, onToolChange, className }: ToolboxHUDP
         className={`w-10 h-10 rounded-xl bg-[#0D0D0F]/80 backdrop-blur-xl border flex items-center justify-center transition-all ${
           isOpen ? 'border-gold-DEFAULT shadow-[0_0_15px_rgba(212,175,55,0.3)] text-gold-DEFAULT' : 'border-gold-DEFAULT/40 hover:border-gold-DEFAULT/80 text-gold-DEFAULT/70 hover:text-gold-DEFAULT'
         }`}
-        title="Boîte à outils"
+        title="Bo&#238;te &#224; outils"
       >
         <ActiveIcon size={18} />
       </button>
 
-      {/* Menu déployé */}
+      {/* Menu d&#233;ploy&#233; */}
       {isOpen && (
         <div className="flex flex-col bg-[#0D0D0F]/80 backdrop-blur-xl border border-gold-DEFAULT/40 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)] w-full">
           {tools.map(tool => {
@@ -59,8 +65,29 @@ export function ToolboxHUD({ currentTool, onToolChange, className }: ToolboxHUDP
               </button>
             );
           })}
+
+          {/* Bouton Annales — MJ uniquement */}
+          {isMJ && sessionId && (
+            <button
+              onClick={() => { setShowLogs(true); setIsOpen(false); }}
+              className="flex flex-col items-center justify-center gap-1 p-2 transition-all text-gold-DEFAULT/60 hover:text-gold-bright hover:bg-gold-DEFAULT/10 border-t border-gold-DEFAULT/20"
+              title="Annales de Session"
+            >
+              <ScrollText size={16} />
+              <span className="text-[10px] font-cinzel tracking-wider uppercase font-bold">Annales</span>
+            </button>
+          )}
         </div>
       )}
+
+      {/* Pop-up Annales */}
+      <AnimatePresence>
+        {showLogs && sessionId && (
+          <div className="absolute bottom-14 right-0 z-[200]">
+            <ActivityLogPanel sessionId={sessionId} onClose={() => setShowLogs(false)} />
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

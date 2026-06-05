@@ -5,6 +5,7 @@ import { useTagsStore } from '../../store/tags';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
 import { usePeer } from '../../hooks/usePeer';
+import { activityLogService } from '../../services/activity-log.service';
 import { 
   Sparkles, 
   Search, 
@@ -85,15 +86,34 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
 
   const handleToggleSkillActive = async (skillToToggle: any) => {
     if (!character) return;
+    const newActive = !skillToToggle.is_active;
     const updatedChar = {
       ...character,
       custom_skills: (character.custom_skills || []).map((s: any) => 
-        (s.id === skillToToggle.id) ? { ...s, is_active: !s.is_active } : s
+        (s.id === skillToToggle.id) ? { ...s, is_active: newActive } : s
       )
     };
     addOrUpdateCharacter(updatedChar, false);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+
+    // Broadcast log de compétence
+    const logPayload = {
+      skill_id: skillToToggle.id,
+      skill_name: skillToToggle.name,
+      skill_type: skillToToggle.type,
+      action: newActive ? 'Activée' : 'Désactivée',
+      sender_id: user?.id,
+      sender_name: character.name,
+    };
+    broadcast({ type: 'SKILL_USED', payload: logPayload });
+    activityLogService.addLog({
+      type: 'skill',
+      action: `${newActive ? 'Active' : 'Désactive'} : ${skillToToggle.name}`,
+      details: logPayload,
+      character_id: user?.id,
+      character_name: character.name,
+    });
   };
 
   const handleGiveSkillToCharacter = async (skill: any) => {

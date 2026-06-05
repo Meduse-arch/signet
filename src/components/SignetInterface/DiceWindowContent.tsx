@@ -6,6 +6,7 @@ import { useSessionStore } from '../../store/session';
 import { usePeer } from '../../hooks/usePeer';
 import { lancerDes, DiceResult } from '../../services/des.service';
 import { addSessionLog, getSessionLogs, SessionLog } from '../../services/db.service';
+import { activityLogService } from '../../services/activity-log.service';
 import { History, Share2, Plus, Minus, Trash2, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DEFAULT_STATS, DEFAULT_SKILLS } from '../../systems/seal/constants';
@@ -85,6 +86,21 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
     if (diceSharingEnabled) {
       broadcast({ type: 'DICE_ROLL', payload: result });
     }
+
+    // Log local toujours (même en secret, le MJ voit tout dans ses Annales)
+    activityLogService.addLog({
+      type: 'des',
+      action: `Lance ${result.label || result.diceString}`,
+      details: {
+        rolls: res.rolls,
+        total: res.total,
+        diceString,
+        formula: diceString,
+        secret: !diceSharingEnabled,
+      },
+      character_id: user?.id,
+      character_name: result.sender_name,
+    });
   };
 
   const statDefs = session?.settings?.stats || DEFAULT_STATS;

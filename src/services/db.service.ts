@@ -37,7 +37,7 @@ export async function clearSessionPlayers(sessionId: string) {
 
 export interface SessionLog {
   id: string;
-  type: 'des' | 'action' | 'system';
+  type: 'des' | 'action' | 'system' | 'skill' | 'item' | 'quest' | 'combat';
   action: string;
   details: any;
   timestamp: number;

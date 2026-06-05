@@ -2,7 +2,7 @@ import { ImageCompressor, ChunkManifest, ChunkManifestEntry, TransferPayload, Co
 import { peerService } from './peer.service';
 import { transferService } from './transfer.service';
 import { dbStorage } from './db.storage';
-
+import { swarmService } from './swarm.service';
 import { evictionManager } from './eviction.manager';
 
 // SHA-256 via crypto.subtle (sécurisé) avec fallback en JS pur pour les contextes LAN HTTP
@@ -240,13 +240,31 @@ class MapSyncService {
         });
       }
 
-      peerService.broadcast({
-        type: ControlChannelMessage.TRANSFER_START,
-        payload: { map_id: mapId, session_transfer_id: sessionTransferId, manifest }
-      });
+      // ─── SWARM : Amorce Round-Robin pour les maps ───────────────────────────
+      // Chaque tuile de map devient un bloc Swarm naturel.
+      // Le SwarmService distribue via Round-Robin puis les joueurs s'échangent le reste.
+      const peers = Array.from(peerService.connections.entries())
+        .filter(([_, pc]) => pc.control?.open)
+        .map(([id]) => id);
 
-      // ✅ MJ : On déclenche aussi l'évènement localement pour que notre propre useBoard réagisse
-      this.onManifestReceivedCallbacks.forEach(cb => cb(mapId, manifest, [], peerService.getPeerId() || 'host'));
+      if (peers.length <= 1) {
+        // 1 joueur ou 0 : étoile directe (Round-Robin dégénère automatiquement)
+        for (const chunk of chunks) {
+          if (peers.length === 1) {
+            transferService.sendChunkPaced(chunk.id, chunk.data, chunk.hash, peers[0]);
+          }
+        }
+      } else {
+        // 2+ joueurs : Round-Robin Swarm
+        // On reconstruit le fichier complet pour seedAsset, qui le redécoupera en blocs Swarm
+        // Note : l'ID transferId = global_hash pour la déduplication
+        await swarmService.seedAsset(manifest.global_hash, compressedData);
+      }
+
+      // MJ : déclenche localement son propre rendu
+      this.onManifestReceivedCallbacks.forEach(cb =>
+        cb(mapId, manifest, [], peerService.getPeerId() || 'host')
+      );
     } finally {
       this.isBroadcasting.delete(mapId);
     }

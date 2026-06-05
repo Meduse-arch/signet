@@ -73,7 +73,7 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
       )}
 
       {/* Élément audio pour le rendu du buffer MSE (doit être dans le DOM pour l'autoplay) */}
-      <audio ref={audioSync.mseState.audioRef} style={{ display: 'none' }} />
+      <audio ref={audioSync.mseState.audioRef as any} style={{ display: 'none' }} />
 
       {/* Ultra Minimalist Bar - Vertical Layout */}
       <div className="pointer-events-auto flex flex-col items-center gap-2 px-6 py-2 w-full max-w-lg group">
