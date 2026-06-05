@@ -15,8 +15,8 @@ import type { AudioChunkMessage, AudioReadyMessage } from '../services/audio-str
 // Seuil en bytes au-delà duquel on bascule en MSE streaming (~5 min à 128kbps)
 const LONG_TRACK_THRESHOLD_BYTES = 5 * 60 * (128_000 / 8); // ~4.8 Mo
 
-// Référence au provider actif côté MJ (pour pouvoir l'annuler si on change de piste)
-let activeStreamProvider: AudioStreamProvider | null = null;
+// Contrôle du streaming actif — objet partagé par référence pour que le for loop async puisse le lire
+const activeStream = { hash: null as string | null, aborted: false };
 
 export function useAudioSync() {
   const { broadcast, onData, sendTo, isHost } = usePeer();
@@ -289,11 +289,9 @@ export function useAudioSync() {
         return;
       }
 
-      // Annule le streaming précédent si existant
-      if (activeStreamProvider) {
-        activeStreamProvider.abort();
-        activeStreamProvider = null;
-      }
+      // Annule le streaming précédent si existant — même piste ou autre
+      activeStream.aborted = true;
+      activeStream.hash = null;
 
       // Joue localement via Howler (le MJ a le fichier complet)
       audioService.playAmbiance(hash, asset.data, asset.mime, 0);
@@ -320,9 +318,18 @@ export function useAudioSync() {
         };
         broadcast({ type: 'AUDIO_MSE_READY', payload: readyMsg });
 
-        // Stream les chunks via broadcast (enveloppés pour le router onData)
+        // Stream les chunks via broadcast — s'arrête si abort, reprend depuis le bon chunk
         const buffer = await streamFile.arrayBuffer();
+        const streamHash = hash;
+
+        // Marque ce streaming comme actif
+        activeStream.hash = streamHash;
+        activeStream.aborted = false;
+
         for (let i = 0; i < plan.chunks.length; i++) {
+          // Abort si : on a pausé, ou on a changé de piste
+          if (activeStream.aborted || activeStream.hash !== streamHash) break;
+
           const chunk = plan.chunks[i];
           const data = buffer.slice(chunk.byteStart, chunk.byteEnd);
           broadcast({
@@ -353,6 +360,8 @@ export function useAudioSync() {
 
   const pauseAmbiance = useCallback(() => {
     if (!isHost) return;
+    // Arrête le streaming MSE en cours — inutile d'envoyer des chunks si personne n'écoute
+    activeStream.aborted = true;
     audioService.pauseAmbiance();
     setIsPlaying(false);
     if (targetTrackRef.current) targetTrackRef.current.isPlaying = false;
@@ -377,8 +386,10 @@ export function useAudioSync() {
     broadcast({ type: 'AUDIO_DELETE', payload: { hash } });
   }, [isHost, broadcast, pauseAmbiance]);
 
-  const preloadAudio = useCallback((hash: string, isSfx: boolean = false) => {
+  const preloadAudio = useCallback(async (hash: string, isSfx: boolean = false) => {
     if (!isHost) return;
+    const asset = await dbStorage.getAsset(hash);
+    if (asset && asset.size >= LONG_TRACK_THRESHOLD_BYTES) return; // Ignore les pistes MSE
     broadcast({ type: 'AUDIO_PRELOAD', payload: { hash, isSfx } });
   }, [isHost, broadcast]);
 
@@ -408,6 +419,7 @@ export function useAudioSync() {
     state: msePlayer.state,
     bufferedChunks: msePlayer.bufferedChunks,
     totalChunks: msePlayer.totalChunks,
+    audioRef: msePlayer.audioRef,
   };
 
   return {

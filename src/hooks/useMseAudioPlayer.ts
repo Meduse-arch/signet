@@ -4,7 +4,7 @@
  * Buffer glissant — la lecture démarre dès réception du chunk 0.
  */
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, type RefObject } from "react";
 import type { AudioChunkMessage, AudioReadyMessage } from "../services/audio-stream.provider";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -17,6 +17,7 @@ export interface MsePlayerControls {
   totalChunks: number;
   error: string | null;
   volume: number;
+  audioRef: RefObject<HTMLAudioElement | null>;
   setVolume: (v: number) => void;
   play: () => void;
   pause: () => void;
@@ -169,6 +170,7 @@ export function useMseAudioPlayer(): MsePlayerControls {
     totalChunks,
     error,
     volume,
+    audioRef,
     setVolume,
     play,
     pause,

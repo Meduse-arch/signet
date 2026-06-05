@@ -37,14 +37,25 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     setVolume(val);
-    if (val > 0 && isMuted) setIsMuted(false);
-    audioService.setMasterVolume(isMuted ? 0 : val);
+    const newMuted = (val > 0 && isMuted) ? false : isMuted;
+    if (newMuted !== isMuted) setIsMuted(newMuted);
+    
+    const effectiveVolume = newMuted ? 0 : val;
+    audioService.setMasterVolume(effectiveVolume);
+    if (audioSync.mseState.audioRef.current) {
+      audioSync.mseState.audioRef.current.volume = effectiveVolume;
+    }
   };
 
   const toggleMute = () => {
     const newMuted = !isMuted;
     setIsMuted(newMuted);
-    audioService.setMasterVolume(newMuted ? 0 : volume);
+    
+    const effectiveVolume = newMuted ? 0 : volume;
+    audioService.setMasterVolume(effectiveVolume);
+    if (audioSync.mseState.audioRef.current) {
+      audioSync.mseState.audioRef.current.volume = effectiveVolume;
+    }
   };
 
   const formatTime = (secs: number) => {
@@ -61,6 +72,9 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
       {showManager && isMJ && (
         <JukeboxManager onClose={() => setShowManager(false)} audioSync={audioSync} />
       )}
+
+      {/* Élément audio pour le rendu du buffer MSE (doit être dans le DOM pour l'autoplay) */}
+      <audio ref={audioSync.mseState.audioRef} style={{ display: 'none' }} />
 
       {/* Ultra Minimalist Bar - Vertical Layout */}
       <div className="pointer-events-auto flex flex-col items-center gap-2 px-6 py-2 w-full max-w-lg group">
