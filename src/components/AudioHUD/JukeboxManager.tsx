@@ -6,6 +6,7 @@ import { calculateHash } from '../../services/transfer.service';
 import { usePeersStore } from '../../store/peers';
 
 interface JukeboxManagerProps {
+  sessionId: string;
   onClose: () => void;
   audioSync: ReturnType<typeof useAudioSync>;
 }
@@ -17,7 +18,7 @@ interface AudioFile {
   size: number;
 }
 
-export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
+export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManagerProps) {
   const [tracks, setTracks] = useState<AudioFile[]>([]);
   const [sfxs, setSfxs] = useState<AudioFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,18 +31,18 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
     const loadAssets = async () => {
       // Pour l'instant, on liste tout ce qui est audio. On pourrait filtrer par nom.
       // Mais on n'a pas de getAll() complet dans dbStorage pour assets. On va devoir gérer une liste locale (ex: dans un store ou localStorage).
-      const savedTracks = localStorage.getItem('signet_tracks');
+      const savedTracks = localStorage.getItem(`signet_tracks_${sessionId}`);
       if (savedTracks) setTracks(JSON.parse(savedTracks));
       
-      const savedSfx = localStorage.getItem('signet_sfx');
+      const savedSfx = localStorage.getItem(`signet_sfx_${sessionId}`);
       if (savedSfx) setSfxs(JSON.parse(savedSfx));
     };
     loadAssets();
   }, []);
 
   const saveToLocal = (t: AudioFile[], s: AudioFile[]) => {
-    localStorage.setItem('signet_tracks', JSON.stringify(t));
-    localStorage.setItem('signet_sfx', JSON.stringify(s));
+    localStorage.setItem(`signet_tracks_${sessionId}`, JSON.stringify(t));
+    localStorage.setItem(`signet_sfx_${sessionId}`, JSON.stringify(s));
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isSfx: boolean) => {

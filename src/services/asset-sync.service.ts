@@ -190,7 +190,7 @@ class AssetSyncService {
       this.pendingRequests.delete(hash);
     }
 
-    dbStorage.cleanupAssets(500);
+    dbStorage.cleanupAssets(5120);
   }
 
   private async calculateHash(buffer: ArrayBuffer): Promise<string> {

@@ -89,7 +89,7 @@ class DBStorageService {
   /**
    * Nettoie les vieux assets si on dépasse le quota (en Mo)
    */
-  async cleanupAssets(maxSizeMB: number = 500): Promise<void> {
+  async cleanupAssets(maxSizeMB: number = 5120): Promise<void> {
     const db = await this.dbPromise;
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     

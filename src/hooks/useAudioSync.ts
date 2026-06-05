@@ -18,7 +18,7 @@ const LONG_TRACK_THRESHOLD_BYTES = 5 * 60 * (128_000 / 8); // ~4.8 Mo
 // Contrôle du streaming actif — objet partagé par référence pour que le for loop async puisse le lire
 const activeStream = { hash: null as string | null, aborted: false };
 
-export function useAudioSync() {
+export function useAudioSync(sessionId: string) {
   const { broadcast, onData, sendTo, isHost } = usePeer();
   const [currentTrackTitle, setCurrentTrackTitle] = useState<string | null>(null);
   const [currentHash, setCurrentHash] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export function useAudioSync() {
       // ── Joueur reçoit DELETE ────────────────────────────────────────────────
       else if (data.type === 'AUDIO_DELETE') {
         const { hash } = data.payload;
-        await dbStorage.deleteAsset(hash);
+        // Soft delete : on ne supprime PLUS dbStorage.deleteAsset(hash) ici !
         if (audioService.getAmbianceHash() === hash) {
           audioService.pauseAmbiance();
           setIsPlaying(false);
@@ -165,7 +165,7 @@ export function useAudioSync() {
 
       // ── Sync initial joueur qui rejoint ─────────────────────────────────────
       else if (isHost && data.type === 'INITIAL_SYNC_REQUEST') {
-        const savedTracks = localStorage.getItem('signet_tracks');
+        const savedTracks = localStorage.getItem(`signet_tracks_${sessionId}`);
         if (savedTracks) {
           const tracks = JSON.parse(savedTracks);
           // Ne précharge que les pistes courtes via PRELOAD — les longues arrivent à la demande
@@ -175,7 +175,7 @@ export function useAudioSync() {
               sendTo(fromPeerId, { type: 'AUDIO_PRELOAD', payload: { hash: t.hash, isSfx: false } });
             });
         }
-        const savedSfx = localStorage.getItem('signet_sfx');
+        const savedSfx = localStorage.getItem(`signet_sfx_${sessionId}`);
         if (savedSfx) {
           const sfxs = JSON.parse(savedSfx);
           sfxs.forEach((t: any) => {
@@ -381,7 +381,8 @@ export function useAudioSync() {
 
   const deleteAudio = useCallback((hash: string) => {
     if (!isHost) return;
-    dbStorage.deleteAsset(hash);
+    // Soft delete : on supprime uniquement de la liste UI (fait dans JukeboxManager),
+    // mais on ne détruit PAS le fichier partagé dans dbStorage.
     if (audioService.getAmbianceHash() === hash) pauseAmbiance();
     broadcast({ type: 'AUDIO_DELETE', payload: { hash } });
   }, [isHost, broadcast, pauseAmbiance]);

@@ -12,8 +12,7 @@ interface AudioHUDProps {
 export function AudioHUD({ sessionId }: AudioHUDProps) {
   const { user } = useAuthStore();
   const isMJ = !!user && user.role >= 1;
-  
-  const audioSync = useAudioSync();
+  const audioSync = useAudioSync(sessionId);
   
   const [showManager, setShowManager] = useState(false);
   const [volume, setVolume] = useState(0.5);
@@ -70,7 +69,7 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
       
       {/* Jukebox Manager (MJ only) */}
       {showManager && isMJ && (
-        <JukeboxManager onClose={() => setShowManager(false)} audioSync={audioSync} />
+        <JukeboxManager sessionId={sessionId} onClose={() => setShowManager(false)} audioSync={audioSync} />
       )}
 
       {/* Élément audio pour le rendu du buffer MSE (doit être dans le DOM pour l'autoplay) */}

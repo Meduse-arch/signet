@@ -43,9 +43,13 @@ class AudioService {
     const blob = new Blob([audioData], { type: mime });
     const blobUrl = URL.createObjectURL(blob);
 
+    const LONG_TRACK_THRESHOLD_BYTES = 5 * 60 * (128_000 / 8); // ~4.8 Mo
+    const isLong = audioData.byteLength >= LONG_TRACK_THRESHOLD_BYTES;
+
     const newHowl = new Howl({
       src: [blobUrl],
       format: [mime.split('/')[1] || 'mp3'],
+      html5: isLong, // Protection RAM : HTML5 Audio pour les gros fichiers, Web Audio pour les boucles courtes
       loop: true,
       volume: 0, // Commence à 0 pour le fade in
     });
