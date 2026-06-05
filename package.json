@@ -2,7 +2,7 @@
   "name": "signet-vtt",
   "version": "1.0.0",
   "description": "Signet VTT - A Virtual Tabletop Application",
-  "author": "Sigil Team",
+  "author": "Signet Team",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",

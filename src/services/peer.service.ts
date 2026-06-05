@@ -213,7 +213,7 @@ class PeerService {
   }
 
   private setupConnection(conn: DataConnection) {
-    let peerConns = this.connections.get(conn.peer) || {};
+    const peerConns = this.connections.get(conn.peer) || {};
     
     if (conn.label === 'transfer') {
       if (peerConns.transfer?.open) peerConns.transfer.close();

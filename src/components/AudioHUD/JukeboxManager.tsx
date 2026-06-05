@@ -30,18 +30,18 @@ export function JukeboxManager({ onClose, audioSync }: JukeboxManagerProps) {
     const loadAssets = async () => {
       // Pour l'instant, on liste tout ce qui est audio. On pourrait filtrer par nom.
       // Mais on n'a pas de getAll() complet dans dbStorage pour assets. On va devoir gérer une liste locale (ex: dans un store ou localStorage).
-      const savedTracks = localStorage.getItem('sigil_tracks');
+      const savedTracks = localStorage.getItem('signet_tracks');
       if (savedTracks) setTracks(JSON.parse(savedTracks));
       
-      const savedSfx = localStorage.getItem('sigil_sfx');
+      const savedSfx = localStorage.getItem('signet_sfx');
       if (savedSfx) setSfxs(JSON.parse(savedSfx));
     };
     loadAssets();
   }, []);
 
   const saveToLocal = (t: AudioFile[], s: AudioFile[]) => {
-    localStorage.setItem('sigil_tracks', JSON.stringify(t));
-    localStorage.setItem('sigil_sfx', JSON.stringify(s));
+    localStorage.setItem('signet_tracks', JSON.stringify(t));
+    localStorage.setItem('signet_sfx', JSON.stringify(s));
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isSfx: boolean) => {

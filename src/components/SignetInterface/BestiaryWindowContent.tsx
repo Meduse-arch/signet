@@ -447,21 +447,21 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
               </div>
             </button>
 
-            {templates.map(t => (
+            {templates.map(tmpl => (
               <button 
-                key={t.id}
-                onClick={() => handleCreateFromTemplate(t)}
+                key={tmpl.id}
+                onClick={() => handleCreateFromTemplate(tmpl)}
                 className="flex items-center gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.05] hover:border-purple-500/30 transition-all text-left group"
               >
                 <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center overflow-hidden shrink-0">
-                  {t.image_url ? (
-                    <BestiaryImage url={t.image_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                  {tmpl.image_url ? (
+                    <BestiaryImage url={tmpl.image_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
                   ) : (
                     <BookOpen size={20} className="text-purple-400/40" />
                   )}
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="font-cinzel font-black text-xs uppercase tracking-widest text-purple-300 truncate">{t.name}</span>
+                  <span className="font-cinzel font-black text-xs uppercase tracking-widest text-purple-300 truncate">{tmpl.name}</span>
                   <span className="text-xs text-purple-400/40 uppercase font-mono mt-0.5">{t('bestiary.useModel', 'Utiliser ce modèle')}</span>
                 </div>
                 <ChevronRight size={16} className="ml-auto text-purple-500/40 group-hover:translate-x-1 transition-transform" />

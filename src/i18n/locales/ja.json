@@ -5,9 +5,9 @@
     "version": "Signet Engine v1.0.4 — 安定版"
   },
   "auth": {
-    "pressToStart": "スペースキーを押して開始",
+    "pressToStart": "スペースキーを押してスタート",
     "loginTitle": "ログイン",
-    "signupTitle": "新規登録",
+    "signupTitle": "アカウント作成",
     "loginSubtitle": "ログイン",
     "signupSubtitle": "アカウントを作成",
     "pseudoLabel": "ユーザー名",
@@ -23,7 +23,7 @@
   "hub": {
     "archivesRevealed_one": "{{count}}件のセッションが見つかりました",
     "archivesRevealed_other": "{{count}}件のセッションが見つかりました",
-    "awakening": "セッションを読み込んでいます...",
+    "awakening": "セッションをロード中...",
     "noResults": "検索結果がありません...",
     "confirmDelete": "本当にこのセッションを削除しますか？",
     "editSessionTitle": "セッションを編集",
@@ -37,7 +37,7 @@
     "joinKey": "参加（キー）",
     "createSession": "セッション作成",
     "logout": "ログアウト",
-    "disconnect": "切断",
+    "disconnect": "ログアウト",
     "grade": "役割"
   },
   "lobby": {
@@ -49,7 +49,7 @@
     "connecting": "接続中...",
     "waitingChronicles": "セッションを待機中",
     "systemStory": "{{system}} システムでのセッションがまもなく始まります。",
-    "launchSession": "セッション開始",
+    "launchSession": "セッションスタート",
     "playerCircle": "プレイヤー",
     "roleAdmin": "管理者",
     "roleMJ": "GM",
@@ -61,7 +61,7 @@
     "archivePlaceholder": "例: 古代の墓",
     "arcaneSystem": "ゲームシステム",
     "systemPlaceholder": "選択または検索...",
-    "arcaneSettings": "システム設定",
+    "arcaneSettings": "システムセッティング",
     "imageLabel": "画像のURL",
     "imagePlaceholder": "https://画像...",
     "cancel": "キャンセル",
@@ -70,7 +70,7 @@
     "createDescription": "新規セッションの情報を入力してください。",
     "unnamed": "名前なしのセッション",
     "unknownSystem": "不明なシステム",
-    "summoned": "作成済み"
+    "summoned": "作成"
   },
   "titlebar": {
     "reintegrate": "再統合",
@@ -318,7 +318,6 @@
     "monthsAgo": "{{count}}ヶ月前",
     "yearsAgo": "1年以上前"
   },
-
   "bestiary": {
     "searchPlaceholder": "検索...",
     "restrictedAccess": "アクセス制限",
@@ -349,9 +348,8 @@
     "possessEntity": "所有権を取得",
     "banish": "削除"
   },
-
   "seal": {
-    "settingsTitle": "システム設定",
+    "settingsTitle": "システムセッティング",
     "creation": "作成",
     "attributes": "属性",
     "resources": "リソース",

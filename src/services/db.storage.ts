@@ -9,7 +9,7 @@ export interface AssetRecord {
   last_accessed: number;
 }
 
-interface SigilDB extends DBSchema {
+interface SignetDB extends DBSchema {
   chunks: {
     key: string;
     value: ChunkRecord;
@@ -32,10 +32,10 @@ interface SigilDB extends DBSchema {
 }
 
 class DBStorageService {
-  private dbPromise: Promise<IDBPDatabase<SigilDB>>;
+  private dbPromise: Promise<IDBPDatabase<SignetDB>>;
 
   constructor() {
-    this.dbPromise = openDB<SigilDB>('sigil-vtt-db', 6, {
+    this.dbPromise = openDB<SignetDB>('signet-vtt-db', 6, {
       upgrade(db, oldVersion, newVersion, transaction) {
         if (!db.objectStoreNames.contains('chunks')) {
           const chunkStore = db.createObjectStore('chunks', { keyPath: 'chunk_id' });
@@ -93,7 +93,7 @@ class DBStorageService {
     const db = await this.dbPromise;
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     
-    let allAssets = await db.getAllFromIndex('assets', 'by-access');
+    const allAssets = await db.getAllFromIndex('assets', 'by-access');
     let currentTotalSize = allAssets.reduce((sum, a) => sum + (a.size || 0), 0);
 
     if (currentTotalSize <= maxSizeBytes) return;

@@ -56,7 +56,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   updateTrackStatus: (trackHash, peerIds) => set((state) => {
     const possession = state.peerPossession[trackHash] || {};
     let allHaveIt = true;
-    let someTransferring = false; // Logic to detect if a transfer is in progress would rely on TransferService
+    const someTransferring = false; // Logic to detect if a transfer is in progress would rely on TransferService
 
     for (const peerId of peerIds) {
       if (!possession[peerId]) {
