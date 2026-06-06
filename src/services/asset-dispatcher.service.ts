@@ -173,12 +173,31 @@ class AssetDispatcher {
     await swarmService.seedAsset(hash, data);
     await this.storeAsset(hash, mime, data);
 
+    // [FIX #1] Libère les blocs MJ dès que tous les pairs ont confirmé la réception.
+    // On compte les ACK via onAssetComplete (appelé une fois par pair qui reconstruit).
+    // Quand le compteur atteint peerCount, on purge hostBlocks pour éviter la fuite mémoire.
+    if (peerCount > 0) {
+      let receivedCount = 0;
+      for (let i = 0; i < peerCount; i++) {
+        swarmService.onAssetComplete(hash, () => {
+          receivedCount++;
+          if (receivedCount >= peerCount) {
+            swarmService.releaseHostBlocks(hash);
+          }
+        });
+      }
+    } else {
+      // Aucun pair connecté : libération immédiate (seedAsset a déjà annulé)
+      swarmService.releaseHostBlocks(hash);
+    }
+
     return {
       channel: 'swarm',
       hash,
       blobUrl: URL.createObjectURL(new Blob([data], { type: mime }))
     };
   }
+
 
   // ─── Réception côté Joueur ────────────────────────────────────────────────
 

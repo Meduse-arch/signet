@@ -200,19 +200,45 @@ class SwarmService {
     this.broadcastBitfield(session);
   }
 
-  // ─── Callbacks Asset Complet ─────────────────────────────────────────────────
+  // ─── Callbacks Asset Complet ─────────────────────────────────────────────
+  //
+  // [FIX #4] On utilise un Set par transferId pour éviter qu'un second
+  // enregistrement n'écrase le premier (ex : deux composants qui écoutent
+  // la fin du même transfert simultanément).
 
-  private assetCompleteCallbacks: Map<string, (data: ArrayBuffer) => void> = new Map();
+  private assetCompleteCallbacks: Map<string, Set<(data: ArrayBuffer) => void>> = new Map();
 
   public onAssetComplete(transferId: string, cb: (data: ArrayBuffer) => void) {
-    this.assetCompleteCallbacks.set(transferId, cb);
+    if (!this.assetCompleteCallbacks.has(transferId)) {
+      this.assetCompleteCallbacks.set(transferId, new Set());
+    }
+    this.assetCompleteCallbacks.get(transferId)!.add(cb);
   }
 
   private notifyAssetComplete(transferId: string, data: ArrayBuffer) {
-    const cb = this.assetCompleteCallbacks.get(transferId);
-    if (cb) {
-      cb(data);
+    const callbacks = this.assetCompleteCallbacks.get(transferId);
+    if (callbacks) {
+      callbacks.forEach(cb => cb(data));
       this.assetCompleteCallbacks.delete(transferId);
+    }
+  }
+
+  // ─── Libération explicite des blocs MJ (anti-fuite mémoire) ──────────────
+  //
+  // [FIX #1] Le MJ ne reconstruit jamais son propre fichier → finalizeSession()
+  // ne s'exécute jamais côté MJ → hostBlocks grossit indéfiniment.
+  // L'appelant (asset-dispatcher) doit appeler cette méthode une fois que
+  // tous les pairs ont confirmé la réception de l'asset.
+  public releaseHostBlocks(transferId: string): void {
+    if (this.hostBlocks.has(transferId)) {
+      const blockMap = this.hostBlocks.get(transferId)!;
+      const blockCount = blockMap.size;
+      this.hostBlocks.delete(transferId);
+      this.possessionMatrix.delete(transferId);
+      console.log(
+        `%c[SwarmService] 🗑️  Blocs MJ libérés : "${transferId.substring(0, 8)}..." (${blockCount} blocs purgés de la RAM)`,
+        'color:#94a3b8'
+      );
     }
   }
 

@@ -259,6 +259,11 @@ export class AudioStreamProvider {
     };
     this.broadcast(readyMsg);
 
+    // Laisse le temps au joueur d'initialiser son MediaSource (sourceopen est asynchrone).
+    // Sur réseau local, sans ce délai, le chunk 0 peut arriver avant que sourceBufferRef
+    // soit prêt et serait silencieusement jeté, tronquant la lecture.
+    await sleep(150);
+
     // Envoie le chunk 0 immédiatement pour démarrage instantané
     await this.sendChunk(0);
     onProgress?.(1, this.plan.chunks.length);

@@ -267,7 +267,7 @@ export function useAudioSync(sessionId: string) {
     setIsPlaying(true);
     targetTrackRef.current = { hash, isPlaying: true, position: 0 };
 
-    const isLong = (memFile !== undefined) || (asset && asset.size >= LONG_TRACK_THRESHOLD_BYTES);
+    const isLong = (memFile !== undefined && memFile.size >= LONG_TRACK_THRESHOLD_BYTES) || (asset && asset.size >= LONG_TRACK_THRESHOLD_BYTES);
 
     // ── ASTUCE : Récupérer l'objet File ─────────────────────
     let streamFile = memFile || file;
