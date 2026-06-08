@@ -52,41 +52,7 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
 
     const name = file.name.replace(/\.[^/.]+$/, "");
     setUploadingState({ type: isSfx ? 'sfx' : 'track', name });
-    
-    // Seuil de fichier lourd (4.8 Mo)
-    const LONG_TRACK_THRESHOLD_BYTES = 5 * 60 * (128_000 / 8); 
 
-    // --- Si fichier LOURD (> 4.8 Mo) : PAS de lecture ArrayBuffer, PAS d'IndexedDB ---
-    if (file.size >= LONG_TRACK_THRESHOLD_BYTES) {
-      // Hash simple basé sur le nom et la taille pour identifier le File
-      const hash = "mem_" + btoa(file.name + file.size).substring(0, 16).replace(/[^a-zA-Z0-9]/g, '');
-      
-      const newFile: AudioFile = {
-        hash,
-        title: name,
-        mime: file.type || 'audio/mp3',
-        size: file.size
-      };
-
-      // On garde l'objet File en mémoire vive (perdu au refresh de la page, mais évite le crash RAM)
-      audioService.memoryAudioFiles.set(hash, file);
-
-      if (isSfx) {
-        const newSfxs = [...sfxs.filter(s => s.hash !== hash), newFile];
-        setSfxs(newSfxs);
-        saveToLocal(tracks, newSfxs);
-      } else {
-        const newTracks = [...tracks.filter(t => t.hash !== hash), newFile];
-        setTracks(newTracks);
-        saveToLocal(newTracks, sfxs);
-      }
-
-      setUploadingState(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
-    // --- Si fichier LEGER (< 4.8 Mo) : Lecture ArrayBuffer normale et IndexedDB ---
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
@@ -106,7 +72,7 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
           size: buffer.byteLength
         };
 
-        // Save to IndexedDB
+        // Save to IndexedDB (Works for both small SFX and large MSE tracks)
         await dbStorage.putAsset({
           hash,
           data: buffer,
@@ -124,7 +90,7 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
           const newTracks = [...tracks.filter(t => t.hash !== hash), newFile];
           setTracks(newTracks);
           saveToLocal(newTracks, sfxs);
-          audioSync.preloadAudio(hash, false); // Preload Ambiance
+          audioSync.preloadAudio(hash, false); // Preload Ambiance (ignored if > 4.8MB)
         }
       } catch (err) {
         console.error("Erreur upload audio", err);
@@ -226,9 +192,8 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
                   </button>
                   <button 
                     onClick={() => audioSync.playAmbiance(t.hash, t.title)}
-                    disabled={!isReady}
-                    className={`w-6 h-6 flex items-center justify-center rounded-full transition-all ${isReady ? 'bg-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT hover:text-black' : 'bg-white/5 text-white/20 cursor-not-allowed'}`}
-                    title={isReady ? "Jouer" : "Attendez la fin du transfert..."}
+                    className={`w-6 h-6 flex items-center justify-center rounded-full transition-all bg-gold-DEFAULT/20 text-gold-DEFAULT hover:bg-gold-DEFAULT hover:text-black`}
+                    title="Jouer"
                   >
                     <Play size={12} fill="currentColor" />
                   </button>
@@ -272,9 +237,8 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isReady ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
                  <button
                    onClick={() => audioSync.playSFX(s.hash)}
-                   disabled={!isReady}
-                   className={`w-full text-left text-xs py-1.5 px-2 rounded truncate transition-colors ${isReady ? 'bg-cyan-500/10 border border-cyan-500/20 hover:border-cyan-500/50 hover:bg-cyan-500/20 text-cyan-100' : 'bg-white/5 border border-white/10 text-white/30 cursor-not-allowed'}`}
-                   title={isReady ? s.title : "Transfert..."}
+                   className={`w-full text-left text-xs py-1.5 px-2 rounded truncate transition-colors bg-cyan-500/10 border border-cyan-500/20 hover:border-cyan-500/50 hover:bg-cyan-500/20 text-cyan-100`}
+                   title={s.title}
                  >
                    {s.title}
                  </button>

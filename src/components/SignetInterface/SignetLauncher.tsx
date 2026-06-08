@@ -10,14 +10,15 @@ import {
   X,
   Sparkles,
   Ghost,
-  Plus
+  Plus,
+  BookOpen
 } from 'lucide-react';
 
 import { SecurityLevel, useAuthStore } from '../../store/auth';
 import { useCharactersStore } from '../../store/characters';
 
 interface SignetLauncherProps {
-  onOpenWindow: (type: 'scenes' | 'quests' | 'dice' | 'inventaire' | 'players' | 'bestiary' | 'skills') => void;
+  onOpenWindow: (type: 'scenes' | 'quests' | 'dice' | 'inventaire' | 'players' | 'bestiary' | 'skills' | 'logs') => void;
   securityLevel?: SecurityLevel;
   sessionId: string;
 }
@@ -69,7 +70,7 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
   const menuItems = [
     { type: 'scenes' as const, icon: <ImageIcon size={18} />, label: 'Scènes', minSecurity: SecurityLevel.PLAYER },
     { type: 'bestiary' as const, icon: <Ghost size={18} />, label: 'Bestiaire', minSecurity: SecurityLevel.MJ },
-    { type: 'logs' as const, icon: <ScrollText size={18} />, label: 'Annales', minSecurity: SecurityLevel.MJ },
+    { type: 'logs' as const, icon: <BookOpen size={18} />, label: 'Annales', minSecurity: SecurityLevel.MJ },
     { type: 'skills' as const, icon: <Sparkles size={18} />, label: 'Compétences', minSecurity: SecurityLevel.PLAYER },
     { type: 'quests' as const, icon: <ScrollText size={18} />, label: 'Quêtes', minSecurity: SecurityLevel.PLAYER },
     { type: 'dice' as const, icon: <Dices size={18} />, label: 'Dés', minSecurity: SecurityLevel.PLAYER },
