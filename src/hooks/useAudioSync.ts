@@ -350,8 +350,20 @@ export function useAudioSync(sessionId: string) {
               mimeType: plan.mimeType,
             } as AudioChunkMessage,
           });
-          if (i === 0) await sleep(50); // priorité absolue au chunk 0
-          else await sleep(200);
+
+          // Pacing strategy:
+          // 1. Chunk 0: Instant, no delay.
+          // 2. Chunks 1-2: 500ms delay to build a safe ~1 minute buffer.
+          // 3. Subsequent chunks: Wait 90% of the audio chunk's actual duration to prevent SourceBuffer overflow.
+          if (i === 0) {
+            await interruptibleSleep(50, streamHash);
+          } else if (i < 3) {
+            await interruptibleSleep(500, streamHash);
+          } else {
+            // chunk.durationSeconds is ~30s. We wait ~27s.
+            const waitTime = chunk.durationSeconds * 1000 * 0.9;
+            await interruptibleSleep(waitTime, streamHash);
+          }
         }
       } catch (e) {
         console.error('[AudioSync] Erreur MSE streaming:', e);
@@ -453,4 +465,17 @@ export function useAudioSync(sessionId: string) {
 
 function sleep(ms: number) {
   return new Promise<void>((r) => setTimeout(r, ms));
+}
+
+async function interruptibleSleep(ms: number, streamHash: string) {
+  const start = Date.now();
+  // Vérifie toutes les 100ms si le stream a été coupé pour ne pas bloquer la boucle
+  while (Date.now() - start < ms) {
+    // Si le MJ a mis pause ou changé de piste, on interrompt le sleep
+    // @ts-ignore (activeStream est défini dans le scope global du module)
+    if (typeof activeStream !== 'undefined' && (activeStream.aborted || activeStream.hash !== streamHash)) {
+      return;
+    }
+    await sleep(Math.min(100, ms - (Date.now() - start)));
+  }
 }

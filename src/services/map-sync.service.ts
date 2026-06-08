@@ -111,10 +111,15 @@ class MapSyncService {
   }
 
   public requestChunks(mapId: string, chunkIds: string[], hostPeerId: string) {
-    console.log(`[MapSync] Requesting ${chunkIds.length} chunks from ${hostPeerId} for map ${mapId}`);
+    const toRequest = chunkIds.filter(id => !this.pendingMeshRequests.has(id));
+    if (toRequest.length === 0) return;
+
+    toRequest.forEach(id => this.pendingMeshRequests.add(id));
+
+    console.log(`[MapSync] Requesting ${toRequest.length} chunks from ${hostPeerId} for map ${mapId}`);
     peerService.sendTo(hostPeerId, {
       type: ControlChannelMessage.CHUNK_REQUEST,
-      payload: { map_id: mapId, chunk_ids: chunkIds }
+      payload: { map_id: mapId, chunk_ids: toRequest }
     });
   }
 
@@ -131,7 +136,7 @@ class MapSyncService {
       type: ControlChannelMessage.TRANSFER_START,
       payload: { 
         map_id: mapId, 
-        session_transfer_id: crypto.randomUUID(), 
+        session_transfer_id: this.activeTransfers.get(mapId) || crypto.randomUUID(), 
         manifest: map.manifest 
       }
     });
@@ -198,11 +203,17 @@ class MapSyncService {
       if (existing) {
         console.log(`[MapSync] Map ${mapId} déjà en cache, on utilise le manifest existant.`);
         
+        let sessionTransferId = this.activeTransfers.get(mapId);
+        if (!sessionTransferId) {
+            sessionTransferId = crypto.randomUUID();
+            this.activeTransfers.set(mapId, sessionTransferId);
+        }
+
         peerService.broadcast({
           type: ControlChannelMessage.TRANSFER_START,
           payload: { 
             map_id: mapId, 
-            session_transfer_id: crypto.randomUUID(), 
+            session_transfer_id: sessionTransferId, 
             manifest: existing.manifest 
           }
         });
@@ -365,17 +376,21 @@ class MapSyncService {
       completed_chunks: 0
     });
 
-    const missingChunks = manifest.chunks;
+    const missingChunks: ChunkManifestEntry[] = [];
     
-    missingChunks.forEach(c => {
-       dbStorage.putChunk({
+    for (const c of manifest.chunks) {
+      const existingChunk = await dbStorage.getChunk(c.id);
+      if (!existingChunk || existingChunk.status !== 'complete' || existingChunk.hash !== c.hash) {
+        missingChunks.push(c);
+        await dbStorage.putChunk({
            chunk_id: c.id,
            map_hash: manifest.global_hash,
            hash: c.hash,
            status: 'downloading',
            last_accessed: Date.now()
-       });
-    });
+        });
+      }
+    }
 
     this.onManifestReceivedCallbacks.forEach(cb => cb(map_id, manifest, missingChunks, fromPeerId));
   }

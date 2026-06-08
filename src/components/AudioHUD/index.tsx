@@ -26,12 +26,24 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
     if (!audioSync.isPlaying) return;
     const interval = setInterval(() => {
       if (!isDragging) {
-        setPosition(audioService.getAmbiancePosition());
-        setDuration(audioService.getAmbianceDuration());
+        if (audioSync.mseState && audioSync.mseState.audioRef && audioSync.mseState.audioRef.current && (audioSync.mseState.state === 'playing' || audioSync.mseState.state === 'buffering')) {
+          const audio = audioSync.mseState.audioRef.current;
+          setPosition(audio.currentTime || 0);
+          
+          // MSE duration is sometimes Infinity or NaN during streaming, fallback to chunk calculation
+          let d = audio.duration;
+          if (!d || !isFinite(d)) {
+            d = audioSync.mseState.totalChunks * 30; // 30s is CHUNK_TARGET_SECONDS
+          }
+          setDuration(d);
+        } else {
+          setPosition(audioService.getAmbiancePosition());
+          setDuration(audioService.getAmbianceDuration());
+        }
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [audioSync.isPlaying, isDragging]);
+  }, [audioSync.isPlaying, isDragging, audioSync.mseState]);
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
