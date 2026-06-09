@@ -17,1081 +17,1081 @@ import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { AssetImage } from '../AssetImage';
 
 interface CharacterSheetContentProps {
-  sessionId: string;
-  variant?: 'popup' | 'window';
-  forceCharacterId?: string;
+ sessionId: string;
+ variant?: 'popup' | 'window';
+ forceCharacterId?: string;
 }
 
 // ─── Liquid Glass panel wrapper ───────────────────────────────────────────────
 function GlassPanel({
-  children,
-  className = '',
+ children,
+ className = '',
 }: {
-  children: React.ReactNode;
-  className?: string;
+ children: React.ReactNode;
+ className?: string;
 }) {
-  return (
-    <div
-      className={`relative rounded-xl overflow-hidden flex flex-col ${className}`}
-      style={{
-        background: 'rgba(14, 11, 6, 0.55)',
-        backdropFilter: 'blur(24px) saturate(160%)',
-        borderTop: '1px solid rgba(212, 175, 55, 0.35)',
-        borderLeft: '1px solid rgba(212, 175, 55, 0.25)',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.6)',
-        borderRight: '1px solid rgba(0, 0, 0, 0.5)',
-        boxShadow:
-          'inset 0 1px 0 rgba(255,215,0,0.12), inset 0 -1px 0 rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.6)',
-      }}
-    >
-      {/* specular shine layer */}
-      <div
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          background:
-            'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 45%)',
-          borderRadius: 'inherit',
-        }}
-      />
-      <div className="relative z-10 flex flex-col flex-1 min-h-0">
-        {children}
-      </div>
-    </div>
-  );
+ return (
+ <div
+ className={`relative rounded-xl overflow-hidden flex flex-col ${className}`}
+ style={{
+ background: 'rgba(14, 11, 6, 0.55)',
+ backdropFilter: 'blur(24px) saturate(160%)',
+ borderTop: '1px solid rgba(157, 168, 184, 0.35)',
+ borderLeft: '1px solid rgba(157, 168, 184, 0.25)',
+ borderBottom: '1px solid rgba(0, 0, 0, 0.6)',
+ borderRight: '1px solid rgba(0, 0, 0, 0.5)',
+ boxShadow:
+ 'inset 0 1px 0 rgba(255,215,0,0.12), inset 0 -1px 0 rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.6)',
+ }}
+ >
+ {/* specular shine layer */}
+ <div
+ className="pointer-events-none absolute inset-0 z-0"
+ style={{
+ background:
+ 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 45%)',
+ borderRadius: 'inherit',
+ }}
+ />
+ <div className="relative z-10 flex flex-col flex-1 min-h-0">
+ {children}
+ </div>
+ </div>
+ );
 }
 
 // ─── Liquid progress bar ──────────────────────────────────────────────────────
 function LiquidBar({
-  percent,
-  color,
-  height = 6,
+ percent,
+ color,
+ height = 6,
 }: {
-  percent: number;
-  color: string;
-  height?: number;
+ percent: number;
+ color: string;
+ height?: number;
 }) {
-  return (
-    <div
-      className="w-full rounded-full overflow-hidden flex-shrink-0"
-      style={{
-        height,
-        background: 'rgba(0,0,0,0.45)',
-        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.6)',
-        border: '1px solid rgba(255,255,255,0.05)',
-      }}
-    >
-      <div
-        className="h-full rounded-full relative overflow-hidden transition-all duration-500"
-        style={{
-          width: `${percent}%`,
-          background: `linear-gradient(180deg, ${color}dd 0%, ${color} 50%, ${color}aa 100%)`,
-          boxShadow: `inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -1px 2px rgba(0,0,0,0.3), 0 0 8px ${color}66`,
-        }}
-      >
-        {/* shimmer sweep */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.28) 50%, transparent 100%)',
-            animation: 'shimmer-sweep 2.8s infinite linear',
-          }}
-        />
-      </div>
-    </div>
-  );
+ return (
+ <div
+ className="w-full rounded-full overflow-hidden flex-shrink-0"
+ style={{
+ height,
+ background: 'rgba(0,0,0,0.45)',
+ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.6)',
+ border: '1px solid rgba(255,255,255,0.05)',
+ }}
+ >
+ <div
+ className="h-full rounded-full relative overflow-hidden transition-all duration-500"
+ style={{
+ width: `${percent}%`,
+ background: `linear-gradient(180deg, ${color}dd 0%, ${color} 50%, ${color}aa 100%)`,
+ boxShadow: `inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -1px 2px rgba(0,0,0,0.3), 0 0 8px ${color}66`,
+ }}
+ >
+ {/* shimmer sweep */}
+ <div
+ className="absolute inset-0"
+ style={{
+ background:
+ 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.28) 50%, transparent 100%)',
+ animation: 'shimmer-sweep 2.8s infinite linear',
+ }}
+ />
+ </div>
+ </div>
+ );
 }
 
 // ─── Snap-scroll column with dots indicator ───────────────────────────────────
 function SnapColumn({
-  items,
-  itemsPerPage,
-  renderItem,
-  label,
-  variant,
+ items,
+ itemsPerPage,
+ renderItem,
+ label,
+ variant,
 }: {
-  items: unknown[];
-  itemsPerPage: number;
-  renderItem: (item: unknown, index: number) => React.ReactNode;
-  label: string;
-  variant: 'popup' | 'window';
+ items: unknown[];
+ itemsPerPage: number;
+ renderItem: (item: unknown, index: number) => React.ReactNode;
+ label: string;
+ variant: 'popup' | 'window';
 }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [activePage, setActivePage] = useState(0);
-  const totalPages = Math.ceil(items.length / itemsPerPage);
-  const needsScroll = items.length > itemsPerPage;
+ const scrollRef = useRef<HTMLDivElement>(null);
+ const [activePage, setActivePage] = useState(0);
+ const totalPages = Math.ceil(items.length / itemsPerPage);
+ const needsScroll = items.length > itemsPerPage;
 
-  const onScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const page = Math.round(el.scrollTop / el.clientHeight);
-    setActivePage(page);
-  }, []);
+ const onScroll = useCallback(() => {
+ const el = scrollRef.current;
+ if (!el) return;
+ const page = Math.round(el.scrollTop / el.clientHeight);
+ setActivePage(page);
+ }, []);
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [onScroll]);
+ useEffect(() => {
+ const el = scrollRef.current;
+ if (!el) return;
+ el.addEventListener('scroll', onScroll, { passive: true });
+ return () => el.removeEventListener('scroll', onScroll);
+ }, [onScroll]);
 
-  // Group items into pages of itemsPerPage
-  const pages: unknown[][] = [];
-  for (let i = 0; i < items.length; i += itemsPerPage) {
-    pages.push(items.slice(i, i + itemsPerPage));
-  }
+ // Group items into pages of itemsPerPage
+ const pages: unknown[][] = [];
+ for (let i = 0; i < items.length; i += itemsPerPage) {
+ pages.push(items.slice(i, i + itemsPerPage));
+ }
 
-  const isPopup = variant === 'popup';
+ const isPopup = variant === 'popup';
 
-  return (
-    <GlassPanel className="flex-1 min-w-0">
-      {/* header */}
-      <div
-        className="flex-shrink-0 text-center py-1.5 border-b"
-        style={{
-          borderColor: 'rgba(212,175,55,0.2)',
-          background: 'rgba(0,0,0,0.2)',
-        }}
-      >
-        <span
-          className="font-cinzel font-black uppercase tracking-widest"
-          style={{
-            fontSize: isPopup ? '8px' : '10px',
-            color: 'rgba(212,175,55,0.7)',
-          }}
-        >
-          {label}
-        </span>
-      </div>
+ return (
+ <GlassPanel className="flex-1 min-w-0">
+ {/* header */}
+ <div
+ className="flex-shrink-0 text-center py-1.5 border-b"
+ style={{
+ borderColor: 'rgba(157, 168, 184,0.2)',
+ background: 'rgba(0,0,0,0.2)',
+ }}
+ >
+ <span
+ className="font-quantico font-black uppercase tracking-widest"
+ style={{
+ fontSize: isPopup ? '8px' : '10px',
+ color: 'rgba(157, 168, 184,0.7)',
+ }}
+ >
+ {label}
+ </span>
+ </div>
 
-      {/* scrollable snap area */}
-      <div
-        ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto"
-        style={{
-          scrollSnapType: needsScroll ? 'y mandatory' : 'none',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        }}
-      >
-        {pages.map((pageItems, pageIndex) => (
-          <div
-            key={pageIndex}
-            className="flex flex-col"
-            style={{
-              scrollSnapAlign: 'start',
-              scrollSnapStop: 'always',
-              height: needsScroll ? '100%' : 'max-content',
-              minHeight: '100%',
-              padding: isPopup ? '4px' : '6px',
-              gap: isPopup ? '3px' : '5px',
-              justifyContent: 'flex-start',
-            }}
-          >
-            {pageItems.map((item, i) => renderItem(item, pageIndex * itemsPerPage + i))}
-          </div>
-        ))}
-      </div>
+ {/* scrollable snap area */}
+ <div
+ ref={scrollRef}
+ className="flex-1 min-h-0 overflow-y-auto"
+ style={{
+ scrollSnapType: needsScroll ? 'y mandatory' : 'none',
+ scrollbarWidth: 'none',
+ msOverflowStyle: 'none',
+ }}
+ >
+ {pages.map((pageItems, pageIndex) => (
+ <div
+ key={pageIndex}
+ className="flex flex-col"
+ style={{
+ scrollSnapAlign: 'start',
+ scrollSnapStop: 'always',
+ height: needsScroll ? '100%' : 'max-content',
+ minHeight: '100%',
+ padding: isPopup ? '4px' : '6px',
+ gap: isPopup ? '3px' : '5px',
+ justifyContent: 'flex-start',
+ }}
+ >
+ {pageItems.map((item, i) => renderItem(item, pageIndex * itemsPerPage + i))}
+ </div>
+ ))}
+ </div>
 
-      {/* dots — only if multiple pages */}
-      {needsScroll && (
-        <div
-          className="flex-shrink-0 flex items-center justify-center gap-1 py-1"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-        >
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                scrollRef.current?.scrollTo({
-                  top: i * (scrollRef.current.clientHeight),
-                  behavior: 'smooth',
-                });
-              }}
-              style={{
-                width: i === activePage ? 12 : 5,
-                height: 5,
-                borderRadius: 3,
-                background:
-                  i === activePage
-                    ? '#d4af37'
-                    : 'rgba(212,175,55,0.3)',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                transition: 'all 0.25s ease',
-              }}
-            />
-          ))}
-        </div>
-      )}
-    </GlassPanel>
-  );
+ {/* dots — only if multiple pages */}
+ {needsScroll && (
+ <div
+ className="flex-shrink-0 flex items-center justify-center gap-1 py-1"
+ style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+ >
+ {Array.from({ length: totalPages }).map((_, i) => (
+ <button
+ key={i}
+ onClick={() => {
+ scrollRef.current?.scrollTo({
+ top: i * (scrollRef.current.clientHeight),
+ behavior: 'smooth',
+ });
+ }}
+ style={{
+ width: i === activePage ? 12 : 5,
+ height: 5,
+ borderRadius: 3,
+ background:
+ i === activePage
+ ? '#d4af37'
+ : 'rgba(157, 168, 184,0.3)',
+ border: 'none',
+ cursor: 'pointer',
+ padding: 0,
+ transition: 'all 0.25s ease',
+ }}
+ />
+ ))}
+ </div>
+ )}
+ </GlassPanel>
+ );
 }
 
-  // ── Main component ───────────────────────────────────────────────────────────
+ // ── Main component ───────────────────────────────────────────────────────────
 export function CharacterSheetContent({
-  sessionId,
-  variant = 'popup',
-  forceCharacterId,
+ sessionId,
+ variant = 'popup',
+ forceCharacterId,
 }: CharacterSheetContentProps) {
-  const user = useAuthStore(state => state.user);
-  const characters = useCharactersStore(state => state.characters);
-  const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
-  const { removeCharacter, controlledCharacterId, setPnjControle } = useCharactersStore();
-  const { setSelectedSkill } = useUIStore();
-  const { skills } = useSkillsStore();
-  const session = useSessionStore(state =>
-    state.sessions.find(s => s.id === sessionId)
-  );
-  const { broadcast, sendTo, onData } = usePeer();
-  const { nbDice, modifier, setDiceResult, diceSharingEnabled } = useDiceStore();
-  const { setCharacterManagement } = useUIStore();
+ const user = useAuthStore(state => state.user);
+ const characters = useCharactersStore(state => state.characters);
+ const addOrUpdateCharacter = useCharactersStore(state => state.addOrUpdateCharacter);
+ const { removeCharacter, controlledCharacterId, setPnjControle } = useCharactersStore();
+ const { setSelectedSkill } = useUIStore();
+ const { skills } = useSkillsStore();
+ const session = useSessionStore(state =>
+ state.sessions.find(s => s.id === sessionId)
+ );
+ const { broadcast, sendTo, onData } = usePeer();
+ const { nbDice, modifier, setDiceResult, diceSharingEnabled } = useDiceStore();
+ const { setCharacterManagement } = useUIStore();
 
-  const isPopup = variant === 'popup';
+ const isPopup = variant === 'popup';
 
-  // ── how many items visible per page per mode ──
-  const [itemsPerPage, setItemsPerPage] = useState(3);
-  const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
-  const [avatarUrlInput, setAvatarUrlInput] = useState('');
+ // ── how many items visible per page per mode ──
+ const [itemsPerPage, setItemsPerPage] = useState(3);
+ const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
+ const [avatarUrlInput, setAvatarUrlInput] = useState('');
 
-  const { isUploading, fileInputRef, handleFileUpload } = useAssetUpload(
-    avatarUrlInput,
-    (url) => {
-      setAvatarUrlInput(url);
-    }
-  );
+ const { isUploading, fileInputRef, handleFileUpload } = useAssetUpload(
+ avatarUrlInput,
+ (url) => {
+ setAvatarUrlInput(url);
+ }
+ );
 
-  useEffect(() => {
-    if (isPopup) {
-      setItemsPerPage(3);
-    } else {
-      setItemsPerPage(999); // En mode fenêtre, on affiche tout sur une seule page déroulante
-    }
-  }, [isPopup]);
+ useEffect(() => {
+ if (isPopup) {
+ setItemsPerPage(3);
+ } else {
+ setItemsPerPage(999); // En mode fenêtre, on affiche tout sur une seule page déroulante
+ }
+ }, [isPopup]);
 
-  const character = useMemo(() => {
-    if (forceCharacterId) {
-      return characters.find(c => c.id === forceCharacterId);
-    }
-    if (controlledCharacterId) {
-      return characters.find(c => c.id === controlledCharacterId);
-    }
-    return characters.find(c => c.user_id === user?.id);
-  }, [characters, controlledCharacterId, user?.id, forceCharacterId]);
+ const character = useMemo(() => {
+ if (forceCharacterId) {
+ return characters.find(c => c.id === forceCharacterId);
+ }
+ if (controlledCharacterId) {
+ return characters.find(c => c.id === controlledCharacterId);
+ }
+ return characters.find(c => c.user_id === user?.id);
+ }, [characters, controlledCharacterId, user?.id, forceCharacterId]);
 
-  const isMJ = !!user && user.role >= SecurityLevel.MJ;
-  const isOwner = character?.user_id === user?.id;
+ const isMJ = !!user && user.role >= SecurityLevel.MJ;
+ const isOwner = character?.user_id === user?.id;
 
-  const handleDelete = async () => {
-    if (!character) return;
-    if (!isMJ && !isOwner) return;
-    
-    if (!confirm(`Souhaitez-vous vraiment bannir ${character.name} de l'Archive ?`)) return;
+ const handleDelete = async () => {
+ if (!character) return;
+ if (!isMJ && !isOwner) return;
+ 
+ if (!confirm(`Souhaitez-vous vraiment bannir ${character.name} de l'Archive ?`)) return;
 
-    if (window.electronAPI) {
-      await removeSessionCharacter(sessionId, character.id);
-    }
+ if (window.electronAPI) {
+ await removeSessionCharacter(sessionId, character.id);
+ }
 
-    if (controlledCharacterId === character.id) {
-        setPnjControle(sessionId, null);
-    }
+ if (controlledCharacterId === character.id) {
+ setPnjControle(sessionId, null);
+ }
 
-    removeCharacter(sessionId, character.id);    broadcast({ type: 'CHAR_DELETE', payload: { id: character.id } });
-  };
+ removeCharacter(sessionId, character.id); broadcast({ type: 'CHAR_DELETE', payload: { id: character.id } });
+ };
 
-  const handleAvatarClick = () => {
-    if (!character) return;
-    setAvatarUrlInput(character.image_url || '');
-    setShowAvatarPrompt(true);
-  };
+ const handleAvatarClick = () => {
+ if (!character) return;
+ setAvatarUrlInput(character.image_url || '');
+ setShowAvatarPrompt(true);
+ };
 
-  const submitAvatarChange = async () => {
-    if (!character) return;
-    const updatedChar = { ...character, image_url: avatarUrlInput };
-    
-    // Update local store
-    addOrUpdateCharacter(updatedChar);
-    
-    // Persist to DB if in electron
-    if (window.electronAPI) {
-      await addSessionCharacter(updatedChar);
-    }
-    
-    // Broadcast via P2P
-    broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
-    
-    // La mise à jour locale est déjà gérée par le store Zustand (addOrUpdateCharacter)
-    
-    setShowAvatarPrompt(false);
-  };
+ const submitAvatarChange = async () => {
+ if (!character) return;
+ const updatedChar = { ...character, image_url: avatarUrlInput };
+ 
+ // Update local store
+ addOrUpdateCharacter(updatedChar);
+ 
+ // Persist to DB if in electron
+ if (window.electronAPI) {
+ await addSessionCharacter(updatedChar);
+ }
+ 
+ // Broadcast via P2P
+ broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+ 
+ // La mise à jour locale est déjà gérée par le store Zustand (addOrUpdateCharacter)
+ 
+ setShowAvatarPrompt(false);
+ };
 
-  // ── MAP TOKENS SYNC ──────────────────────────────
-  const tokenStatuses = useMapStore(state => state.tokenStatuses);
-  const setStoreTokenStatus = useMapStore(state => state.setTokenStatus);
+ // ── MAP TOKENS SYNC ──────────────────────────────
+ const tokenStatuses = useMapStore(state => state.tokenStatuses);
+ const setStoreTokenStatus = useMapStore(state => state.setTokenStatus);
 
-  const isTokenOnMap = useMemo(() => {
-    return character ? !!tokenStatuses[character.id] : false;
-  }, [character, tokenStatuses]);
+ const isTokenOnMap = useMemo(() => {
+ return character ? !!tokenStatuses[character.id] : false;
+ }, [character, tokenStatuses]);
 
-  const toggleTokenPlacement = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!character) return;
-    
-    // Si on est le host (MJ), on peut déclencher directement en local
-    if (isMJ) {
-        const channel = new BroadcastChannel(`board_actions_${sessionId}`);
-        channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: character.id } });
-        channel.close();
-    }
-    
-    // On envoie la requête P2P au host
-    broadcast({ type: 'TOGGLE_TOKEN_REQUEST', payload: { id: character.id } });
-    // Optimistic update
-    setStoreTokenStatus(character.id, !isTokenOnMap);
-  };
+ const toggleTokenPlacement = async (e: React.MouseEvent) => {
+ e.stopPropagation();
+ if (!character) return;
+ 
+ // Si on est le host (MJ), on peut déclencher directement en local
+ if (isMJ) {
+ const channel = new BroadcastChannel(`board_actions_${sessionId}`);
+ channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: character.id } });
+ channel.close();
+ }
+ 
+ // On envoie la requête P2P au host
+ broadcast({ type: 'TOGGLE_TOKEN_REQUEST', payload: { id: character.id } });
+ // Optimistic update
+ setStoreTokenStatus(character.id, !isTokenOnMap);
+ };
 
-  const { name = 'Inconnu', stats = {}, bars = {}, image_url, inventory = [], custom_skills = [] } = character || {};
-  const statDefs = session?.settings?.stats || DEFAULT_STATS;
-  const barDefs = session?.settings?.bars || DEFAULT_BARS;
+ const { name = 'Inconnu', stats = {}, bars = {}, image_url, inventory = [], custom_skills = [] } = character || {};
+ const statDefs = session?.settings?.stats || DEFAULT_STATS;
+ const barDefs = session?.settings?.bars || DEFAULT_BARS;
 
-  // Sync custom skills with the global skills store to enable "real-time" updates
-  const reactiveSkills = useMemo(() => {
-    return custom_skills.map((cs: any) => {
-        const template = skills.find(s => s.id === cs.id);
-        if (!template) return cs;
-        return { ...template, is_active: cs.is_active, modifiers: cs.modifiers || template.modifiers };
-    });
-  }, [custom_skills, skills]);
+ // Sync custom skills with the global skills store to enable "real-time" updates
+ const reactiveSkills = useMemo(() => {
+ return custom_skills.map((cs: any) => {
+ const template = skills.find(s => s.id === cs.id);
+ if (!template) return cs;
+ return { ...template, is_active: cs.is_active, modifiers: cs.modifiers || template.modifiers };
+ });
+ }, [custom_skills, skills]);
 
-  // Calculer les modificateurs d'équipement et de compétences complexes
-  const calculatedModifiers = useMemo(() => {
-    const statsFlat: Record<string, number> = {};
-    const statsPercent: Record<string, number> = {};
-    const barsFlat: Record<string, { value: number; max: number }> = {};
-    
-    if (!character) return { stats: {}, bars: {} };
+ // Calculer les modificateurs d'équipement et de compétences complexes
+ const calculatedModifiers = useMemo(() => {
+ const statsFlat: Record<string, number> = {};
+ const statsPercent: Record<string, number> = {};
+ const barsFlat: Record<string, { value: number; max: number }> = {};
+ 
+ if (!character) return { stats: {}, bars: {} };
 
-    // 1. Modificateurs d'objets (Inventaire)
-    inventory.forEach((item: any) => {
-      if (item.equipped && item.modifiers) {
-        item.modifiers.forEach((m: any, idx: number) => {
-          if (m.target === 'stat') {
-            if (m.mode === 'percent') {
-              statsPercent[m.targetId] = (statsPercent[m.targetId] || 0) + m.value;
-            } else if (m.mode === 'dice') {
-              statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + (item.rolledValues?.[idx] || 0);
-            } else {
-              statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
-            }
-          } else if (m.target === 'bar') {
-            if (item.category === 'Arme') return;
-            if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
-            const prop = m.targetProperty || 'max';
-            if (m.mode === 'dice') {
-               barsFlat[m.targetId][prop as 'value' | 'max'] += (item.rolledValues?.[idx] || 0);
-            } else {
-               barsFlat[m.targetId][prop as 'value' | 'max'] += m.value;
-            }
-          }
-        });
-      }
-    });
+ // 1. Modificateurs d'objets (Inventaire)
+ inventory.forEach((item: any) => {
+ if (item.equipped && item.modifiers) {
+ item.modifiers.forEach((m: any, idx: number) => {
+ if (m.target === 'stat') {
+ if (m.mode === 'percent') {
+ statsPercent[m.targetId] = (statsPercent[m.targetId] || 0) + m.value;
+ } else if (m.mode === 'dice') {
+ statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + (item.rolledValues?.[idx] || 0);
+ } else {
+ statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
+ }
+ } else if (m.target === 'bar') {
+ if (item.category === 'Arme') return;
+ if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
+ const prop = m.targetProperty || 'max';
+ if (m.mode === 'dice') {
+ barsFlat[m.targetId][prop as 'value' | 'max'] += (item.rolledValues?.[idx] || 0);
+ } else {
+ barsFlat[m.targetId][prop as 'value' | 'max'] += m.value;
+ }
+ }
+ });
+ }
+ });
 
-    // 2. Modificateurs de compétences (Reactive Skills)
-    reactiveSkills.forEach((skill: any) => {
-      // Les passifs auto s'appliquent toujours, les passifs toggle seulement si actifs
-      const isAuto = skill.type === 'passive_auto';
-      const isToggleActive = skill.type === 'passive_toggle' && skill.is_active;
-      
-      if ((isAuto || isToggleActive) && skill.modifiers) {
-        skill.modifiers.forEach((m: any) => {
-          if (m.target === 'stat') {
-            if (m.mode === 'percent') {
-              statsPercent[m.targetId] = (statsPercent[m.targetId] || 0) + m.value;
-            } else {
-              statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
-            }
-          } else if (m.target === 'bar') {
-            if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
-            const prop = m.targetProperty || 'max';
-            barsFlat[m.targetId][prop as 'value' | 'max'] += m.value;
-          }
-        });
-      }
-    });
+ // 2. Modificateurs de compétences (Reactive Skills)
+ reactiveSkills.forEach((skill: any) => {
+ // Les passifs auto s'appliquent toujours, les passifs toggle seulement si actifs
+ const isAuto = skill.type === 'passive_auto';
+ const isToggleActive = skill.type === 'passive_toggle' && skill.is_active;
+ 
+ if ((isAuto || isToggleActive) && skill.modifiers) {
+ skill.modifiers.forEach((m: any) => {
+ if (m.target === 'stat') {
+ if (m.mode === 'percent') {
+ statsPercent[m.targetId] = (statsPercent[m.targetId] || 0) + m.value;
+ } else {
+ statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
+ }
+ } else if (m.target === 'bar') {
+ if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
+ const prop = m.targetProperty || 'max';
+ barsFlat[m.targetId][prop as 'value' | 'max'] += m.value;
+ }
+ });
+ }
+ });
 
-    // Calculer les bonus finaux des stats
-    const statsFinal: Record<string, number> = {};
-    statDefs.forEach((s: any) => {
-      const base = stats[s.id] || 20;
-      const flat = statsFlat[s.id] || 0;
-      const percent = statsPercent[s.id] || 0;
-      statsFinal[s.id] = flat + Math.round(base * (percent / 100));
-    });
+ // Calculer les bonus finaux des stats
+ const statsFinal: Record<string, number> = {};
+ statDefs.forEach((s: any) => {
+ const base = stats[s.id] || 20;
+ const flat = statsFlat[s.id] || 0;
+ const percent = statsPercent[s.id] || 0;
+ statsFinal[s.id] = flat + Math.round(base * (percent / 100));
+ });
 
-    return { stats: statsFinal, bars: barsFlat };
-  }, [character, inventory, stats, statDefs, reactiveSkills]);
+ return { stats: statsFinal, bars: barsFlat };
+ }, [character, inventory, stats, statDefs, reactiveSkills]);
 
-  if (!character) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-        <p
-          className="font-cinzel text-sm uppercase tracking-widest"
-          style={{ color: 'rgba(212,175,55,0.5)' }}
-        >
-          Aucun personnage lié à cette session
-        </p>
-      </div>
-    );
-  }
+ if (!character) {
+ return (
+ <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+ <p
+ className="font-quantico text-sm uppercase tracking-widest"
+ style={{ color: 'rgba(157, 168, 184,0.5)' }}
+ >
+ Aucun personnage lié à cette session
+ </p>
+ </div>
+ );
+ }
 
-  const CustomAvatarPrompt = () => {
-    if (!showAvatarPrompt) return null;
-    return (
-      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="bg-[#0A0A0C]/90 border border-gold-DEFAULT/40 p-6 rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.2)] w-[90%] max-w-sm flex flex-col gap-4">
-          <h3 className="text-gold-bright font-cinzel font-black uppercase tracking-widest text-center text-sm">Portrait du Voyageur</h3>
-          <div className="flex gap-2">
-            <input 
-              type="text" 
-              value={avatarUrlInput}
-              onChange={(e) => setAvatarUrlInput(e.target.value)}
-              placeholder="URL de l'image (https://...)"
-              className="flex-1 bg-black/50 border border-gold-DEFAULT/20 rounded-lg px-3 py-2 text-white/90 text-xs font-mono focus:outline-none focus:border-gold-DEFAULT/60 transition-colors"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') submitAvatarChange();
-                if (e.key === 'Escape') setShowAvatarPrompt(false);
-              }}
-            />
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="p-2 rounded-lg bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[40px]"
-              title="Importer un fichier local"
-            >
-              {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-            </button>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*"
-              onChange={handleFileUpload}
-            />
-          </div>
-          <p className="text-[10px] font-cinzel text-white/40 uppercase tracking-widest text-center">Importez un portrait local (P2P)</p>
-          <div className="flex justify-end gap-2 mt-2">
-            <button 
-              onClick={() => setShowAvatarPrompt(false)}
-              className="px-4 py-1.5 rounded-lg text-white/50 hover:text-white/90 text-xs font-cinzel uppercase tracking-wider transition-colors"
-            >
-              Annuler
-            </button>
-            <button 
-              onClick={submitAvatarChange}
-              className="px-4 py-1.5 rounded-lg bg-gold-DEFAULT text-black border border-gold-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] text-xs font-cinzel font-black uppercase tracking-wider transition-all"
-            >
-              Enregistrer
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
+ const CustomAvatarPrompt = () => {
+ if (!showAvatarPrompt) return null;
+ return (
+ <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+ <div className="bg-[#0A0A0C]/90 border border-silver-DEFAULT/40 p-6 rounded-2xl shadow-[0_0_30px_rgba(157, 168, 184,0.2)] w-[90%] max-w-sm flex flex-col gap-4">
+ <h3 className="text-glacier-bright font-quantico font-black uppercase tracking-widest text-center text-sm">Portrait du Voyageur</h3>
+ <div className="flex gap-2">
+ <input 
+ type="text" 
+ value={avatarUrlInput}
+ onChange={(e) => setAvatarUrlInput(e.target.value)}
+ placeholder="URL de l'image (https://...)"
+ className="flex-1 bg-black/50 border border-silver-DEFAULT/20 rounded-lg px-3 py-2 text-white/90 text-xs font-mono focus:outline-none focus:border-silver-DEFAULT/60 transition-colors"
+ autoFocus
+ onKeyDown={(e) => {
+ if (e.key === 'Enter') submitAvatarChange();
+ if (e.key === 'Escape') setShowAvatarPrompt(false);
+ }}
+ />
+ <button 
+ onClick={() => fileInputRef.current?.click()}
+ disabled={isUploading}
+ className="p-2 rounded-lg bg-glacier-DEFAULT/10 border border-silver-DEFAULT/20 text-glacier-bright hover:bg-glacier-DEFAULT/20 transition-all flex items-center justify-center min-w-[40px]"
+ title="Importer un fichier local"
+ >
+ {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+ </button>
+ <input 
+ type="file" 
+ ref={fileInputRef} 
+ className="hidden" 
+ accept="image/*"
+ onChange={handleFileUpload}
+ />
+ </div>
+ <p className="text-[10px] font-quantico text-white/40 uppercase tracking-widest text-center">Importez un portrait local (P2P)</p>
+ <div className="flex justify-end gap-2 mt-2">
+ <button 
+ onClick={() => setShowAvatarPrompt(false)}
+ className="px-4 py-1.5 rounded-lg text-white/50 hover:text-white/90 text-xs font-quantico uppercase tracking-wider transition-colors"
+ >
+ Annuler
+ </button>
+ <button 
+ onClick={submitAvatarChange}
+ className="px-4 py-1.5 rounded-lg bg-glacier-DEFAULT text-black border border-silver-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_15px_rgba(157, 168, 184,0.3)] text-xs font-quantico font-black uppercase tracking-wider transition-all"
+ >
+ Enregistrer
+ </button>
+ </div>
+ </div>
+ </div>
+ );
+ };
 
-  const handleRollStat = async (statName: string, baseFaces: number, statId: string) => {
-    if (!character) return;
-    
-    const nb = Math.max(1, nbDice);
-    const itemMod = calculatedModifiers.stats[statId] || 0;
-    const finalFaces = baseFaces + itemMod;
-    const mod = modifier; // Seul le modificateur global s'ajoute au résultat
-    const res = lancerDes(nb, finalFaces, mod);
-    
-    const labelPart = `(${statName}=${finalFaces})`;
-    const modStr = mod !== 0 ? (mod > 0 ? '+' : '') + mod : '';
-    const diceString = `${nb}d${labelPart}${modStr}`;
-    
-    const result = {
-      rolls: res.rolls,
-      total: res.total,
-      bonus: mod,
-      diceString,
-      label: statName,
-      groups: [{ nb, faces: finalFaces, label: statName, rolls: res.rolls }],
-      color: '#d4af37',
-      secret: !diceSharingEnabled,
-      timestamp: Date.now(),
-      sender_id: user?.id,
-      sender_name: character.name
-    };
+ const handleRollStat = async (statName: string, baseFaces: number, statId: string) => {
+ if (!character) return;
+ 
+ const nb = Math.max(1, nbDice);
+ const itemMod = calculatedModifiers.stats[statId] || 0;
+ const finalFaces = baseFaces + itemMod;
+ const mod = modifier; // Seul le modificateur global s'ajoute au résultat
+ const res = lancerDes(nb, finalFaces, mod);
+ 
+ const labelPart = `(${statName}=${finalFaces})`;
+ const modStr = mod !== 0 ? (mod > 0 ? '+' : '') + mod : '';
+ const diceString = `${nb}d${labelPart}${modStr}`;
+ 
+ const result = {
+ rolls: res.rolls,
+ total: res.total,
+ bonus: mod,
+ diceString,
+ label: statName,
+ groups: [{ nb, faces: finalFaces, label: statName, rolls: res.rolls }],
+ color: '#d4af37',
+ secret: !diceSharingEnabled,
+ timestamp: Date.now(),
+ sender_id: user?.id,
+ sender_name: character.name
+ };
 
-    setDiceResult([result]);
+ setDiceResult([result]);
 
-    const logEntry = {
-      id: crypto.randomUUID(),
-      type: 'des',
-      action: `Lance ${result.label} (${diceString})`,
-      details: { rolls: res.rolls, total: res.total, diceString },
-      timestamp: Date.now(),
-      character_id: character.id,
-      character_name: character.name
-    };
+ const logEntry = {
+ id: crypto.randomUUID(),
+ type: 'des',
+ action: `Lance ${result.label} (${diceString})`,
+ details: { rolls: res.rolls, total: res.total, diceString },
+ timestamp: Date.now(),
+ character_id: character.id,
+ character_name: character.name
+ };
 
-    if (window.electronAPI) {
-      await addSessionLog(sessionId, logEntry as any);
-    }
+ if (window.electronAPI) {
+ await addSessionLog(sessionId, logEntry as any);
+ }
 
-    if (diceSharingEnabled) {
-      broadcast({ type: 'DICE_ROLL', payload: result });
-    } else {
-      if (!isMJ && session?.hostPeerId) {
-        sendTo(session.hostPeerId, { type: 'SECRET_DICE_ROLL', payload: result });
-      }
-    }
-  };
+ if (diceSharingEnabled) {
+ broadcast({ type: 'DICE_ROLL', payload: result });
+ } else {
+ if (!isMJ && session?.hostPeerId) {
+ sendTo(session.hostPeerId, { type: 'SECRET_DICE_ROLL', payload: result });
+ }
+ }
+ };
 
-  const handleManualBarUpdate = async (barId: string, diff: number) => {
-    if (!character) return;
-    const updatedBars = { ...(character.bars || {}) };
-    const currentVal = updatedBars[barId] || 0;
-    const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
-    const maxVal = updatedBars[maxKey] || currentVal || 100;
-    
-    updatedBars[barId] = Math.max(0, Math.min(maxVal, currentVal + diff));
-    
-    const updatedChar = { ...character, bars: updatedBars };
-    addOrUpdateCharacter(updatedChar, false);
-    if (window.electronAPI) await addSessionCharacter(updatedChar);
-    broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
-  };
+ const handleManualBarUpdate = async (barId: string, diff: number) => {
+ if (!character) return;
+ const updatedBars = { ...(character.bars || {}) };
+ const currentVal = updatedBars[barId] || 0;
+ const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
+ const maxVal = updatedBars[maxKey] || currentVal || 100;
+ 
+ updatedBars[barId] = Math.max(0, Math.min(maxVal, currentVal + diff));
+ 
+ const updatedChar = { ...character, bars: updatedBars };
+ addOrUpdateCharacter(updatedChar, false);
+ if (window.electronAPI) await addSessionCharacter(updatedChar);
+ broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+ };
 
-  const handleToggleSkill = async (skillId: string) => {
-    if (!character) return;
+ const handleToggleSkill = async (skillId: string) => {
+ if (!character) return;
 
-    // 1. Collecter les valeurs des attributs pour le remplacement
-    const statValues: Record<string, number> = {};
-    const labelMapping: Record<string, string> = {};
-    
-    // Attributs (Stats) - Résolution uniquement par ID
-    statDefs.forEach((s: any) => {
-      const val = (character.stats || {})[s.id] || 20;
-      const itemMod = calculatedModifiers.stats[s.id] || 0;
-      const finalVal = val + itemMod;
-      statValues[s.id.toLowerCase()] = finalVal;
-      labelMapping[s.id.toLowerCase()] = s.name;
-    });
+ // 1. Collecter les valeurs des attributs pour le remplacement
+ const statValues: Record<string, number> = {};
+ const labelMapping: Record<string, string> = {};
+ 
+ // Attributs (Stats) - Résolution uniquement par ID
+ statDefs.forEach((s: any) => {
+ const val = (character.stats || {})[s.id] || 20;
+ const itemMod = calculatedModifiers.stats[s.id] || 0;
+ const finalVal = val + itemMod;
+ statValues[s.id.toLowerCase()] = finalVal;
+ labelMapping[s.id.toLowerCase()] = s.name;
+ });
 
-    // Ressources (Bars) - Résolution uniquement par ID
-    const barDefs = character?.settings?.bars || [
-        { id: 'hp', name: 'Points de Vie' },
-        { id: 'mana', name: 'Mana' },
-        { id: 'stamina', name: 'Endurance' }
-    ];
-    barDefs.forEach((b: any) => {
-        const val = (character.bars || {})[b.id] || 0;
-        statValues[b.id.toLowerCase()] = val;
-        labelMapping[b.id.toLowerCase()] = b.name;
-    });
+ // Ressources (Bars) - Résolution uniquement par ID
+ const barDefs = character?.settings?.bars || [
+ { id: 'hp', name: 'Points de Vie' },
+ { id: 'mana', name: 'Mana' },
+ { id: 'stamina', name: 'Endurance' }
+ ];
+ barDefs.forEach((b: any) => {
+ const val = (character.bars || {})[b.id] || 0;
+ statValues[b.id.toLowerCase()] = val;
+ labelMapping[b.id.toLowerCase()] = b.name;
+ });
 
-    const updatedBars = { ...(character.bars || {}) };
-    let barsChanged = false;
+ const updatedBars = { ...(character.bars || {}) };
+ let barsChanged = false;
 
-    const updatedSkills = (character.custom_skills || []).map((s: any) => {
-      if (s.id === skillId) {
-        const isActive = !s.is_active;
-        let updatedModifiers = s.modifiers;
-        const diceResults: any[] = [];
+ const updatedSkills = (character.custom_skills || []).map((s: any) => {
+ if (s.id === skillId) {
+ const isActive = !s.is_active;
+ let updatedModifiers = s.modifiers;
+ const diceResults: any[] = [];
 
-        // 2. Si on active l'aura, on roll les modificateurs ET les effets classiques
-        if (isActive) {
-          // Modificateurs (Aura/Passif) - On fige les valeurs pour les bonus statiques
-          if (updatedModifiers) {
-            updatedModifiers = updatedModifiers.map((m: any) => {
-              let valueToApply = 0;
+ // 2. Si on active l'aura, on roll les modificateurs ET les effets classiques
+ if (isActive) {
+ // Modificateurs (Aura/Passif) - On fige les valeurs pour les bonus statiques
+ if (updatedModifiers) {
+ updatedModifiers = updatedModifiers.map((m: any) => {
+ let valueToApply = 0;
 
-              if (m.mode === 'dice' && m.formula) {
-                let formula = m.formula;
-                const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
-                sortedStats.forEach((key) => {
-                  const val = statValues[key];
-                  const label = labelMapping[key];
-                  const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
-                  formula = formula.replace(regex, `(${label}=${val})`);
-                });
-                const rollRes = parseAndRoll(formula);
-                
-                // AJOUT : On ajoute au DiceRollModal SEULEMENT s'il y a eu des dés
-                if (rollRes.rolls.length > 0) {
-                  diceResults.push({
-                    rolls: rollRes.rolls || [],
-                    total: rollRes.total,
-                    bonus: 0,
-                    diceString: m.formula,
-                    label: `Bonus ${m.targetId}`,
-                    groups: rollRes.groups,
-                    color: '#3b82f6', // Bleu pour les auras/buffs
-                    secret: !diceSharingEnabled,
-                    timestamp: Date.now(),
-                    sender_id: user?.id,
-                    sender_name: character.name
-                  });
-                }
-                valueToApply = rollRes.total;
-              } else {
-                valueToApply = m.value;
-              }
+ if (m.mode === 'dice' && m.formula) {
+ let formula = m.formula;
+ const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
+ sortedStats.forEach((key) => {
+ const val = statValues[key];
+ const label = labelMapping[key];
+ const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
+ formula = formula.replace(regex, `(${label}=${val})`);
+ });
+ const rollRes = parseAndRoll(formula);
+ 
+ // AJOUT : On ajoute au DiceRollModal SEULEMENT s'il y a eu des dés
+ if (rollRes.rolls.length > 0) {
+ diceResults.push({
+ rolls: rollRes.rolls || [],
+ total: rollRes.total,
+ bonus: 0,
+ diceString: m.formula,
+ label: `Bonus ${m.targetId}`,
+ groups: rollRes.groups,
+ color: '#3b82f6', // Bleu pour les auras/buffs
+ secret: !diceSharingEnabled,
+ timestamp: Date.now(),
+ sender_id: user?.id,
+ sender_name: character.name
+ });
+ }
+ valueToApply = rollRes.total;
+ } else {
+ valueToApply = m.value;
+ }
 
-              // Gestion Spécifique de la Régénération / Soin (Propriété 'current')
-              if (m.target === 'bar' && m.targetProperty === 'current') {
-                const barId = m.targetId;
-                const currentVal = updatedBars[barId] || 0;
-                const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
-                const itemMod = calculatedModifiers.bars[barId] || { value: 0, max: 0 };
-                const baseMaxVal = (character.bars as Record<string, number>)[maxKey] || (character.bars as Record<string, number>)[barId] || 100;
-                const maxVal = baseMaxVal + itemMod.max;
+ // Gestion Spécifique de la Régénération / Soin (Propriété 'current')
+ if (m.target === 'bar' && m.targetProperty === 'current') {
+ const barId = m.targetId;
+ const currentVal = updatedBars[barId] || 0;
+ const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
+ const itemMod = calculatedModifiers.bars[barId] || { value: 0, max: 0 };
+ const baseMaxVal = (character.bars as Record<string, number>)[maxKey] || (character.bars as Record<string, number>)[barId] || 100;
+ const maxVal = baseMaxVal + itemMod.max;
 
-                updatedBars[barId] = Math.max(0, Math.min(maxVal, currentVal + valueToApply));
-                barsChanged = true;
-                return m; // On ne fige pas dans 'value' car c'est un effet "One-shot" à l'activation
-              }
+ updatedBars[barId] = Math.max(0, Math.min(maxVal, currentVal + valueToApply));
+ barsChanged = true;
+ return m; // On ne fige pas dans 'value' car c'est un effet "One-shot" à l'activation
+ }
 
-              if (m.mode === 'dice') {
-                return { ...m, value: valueToApply };
-              }
-              return m;
-            });
-          }
+ if (m.mode === 'dice') {
+ return { ...m, value: valueToApply };
+ }
+ return m;
+ });
+ }
 
-          // Effets Classiques (Dégâts, etc.) - On déclenche l'animation de roll
-          if (s.effects && s.effects.length > 0) {
-            s.effects.forEach((eff: any) => {
-              if (eff.mode === 'dice' && eff.formula) {
-                let formula = eff.formula;
-                const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
-                sortedStats.forEach((key) => {
-                  const val = statValues[key];
-                  const label = labelMapping[key];
-                  const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
-                  formula = formula.replace(regex, `(${label}=${val})`);
-                });
+ // Effets Classiques (Dégâts, etc.) - On déclenche l'animation de roll
+ if (s.effects && s.effects.length > 0) {
+ s.effects.forEach((eff: any) => {
+ if (eff.mode === 'dice' && eff.formula) {
+ let formula = eff.formula;
+ const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
+ sortedStats.forEach((key) => {
+ const val = statValues[key];
+ const label = labelMapping[key];
+ const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
+ formula = formula.replace(regex, `(${label}=${val})`);
+ });
 
-                const rollRes = parseAndRoll(formula);
-                // On n'ajoute que s'il y a des dés
-                if (rollRes.rolls.length > 0) {
-                  diceResults.push({
-                    rolls: rollRes.rolls || [],
-                    total: rollRes.total,
-                    bonus: 0,
-                    diceString: eff.formula,
-                    label: eff.description || s.name,
-                    groups: rollRes.groups,
-                    color: '#d4af37',
-                    secret: !diceSharingEnabled,
-                    timestamp: Date.now(),
-                    sender_id: user?.id,
-                    sender_name: character.name
-                  });
-                }
-              }
-            });
-          }
-        }
+ const rollRes = parseAndRoll(formula);
+ // On n'ajoute que s'il y a des dés
+ if (rollRes.rolls.length > 0) {
+ diceResults.push({
+ rolls: rollRes.rolls || [],
+ total: rollRes.total,
+ bonus: 0,
+ diceString: eff.formula,
+ label: eff.description || s.name,
+ groups: rollRes.groups,
+ color: '#d4af37',
+ secret: !diceSharingEnabled,
+ timestamp: Date.now(),
+ sender_id: user?.id,
+ sender_name: character.name
+ });
+ }
+ }
+ });
+ }
+ }
 
-        if (diceResults.length > 0) {
-          setDiceResult(diceResults);
-          if (diceSharingEnabled) {
-            diceResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
-          } else {
-            if (!isMJ && session?.hostPeerId) {
-              diceResults.forEach(r => sendTo(session.hostPeerId, { type: 'SECRET_DICE_ROLL', payload: r }));
-            }
-          }
-        }
+ if (diceResults.length > 0) {
+ setDiceResult(diceResults);
+ if (diceSharingEnabled) {
+ diceResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+ } else {
+ if (!isMJ && session?.hostPeerId) {
+ diceResults.forEach(r => sendTo(session.hostPeerId, { type: 'SECRET_DICE_ROLL', payload: r }));
+ }
+ }
+ }
 
-        return { ...s, is_active: isActive, modifiers: updatedModifiers };
-      }
-      return s;
-    });
+ return { ...s, is_active: isActive, modifiers: updatedModifiers };
+ }
+ return s;
+ });
 
-    const updatedChar = { ...character, custom_skills: updatedSkills, bars: barsChanged ? updatedBars : character.bars };
-    addOrUpdateCharacter(updatedChar);
-    if (window.electronAPI) await addSessionCharacter(updatedChar);
-    broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
-  };
+ const updatedChar = { ...character, custom_skills: updatedSkills, bars: barsChanged ? updatedBars : character.bars };
+ addOrUpdateCharacter(updatedChar);
+ if (window.electronAPI) await addSessionCharacter(updatedChar);
+ broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+ };
 
-  const handleUseSkill = async (skill: any) => {
-    if (!character) return;
-    const diceResults: any[] = [];
-    
-    // 1. Collecter les valeurs des attributs pour le remplacement
-    const statValues: Record<string, number> = {};
-    const labelMapping: Record<string, string> = {};
-    
-    statDefs.forEach((s: any) => {
-      const val = stats[s.id] || 20;
-      const itemMod = calculatedModifiers.stats[s.id] || 0;
-      statValues[s.id.toLowerCase()] = val + itemMod;
-      labelMapping[s.id.toLowerCase()] = s.name;
-    });
+ const handleUseSkill = async (skill: any) => {
+ if (!character) return;
+ const diceResults: any[] = [];
+ 
+ // 1. Collecter les valeurs des attributs pour le remplacement
+ const statValues: Record<string, number> = {};
+ const labelMapping: Record<string, string> = {};
+ 
+ statDefs.forEach((s: any) => {
+ const val = stats[s.id] || 20;
+ const itemMod = calculatedModifiers.stats[s.id] || 0;
+ statValues[s.id.toLowerCase()] = val + itemMod;
+ labelMapping[s.id.toLowerCase()] = s.name;
+ });
 
-    const barDefs = character?.settings?.bars || [
-        { id: 'hp', name: 'Points de Vie' },
-        { id: 'mana', name: 'Mana' },
-        { id: 'stamina', name: 'Endurance' }
-    ];
-    barDefs.forEach((b: any) => {
-        const val = (character.bars || {})[b.id] || 0;
-        statValues[b.id.toLowerCase()] = val;
-        labelMapping[b.id.toLowerCase()] = b.name;
-    });
+ const barDefs = character?.settings?.bars || [
+ { id: 'hp', name: 'Points de Vie' },
+ { id: 'mana', name: 'Mana' },
+ { id: 'stamina', name: 'Endurance' }
+ ];
+ barDefs.forEach((b: any) => {
+ const val = (character.bars || {})[b.id] || 0;
+ statValues[b.id.toLowerCase()] = val;
+ labelMapping[b.id.toLowerCase()] = b.name;
+ });
 
-    // 2. Traiter chaque effet configuré
-    if (skill.effects && skill.effects.length > 0) {
-      skill.effects.forEach((eff: any) => {
-        let label = eff.description || skill.name;
-        const mode = eff.mode || 'dice';
-        const formulaStr = eff.formula || '';
-        
-        if (mode === 'dice' && formulaStr) {
-          let formula = formulaStr;
-          
-          const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
-          
-          sortedStats.forEach((key) => {
-            const val = statValues[key];
-            const statLabel = labelMapping[key];
-            const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
-            formula = formula.replace(regex, `(${statLabel}=${val})`);
-          });
+ // 2. Traiter chaque effet configuré
+ if (skill.effects && skill.effects.length > 0) {
+ skill.effects.forEach((eff: any) => {
+ let label = eff.description || skill.name;
+ const mode = eff.mode || 'dice';
+ const formulaStr = eff.formula || '';
+ 
+ if (mode === 'dice' && formulaStr) {
+ let formula = formulaStr;
+ 
+ const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
+ 
+ sortedStats.forEach((key) => {
+ const val = statValues[key];
+ const statLabel = labelMapping[key];
+ const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
+ formula = formula.replace(regex, `(${statLabel}=${val})`);
+ });
 
-          const rollRes = parseAndRoll(formula);
-          const finalTotal = (rollRes.total || 0) + modifier;
-          const modStr = modifier !== 0 ? (modifier > 0 ? `+${modifier}` : modifier) : '';
-          
-          diceResults.push({
-            rolls: rollRes.rolls || [],
-            total: finalTotal,
-            bonus: modifier,
-            diceString: `${formulaStr}${modStr}`,
-            label: label,
-            groups: rollRes.groups,
-            color: '#d4af37',
-            secret: !diceSharingEnabled,
-            timestamp: Date.now(),
-            sender_id: user?.id,
-            sender_name: character.name
-          });
-        } else if (eff.valeur !== undefined) {
-          diceResults.push({
-            rolls: [eff.valeur],
-            total: eff.valeur,
-            bonus: 0,
-            diceString: `Effet fixe`,
-            label: label,
-            color: '#d4af37',
-            secret: !diceSharingEnabled,
-            timestamp: Date.now(),
-            sender_id: user?.id,
-            sender_name: character.name
-          });
-        } else if (eff.description) {
-           // Effet purement narratif
-           diceResults.push({
-            rolls: [],
-            total: 0,
-            bonus: 0,
-            diceString: 'Narratif',
-            label: label,
-            color: '#d4af37',
-            secret: !diceSharingEnabled,
-            timestamp: Date.now(),
-            sender_id: user?.id,
-            sender_name: character.name
-          });
-        }
-      });
-    }
+ const rollRes = parseAndRoll(formula);
+ const finalTotal = (rollRes.total || 0) + modifier;
+ const modStr = modifier !== 0 ? (modifier > 0 ? `+${modifier}` : modifier) : '';
+ 
+ diceResults.push({
+ rolls: rollRes.rolls || [],
+ total: finalTotal,
+ bonus: modifier,
+ diceString: `${formulaStr}${modStr}`,
+ label: label,
+ groups: rollRes.groups,
+ color: '#d4af37',
+ secret: !diceSharingEnabled,
+ timestamp: Date.now(),
+ sender_id: user?.id,
+ sender_name: character.name
+ });
+ } else if (eff.valeur !== undefined) {
+ diceResults.push({
+ rolls: [eff.valeur],
+ total: eff.valeur,
+ bonus: 0,
+ diceString: `Effet fixe`,
+ label: label,
+ color: '#d4af37',
+ secret: !diceSharingEnabled,
+ timestamp: Date.now(),
+ sender_id: user?.id,
+ sender_name: character.name
+ });
+ } else if (eff.description) {
+ // Effet purement narratif
+ diceResults.push({
+ rolls: [],
+ total: 0,
+ bonus: 0,
+ diceString: 'Narratif',
+ label: label,
+ color: '#d4af37',
+ secret: !diceSharingEnabled,
+ timestamp: Date.now(),
+ sender_id: user?.id,
+ sender_name: character.name
+ });
+ }
+ });
+ }
 
-    // 3. Envoyer les résultats (Si aucun effet technique, on envoie au moins le nom du skill)
-    const finalResults = diceResults.length > 0 ? diceResults : [{
-      rolls: [],
-      total: 0,
-      bonus: 0,
-      diceString: 'Utilisation',
-      label: skill.name,
-      color: '#d4af37',
-      secret: !diceSharingEnabled,
-      timestamp: Date.now(),
-      sender_id: user?.id,
-      sender_name: character.name
-    }];
+ // 3. Envoyer les résultats (Si aucun effet technique, on envoie au moins le nom du skill)
+ const finalResults = diceResults.length > 0 ? diceResults : [{
+ rolls: [],
+ total: 0,
+ bonus: 0,
+ diceString: 'Utilisation',
+ label: skill.name,
+ color: '#d4af37',
+ secret: !diceSharingEnabled,
+ timestamp: Date.now(),
+ sender_id: user?.id,
+ sender_name: character.name
+ }];
 
-    setDiceResult(finalResults);
-    
-    const logEntry = {
-      id: crypto.randomUUID(),
-      type: 'competence',
-      action: `Invoque ${skill.name}`,
-      details: { results: finalResults },
-      timestamp: Date.now(),
-      character_id: character.id,
-      character_name: character.name
-    };
+ setDiceResult(finalResults);
+ 
+ const logEntry = {
+ id: crypto.randomUUID(),
+ type: 'competence',
+ action: `Invoque ${skill.name}`,
+ details: { results: finalResults },
+ timestamp: Date.now(),
+ character_id: character.id,
+ character_name: character.name
+ };
 
-    if (window.electronAPI) await addSessionLog(sessionId, logEntry as any);
-    if (diceSharingEnabled) {
-      finalResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
-    } else {
-      if (!isMJ && session?.hostPeerId) {
-        finalResults.forEach(r => sendTo(session.hostPeerId, { type: 'SECRET_DICE_ROLL', payload: r }));
-      }
-    }
-  };
+ if (window.electronAPI) await addSessionLog(sessionId, logEntry as any);
+ if (diceSharingEnabled) {
+ finalResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+ } else {
+ if (!isMJ && session?.hostPeerId) {
+ finalResults.forEach(r => sendTo(session.hostPeerId, { type: 'SECRET_DICE_ROLL', payload: r }));
+ }
+ }
+ };
 
-  // ── renderers ──────────────────────────────────
-  const renderStat = (stat: unknown) => {
-    const s = stat as { id: string; name: string };
-    const val = stats[s.id] || 20;
-    const itemMod = calculatedModifiers.stats[s.id] || 0;
-    const finalVal = val + itemMod;
+ // ── renderers ──────────────────────────────────
+ const renderStat = (stat: unknown) => {
+ const s = stat as { id: string; name: string };
+ const val = stats[s.id] || 20;
+ const itemMod = calculatedModifiers.stats[s.id] || 0;
+ const finalVal = val + itemMod;
 
-    return (
-      <div
-        key={s.id}
-        onClick={() => handleRollStat(s.name, val, s.id)}
-        className="flex items-center justify-between flex-shrink-0 rounded-lg cursor-pointer group"
-        style={{
-          padding: isPopup ? '5px 8px' : '7px 12px',
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.07)',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(212,175,55,0.3)';
-          (e.currentTarget as HTMLDivElement).style.background = 'rgba(212,175,55,0.08)';
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)';
-          (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)';
-        }}
-      >
-        <div className="flex flex-col flex-1 min-w-0">
-          <span
-            className="font-cinzel uppercase tracking-widest truncate group-hover:text-gold-bright transition-colors"
-            style={{ fontSize: isPopup ? '8px' : '10px', color: 'rgba(255,255,255,0.75)' }}
-            title={s.name}
-          >
-            {s.name}
-          </span>
-          {itemMod !== 0 && (
-            <span className="text-[11px] font-bold text-gold-DEFAULT/40 uppercase tracking-tighter">
-              BASE: {val}
-            </span>
-          )}
-        </div>
-        <span className="font-cinzel font-black" style={{ fontSize: isPopup ? '10px' : '13px', color: '#d4af37' }}>
-          D{finalVal}
-        </span>
-      </div>
-    );
-  };
+ return (
+ <div
+ key={s.id}
+ onClick={() => handleRollStat(s.name, val, s.id)}
+ className="flex items-center justify-between flex-shrink-0 rounded-lg cursor-pointer group"
+ style={{
+ padding: isPopup ? '5px 8px' : '7px 12px',
+ background: 'rgba(255,255,255,0.04)',
+ border: '1px solid rgba(255,255,255,0.07)',
+ transition: 'all 0.2s',
+ }}
+ onMouseEnter={e => {
+ (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(157, 168, 184,0.3)';
+ (e.currentTarget as HTMLDivElement).style.background = 'rgba(157, 168, 184,0.08)';
+ }}
+ onMouseLeave={e => {
+ (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)';
+ (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)';
+ }}
+ >
+ <div className="flex flex-col flex-1 min-w-0">
+ <span
+ className="font-quantico uppercase tracking-widest truncate group-hover:text-glacier-bright transition-colors"
+ style={{ fontSize: isPopup ? '8px' : '10px', color: 'rgba(255,255,255,0.75)' }}
+ title={s.name}
+ >
+ {s.name}
+ </span>
+ {itemMod !== 0 && (
+ <span className="text-[11px] font-bold text-silver-bright/40 uppercase tracking-tighter">
+ BASE: {val}
+ </span>
+ )}
+ </div>
+ <span className="font-quantico font-black" style={{ fontSize: isPopup ? '10px' : '13px', color: '#d4af37' }}>
+ D{finalVal}
+ </span>
+ </div>
+ );
+ };
 
-  const renderBar = (bar: unknown) => {
-    const b = bar as { id: string; name: string; color: string };
-    const maxKey = `max${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}`;
-    const itemMod = calculatedModifiers.bars[b.id] || { value: 0, max: 0 };
-    
-    const baseMaxVal = (bars as Record<string, number>)[maxKey] || (bars as Record<string, number>)[b.id] || 1;
-    const baseCurrentVal = (bars as Record<string, number>)[b.id] || 0;
-    
-    const maxVal = baseMaxVal + itemMod.max;
-    const currentVal = baseCurrentVal + itemMod.value;
-    
-    const percent = Math.min(100, Math.max(0, (currentVal / maxVal) * 100));
+ const renderBar = (bar: unknown) => {
+ const b = bar as { id: string; name: string; color: string };
+ const maxKey = `max${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}`;
+ const itemMod = calculatedModifiers.bars[b.id] || { value: 0, max: 0 };
+ 
+ const baseMaxVal = (bars as Record<string, number>)[maxKey] || (bars as Record<string, number>)[b.id] || 1;
+ const baseCurrentVal = (bars as Record<string, number>)[b.id] || 0;
+ 
+ const maxVal = baseMaxVal + itemMod.max;
+ const currentVal = baseCurrentVal + itemMod.value;
+ 
+ const percent = Math.min(100, Math.max(0, (currentVal / maxVal) * 100));
 
-    return (
-      <div
-        key={b.id}
-        className="flex flex-col justify-center flex-shrink-0 rounded-lg p-2"
-        style={{
-          padding: isPopup ? '5px 8px' : '8px 12px',
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.07)',
-          gap: isPopup ? 4 : 6,
-          transition: 'border-color 0.2s',
-        }}
-      >
-        <div className="flex items-center justify-between mb-1 gap-2">
-          <div className="flex flex-col flex-1 min-w-0">
-            <span className="font-cinzel uppercase tracking-widest text-xs sm:text-xs truncate" title={b.name} style={{ color: b.color }}>{b.name}</span>
-            {(itemMod.value !== 0 || itemMod.max !== 0) && (
-              <span className="text-[11px] font-bold opacity-50" style={{ color: b.color }}>
-                {itemMod.value !== 0 && `ACTUEL JAUGE:${itemMod.value > 0 ? '+' : ''}${itemMod.value} `}
-                {itemMod.max !== 0 && `MAX JAUGE:${itemMod.max > 0 ? '+' : ''}${itemMod.max}`}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-             {(isMJ || isOwner) && (
-               <button 
-                 onClick={() => handleManualBarUpdate(b.id, -1)}
-                 className="w-4 h-4 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs text-white/60 hover:text-white"
-               >-</button>
-             )}
-             <span className="font-mono font-black text-xs sm:text-xs truncate" title={`${Math.floor(currentVal)}/${Math.floor(maxVal)}`} style={{ color: b.color }}>{Math.floor(currentVal)}/{Math.floor(maxVal)}</span>
-             {(isMJ || isOwner) && (
-               <button 
-                 onClick={() => handleManualBarUpdate(b.id, 1)}
-                 className="w-4 h-4 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs text-white/60 hover:text-white"
-               >+</button>
-             )}
-          </div>
-        </div>
-        <LiquidBar percent={percent} color={b.color} height={isPopup ? 4 : 6} />
-      </div>
-    );
-  };
+ return (
+ <div
+ key={b.id}
+ className="flex flex-col justify-center flex-shrink-0 rounded-lg p-2"
+ style={{
+ padding: isPopup ? '5px 8px' : '8px 12px',
+ background: 'rgba(255,255,255,0.04)',
+ border: '1px solid rgba(255,255,255,0.07)',
+ gap: isPopup ? 4 : 6,
+ transition: 'border-color 0.2s',
+ }}
+ >
+ <div className="flex items-center justify-between mb-1 gap-2">
+ <div className="flex flex-col flex-1 min-w-0">
+ <span className="font-quantico uppercase tracking-widest text-xs sm:text-xs truncate" title={b.name} style={{ color: b.color }}>{b.name}</span>
+ {(itemMod.value !== 0 || itemMod.max !== 0) && (
+ <span className="text-[11px] font-bold opacity-50" style={{ color: b.color }}>
+ {itemMod.value !== 0 && `ACTUEL JAUGE:${itemMod.value > 0 ? '+' : ''}${itemMod.value} `}
+ {itemMod.max !== 0 && `MAX JAUGE:${itemMod.max > 0 ? '+' : ''}${itemMod.max}`}
+ </span>
+ )}
+ </div>
+ <div className="flex items-center gap-1 shrink-0">
+ {(isMJ || isOwner) && (
+ <button 
+ onClick={() => handleManualBarUpdate(b.id, -1)}
+ className="w-4 h-4 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs text-white/60 hover:text-white"
+ >-</button>
+ )}
+ <span className="font-mono font-black text-xs sm:text-xs truncate" title={`${Math.floor(currentVal)}/${Math.floor(maxVal)}`} style={{ color: b.color }}>{Math.floor(currentVal)}/{Math.floor(maxVal)}</span>
+ {(isMJ || isOwner) && (
+ <button 
+ onClick={() => handleManualBarUpdate(b.id, 1)}
+ className="w-4 h-4 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs text-white/60 hover:text-white"
+ >+</button>
+ )}
+ </div>
+ </div>
+ <LiquidBar percent={percent} color={b.color} height={isPopup ? 4 : 6} />
+ </div>
+ );
+ };
 
-  const renderSkill = (skill: unknown) => {
-    const s = skill as any;
-    return (
-      <div
-        key={s.id}
-        onClick={() => setSelectedSkill(s)}
-        className="flex items-center justify-between flex-shrink-0 rounded-lg cursor-pointer group"
-        style={{
-          padding: isPopup ? '4px 6px' : '6px 10px',
-          background: s.is_active ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.04)',
-          border: s.is_active ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.07)',
-          transition: 'all 0.2s',
-        }}
-      >
-        <div className="flex flex-col flex-1 min-w-0">
-          <span
-            className="font-cinzel uppercase tracking-widest truncate text-white/80"
-            style={{ fontSize: isPopup ? '8px' : '9px' }}
-            title={s.name}
-          >
-            {s.name}
-          </span>
-          <span className="text-[11px] font-mono text-gold-DEFAULT/40 uppercase">
-            {s.type === 'active' ? 'Actif' : s.type === 'passive_auto' ? 'Passif' : 'Aura'}
-          </span>
-        </div>
-        <div className="flex items-center gap-1 ml-2">
-           {s.type === 'active' && (
-             <button 
-               onClick={() => handleUseSkill(s)}
-               className="p-1 rounded bg-gold-DEFAULT/10 text-gold-DEFAULT hover:bg-gold-DEFAULT/20 transition-all"
-             >
-               <Plus size={10} />
-             </button>
-           )}
-           {s.type === 'passive_toggle' && (
-             <button 
-               onClick={() => handleToggleSkill(s.id)}
-               className={`p-1 rounded transition-all ${s.is_active ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/60 hover:text-white'}`}
-             >
-               <Settings size={10} />
-             </button>
-           )}
-        </div>
-      </div>
-    );
-  };
+ const renderSkill = (skill: unknown) => {
+ const s = skill as any;
+ return (
+ <div
+ key={s.id}
+ onClick={() => setSelectedSkill(s)}
+ className="flex items-center justify-between flex-shrink-0 rounded-lg cursor-pointer group"
+ style={{
+ padding: isPopup ? '4px 6px' : '6px 10px',
+ background: s.is_active ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.04)',
+ border: s.is_active ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.07)',
+ transition: 'all 0.2s',
+ }}
+ >
+ <div className="flex flex-col flex-1 min-w-0">
+ <span
+ className="font-quantico uppercase tracking-widest truncate text-white/80"
+ style={{ fontSize: isPopup ? '8px' : '9px' }}
+ title={s.name}
+ >
+ {s.name}
+ </span>
+ <span className="text-[11px] font-mono text-silver-bright/40 uppercase">
+ {s.type === 'active' ? 'Actif' : s.type === 'passive_auto' ? 'Passif' : 'Aura'}
+ </span>
+ </div>
+ <div className="flex items-center gap-1 ml-2">
+ {s.type === 'active' && (
+ <button 
+ onClick={() => handleUseSkill(s)}
+ className="p-1 rounded bg-glacier-DEFAULT/10 text-silver-bright hover:bg-glacier-DEFAULT/20 transition-all"
+ >
+ <Plus size={10} />
+ </button>
+ )}
+ {s.type === 'passive_toggle' && (
+ <button 
+ onClick={() => handleToggleSkill(s.id)}
+ className={`p-1 rounded transition-all ${s.is_active ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/60 hover:text-white'}`}
+ >
+ <Settings size={10} />
+ </button>
+ )}
+ </div>
+ </div>
+ );
+ };
 
-  // ── POPUP layout ───────────────────────────────
-  if (isPopup) {
-    return (
-      <>
-        <style>{`
-          @keyframes shimmer-sweep {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-          }
-        `}</style>
-        
-        <CustomAvatarPrompt />
+ // ── POPUP layout ───────────────────────────────
+ if (isPopup) {
+ return (
+ <>
+ <style>{`
+ @keyframes shimmer-sweep {
+ 0% { transform: translateX(-100%); }
+ 100% { transform: translateX(100%); }
+ }
+ `}</style>
+ 
+ <CustomAvatarPrompt />
 
-        <div className="flex flex-col h-full w-full overflow-hidden">
-          {/* ── Header ── */}
-          <div className="flex-shrink-0 flex items-center gap-3 p-2 bg-black/40 border-b border-gold-DEFAULT/10">
-            <div className="relative">
-              <div 
-                className="w-8 h-8 shrink-0 rounded-full border border-gold-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-gold-DEFAULT transition-colors"
-                onClick={handleAvatarClick}
-              >
-                {image_url ? <AssetImage src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black">{name.charAt(0)}</div>}
-              </div>
-              <button 
-                onClick={toggleTokenPlacement}
-                className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all flex items-center justify-center ${
-                    isTokenOnMap 
-                        ? 'bg-gold-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
-                        : 'bg-black/80 text-gold-DEFAULT border-gold-DEFAULT/40 hover:border-gold-DEFAULT'
-                }`}
-                title={isTokenOnMap ? "Retirer de la carte" : "Placer sur la carte"}
-              >
-                <Plus size={12} className={`transition-transform duration-500 ${isTokenOnMap ? 'rotate-45' : ''}`} />
-              </button>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xs font-cinzel font-black text-gold-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
-            </div>
-          </div>
+ <div className="flex flex-col h-full w-full overflow-hidden">
+ {/* ── Header ── */}
+ <div className="flex-shrink-0 flex items-center gap-3 p-2 bg-black/40 border-b border-silver-DEFAULT/10">
+ <div className="relative">
+ <div 
+ className="w-8 h-8 shrink-0 rounded-full border border-silver-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-silver-DEFAULT transition-colors"
+ onClick={handleAvatarClick}
+ >
+ {image_url ? <AssetImage src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-silver-bright font-quantico font-black">{name.charAt(0)}</div>}
+ </div>
+ <button 
+ onClick={toggleTokenPlacement}
+ className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all flex items-center justify-center ${
+ isTokenOnMap 
+ ? 'bg-glacier-DEFAULT text-black shadow-[0_0_15px_rgba(157, 168, 184,0.4)]' 
+ : 'bg-black/80 text-silver-bright border-silver-DEFAULT/40 hover:border-silver-DEFAULT'
+ }`}
+ title={isTokenOnMap ? "Retirer de la carte" : "Placer sur la carte"}
+ >
+ <Plus size={12} className={`transition-transform duration-500 ${isTokenOnMap ? 'rotate-45' : ''}`} />
+ </button>
+ </div>
+ <div className="flex-1 min-w-0">
+ <h2 className="text-xs font-quantico font-black text-glacier-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
+ </div>
+ </div>
 
-          <div className="flex gap-2 p-2 h-[160px] overflow-hidden">
-            <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs" variant="popup" />
-            <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Ressources" variant="popup" />
-            
-          </div>
-        </div>
-      </>
-    );
-  }
+ <div className="flex gap-2 p-2 h-[160px] overflow-hidden">
+ <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs" variant="popup" />
+ <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Ressources" variant="popup" />
+ 
+ </div>
+ </div>
+ </>
+ );
+ }
 
-  // ── WINDOW (full-screen) layout ────────────────
-  return (
-    <>
-      <style>{`
-        @keyframes shimmer-sweep {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-      `}</style>
-      
-      <CustomAvatarPrompt />
+ // ── WINDOW (full-screen) layout ────────────────
+ return (
+ <>
+ <style>{`
+ @keyframes shimmer-sweep {
+ 0% { transform: translateX(-100%); }
+ 100% { transform: translateX(100%); }
+ }
+ `}</style>
+ 
+ <CustomAvatarPrompt />
 
-      <div className="flex flex-col h-full w-full overflow-hidden p-4">
-        {/* ── Header ── */}
-        <div className="flex-shrink-0 flex items-center gap-4 mb-4 p-3 bg-black/40 border border-gold-DEFAULT/15 rounded-xl shadow-lg">
-          <div className="relative">
-            <div 
-              className="w-14 h-14 shrink-0 rounded-full border-2 border-gold-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-gold-DEFAULT transition-colors"
-              onClick={handleAvatarClick}
-            >
-              {image_url ? <AssetImage src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gold-DEFAULT font-cinzel font-black text-2xl">{name.charAt(0)}</div>}
-            </div>
-            <button 
-              onClick={toggleTokenPlacement}
-              className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-sm transition-colors ${isTokenOnMap ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'}`}
-              title={isTokenOnMap ? "Retirer de la carte" : "Placer sur la carte"}
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-cinzel font-black text-gold-bright uppercase tracking-[0.2em] truncate" title={name}>{name}</h1>
-          </div>
-        </div>
+ <div className="flex flex-col h-full w-full overflow-hidden p-4">
+ {/* ── Header ── */}
+ <div className="flex-shrink-0 flex items-center gap-4 mb-4 p-3 bg-black/40 border border-silver-DEFAULT/15 rounded-xl shadow-lg">
+ <div className="relative">
+ <div 
+ className="w-14 h-14 shrink-0 rounded-full border-2 border-silver-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-silver-DEFAULT transition-colors"
+ onClick={handleAvatarClick}
+ >
+ {image_url ? <AssetImage src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-silver-bright font-quantico font-black text-2xl">{name.charAt(0)}</div>}
+ </div>
+ <button 
+ onClick={toggleTokenPlacement}
+ className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-sm transition-colors ${isTokenOnMap ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'}`}
+ title={isTokenOnMap ? "Retirer de la carte" : "Placer sur la carte"}
+ />
+ </div>
+ <div className="flex-1 min-w-0">
+ <h1 className="text-xl font-quantico font-black text-glacier-bright uppercase tracking-[0.2em] truncate" title={name}>{name}</h1>
+ </div>
+ </div>
 
-        <div className="flex-1 flex gap-4 min-h-0">
-          <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs" variant="window" />
-          <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Ressources" variant="window" />
-          
-        </div>
-      </div>
-    </>
-  );
+ <div className="flex-1 flex gap-4 min-h-0">
+ <SnapColumn items={statDefs} itemsPerPage={itemsPerPage} renderItem={renderStat} label="Attributs" variant="window" />
+ <SnapColumn items={barDefs} itemsPerPage={itemsPerPage} renderItem={renderBar} label="Ressources" variant="window" />
+ 
+ </div>
+ </div>
+ </>
+ );
 }

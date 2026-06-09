@@ -14,5 +14,5 @@ import './services/activity-log.service';
 
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <App />
+ <App />
 );

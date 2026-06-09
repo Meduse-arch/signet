@@ -17,8 +17,8 @@ interface Ghost {
 }
 
 const RUNES   = ['ᚠ','ᚢ','ᚦ','ᚨ','ᚱ','ᚲ','ᚷ','ᚹ','ᚺ','ᚾ','ᛁ','ᛃ','ᛇ','ᛈ','ᛉ','ᛊ','ᛏ','ᛒ','ᛖ','ᛗ','ᛚ','ᛜ','ᛞ','ᛟ']
-const GOLDS   = ['#D4A017','#E8B420','#F0C040','#C8960E','#DDB830','#F5CC50']
-const SILVERS = ['#9DA8B8','#B0BCC8','#C8D4E0','#8898A8','#A8B8C8','#D0DCE8']
+const GLACIERS = ['#4FA4B8','#6BBDD1','#8BE0F2','#3C8A9E','#A5EDFC','#5CBED4']
+const SILVERS  = ['#D2D7DF','#E2E7EF','#FFFFFF','#B2B8C2','#C2C8D2','#F0F4FA']
 const MAX_GLYPHS = 30
 const STOP_DELAY = 120
 
@@ -73,10 +73,10 @@ export function useRune(containerRef: RefObject<HTMLDivElement>): void {
         const ghostText = new PIXI.Text({
           text: RUNES[0],
           style: new PIXI.TextStyle({
-            fontFamily: 'serif',
+            fontFamily: 'Quantico, sans-serif',
             fontSize: 14,
-            fill: '#D4A017',
-            dropShadow: { color: '#B8860B', blur: 6, distance: 0, alpha: 1 }
+            fill: '#8BE0F2',
+            dropShadow: { color: '#4FA4B8', blur: 6, distance: 0, alpha: 1 }
           })
         })
         ghostText.alpha = 0
@@ -88,13 +88,13 @@ export function useRune(containerRef: RefObject<HTMLDivElement>): void {
         const pickColor = (): { fill: string; shadowColor: string } => {
           if (Math.random() < 0.65) {
             return {
-              fill: GOLDS[Math.floor(Math.random() * GOLDS.length)],
-              shadowColor: '#B8860B'
+              fill: GLACIERS[Math.floor(Math.random() * GLACIERS.length)],
+              shadowColor: '#4FA4B8'
             }
           }
           return {
             fill: SILVERS[Math.floor(Math.random() * SILVERS.length)],
-            shadowColor: '#7890A8'
+            shadowColor: '#9DA8B8'
           }
         }
 
@@ -108,7 +108,7 @@ export function useRune(containerRef: RefObject<HTMLDivElement>): void {
           const textObj = new PIXI.Text({
             text: RUNES[Math.floor(Math.random() * RUNES.length)],
             style: new PIXI.TextStyle({
-              fontFamily: 'serif',
+              fontFamily: 'Quantico, sans-serif',
               fontSize: size,
               fill,
               dropShadow: { color: shadowColor, blur: 5 + Math.random() * 7, distance: 0, alpha: 1 }

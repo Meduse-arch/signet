@@ -67,7 +67,7 @@ export class TokenSprite extends Container {
     this.cursor = 'pointer';
     this.sortableChildren = true;
 
-    // 1. Fond doré (Immédiat)
+    // 1. Fond (Immédiat)
     this.bgGraphics = new Graphics();
     this.drawBg(false);
     this.bgGraphics.zIndex = 0;
@@ -78,9 +78,9 @@ export class TokenSprite extends Container {
     this.idText = new Text({
       text: initials,
       style: new TextStyle({
-        fontFamily: 'Cinzel, serif',
-        fontSize: 14,
-        fill: '#000000',
+        fontFamily: 'Quantico, sans-serif',
+        fontSize: 16,
+        fill: '#D2D7DF',
         fontWeight: 'bold'
       })
     });
@@ -92,10 +92,12 @@ export class TokenSprite extends Container {
     this.labelText = new Text({
       text: data.name || 'Inconnu',
       style: new TextStyle({
-        fontFamily: 'Cinzel, serif',
-        fontSize: 11,
-        fill: '#ffffff',
-        stroke: { color: '#000000', width: 3 }
+        fontFamily: 'Quantico, sans-serif',
+        fontSize: 13,
+        fill: '#FFFFFF',
+        stroke: { color: '#000000', width: 3 },
+        letterSpacing: 1,
+        fontWeight: 'bold'
       })
     });
     this.labelText.anchor.set(0.5, 0);
@@ -181,7 +183,13 @@ export class TokenSprite extends Container {
       this.sprite.scale.set(scale);
 
       const mask = new Graphics();
-      mask.circle(0, 0, 18).fill(0xffffff);
+      const radius = 18;
+      const points = [];
+      for (let i = 0; i < 6; i++) {
+        points.push(radius * Math.cos(i * Math.PI / 3), radius * Math.sin(i * Math.PI / 3));
+      }
+      mask.poly(points).fill(0xffffff);
+      
       this.addChild(mask);
       this.sprite.mask = mask;
 
@@ -197,10 +205,15 @@ export class TokenSprite extends Container {
 
   private drawBg(selected: boolean) {
     this.bgGraphics.clear();
+    const radius = 20;
+    const points = [];
+    for (let i = 0; i < 6; i++) {
+      points.push(radius * Math.cos(i * Math.PI / 3), radius * Math.sin(i * Math.PI / 3));
+    }
     this.bgGraphics
-      .circle(0, 0, 20)
-      .fill(selected ? 0xF0C040 : 0xD4A017)
-      .stroke({ color: selected ? 0xFFFFFF : 0xB8860B, width: 2 });
+      .poly(points)
+      .fill(selected ? 0x0E1116 : 0x000000)
+      .stroke({ color: selected ? 0x4FA4B8 : 0x4A5462, width: 2 });
   }
 
   private dragging = false;
@@ -306,14 +319,20 @@ export class TokenSprite extends Container {
       this.activeRing = new Container();
       
       const ring = new Graphics();
+      const radius = 24;
+      const points = [];
+      for (let i = 0; i < 6; i++) {
+        points.push(radius * Math.cos(i * Math.PI / 3), radius * Math.sin(i * Math.PI / 3));
+      }
       ring
-        .circle(0, 0, 24)
-        .stroke({ color: 0xF0C040, width: 2.5, alpha: 0.75 });
+        .poly(points)
+        .stroke({ color: 0x8BE0F2, width: 2.5, alpha: 0.75 });
         
       for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 3) {
         ring
+          // keep the little dots as circles, but colored glacier
           .circle(Math.cos(angle) * 24, Math.sin(angle) * 24, 2.5)
-          .fill({ color: 0xF0C040, alpha: 0.9 });
+          .fill({ color: 0x8BE0F2, alpha: 0.9 });
       }
 
       this.activeRing.addChild(ring);
