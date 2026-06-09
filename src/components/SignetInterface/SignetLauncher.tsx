@@ -78,8 +78,16 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
     { type: 'players' as const, icon: <List size={18} />, label: 'Liste', minSecurity: SecurityLevel.PLAYER },
   ].filter(item => securityLevel >= item.minSecurity);
 
-  // Calcul pour une disposition en quart de cercle (arc)
-  const radius = 90; // Distance des boutons par rapport au centre
+  // Calcul pour une disposition en quart de cercle (arc) étendu
+  // On ajuste dynamiquement le rayon et l'angle en fonction du nombre de boutons
+  const maxAngle = 120; // On s'étale sur 120° maximum pour ne pas trop s'éloigner du centre
+  const baseAngle = 90;
+  const angleSpread = Math.min(maxAngle, baseAngle + Math.max(0, menuItems.length - 4) * 10);
+  const startAngle = 180 - (angleSpread - baseAngle) / 2;
+  
+  const MIN_ARC_SPACING = 42; // Espacement minimal sur l'arc (taille du bouton + marge plus faible)
+  const requiredArcLength = Math.max(0, menuItems.length - 1) * MIN_ARC_SPACING;
+  const radius = Math.max(90, requiredArcLength / (angleSpread * Math.PI / 180));
 
   return (
     <div className="fixed bottom-10 right-10 z-[100] flex items-center justify-center">
@@ -101,8 +109,8 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
       {/* Menu items (Radial/Arc) */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
         {menuItems.map((item, index) => {
-          // Angle entre 180° (gauche) et 270° (haut) car on est en bas à droite
-          const angle = 180 + (90 / (menuItems.length - 1)) * index;
+          // Angle calculé dynamiquement pour s'étaler si nécessaire
+          const angle = startAngle + (angleSpread / Math.max(1, menuItems.length - 1)) * index;
           const radian = (angle * Math.PI) / 180;
           const tx = Math.cos(radian) * radius;
           const ty = Math.sin(radian) * radius;
