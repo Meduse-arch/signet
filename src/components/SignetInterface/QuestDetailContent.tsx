@@ -60,7 +60,7 @@ export function QuestDetailContent({
  const statusInfo = getStatusInfo(quest.status);
 
  return (
- <div className="flex flex-col h-full bg-[#0D0D0F]">
+ <div className="w-full h-full flex-1 min-h-0 flex flex-col relative overflow-hidden bg-[#0D0D0F]">
  {/* ─── BLOCK IMAGE (Plus compact) ─── */}
  <div 
  className="relative h-32 shrink-0 flex items-center justify-center overflow-hidden border-b border-silver-DEFAULT/20"
@@ -95,32 +95,31 @@ export function QuestDetailContent({
 
  {/* ─── CORPS SCROLLABLE PAR BLOCKS ─── */}
  <div className="flex-1 flex flex-col min-h-0">
- 
- {/* BLOCK DESCRIPTION (Scrollable, plus compact) */}
- <div className="shrink-0 px-4 py-3">
- <div className="flex items-center gap-2 mb-2 opacity-40">
- <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
- <span className="text-[6px] font-quantico font-black uppercase tracking-[0.3em]">{t('context.questStory', 'Récit')}</span>
- <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
- </div>
- <div className="max-h-24 overflow-y-auto custom-scrollbar pr-2">
- <p className="font-garamond italic text-xs text-white/50 leading-relaxed text-center">
- "{quest.description || t('context.questNoStory', "Les chroniques sont muettes sur ce récit...")}"
- </p>
- </div>
- </div>
+    
+    {/* BLOCK DESCRIPTION (Scrollable, plus compact) */}
+    <div className="shrink-0 px-4 pt-3 pb-2 border-b border-white/5">
+      <div className="flex items-center gap-2 mb-2 opacity-40">
+        <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
+        <span className="text-[6px] font-quantico font-black uppercase tracking-[0.3em]">{t('context.questStory', 'Récit')}</span>
+        <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
+      </div>
+      <div className="max-h-24 overflow-y-auto custom-scrollbar pr-2">
+        <p className="font-garamond italic text-xs text-white/50 leading-relaxed text-center">
+          "{quest.description || t('context.questNoStory', "Les chroniques sont muettes sur ce récit...")}"
+        </p>
+      </div>
+    </div>
 
- {/* BLOCK RÉCOMPENSES (Flexible) ─── */}
- <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
- <div className="flex items-center gap-2 mb-3 opacity-40">
- <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
- <span className="text-[6px] font-quantico font-black uppercase tracking-[0.3em]">{t('context.rewards', 'Récompenses')}</span>
- <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
- </div>
- 
- {/* Conteneur scrollable dédié pour les récompenses */}
- <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 min-h-0">
- <div className="space-y-4">
+    {/* BLOCK RÉCOMPENSES (Flexible) ─── */}
+    <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-4 py-3 min-h-0 space-y-4">
+      <div>
+        <div className="flex items-center gap-2 mb-3 opacity-40">
+          <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
+          <span className="text-[6px] font-quantico font-black uppercase tracking-[0.3em]">{t('context.rewards', 'Récompenses')}</span>
+          <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
+        </div>
+        
+        <div className="space-y-4">
  {/* Participants supprimés pour raisons RP */}
 
  {/* Rewards */}
@@ -147,11 +146,11 @@ export function QuestDetailContent({
  <div className="h-full flex flex-col items-center justify-center py-4 opacity-5">
  <Sparkles size={20} className="mb-1" />
  <span className="text-[6px] font-quantico uppercase tracking-widest">{t('context.nothing', 'Néant')}</span>
- </div>
- )}
- </div>
- </div>
- </div>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
  </div>
 
  {/* ─── FOOTER ACTIONS FIXE (Conditionnel) ─── */}

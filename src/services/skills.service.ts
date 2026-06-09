@@ -31,9 +31,16 @@ export interface Skill {
   modifiers: SkillModifier[];
   effects: SkillEffect[];
   cost?: {
-    barId: string;
     value: number;
+    barId: string;
   };
+  costs?: {
+    id: string;
+    mode: 'fixed' | 'percent' | 'dice';
+    value: number;
+    formula?: string;
+    barId: string;
+  }[];
   condition_type?: 'item' | 'skill' | 'les_deux' | null;
   condition_tags?: string[];
 }

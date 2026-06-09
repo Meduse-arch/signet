@@ -31,10 +31,8 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  const { imageUrl, setImageUrl, isUploading, handleFileUpload } = useAssetUpload();
  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
- // Coût
- const [hasCost, setHasCost] = useState(false);
- const [costBarId, setCostBarId] = useState('vitalite');
- const [costValue, setCostValue] = useState(1);
+ // Coûts multiples
+ const [costs, setCosts] = useState<any[]>([]);
 
  // Effets techniques (Dégâts, Soins, etc)
  const [effects, setEffects] = useState<any[]>([]);
@@ -53,11 +51,13 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  setType(skillToEdit.type || 'active');
  setImageUrl(skillToEdit.image_url || '');
  setSelectedTags(skillToEdit.tags || []);
- setHasCost(!!skillToEdit.cost);
- if (skillToEdit.cost) {
- setCostBarId(skillToEdit.cost.barId);
- setCostValue(skillToEdit.cost.value);
- }
+      if (skillToEdit.costs) {
+        setCosts(skillToEdit.costs);
+      } else if (skillToEdit.cost) {
+        setCosts([{ id: crypto.randomUUID(), mode: 'fixed', value: skillToEdit.cost.value, barId: skillToEdit.cost.barId }]);
+      } else {
+        setCosts([]);
+      }
  setEffects(skillToEdit.effects || []);
  setModifiers(skillToEdit.modifiers || []);
  setConditionType(skillToEdit.condition_type || 'none');
@@ -68,7 +68,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  setType('active');
  setImageUrl('');
  setSelectedTags([]);
- setHasCost(false);
+      setCosts([]);
  setEffects([]);
  setModifiers([]);
  setConditionType('none');
@@ -86,7 +86,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  type,
  image_url: imageUrl,
  tags: selectedTags,
- cost: hasCost ? { barId: costBarId, value: costValue } : undefined,
+      costs: costs.length > 0 ? costs : undefined,
  effects,
  modifiers,
  condition_type: conditionType !== 'none' ? conditionType : undefined,
@@ -110,6 +110,14 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
 
  setShowSkillCreateModal(false);
  };
+
+  const addCost = () => {
+    setCosts([...costs, { id: crypto.randomUUID(), mode: 'fixed', value: 1, barId: DEFAULT_BARS[0]?.id || 'hp' }]);
+  };
+
+  const updateCost = (id: string, updates: any) => {
+    setCosts(costs.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
 
  const addEffect = () => {
  setEffects([...effects, { id: crypto.randomUUID(), type: 'damage', mode: 'dice', formula: '1d6', valeur: 0, description: '' }]);
@@ -265,39 +273,70 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  </div>
  </section>
 
- {/* COÛT */}
- <section className="space-y-6 p-6 rounded-[2rem] bg-white/[0.02] border border-white/5">
- <div className="flex items-center justify-between">
- <h3 className="text-xs font-quantico font-black text-silver-bright/70 uppercase tracking-[0.3em] flex items-center gap-3">
- <Power size={14} /> {t('context.cost', "Coût")}
- </h3>
- <button 
- onClick={() => setHasCost(!hasCost)}
- className={`px-4 py-1.5 rounded-full text-[11px] font-quantico font-black uppercase transition-all ${hasCost ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}
- >
- {hasCost ? t('common.remove', 'Retirer') : t('context.addCost', 'Ajouter un coût')}
- </button>
- </div>
- {hasCost && (
- <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
- <select 
- value={costBarId} 
- onChange={e => setCostBarId(e.target.value)}
- className="bg-black border border-white/10 rounded-xl px-4 py-3 text-xs font-quantico text-white uppercase focus:border-gold-bright outline-none"
- >
- {DEFAULT_BARS.map(b => (
- <option key={b.id} value={b.id}>{b.name}</option>
- ))}
- </select>
- <input 
- type="number" 
- value={costValue} 
- onChange={e => setCostValue(parseInt(e.target.value))}
- className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[12px] font-mono text-glacier-bright text-center outline-none focus:border-gold-bright"
- />
- </div>
- )}
- </section>
+      {/* COÛTS */}
+      <section className="space-y-6 p-6 rounded-[2rem] bg-white/[0.02] border border-white/5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-quantico font-black text-silver-bright/70 uppercase tracking-[0.3em] flex items-center gap-3">
+            <Power size={14} /> {t('context.costs', "Coûts")}
+          </h3>
+          <button onClick={addCost} className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all shadow-lg">
+            <Plus size={16} />
+          </button>
+        </div>
+        
+        {costs.length > 0 && (
+          <div className="space-y-4 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+            {costs.map((c) => (
+              <div key={c.id} className="p-4 rounded-2xl bg-black/40 border border-white/5 flex flex-col gap-3 relative animate-in slide-in-from-top-2 duration-300">
+                <button 
+                  onClick={() => setCosts(costs.filter(x => x.id !== c.id))}
+                  className="absolute -top-2 -right-2 p-1.5 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all z-10"
+                >
+                  <X size={12} />
+                </button>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <select 
+                    value={c.barId} 
+                    onChange={e => updateCost(c.id, { barId: e.target.value })}
+                    className="bg-black border border-white/10 rounded-xl px-3 py-2 text-[11px] font-quantico text-white uppercase focus:border-gold-bright outline-none"
+                  >
+                    {DEFAULT_BARS.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                  <select 
+                    value={c.mode} 
+                    onChange={e => updateCost(c.id, { mode: e.target.value })}
+                    className="bg-black border border-white/10 rounded-xl px-3 py-2 text-[11px] font-quantico text-white uppercase focus:border-gold-bright outline-none"
+                  >
+                    <option value="fixed">{t('context.fixedValue', 'Fixe')}</option>
+                    <option value="percent">{t('context.percentage', 'Pourcentage (%)')}</option>
+                    <option value="dice">{t('context.diceFormula', 'Jet de Dés / Formule')}</option>
+                  </select>
+                </div>
+                
+                {c.mode === 'dice' ? (
+                  <input 
+                    type="text" 
+                    value={c.formula || ''} 
+                    onChange={e => updateCost(c.id, { formula: e.target.value })}
+                    placeholder="ex: 1d6 + strength"
+                    className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[12px] font-mono text-glacier-bright text-center outline-none focus:border-gold-bright w-full"
+                  />
+                ) : (
+                  <input 
+                    type="number" 
+                    value={c.value} 
+                    onChange={e => updateCost(c.id, { value: parseInt(e.target.value) || 0 })}
+                    className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[12px] font-mono text-glacier-bright text-center outline-none focus:border-gold-bright w-full"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
  </div>
 
  {/* COLONNE DROITE : MÉCANIQUES */}

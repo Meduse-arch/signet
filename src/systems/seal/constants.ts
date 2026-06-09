@@ -28,9 +28,9 @@ export const DEFAULT_STATS: StatDefinition[] = [
 export const DEFAULT_SKILLS: SkillDefinition[] = [];
 
 export const DEFAULT_BARS: BarDefinition[] = [
-  { id: 'hp', name: 'Ressource', color: '#ef4444', formula: 'constitution * 4' },
+  { id: 'hp', name: 'Health', color: '#ef4444', formula: 'constitution * 4' },
   { id: 'mana', name: 'Mana', color: '#3b82f6', formula: '(intelligence + wisdom) / 2 * 10' },
-  { id: 'stam', name: 'Endurance', color: '#22c55e', formula: '(strength + dexterity + constitution) / 3 * 10' },
+  { id: 'stam', name: 'Stamina', color: '#22c55e', formula: '(strength + dexterity + constitution) / 3 * 10' },
 ];
 
 export const DEFAULT_SEAL_SETTINGS = {

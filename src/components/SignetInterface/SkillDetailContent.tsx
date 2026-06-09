@@ -87,7 +87,7 @@ export function SkillDetailContent({
  };
 
  return (
- <div className="flex flex-col h-full bg-[#0D0D0F]">
+ <div className="w-full h-full flex-1 min-h-0 flex flex-col relative overflow-hidden bg-[#0D0D0F]">
  {/* ─── BLOCK IMAGE (Plus compact) ─── */}
  <div 
  className="relative h-32 shrink-0 flex items-center justify-center overflow-hidden border-b border-silver-DEFAULT/20"
@@ -113,11 +113,11 @@ export function SkillDetailContent({
  <span className="px-1.5 py-0.5 rounded bg-glacier-DEFAULT/10 text-glacier-bright text-[6px] font-quantico font-black tracking-widest uppercase border border-silver-DEFAULT/20">
  {getTypeLabel(skill.type)}
  </span>
- {skill.cost && (
- <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[6px] font-mono border border-red-500/20">
- {skill.cost.value} {DEFAULT_BARS.find(b => b.id === skill.cost?.barId)?.name || skill.cost.barId}
+ {(skill.costs || (skill.cost ? [{ id: 'legacy', mode: 'fixed', value: skill.cost.value, barId: skill.cost.barId }] : [])).map((c: any) => (
+ <span key={c.id} className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[6px] font-mono border border-red-500/20">
+ {c.mode === 'dice' ? c.formula : `${c.value}${c.mode === 'percent' ? '%' : ''}`} {DEFAULT_BARS.find(b => b.id === c.barId)?.name || c.barId}
  </span>
- )}
+ ))}
  </div>
  </div>
  <h2 className="text-base font-quantico font-black text-white uppercase tracking-tight truncate">
@@ -126,36 +126,35 @@ export function SkillDetailContent({
  </div>
  </div>
 
- {/* ─── CORPS SCROLLABLE PAR BLOCKS ─── */}
- <div className="flex-1 flex flex-col min-h-0">
- 
- {/* BLOCK DESCRIPTION (Scrollable, plus compact) */}
- <div className="shrink-0 px-4 py-3">
- <div className="flex items-center gap-2 mb-2 opacity-40">
- <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
- <span className="text-[6px] font-quantico font-black uppercase tracking-[0.3em]">{t('context.arcanes', 'Arcanes')}</span>
- <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
- </div>
- <div className="max-h-20 overflow-y-auto custom-scrollbar pr-2">
- <p className="font-garamond italic text-xs text-white/50 leading-relaxed text-center">
- "{skill.description || t('context.noSkillDescription', "Une technique sans nom, perdue dans les âges...")}"
- </p>
- </div>
- </div>
+  {/* ─── CORPS SCROLLABLE PAR BLOCKS ─── */}
+  <div className="flex-1 flex flex-col min-h-0">
+    
+    {/* BLOCK DESCRIPTION (Scrollable, plus compact) */}
+    <div className="shrink-0 px-4 pt-3 pb-2 border-b border-white/5">
+      <div className="flex items-center gap-2 mb-2 opacity-40">
+        <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
+        <span className="text-[6px] font-quantico font-black uppercase tracking-[0.3em]">{t('context.arcanes', 'Arcanes')}</span>
+        <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
+      </div>
+      <div className="max-h-24 overflow-y-auto custom-scrollbar pr-2">
+        <p className="font-garamond italic text-xs text-white/50 leading-relaxed text-center">
+          "{skill.description || t('context.noSkillDescription', "Une technique sans nom, perdue dans les âges...")}"
+        </p>
+      </div>
+    </div>
 
- {/* BLOCK EFFETS & MODIFICATEURS (Flexible) ─── */}
- <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
- <div className="flex items-center gap-2 mb-3 opacity-40">
- <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
- <span className="text-[6px] font-quantico font-black uppercase tracking-[0.3em]">{t('context.manifestations', 'Manifestations')}</span>
- <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
- </div>
- 
- <div className="max-h-32 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 min-h-0 mb-4">
- <div className="space-y-3">
- {/* Effets Actifs */}
- {skill.effects && skill.effects.length > 0 && (
- <div className="space-y-1.5">
+    {/* BLOCK EFFETS & MODIFICATEURS (Flexible) */}
+    <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-4 py-3 min-h-0 space-y-4">
+    {/* BLOCK EFFETS ─── */}
+    {skill.effects && skill.effects.length > 0 && (
+      <div>
+        <div className="flex items-center gap-2 mb-3 opacity-40">
+          <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
+          <span className="text-[6px] font-quantico font-black uppercase tracking-[0.3em]">{t('context.manifestations', 'Manifestations')}</span>
+          <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
+        </div>
+        
+        <div className="space-y-1.5">
  {skill.effects.map((effect) => (
  <div key={effect.id} className="p-2 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col">
  <div className="flex items-center justify-between gap-2">
@@ -172,12 +171,11 @@ export function SkillDetailContent({
  </p>
  </div>
  ))}
- </div>
- )}
- </div>
- </div>
+        </div>
+      </div>
+    )}
 
- {/* Conteneur scrollable dédié pour les modificateurs */}
+    {/* BLOCK MODIFICATEURS */}
  {skill.modifiers && skill.modifiers.length > 0 && (
  <>
  <div className="flex items-center gap-2 mb-3 opacity-40">
@@ -185,7 +183,6 @@ export function SkillDetailContent({
  <span className="text-[6px] font-quantico font-black uppercase tracking-[0.3em]">{t('context.arithmancyTitle', 'Arithmancie')}</span>
  <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
  </div>
- <div className="max-h-32 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 min-h-0 mb-4">
  <div className="grid grid-cols-1 gap-1.5">
  {skill.modifiers.map((m, i) => (
  <div key={i} className="flex flex-col p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-silver-DEFAULT/20 transition-all">
@@ -208,21 +205,20 @@ export function SkillDetailContent({
  </div>
  ))}
  </div>
- </div>
  </>
  )}
 
- {/* Conditions */}
- {skill.condition_type && (
- <div className="p-2.5 rounded-xl bg-glacier-DEFAULT/5 border border-silver-DEFAULT/10">
- <p className="text-[11px] font-quantico text-silver-bright/50 uppercase leading-relaxed text-center tracking-wider">
- {t('context.requires', 'Requiert')} {skill.condition_type === 'item' ? t('context.relic', 'Relique').toLowerCase() : skill.condition_type === 'skill' ? t('context.skillType', 'Compétence').toLowerCase() : t('context.relicAndSkill', 'Relique & Compétence').toLowerCase()}
- {skill.condition_tags && skill.condition_tags.length > 0 && ` [${skill.condition_tags.join(', ')}]`}
- </p>
- </div>
- )}
- </div>
- </div>
+    {/* Conditions */}
+    {skill.condition_type && (
+      <div className="p-2.5 rounded-xl bg-glacier-DEFAULT/5 border border-silver-DEFAULT/10">
+        <p className="text-[11px] font-quantico text-silver-bright/50 uppercase leading-relaxed text-center tracking-wider">
+          {t('context.requires', 'Requiert')} {skill.condition_type === 'item' ? t('context.relic', 'Relique').toLowerCase() : skill.condition_type === 'skill' ? t('context.skillType', 'Compétence').toLowerCase() : t('context.relicAndSkill', 'Relique & Compétence').toLowerCase()}
+          {skill.condition_tags && skill.condition_tags.length > 0 && ` [${skill.condition_tags.join(', ')}]`}
+        </p>
+      </div>
+    )}
+    </div>
+  </div>
 
  {/* ─── FOOTER ACTIONS FIXE (Conditionnel) ─── */}
  {isMJ && showActions && (

@@ -134,9 +134,11 @@ export const DiceRollModal: React.FC = () => {
  })()}
  <span className="relative text-7xl font-quantico font-black text-glacier-bright leading-none z-10">{totalGlobal}</span>
  </div>
+ {diceResult.length === 1 && (
  <div className="mt-2">
  <RunicDecoder text={diceResult[0].label} />
  </div>
+ )}
  </div>
  )}
  </div>
