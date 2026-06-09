@@ -51,9 +51,14 @@ export function useAudioSync(sessionId: string) {
         } else {
           // Piste courte : Howler classique
           isMseTrackRef.current = false;
+          const memFile = audioService.memoryAudioFiles.get(hash);
           const asset = await dbStorage.getAsset(hash);
-          if (asset) {
-            audioService.playAmbiance(hash, asset.data, asset.mime, position || 0);
+          if (memFile || asset) {
+            if (!isHost) sendTo(fromPeerId, { type: 'AUDIO_READY', payload: { hash } });
+            
+            if (asset) {
+              audioService.playAmbiance(hash, asset.data, asset.mime, position || 0);
+            }
           } else {
             sendTo(fromPeerId, { type: 'AUDIO_REQUEST', payload: { hash } });
           }
@@ -150,6 +155,7 @@ export function useAudioSync(sessionId: string) {
         const asset = await dbStorage.getAsset(hash);
         if (asset) {
           audioService.playSFX(hash, asset.data, asset.mime);
+          if (!isHost) sendTo(fromPeerId, { type: 'AUDIO_READY', payload: { hash } });
         } else {
           sendTo(fromPeerId, { type: 'AUDIO_REQUEST_SFX', payload: { hash, mime } });
         }
