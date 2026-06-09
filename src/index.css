@@ -61,6 +61,18 @@
     position: relative;
   }
 
+  /* --- VISUAL QUALITY OVERRIDES --- */
+  [data-quality="low"] * {
+    backdrop-filter: none !important;
+  }
+  
+  [data-quality="low"] .liquid-glass-panel,
+  [data-quality="low"] .backdrop-blur-md,
+  [data-quality="low"] .backdrop-blur-lg,
+  [data-quality="low"] .backdrop-blur-xl {
+    background-color: rgba(10, 10, 15, 0.95) !important;
+  }
+
   h1, h2, h3, h4, .font-runic {
     @apply font-quantico font-bold tracking-wider uppercase;
   }

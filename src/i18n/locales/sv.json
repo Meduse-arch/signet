@@ -393,6 +393,12 @@
     "moveDown": "Ner",
     "moveLeft": "Vänster",
     "moveRight": "Höger",
-    "general": "Allmänt"
+    "general": "Allmänt",
+    "visualQuality": "Visuell Kvalitet",
+    "visualQualityDesc": "Justera grafisk kvalitet för att förbättra prestanda",
+    "qualityLow": "Låg",
+    "qualityMedium": "Medium",
+    "qualityHigh": "Hög",
+    "graphics": "Grafik"
   }
 }

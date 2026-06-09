@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type VisualQuality = 'low' | 'medium' | 'high';
+
 export interface Keybindings {
   moveUp: string[];
   moveDown: string[];
@@ -9,8 +11,12 @@ export interface Keybindings {
 }
 
 interface SettingsState {
+  visualQuality: VisualQuality;
   keybindings: Keybindings;
+  keyboardInitialized: boolean;
+  setVisualQuality: (quality: VisualQuality) => void;
   setKeybinding: (action: keyof Keybindings, slotIndex: 0 | 1, key: string | null) => void;
+  detectKeyboardLayout: () => Promise<void>;
 }
 
 const defaultKeybindings: Keybindings = {
@@ -22,8 +28,43 @@ const defaultKeybindings: Keybindings = {
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
+      visualQuality: 'medium', // Default to medium for smooth performance out of the box
       keybindings: defaultKeybindings,
+      keyboardInitialized: false,
+      setVisualQuality: (quality) => set({ visualQuality: quality }),
+      detectKeyboardLayout: async () => {
+        const state = get();
+        if (state.keyboardInitialized) return; // Only do this once
+
+        try {
+          const keyboard = (navigator as any).keyboard;
+          if (keyboard && keyboard.getLayoutMap) {
+            const layoutMap = await keyboard.getLayoutMap();
+            const keyW = layoutMap.get('KeyW') || 'w';
+            const keyA = layoutMap.get('KeyA') || 'a';
+            const keyS = layoutMap.get('KeyS') || 's';
+            const keyD = layoutMap.get('KeyD') || 'd';
+            
+            set({
+              keybindings: {
+                ...state.keybindings,
+                moveUp: [keyW, 'arrowup'],
+                moveLeft: [keyA, 'arrowleft'],
+                moveDown: [keyS, 'arrowdown'],
+                moveRight: [keyD, 'arrowright']
+              },
+              keyboardInitialized: true
+            });
+            return;
+          }
+        } catch (e) {
+          console.warn('Keyboard layout detection failed or not supported', e);
+        }
+        
+        // Fallback: Just mark as initialized so we don't try again
+        set({ keyboardInitialized: true });
+      },
       setKeybinding: (action, slotIndex, key) => set((state) => {
         const newKeys = [...state.keybindings[action]];
         

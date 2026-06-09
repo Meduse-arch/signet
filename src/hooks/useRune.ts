@@ -1,5 +1,6 @@
 import { RefObject, useEffect } from 'react'
 import * as PIXI from 'pixi.js'
+import { useSettingsStore } from '../store/settings'
 
 interface Glyph {
   text: PIXI.Text
@@ -36,13 +37,17 @@ export function useRune(containerRef: RefObject<HTMLDivElement>): void {
       const instance = new PIXI.Application()
       app = instance // Capture immediately
 
+      const quality = useSettingsStore.getState().visualQuality;
+      const resolutionMap = { low: 0.5, medium: 1, high: window.devicePixelRatio || 1 };
+      const antialiasMap = { low: false, medium: false, high: true };
+
       try {
         await instance.init({
           width: container!.offsetWidth,
           height: container!.offsetHeight,
           backgroundAlpha: 0,
-          antialias: true,
-          resolution: window.devicePixelRatio || 1,
+          antialias: antialiasMap[quality],
+          resolution: resolutionMap[quality],
           autoDensity: true,
         })
 

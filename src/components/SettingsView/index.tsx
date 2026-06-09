@@ -16,18 +16,19 @@ export const languages = [
   { code: 'sv', label: 'Svenska' }
 ];
 
-type SettingsCategory = 'general' | 'controls' | 'account';
+type SettingsCategory = 'general' | 'graphics' | 'controls' | 'account';
 
 export function SettingsView() {
   const { t, i18n } = useTranslation();
   const { logout, user } = useAuthStore();
-  const { keybindings, setKeybinding } = useSettingsStore();
+  const { keybindings, setKeybinding, visualQuality, setVisualQuality } = useSettingsStore();
   
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const [listeningSlot, setListeningSlot] = useState<{ action: keyof Keybindings, index: 0 | 1 } | null>(null);
 
   const categories = [
     { id: 'general', icon: Icons.Globe, label: t('settings.general', 'Général') },
+    { id: 'graphics', icon: Icons.Layers, label: t('settings.graphics', 'Graphiques') },
     { id: 'controls', icon: Icons.Settings, label: t('settings.controls', 'Contrôles') },
     { id: 'account', icon: Icons.User, label: t('settings.account', 'Compte') }
   ];
@@ -143,7 +144,7 @@ export function SettingsView() {
               <p className="text-silver-bright/60 font-quantico uppercase tracking-widest text-sm mb-8">
                 {t('settings.selectLanguage', 'Sélectionnez la langue de l\'interface')}
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
                 {languages.map((lang) => {
                   const isActive = i18n.language.startsWith(lang.code);
                   return (
@@ -157,6 +158,42 @@ export function SettingsView() {
                       }`}
                     >
                       <span className="font-quantico font-bold tracking-[0.2em] uppercase text-sm">{lang.label}</span>
+                      {isActive && <Icons.Check className="w-5 h-5 text-glacier-bright" />}
+                      {!isActive && <div className="w-5 h-5 rounded-full border border-silver-DEFAULT/30 group-hover:border-silver-DEFAULT/60 transition-colors" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {activeCategory === 'graphics' && (
+            <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
+              <div className="flex items-center gap-4 mb-6">
+                <Icons.Layers className="w-8 h-8 text-glacier-bright" />
+                <h2 className="text-2xl font-black text-white font-quantico uppercase tracking-widest">{t('settings.graphics', 'Graphiques')}</h2>
+              </div>
+              <p className="text-silver-bright/60 font-quantico uppercase tracking-widest text-sm mb-8">
+                {t('settings.visualQualityDesc', 'Ajustez la qualité graphique pour améliorer les performances')}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { id: 'low', label: t('settings.qualityLow', 'Basse') },
+                  { id: 'medium', label: t('settings.qualityMedium', 'Moyenne') },
+                  { id: 'high', label: t('settings.qualityHigh', 'Haute') }
+                ].map((q) => {
+                  const isActive = visualQuality === q.id;
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => setVisualQuality(q.id as any)}
+                      className={`relative flex items-center justify-between p-5 rounded-2xl border transition-all duration-300 group ${
+                        isActive 
+                          ? 'bg-glacier-DEFAULT/10 border-silver-DEFAULT text-glacier-bright shadow-[0_0_20px_rgba(79,164,184,0.2)]' 
+                          : 'bg-black/60 border-silver-DEFAULT/20 text-silver-bright hover:border-silver-DEFAULT/50 hover:bg-white/5'
+                      }`}
+                    >
+                      <span className="font-quantico font-bold tracking-[0.2em] uppercase text-sm">{q.label}</span>
                       {isActive && <Icons.Check className="w-5 h-5 text-glacier-bright" />}
                       {!isActive && <div className="w-5 h-5 rounded-full border border-silver-DEFAULT/30 group-hover:border-silver-DEFAULT/60 transition-colors" />}
                     </button>

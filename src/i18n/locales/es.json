@@ -393,6 +393,12 @@
     "moveDown": "Abajo",
     "moveLeft": "Izquierda",
     "moveRight": "Derecha",
-    "general": "General"
+    "general": "General",
+    "visualQuality": "Calidad Visual",
+    "visualQualityDesc": "Ajuste la calidad gráfica para mejorar el rendimiento",
+    "qualityLow": "Baja",
+    "qualityMedium": "Media",
+    "qualityHigh": "Alta",
+    "graphics": "Gráficos"
   }
 }

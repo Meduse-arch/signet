@@ -9,8 +9,8 @@ import { mapSyncService } from '../services/map-sync.service';
 import { useSessionStore } from '../store/session';
 
 import { BrowserImageCompressor } from '../services/browser-image-compressor';
-
 import { dbStorage } from '../services/db.storage';
+import { useSettingsStore } from '../store/settings';
 
 export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: string, currentMapId?: string, imageUrl?: string) {
   const boardRef = useRef<BoardScene | null>(null);
@@ -283,13 +283,17 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       console.log('[useBoard] Initializing Pixi Application');
       app = new PIXI.Application();
       
+      const quality = useSettingsStore.getState().visualQuality;
+      const resolutionMap = { low: 0.5, medium: 1, high: window.devicePixelRatio || 1 };
+      const antialiasMap = { low: false, medium: false, high: true };
+
       try {
         await app.init({
           width: container!.offsetWidth,
           height: container!.offsetHeight,
           backgroundAlpha: 0,
-          antialias: true,
-          resolution: window.devicePixelRatio || 1,
+          antialias: antialiasMap[quality],
+          resolution: resolutionMap[quality],
           autoDensity: true,
         });
 

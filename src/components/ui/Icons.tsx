@@ -34,6 +34,7 @@ import {
  Image as ImageIcon,
  Info,
  Key,
+ Layers,
  Layout,
  Library,
  Link,
@@ -165,6 +166,7 @@ export const Icons = {
 
  // --- Interface & Layout ---
  Library,
+ Layers,
  Layout,
  Grid,
  Settings,

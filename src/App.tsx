@@ -6,6 +6,7 @@ import { AuthPage } from './pages/AuthPage';
 import { ExternalWindowPage } from './pages/ExternalWindowPage';
 import { SwarmSimulationPage } from './pages/SwarmSimulationPage';
 import { useAuthStore } from './store/auth';
+import { useSettingsStore } from './store/settings';
 import { TitleBar } from './components/TitleBar';
 import logo from './assets/logo.svg';
 
@@ -102,8 +103,20 @@ function ExternalWindowWrapper() {
 }
 
 export function App() {
- return (
- <div className="flex flex-col h-screen w-full overflow-hidden bg-[#0D0D0F]">
+  const { visualQuality, detectKeyboardLayout } = useSettingsStore();
+
+  useEffect(() => {
+    // Attempt keyboard detection on first boot
+    detectKeyboardLayout();
+  }, [detectKeyboardLayout]);
+
+  useEffect(() => {
+    // Apply visual quality globally
+    document.documentElement.setAttribute('data-quality', visualQuality);
+  }, [visualQuality]);
+
+  return (
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-[#0D0D0F]">
  <TitleBar />
  <div className="flex-1 relative">
  <HashRouter>

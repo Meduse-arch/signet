@@ -393,6 +393,12 @@
     "moveDown": "下",
     "moveLeft": "左",
     "moveRight": "右",
-    "general": "一般"
+    "general": "一般",
+    "visualQuality": "視覚的品質",
+    "visualQualityDesc": "パフォーマンスを向上させるためにグラフィック品質を調整する",
+    "qualityLow": "低",
+    "qualityMedium": "中",
+    "qualityHigh": "高",
+    "graphics": "グラフィックス"
   }
 }
