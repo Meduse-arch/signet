@@ -7,6 +7,7 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { SealSettingsModal } from './SealSettingsModal';
 import { DEFAULT_SEAL_SETTINGS } from '../../systems/seal/constants';
+import { useAssetUpload } from '../../hooks/useAssetUpload';
 
 interface SessionModalProps {
   isOpen: boolean;
@@ -35,6 +36,11 @@ export function CreateSessionModal({
   const [imageUrl, setImageUrl] = useState('');
   const [settings, setSettings] = useState<Record<string, any>>({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const { isUploading, fileInputRef, handleFileUpload } = useAssetUpload(
+    imageUrl,
+    (url) => setImageUrl(url)
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -135,13 +141,32 @@ export function CreateSessionModal({
           )}
 
           {/* URL de l'image */}
-          <Input
-            label={t('session.imageLabel')}
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder={t('session.imagePlaceholder')}
-            mono
-          />
+          <div className="flex gap-2 items-end">
+            <Input
+              label={t('session.imageLabel')}
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder={t('session.imagePlaceholder')}
+              mono
+              wrapperClassName="flex-1 min-w-0"
+            />
+            <button 
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="p-3 rounded-xl bg-[#0D0D0F]/80 border border-gold-DEFAULT/30 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[48px] h-[46px]"
+              title="Importer un fichier local"
+            >
+              {isUploading ? <Icons.Loader2 size={18} className="animate-spin" /> : <Icons.Upload size={18} />}
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*"
+              onChange={handleFileUpload}
+            />
+          </div>
         </div>
       </Modal>
 

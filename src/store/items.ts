@@ -51,8 +51,14 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
             const updatedChar = { ...char, inventory: updatedInventory };
             charStore.addOrUpdateCharacter(updatedChar);
             
-            // L'appel à addOrUpdateCharacter déclenche déjà la synchro interne du store.
-            // Pas besoin de BroadcastChannel manuel ici.
+            if ((window as any).electronAPI) {
+              (window as any).electronAPI.updateCharacter(
+                sessionId, updatedChar.id, updatedChar.name, updatedChar.stats, 
+                updatedChar.skills, updatedChar.bars, updatedChar.image_url, 
+                updatedChar.inventory, updatedChar.custom_skills, updatedChar.type, 
+                updatedChar.is_template, updatedChar.quests
+              ).catch(console.error);
+            }
           });
         }
       } else {

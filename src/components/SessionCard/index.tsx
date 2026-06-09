@@ -1,6 +1,7 @@
 import { Session, formatRelativeDate } from '../../services/session.service';
 import { Icons } from '../ui/Icons';
 import { useTranslation } from 'react-i18next';
+import { AssetImage } from '../AssetImage';
 
 interface SessionCardProps {
   session: Session;
@@ -35,7 +36,7 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
 
       <div className="h-28 w-full bg-black/20 relative overflow-hidden z-[4]">
         {session.imageUrl ? (
-          <img 
+          <AssetImage 
             src={session.imageUrl} 
             alt={session.name} 
             className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110" 

@@ -46,13 +46,19 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
         if (affectedChars.length > 0) {
           affectedChars.forEach(char => {
             const updatedCustomSkills = char.custom_skills?.map((s: any) => 
-              s.id === skill.id ? { ...skill, is_active: s.is_active } : s
+              s.id === skill.id ? { ...skill, is_active: s.is_active, instanceId: s.instanceId } : s
             );
             const updatedChar = { ...char, custom_skills: updatedCustomSkills };
             charStore.addOrUpdateCharacter(updatedChar);
             
-            // L'appel à addOrUpdateCharacter déclenche déjà la synchro interne du store.
-            // Pas besoin de BroadcastChannel manuel ici.
+            if ((window as any).electronAPI) {
+              (window as any).electronAPI.updateCharacter(
+                sessionId, updatedChar.id, updatedChar.name, updatedChar.stats, 
+                updatedChar.skills, updatedChar.bars, updatedChar.image_url, 
+                updatedChar.inventory, updatedChar.custom_skills, updatedChar.type, 
+                updatedChar.is_template, updatedChar.quests
+              ).catch(console.error);
+            }
           });
         }
       } else {

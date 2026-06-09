@@ -120,7 +120,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
   };
 
   const addModifier = () => {
-    setModifiers([...modifiers, { target: 'stat', targetId: 'force', mode: 'flat', value: 1 }]);
+    setModifiers([...modifiers, { target: 'stat', targetId: 'strength', mode: 'flat', value: 1 }]);
   };
 
   const updateModifier = (index: number, updates: any) => {
@@ -190,6 +190,46 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                       rows={4}
                       className="w-full bg-black/60 border border-gold-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 outline-none transition-all shadow-inner custom-scrollbar resize-none"
                     />
+                  </div>
+                  <div className="space-y-2">
+                     <div className="flex items-center justify-between">
+                         <label className="text-[11px] font-cinzel font-black text-white/70 uppercase tracking-widest ml-1">{t('context.tags', "Tags & Catégories")}</label>
+                         <div className="relative">
+                             <select 
+                                className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                                value=""
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val && !selectedTags.includes(val)) setSelectedTags([...selectedTags, val]);
+                                }}
+                             >
+                                <option value="" disabled>+</option>
+                                {tags.filter(t => !selectedTags.includes(t.id)).map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                             </select>
+                             <button className="p-1.5 rounded-lg bg-gold-DEFAULT/10 hover:bg-gold-DEFAULT/20 border border-gold-DEFAULT/20 text-gold-bright transition-colors pointer-events-none">
+                                 <Plus size={14} />
+                             </button>
+                         </div>
+                     </div>
+                     <div className="flex flex-wrap gap-2">
+                         {selectedTags.length === 0 && (
+                             <span className="text-[11px] font-garamond italic text-white/30">{t('context.noTags', "Aucun tag sélectionné...")}</span>
+                         )}
+                         {selectedTags.map(tagId => {
+                             const tag = tags.find(t => t.id === tagId);
+                             if (!tag) return null;
+                             return (
+                                 <div key={tag.id} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-cinzel text-white uppercase tracking-widest" style={{ borderLeftColor: tag.color, borderLeftWidth: '2px' }}>
+                                     <span>{tag.name}</span>
+                                     <button onClick={() => setSelectedTags(selectedTags.filter(id => id !== tag.id))} className="text-white/40 hover:text-red-400 transition-colors ml-1">
+                                         <X size={10} />
+                                     </button>
+                                 </div>
+                             );
+                         })}
+                     </div>
                   </div>
                </div>
             </section>
@@ -263,11 +303,11 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
           {/* COLONNE DROITE : MÉCANIQUES */}
           <div className="space-y-10">
             
-            {/* EFFETS ACTIFS */}
+            {/* ACTIONS & JETS DE DES */}
             <section className="space-y-6">
                 <div className="flex items-center justify-between border-b border-gold-DEFAULT/20 pb-3">
                     <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-3">
-                        <Zap size={16} className="text-gold-bright animate-pulse" /> {t('context.activeEffects', "Effets actifs")}
+                        <Zap size={16} className="text-gold-bright animate-pulse" /> {t('context.actionAndRolls', "Actions & Jets de Dés")}
                     </h3>
                     <button onClick={addEffect} className="p-2 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
                         <Plus size={16} />
@@ -290,8 +330,9 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                 >
                                     <option value="damage">{t('context.damage', "Dégâts")}</option>
                                     <option value="heal">{t('context.heal', "Soin")}</option>
-                                    <option value="buff">{t('context.buff', "Bonus")}</option>
-                                    <option value="debuff">{t('context.debuff', "Malus")}</option>
+                                    <option value="pure_roll">{t('context.pureRoll', "Jet Simple")}</option>
+                                    <option value="buff">{t('context.buff', "Bonus temporaire")}</option>
+                                    <option value="debuff">{t('context.debuff', "Malus (Affliction)")}</option>
                                     <option value="utility">{t('context.utility', "Utilité")}</option>
                                 </select>
                                 <div className="col-span-2 flex gap-2">
@@ -323,17 +364,17 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                     ))}
                     {effects.length === 0 && (
                         <div className="py-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.01]">
-                            <span className="text-xs font-cinzel text-white/10 uppercase tracking-[0.4em] italic">{t('context.noActiveEffect', "Aucun effet actif")}</span>
+                            <span className="text-xs font-cinzel text-white/10 uppercase tracking-[0.4em] italic">{t('context.noActionAndRolls', "Aucune action / jet")}</span>
                         </div>
                     )}
                 </div>
             </section>
 
-            {/* MODIFICATEURS PASSIFS */}
+            {/* BONUS PASSIFS */}
             <section className="space-y-6">
                 <div className="flex items-center justify-between border-b border-gold-DEFAULT/20 pb-3">
-                    <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-3">
-                        <BarChart2 size={16} className="text-gold-bright" /> {t('context.statModifiers', "Modificateurs de stats")}
+                    <h3 className="text-xs font-cinzel font-black text-gold-bright uppercase tracking-[0.3em] flex items-center gap-3" title="S'applique passivement au personnage quand la compétence est équipée">
+                        <BarChart2 size={16} className="text-gold-bright" /> {t('context.passiveAuras', "Bonus Passifs Permanents")}
                     </h3>
                     <button onClick={addModifier} className="p-2 rounded-xl bg-gold-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
                         <Plus size={16} />

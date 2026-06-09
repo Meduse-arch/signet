@@ -16,7 +16,7 @@ export interface BarDefinition {
 }
 
 export const DEFAULT_STATS: StatDefinition[] = [
-  { id: 'force', name: 'Force' },
+  { id: 'strength', name: 'Force' },
   { id: 'dexterity', name: 'Dextérité' },
   { id: 'constitution', name: 'Constitution' },
   { id: 'intelligence', name: 'Intelligence' },
@@ -30,7 +30,7 @@ export const DEFAULT_SKILLS: SkillDefinition[] = [];
 export const DEFAULT_BARS: BarDefinition[] = [
   { id: 'hp', name: 'Ressource', color: '#ef4444', formula: 'constitution * 4' },
   { id: 'mana', name: 'Mana', color: '#3b82f6', formula: '(intelligence + wisdom) / 2 * 10' },
-  { id: 'stam', name: 'Endurance', color: '#22c55e', formula: '(force + dexterity + constitution) / 3 * 10' },
+  { id: 'stam', name: 'Endurance', color: '#22c55e', formula: '(strength + dexterity + constitution) / 3 * 10' },
 ];
 
 export const DEFAULT_SEAL_SETTINGS = {

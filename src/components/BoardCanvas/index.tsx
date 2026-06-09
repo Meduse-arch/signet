@@ -70,6 +70,11 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
     const prepareCurrentMap = async () => {
         try {
           let finalUrl = currentMap.url;
+          
+          if (finalUrl.startsWith('asset://')) {
+            finalUrl = await assetSyncService.getAssetUrl(finalUrl);
+          }
+
           if (window.electronAPI && window.electronAPI.fetchImage && !finalUrl.startsWith('data:') && !finalUrl.startsWith('blob:')) {
             const base64 = await window.electronAPI.fetchImage(finalUrl);
             if (base64) finalUrl = base64;

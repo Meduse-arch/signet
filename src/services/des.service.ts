@@ -38,9 +38,9 @@ export function parseAndRoll(formula: string): { rolls: number[], total: number,
   const allRolls: number[] = [];
   const groups: RollGroup[] = [];
   try {
-    // 1. Gérer les jets de dés (ex: 2d10 ou 1d(Force=12))
+    // 1. Gérer les jets de dés (ex: 2d10 ou 1d(Force=12) ou 1d 20 ou 1 d strength)
     // On normalise en minuscules pour la recherche mais on garde l'affichage propre via les labels
-    let processedFormula = formula.replace(/(\d+)?d(?:\(?([^=)]+)=?(\d+)?\)?|(\d+))/gi, (match, nb, label, facesWithLabel, facesOnly) => {
+    let processedFormula = formula.replace(/(\d+)?\s*d\s*(?:\(?([^=)]+)=?(\d+)?\)?|(\d+))/gi, (match, nb, label, facesWithLabel, facesOnly) => {
       const count = parseInt(nb) || 1;
       const faces = parseInt(facesOnly || facesWithLabel) || 6;
       const finalLabel = label || `D${faces}`;
@@ -63,6 +63,9 @@ export function parseAndRoll(formula: string): { rolls: number[], total: number,
       
       return subTotal.toString();
     });
+
+    // 1.5 Convertir les (Nom=Valeur) isolés en simple valeur (ex: bonus de stats purs sans dés)
+    processedFormula = processedFormula.replace(/\([^=)]+=(\d+)\)/g, "$1");
 
     // 2. Nettoyer la formule pour ne garder que les caractères autorisés (sécurité)
     processedFormula = processedFormula.replace(/[^-+*/().\d\s]/g, '');

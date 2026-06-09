@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useItemsStore } from '../../store/items';
-import { Package, Plus, Trash2, Search, Info, Shield, Sword, FlaskConical, Sparkles, Hammer } from 'lucide-react';
+import { Package, Plus, Trash2, Search, Info, Shield, Sword, FlaskConical, Sparkles, Hammer, Upload, Loader2 } from 'lucide-react';
+import { useAssetUpload } from '../../hooks/useAssetUpload';
 
 const CATEGORIES = ['Arme', 'Armure', 'Consommable', 'Artéfact', 'Divers'];
 
@@ -13,6 +14,11 @@ export function AdminItemsView({ sessionId }: { sessionId: string }) {
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemCat, setNewItemCat] = useState('Divers');
   const [newItemImg, setNewItemImg] = useState('');
+
+  const { isUploading, fileInputRef, handleFileUpload } = useAssetUpload(
+    newItemImg,
+    (url) => setNewItemImg(url)
+  );
 
   const handleCreateForgeItem = async () => {
     if (!newItemName.trim()) return;
@@ -76,13 +82,31 @@ export function AdminItemsView({ sessionId }: { sessionId: string }) {
             onChange={e => setNewItemDesc(e.target.value)} 
             className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/50 focus:border-gold-DEFAULT/50 outline-none transition-colors" 
           />
-          <input 
-            type="text" 
-            placeholder="URL de l'image (optionnel)" 
-            value={newItemImg} 
-            onChange={e => setNewItemImg(e.target.value)} 
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/50 focus:border-gold-DEFAULT/50 outline-none transition-colors" 
-          />
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              placeholder="URL de l'image (optionnel)" 
+              value={newItemImg} 
+              onChange={e => setNewItemImg(e.target.value)} 
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/50 focus:border-gold-DEFAULT/50 outline-none transition-colors min-w-0" 
+            />
+            <button 
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="p-2.5 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[44px]"
+              title="Importer un fichier local"
+            >
+              {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*"
+              onChange={handleFileUpload}
+            />
+          </div>
         </div>
 
         <button 

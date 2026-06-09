@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Image as ImageIcon, Plus, Grid, X, Check } from 'lucide-react';
+import { Image as ImageIcon, Plus, Grid, X, Check, Upload, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAssetUpload } from '../../hooks/useAssetUpload';
+import { AssetImage } from '../AssetImage';
 
 interface MapItem {
   id: string;
@@ -35,7 +37,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap, onAddMap }: MapGal
                 currentMapId === map.id ? 'border-gold-bright shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-transparent hover:border-gold-DEFAULT/50'
               }`}
             >
-              <img src={map.url} alt={map.name} className="w-full h-full object-cover" />
+              <AssetImage url={map.url} alt={map.name} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1">
                 <span className="text-xs font-cinzel text-white truncate w-full">{map.name}</span>
               </div>
@@ -94,6 +96,11 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
 
+  const { isUploading, fileInputRef, handleFileUpload } = useAssetUpload(
+    newUrl,
+    (url) => setNewUrl(url)
+  );
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newName && newUrl) {
@@ -138,7 +145,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
                   currentMapId === map.id ? 'border-gold-bright' : 'border-transparent hover:border-gold-DEFAULT/30'
                 }`}
               >
-                <img src={map.url} alt={map.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <AssetImage url={map.url} alt={map.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent transition-opacity ${
                   currentMapId === map.id ? 'opacity-90' : 'opacity-40 group-hover:opacity-80'
                 }`} />
@@ -184,12 +191,30 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-cinzel font-black text-gold-DEFAULT drop-shadow-md tracking-widest uppercase ml-1">{t('modals.imageUrl', "URL de l'image")}</label>
-                <input 
-                  value={newUrl}
-                  onChange={e => setNewUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-xl px-4 py-3 text-sm focus:border-gold-DEFAULT/50 outline-none transition-all placeholder:text-white/30"
-                />
+                <div className="flex gap-2">
+                  <input 
+                    value={newUrl}
+                    onChange={e => setNewUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="flex-1 bg-[#0D0D0F]/80 border border-gold-DEFAULT/40 rounded-xl px-4 py-3 text-sm focus:border-gold-DEFAULT/50 outline-none transition-all placeholder:text-white/30"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="p-3 rounded-xl bg-gold-DEFAULT/10 border border-gold-DEFAULT/20 text-gold-bright hover:bg-gold-DEFAULT/20 transition-all flex items-center justify-center min-w-[48px]"
+                    title="Importer un fichier local"
+                  >
+                    {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                  </button>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                  />
+                </div>
               </div>
             </div>
 

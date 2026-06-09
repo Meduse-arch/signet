@@ -65,6 +65,18 @@ export function SkillDetailContent({
     }
   };
 
+  const getEffectLabel = (type: string) => {
+    switch (type) {
+      case 'damage': return t('context.damage', 'Dégâts');
+      case 'heal': return t('context.heal', 'Soin');
+      case 'buff': return t('context.buff', 'Bonus');
+      case 'debuff': return t('context.debuff', 'Malus');
+      case 'pure_roll': return t('context.pureRoll', 'Jet Simple');
+      case 'utility': return t('context.utility', 'Utilité');
+      default: return type;
+    }
+  };
+
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'active': return t('context.typeActive', 'Active');
@@ -150,7 +162,7 @@ export function SkillDetailContent({
                           <div className="flex items-center justify-between">
                              <div className="flex items-center gap-1.5">
                                 {getEffectIcon(effect.type)}
-                                <span className="text-[11px] font-cinzel font-bold text-white/60 uppercase tracking-widest">{effect.type}</span>
+                                <span className="text-[11px] font-cinzel font-bold text-white/60 uppercase tracking-widest">{getEffectLabel(effect.type)}</span>
                              </div>
                              <span className="text-xs font-mono text-gold-bright">
                                 {effect.mode === 'dice' ? effect.formula : `${effect.valeur >= 0 ? '+' : ''}${effect.valeur}${effect.mode === 'percent' ? '%' : ''}`}

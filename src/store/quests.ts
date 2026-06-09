@@ -39,6 +39,32 @@ export const useQuestsStore = create<QuestsState>((set, get) => ({
       let newQuests;
       if (existing) {
         newQuests = state.quests.map(q => q.id === quest.id ? quest : q);
+        
+        // --- MISE À JOUR SYNCHRONE DES PERSONNAGES ---
+        const { useCharactersStore } = await import('./characters');
+        const charStore = useCharactersStore.getState();
+        const affectedChars = charStore.characters.filter(c => 
+          c.quests?.some((q: any) => q.id === quest.id)
+        );
+
+        if (affectedChars.length > 0) {
+          affectedChars.forEach(char => {
+            const updatedQuests = char.quests?.map((q: any) => 
+              q.id === quest.id ? { ...quest, customId: q.customId, status: q.status } : q
+            );
+            const updatedChar = { ...char, quests: updatedQuests };
+            charStore.addOrUpdateCharacter(updatedChar);
+            
+            if ((window as any).electronAPI) {
+              (window as any).electronAPI.updateCharacter(
+                sessionId, updatedChar.id, updatedChar.name, updatedChar.stats, 
+                updatedChar.skills, updatedChar.bars, updatedChar.image_url, 
+                updatedChar.inventory, updatedChar.custom_skills, updatedChar.type, 
+                updatedChar.is_template, updatedChar.quests
+              ).catch(console.error);
+            }
+          });
+        }
       } else {
         newQuests = [...state.quests, quest];
       }

@@ -573,10 +573,27 @@ export function CharacterSheetContent({
 
     // 1. Collecter les valeurs des attributs pour le remplacement
     const statValues: Record<string, number> = {};
+    const labelMapping: Record<string, string> = {};
+    
+    // Attributs (Stats) - Résolution uniquement par ID
     statDefs.forEach((s: any) => {
       const val = (character.stats || {})[s.id] || 20;
       const itemMod = calculatedModifiers.stats[s.id] || 0;
-      statValues[s.name.toLowerCase()] = val + itemMod;
+      const finalVal = val + itemMod;
+      statValues[s.id.toLowerCase()] = finalVal;
+      labelMapping[s.id.toLowerCase()] = s.name;
+    });
+
+    // Ressources (Bars) - Résolution uniquement par ID
+    const barDefs = character?.settings?.bars || [
+        { id: 'hp', name: 'Points de Vie' },
+        { id: 'mana', name: 'Mana' },
+        { id: 'stamina', name: 'Endurance' }
+    ];
+    barDefs.forEach((b: any) => {
+        const val = (character.bars || {})[b.id] || 0;
+        statValues[b.id.toLowerCase()] = val;
+        labelMapping[b.id.toLowerCase()] = b.name;
     });
 
     const updatedBars = { ...(character.bars || {}) };
@@ -597,10 +614,12 @@ export function CharacterSheetContent({
 
               if (m.mode === 'dice' && m.formula) {
                 let formula = m.formula;
-                const sortedStats = Object.entries(statValues).sort((a, b) => b[0].length - a[0].length);
-                sortedStats.forEach(([name, val]) => {
-                  const regex = new RegExp(`(?<=\\b|d)${name}\\b`, 'gi');
-                  formula = formula.replace(regex, `(${name.charAt(0).toUpperCase() + name.slice(1)}=${val})`);
+                const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
+                sortedStats.forEach((key) => {
+                  const val = statValues[key];
+                  const label = labelMapping[key];
+                  const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
+                  formula = formula.replace(regex, `(${label}=${val})`);
                 });
                 const rollRes = parseAndRoll(formula);
                 
@@ -651,10 +670,12 @@ export function CharacterSheetContent({
             s.effects.forEach((eff: any) => {
               if (eff.mode === 'dice' && eff.formula) {
                 let formula = eff.formula;
-                const sortedStats = Object.entries(statValues).sort((a, b) => b[0].length - a[0].length);
-                sortedStats.forEach(([name, val]) => {
-                  const regex = new RegExp(`(?<=\\b|d)${name}\\b`, 'gi');
-                  formula = formula.replace(regex, `(${name.charAt(0).toUpperCase() + name.slice(1)}=${val})`);
+                const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
+                sortedStats.forEach((key) => {
+                  const val = statValues[key];
+                  const label = labelMapping[key];
+                  const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
+                  formula = formula.replace(regex, `(${label}=${val})`);
                 });
 
                 const rollRes = parseAndRoll(formula);
@@ -707,10 +728,24 @@ export function CharacterSheetContent({
     
     // 1. Collecter les valeurs des attributs pour le remplacement
     const statValues: Record<string, number> = {};
+    const labelMapping: Record<string, string> = {};
+    
     statDefs.forEach((s: any) => {
       const val = stats[s.id] || 20;
       const itemMod = calculatedModifiers.stats[s.id] || 0;
-      statValues[s.name.toLowerCase()] = val + itemMod;
+      statValues[s.id.toLowerCase()] = val + itemMod;
+      labelMapping[s.id.toLowerCase()] = s.name;
+    });
+
+    const barDefs = character?.settings?.bars || [
+        { id: 'hp', name: 'Points de Vie' },
+        { id: 'mana', name: 'Mana' },
+        { id: 'stamina', name: 'Endurance' }
+    ];
+    barDefs.forEach((b: any) => {
+        const val = (character.bars || {})[b.id] || 0;
+        statValues[b.id.toLowerCase()] = val;
+        labelMapping[b.id.toLowerCase()] = b.name;
     });
 
     // 2. Traiter chaque effet configuré
@@ -722,15 +757,14 @@ export function CharacterSheetContent({
         
         if (mode === 'dice' && formulaStr) {
           let formula = formulaStr;
-          // Trier les stats par longueur décroissante pour éviter que "FOR" ne remplace "FORCE" partiellement
-          const sortedStats = Object.entries(statValues).sort((a, b) => b[0].length - a[0].length);
           
-          sortedStats.forEach(([name, val]) => {
-            // Expression régulière stricte : le nom de la stat, insensible à la casse,
-            // pouvant être précédé par un 'd' (pour 1dForce) mais pas par une autre lettre.
-            const regex = new RegExp(`(?<=\\b|d)${name}\\b`, 'gi');
-            // On utilise le format (Nom=Valeur) pour que parseAndRoll puisse extraire le label
-            formula = formula.replace(regex, `(${name.charAt(0).toUpperCase() + name.slice(1)}=${val})`);
+          const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
+          
+          sortedStats.forEach((key) => {
+            const val = statValues[key];
+            const statLabel = labelMapping[key];
+            const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
+            formula = formula.replace(regex, `(${statLabel}=${val})`);
           });
 
           const rollRes = parseAndRoll(formula);
