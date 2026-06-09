@@ -60,7 +60,7 @@ export function QuestDetailContent({
  const statusInfo = getStatusInfo(quest.status);
 
  return (
- <div className="w-full h-full flex-1 min-h-0 flex flex-col relative overflow-hidden bg-[#0D0D0F]">
+ <div className="w-full min-h-0 flex flex-col relative overflow-hidden bg-[#0D0D0F]">
  {/* ─── BLOCK IMAGE (Plus compact) ─── */}
  <div 
  className="relative h-32 shrink-0 flex items-center justify-center overflow-hidden border-b border-silver-DEFAULT/20"

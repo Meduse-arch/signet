@@ -475,16 +475,16 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
 
  {/* ─── PANNEAU DE DÉTAIL (Mode Codex) ─── */}
  {isWideView && (
- <div className={`transition-all duration-500 overflow-hidden bg-black/20 ${selectedSkill ? 'flex-1 opacity-100' : 'w-0 opacity-0'}`}>
+ <div className={`transition-all duration-500 overflow-hidden bg-black/20 flex flex-col ${selectedSkill ? 'w-[384px] shrink-0 border-l border-white/5 opacity-100' : 'w-0 opacity-0'}`}>
  {selectedSkill ? (
- <div className="h-full flex flex-col animate-in slide-in-from-right-4 duration-500 relative">
+ <div className="flex-1 flex flex-col min-h-0 animate-in slide-in-from-right-4 duration-500 relative">
  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
  <span className="text-[11px] font-quantico font-black text-silver-bright tracking-[0.3em] uppercase">{t('context.skillDetails', "Détails de la Skill")}</span>
  <button onClick={() => setSelectedSkill(null)} className="p-1 rounded hover:bg-white/5 text-white/60 hover:text-white transition-colors">
  <X size={14} />
  </button>
  </div>
- <div className="flex-1 overflow-hidden">
+ <div className="flex-1 overflow-hidden flex flex-col min-h-0 [&>div]:h-full [&>div]:flex-1">
  <SkillDetailContent 
  skill={selectedSkill} 
  isMJ={isMJ}
