@@ -16,12 +16,73 @@ export const languages = [
   { code: 'sv', label: 'Svenska' }
 ];
 
+interface SettingOption<T> {
+  id: T;
+  label: string;
+}
+
+interface SettingRowProps<T> {
+  label: string;
+  description: string;
+  options: SettingOption<T>[];
+  currentValue: T;
+  onChange: (val: T) => void;
+}
+
+function SettingRow<T extends string | boolean>({ label, description, options, currentValue, onChange }: SettingRowProps<T>) {
+  const currentIndex = options.findIndex(o => o.id === currentValue);
+  
+  const handlePrev = () => {
+    if (currentIndex > 0) onChange(options[currentIndex - 1].id);
+  };
+  
+  const handleNext = () => {
+    if (currentIndex < options.length - 1) onChange(options[currentIndex + 1].id);
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-silver-DEFAULT/20 transition-all gap-4">
+      <div className="flex-1">
+        <h3 className="font-quantico font-bold tracking-widest text-white uppercase">{label}</h3>
+        <p className="text-silver-bright/60 text-sm mt-1">{description}</p>
+      </div>
+      <div className="flex items-center gap-4 bg-black/40 rounded-xl p-1 border border-white/5 shrink-0">
+        <button onClick={handlePrev} disabled={currentIndex <= 0} className="p-2 hover:bg-white/10 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
+          <Icons.ChevronLeft className="w-5 h-5 text-silver-bright" />
+        </button>
+        <span className="font-quantico w-32 text-center uppercase tracking-widest text-glacier-bright font-bold text-sm truncate">
+          {options[currentIndex]?.label || String(currentValue)}
+        </span>
+        <button onClick={handleNext} disabled={currentIndex >= options.length - 1} className="p-2 hover:bg-white/10 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
+          <Icons.ChevronRight className="w-5 h-5 text-silver-bright" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 type SettingsCategory = 'general' | 'graphics' | 'controls' | 'account';
 
 export function SettingsView() {
   const { t, i18n } = useTranslation();
   const { logout, user } = useAuthStore();
   const { keybindings, setKeybinding, visualQuality, setVisualQuality, shadersIntensity, setShadersIntensity, runeTrailEnabled, setRuneTrailEnabled } = useSettingsStore();
+  
+  let currentPreset = 'custom';
+  if (visualQuality === 'low' && shadersIntensity === 'off') currentPreset = 'low';
+  else if (visualQuality === 'medium' && shadersIntensity === 'off') currentPreset = 'medium';
+  else if (visualQuality === 'medium' && shadersIntensity === 'soft') currentPreset = 'epic';
+  else if (visualQuality === 'high' && shadersIntensity === 'soft') currentPreset = 'high';
+  else if (visualQuality === 'high' && shadersIntensity === 'normal') currentPreset = 'fabulous';
+
+  const handlePresetChange = (presetId: string) => {
+    if (presetId === 'custom') return;
+    if (presetId === 'low') { setVisualQuality('low'); setShadersIntensity('off'); }
+    if (presetId === 'medium') { setVisualQuality('medium'); setShadersIntensity('off'); }
+    if (presetId === 'epic') { setVisualQuality('medium'); setShadersIntensity('soft'); }
+    if (presetId === 'high') { setVisualQuality('high'); setShadersIntensity('soft'); }
+    if (presetId === 'fabulous') { setVisualQuality('high'); setShadersIntensity('normal'); }
+  };
   
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const [listeningSlot, setListeningSlot] = useState<{ action: keyof Keybindings, index: 0 | 1 } | null>(null);
@@ -168,109 +229,67 @@ export function SettingsView() {
           )}
 
           {activeCategory === 'graphics' && (
-            <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
-              <div className="flex items-center gap-4 mb-6">
+            <div className="space-y-6 animate-in slide-in-from-right-8 duration-500 max-w-4xl">
+              <div className="flex items-center gap-4 mb-8">
                 <Icons.Layers className="w-8 h-8 text-glacier-bright" />
                 <h2 className="text-2xl font-black text-white font-quantico uppercase tracking-widest">{t('settings.graphics', 'Graphiques')}</h2>
               </div>
-              <p className="text-silver-bright/60 font-quantico uppercase tracking-widest text-sm mb-8">
-                {t('settings.visualQualityDesc', 'Ajustez la qualité graphique pour améliorer les performances')}
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
+
+              {/* Preset Selecteur */}
+              <SettingRow
+                label={t('settings.preset', 'Préréglage')}
+                description={t('settings.presetDesc', 'Choisis un réglage global pour ajuster automatiquement toutes les options')}
+                currentValue={currentPreset}
+                onChange={handlePresetChange}
+                options={[
+                  { id: 'low', label: t('settings.presetLow', 'Faible') },
+                  { id: 'medium', label: t('settings.presetMedium', 'Moyen') },
+                  { id: 'epic', label: t('settings.presetEpic', 'Épique') },
+                  { id: 'high', label: t('settings.presetHigh', 'Haute') },
+                  { id: 'fabulous', label: t('settings.presetFabulous', 'Fabuleux') },
+                  { id: 'custom', label: t('settings.presetCustom', 'Personnalisé') }
+                ]}
+              />
+
+              <div className="w-full h-px bg-silver-DEFAULT/10 my-4" />
+
+              {/* Visual Quality */}
+              <SettingRow
+                label={t('settings.visualQuality', 'Qualité Visuelle')}
+                description={t('settings.visualQualityDesc', 'Ajustez la qualité graphique pour améliorer les performances')}
+                currentValue={visualQuality}
+                onChange={setVisualQuality as any}
+                options={[
                   { id: 'low', label: t('settings.qualityLow', 'Basse') },
                   { id: 'medium', label: t('settings.qualityMedium', 'Moyenne') },
                   { id: 'high', label: t('settings.qualityHigh', 'Haute') }
-                ].map((q) => {
-                  const isActive = visualQuality === q.id;
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() => setVisualQuality(q.id as any)}
-                      className={`relative flex items-center justify-between p-5 rounded-2xl border transition-all duration-300 group ${
-                        isActive 
-                          ? 'bg-glacier-DEFAULT/10 border-silver-DEFAULT text-glacier-bright shadow-[0_0_20px_rgba(79,164,184,0.2)]' 
-                          : 'bg-black/60 border-silver-DEFAULT/20 text-silver-bright hover:border-silver-DEFAULT/50 hover:bg-white/5'
-                      }`}
-                    >
-                      <span className="font-quantico font-bold tracking-[0.2em] uppercase text-sm">{q.label}</span>
-                      {isActive && <Icons.Check className="w-5 h-5 text-glacier-bright" />}
-                      {!isActive && <div className="w-5 h-5 rounded-full border border-silver-DEFAULT/30 group-hover:border-silver-DEFAULT/60 transition-colors" />}
-                    </button>
-                  );
-                })}
-              </div>
+                ]}
+              />
 
-              {/* Shaders (Post-Processing) */}
-              <div className="flex items-center gap-4 mb-6 pt-6 border-t border-silver-DEFAULT/10">
-                <Icons.Sparkles className="w-8 h-8 text-glacier-bright" />
-                <h2 className="text-2xl font-black text-white font-quantico uppercase tracking-widest">{t('settings.shaders', 'Shaders (Post-Processing)')}</h2>
-              </div>
-              <p className="text-silver-bright/60 font-quantico uppercase tracking-widest text-sm mb-8">
-                {t('settings.shadersDesc', 'Active les effets de lumière avancés (Bloom, Contraste dynamique) sur les cartes')}
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
+              {/* Shaders */}
+              <SettingRow
+                label={t('settings.shaders', 'Shaders (Post-Processing)')}
+                description={t('settings.shadersDesc', 'Active les effets de lumière avancés (Bloom, Contraste dynamique) sur les cartes')}
+                currentValue={shadersIntensity}
+                onChange={setShadersIntensity as any}
+                options={[
                   { id: 'off', label: t('settings.shadersOff', 'Désactivé') },
                   { id: 'soft', label: t('settings.shadersSoft', 'Léger') },
                   { id: 'normal', label: t('settings.shadersNormal', 'Normal') }
-                ].map((s) => {
-                  const isActive = shadersIntensity === s.id;
-                  const isOff = s.id === 'off';
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => setShadersIntensity(s.id as any)}
-                      className={`relative flex items-center justify-between p-5 rounded-2xl border transition-all duration-300 group ${
-                        isActive 
-                          ? (isOff 
-                              ? 'bg-red-500/10 border-red-500/50 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.2)]'
-                              : 'bg-glacier-DEFAULT/10 border-silver-DEFAULT text-glacier-bright shadow-[0_0_20px_rgba(79,164,184,0.2)]')
-                          : 'bg-black/60 border-silver-DEFAULT/20 text-silver-bright hover:border-silver-DEFAULT/50 hover:bg-white/5'
-                      }`}
-                    >
-                      <span className="font-quantico font-bold tracking-[0.2em] uppercase text-sm">{s.label}</span>
-                      {isActive && (isOff ? <Icons.X className="w-5 h-5 text-red-400" /> : <Icons.Check className="w-5 h-5 text-glacier-bright" />)}
-                      {!isActive && <div className="w-5 h-5 rounded-full border border-silver-DEFAULT/30 group-hover:border-silver-DEFAULT/60 transition-colors" />}
-                    </button>
-                  );
-                })}
-              </div>
+                ]}
+              />
 
-              {/* Traînée de Runes (Souris) */}
-              <div className="flex items-center gap-4 mb-6 pt-6 border-t border-silver-DEFAULT/10">
-                <Icons.MousePointer2 className="w-8 h-8 text-glacier-bright" />
-                <h2 className="text-2xl font-black text-white font-quantico uppercase tracking-widest">{t('settings.runeTrail', 'Traînée de Runes')}</h2>
-              </div>
-              <p className="text-silver-bright/60 font-quantico uppercase tracking-widest text-sm mb-8">
-                {t('settings.runeTrailDesc', 'Affiche une traînée magique suivant le curseur dans le Hub')}
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  onClick={() => setRuneTrailEnabled(true)}
-                  className={`relative flex items-center justify-between p-5 rounded-2xl border transition-all duration-300 group ${
-                    runeTrailEnabled 
-                      ? 'bg-glacier-DEFAULT/10 border-silver-DEFAULT text-glacier-bright shadow-[0_0_20px_rgba(79,164,184,0.2)]' 
-                      : 'bg-black/60 border-silver-DEFAULT/20 text-silver-bright hover:border-silver-DEFAULT/50 hover:bg-white/5'
-                  }`}
-                >
-                  <span className="font-quantico font-bold tracking-[0.2em] uppercase text-sm">{t('settings.enabled', 'Activé')}</span>
-                  {runeTrailEnabled && <Icons.Check className="w-5 h-5 text-glacier-bright" />}
-                  {!runeTrailEnabled && <div className="w-5 h-5 rounded-full border border-silver-DEFAULT/30 group-hover:border-silver-DEFAULT/60 transition-colors" />}
-                </button>
-                <button
-                  onClick={() => setRuneTrailEnabled(false)}
-                  className={`relative flex items-center justify-between p-5 rounded-2xl border transition-all duration-300 group ${
-                    !runeTrailEnabled 
-                      ? 'bg-red-500/10 border-red-500/50 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.2)]' 
-                      : 'bg-black/60 border-silver-DEFAULT/20 text-silver-bright hover:border-silver-DEFAULT/50 hover:bg-white/5'
-                  }`}
-                >
-                  <span className="font-quantico font-bold tracking-[0.2em] uppercase text-sm">{t('settings.disabled', 'Désactivé')}</span>
-                  {!runeTrailEnabled && <Icons.X className="w-5 h-5 text-red-400" />}
-                  {runeTrailEnabled && <div className="w-5 h-5 rounded-full border border-silver-DEFAULT/30 group-hover:border-silver-DEFAULT/60 transition-colors" />}
-                </button>
-              </div>
+              {/* Rune Trail */}
+              <SettingRow
+                label={t('settings.runeTrail', 'Traînée de Runes')}
+                description={t('settings.runeTrailDesc', 'Affiche une traînée magique suivant le curseur dans le Hub')}
+                currentValue={runeTrailEnabled}
+                onChange={setRuneTrailEnabled as any}
+                options={[
+                  { id: false, label: t('settings.disabled', 'Désactivé') },
+                  { id: true, label: t('settings.enabled', 'Activé') }
+                ]}
+              />
 
             </div>
           )}

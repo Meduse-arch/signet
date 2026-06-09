@@ -403,6 +403,19 @@
     "runeTrail": "Runspår",
     "runeTrailDesc": "Visar ett magiskt spår som följer muspekaren i Hubben",
     "enabled": "Aktiverad",
-    "disabled": "Inaktiverad"
+    "disabled": "Inaktiverad",
+    "shaders": "Shaders (Efterbearbetning)",
+    "shadersDesc": "Aktivera avancerade ljuseffekter (Bloom, Dynamisk kontrast) på kartor",
+    "shadersOff": "Av",
+    "shadersSoft": "Mjuk",
+    "shadersNormal": "Normal",
+    "preset": "Förinställning",
+    "presetDesc": "Välj en global förinställning för att automatiskt justera alla alternativ",
+    "presetLow": "Låg",
+    "presetMedium": "Medium",
+    "presetEpic": "Episk",
+    "presetHigh": "Hög",
+    "presetFabulous": "Fantastisk",
+    "presetCustom": "Anpassad"
   }
 }

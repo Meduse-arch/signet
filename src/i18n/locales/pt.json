@@ -403,6 +403,19 @@
     "runeTrail": "Rastro de Runas",
     "runeTrailDesc": "Exibe um rastro mágico seguindo o cursor no Hub",
     "enabled": "Ativado",
-    "disabled": "Desativado"
+    "disabled": "Desativado",
+    "shaders": "Shaders (Pós-Processamento)",
+    "shadersDesc": "Ativa efeitos avançados de iluminação (Bloom, Contraste dinâmico) nos mapas",
+    "shadersOff": "Desativado",
+    "shadersSoft": "Leve",
+    "shadersNormal": "Normal",
+    "preset": "Predefinição",
+    "presetDesc": "Escolhe uma predefinição global para ajustar automaticamente todas as opções",
+    "presetLow": "Baixo",
+    "presetMedium": "Médio",
+    "presetEpic": "Épico",
+    "presetHigh": "Alto",
+    "presetFabulous": "Fabuloso",
+    "presetCustom": "Personalizado"
   }
 }

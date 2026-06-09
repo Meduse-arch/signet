@@ -34,8 +34,8 @@ const defaultKeybindings: Keybindings = {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
-      visualQuality: 'medium', // Default to medium for smooth performance out of the box
-      shadersIntensity: 'normal',
+      visualQuality: 'medium', // Default to medium (Moyen preset)
+      shadersIntensity: 'off',
       runeTrailEnabled: true,
       keybindings: defaultKeybindings,
       keyboardInitialized: false,

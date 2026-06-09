@@ -403,6 +403,19 @@
     "runeTrail": "Ślad Run",
     "runeTrailDesc": "Wyświetla magiczny ślad podążający za kursorem w Hubie",
     "enabled": "Włączone",
-    "disabled": "Wyłączone"
+    "disabled": "Wyłączone",
+    "shaders": "Shadery (Post-Processing)",
+    "shadersDesc": "Włącz zaawansowane efekty świetlne (Bloom, Dynamiczny kontrast) na mapach",
+    "shadersOff": "Wyłączone",
+    "shadersSoft": "Lekkie",
+    "shadersNormal": "Normalne",
+    "preset": "Ustawienie",
+    "presetDesc": "Wybierz globalne ustawienie, aby automatycznie dostosować wszystkie opcje",
+    "presetLow": "Niskie",
+    "presetMedium": "Średnie",
+    "presetEpic": "Epickie",
+    "presetHigh": "Wysokie",
+    "presetFabulous": "Bajeczne",
+    "presetCustom": "Niestandardowe"
   }
 }

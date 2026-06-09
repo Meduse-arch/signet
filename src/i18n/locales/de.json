@@ -403,6 +403,19 @@
     "runeTrail": "Runenspur",
     "runeTrailDesc": "Zeigt eine magische Spur an, die dem Cursor im Hub folgt",
     "enabled": "Aktiviert",
-    "disabled": "Deaktiviert"
+    "disabled": "Deaktiviert",
+    "shaders": "Shaders (Post-Processing)",
+    "shadersDesc": "Erweiterte Lichteffekte (Bloom, Dynamischer Kontrast) auf Karten aktivieren",
+    "shadersOff": "Aus",
+    "shadersSoft": "Leicht",
+    "shadersNormal": "Normal",
+    "preset": "Voreinstellung",
+    "presetDesc": "Wähle eine globale Voreinstellung, um alle Optionen automatisch anzupassen",
+    "presetLow": "Niedrig",
+    "presetMedium": "Mittel",
+    "presetEpic": "Episch",
+    "presetHigh": "Hoch",
+    "presetFabulous": "Fabelhaft",
+    "presetCustom": "Benutzerdefiniert"
   }
 }

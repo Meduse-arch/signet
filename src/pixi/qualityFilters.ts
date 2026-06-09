@@ -149,7 +149,7 @@ export function computeFilterParams(analysis: PaletteAnalysis, intensity: 'off' 
 export async function buildHighQualityFilters(
   img: HTMLImageElement | ImageBitmap | null,
   overridePalette?: PaletteAnalysis,
-  intensity: 'off' | 'soft' | 'normal' = 'normal'
+  intensity: 'off' | 'soft' | 'normal' = 'off'
 ): Promise<[BloomFilter, ColorMatrixFilter] | null> {
   if (intensity === 'off') return null;
 

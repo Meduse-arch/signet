@@ -403,6 +403,19 @@
     "runeTrail": "Scia di Rune",
     "runeTrailDesc": "Mostra una scia magica che segue il cursore nell'Hub",
     "enabled": "Abilitato",
-    "disabled": "Disabilitato"
+    "disabled": "Disabilitato",
+    "shaders": "Shaders (Post-Elaborazione)",
+    "shadersDesc": "Abilita effetti di illuminazione avanzati (Bloom, Contrasto dinamico) sulle mappe",
+    "shadersOff": "Disattivato",
+    "shadersSoft": "Leggero",
+    "shadersNormal": "Normale",
+    "preset": "Preimpostazione",
+    "presetDesc": "Scegli una preimpostazione globale per regolare automaticamente tutte le opzioni",
+    "presetLow": "Basso",
+    "presetMedium": "Medio",
+    "presetEpic": "Epico",
+    "presetHigh": "Alto",
+    "presetFabulous": "Favoloso",
+    "presetCustom": "Personalizzato"
   }
 }

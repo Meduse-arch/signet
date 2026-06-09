@@ -403,6 +403,19 @@
     "runeTrail": "ルーンの軌跡",
     "runeTrailDesc": "ハブでカーソルを追従する魔法の軌跡を表示します",
     "enabled": "有効",
-    "disabled": "無効"
+    "disabled": "無効",
+    "shaders": "シェーダー (ポストプロセス)",
+    "shadersDesc": "マップ上の高度なライティング効果 (ブルーム、ダイナミックコントラスト) を有効にする",
+    "shadersOff": "オフ",
+    "shadersSoft": "ソフト",
+    "shadersNormal": "ノーマル",
+    "preset": "プリセット",
+    "presetDesc": "すべての設定を自動的に調整するグローバルプリセットを選択",
+    "presetLow": "低",
+    "presetMedium": "中",
+    "presetEpic": "エピック",
+    "presetHigh": "高",
+    "presetFabulous": "ファビュラス",
+    "presetCustom": "カスタム"
   }
 }
