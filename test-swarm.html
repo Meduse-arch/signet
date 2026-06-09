@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sandbox P2P - Sigil VTT</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #111827;
+      color: #f3f4f6;
+      margin: 0;
+      padding: 15px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+    .controls {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 15px;
+      background: #1f2937;
+      padding: 10px 20px;
+      border-radius: 8px;
+      flex-wrap: wrap;
+    }
+    input, select {
+      background: #374151;
+      border: 1px solid #4b5563;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+    input {
+      width: 350px;
+    }
+    button {
+      background: #8b5cf6;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover { background: #7c3aed; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 15px;
+      flex-grow: 1;
+    }
+    .panel {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #1f2937;
+      height: 100%;
+    }
+    .panel-title {
+      background: #374151;
+      padding: 8px 12px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    iframe {
+      border: none;
+      width: 100%;
+      flex-grow: 1;
+      background: #0D0D0F;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="controls">
+    <strong>Session ID (ex: SIGNET-7287-WSKN) :</strong>
+    <input type="text" id="sessionKey" placeholder="SIGNET-XXXX-XXXX">
+    
+    <label for="peerCount"><strong>Nombre de joueurs :</strong></label>
+    <select id="peerCount">
+      <option value="1">1 Joueur</option>
+      <option value="2" selected>2 Joueurs (Swarm Light - min)</option>
+      <option value="3">3 Joueurs (Swarm Light - max)</option>
+      <option value="4">4 Joueurs (Swarm Full - conseillé)</option>
+      <option value="5">5 Joueurs</option>
+      <option value="6">6 Joueurs</option>
+    </select>
+    
+    <button onclick="launchPeers()">Lancer la simulation</button>
+  </div>
+
+  <div class="grid" id="playersGrid">
+    <!-- Les joueurs s'afficheront ici -->
+  </div>
+
+  <script>
+    function launchPeers() {
+      const key = document.getElementById('sessionKey').value.trim();
+      const count = parseInt(document.getElementById('peerCount').value, 10);
+      const grid = document.getElementById('playersGrid');
+      
+      if (!key) return alert("Saisis le code session du MJ (ex: SIGNET-7287-WSKN) !");
+      
+      grid.innerHTML = ''; // Nettoyer la grille précédente
+      
+      for (let i = 1; i <= count; i++) {
+        const pseudo = `Joueur_${i}`;
+        const playerUrl = `http://localhost:5173/?session=${key}&debug_pseudo=${pseudo}`;
+        
+        const panel = document.createElement('div');
+        panel.className = 'panel';
+        
+        panel.innerHTML = `
+          <div class="panel-title">
+            <span>🎮 ${pseudo}</span>
+            <span style="font-size: 0.75rem; color: #a78bfa;">En attente de connexion...</span>
+          </div>
+          <iframe src="${playerUrl}"></iframe>
+        `;
+        
+        grid.appendChild(panel);
+      }
+    }
+  </script>
+
+</body>
+</html>

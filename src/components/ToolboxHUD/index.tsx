@@ -31,7 +31,7 @@ export function ToolboxHUD({ currentTool, onToolChange, className, isMJ, session
  <button 
  onClick={() => setIsOpen(!isOpen)}
  className={`w-10 h-10 rounded-xl bg-[#0D0D0F]/80 backdrop-blur-xl border flex items-center justify-center transition-all ${
- isOpen ? 'border-silver-DEFAULT shadow-[0_0_15px_rgba(212,175,55,0.3)] text-silver-bright' : 'border-silver-DEFAULT/40 hover:border-silver-DEFAULT/80 text-silver-bright/70 hover:text-silver-bright'
+ isOpen ? 'border-silver-DEFAULT shadow-[0_0_15px_rgba(79,164,184,0.3)] text-silver-bright' : 'border-silver-DEFAULT/40 hover:border-silver-DEFAULT/80 text-silver-bright/70 hover:text-silver-bright'
  }`}
  title="Bo&#238;te &#224; outils"
  >
@@ -53,7 +53,7 @@ export function ToolboxHUD({ currentTool, onToolChange, className, isMJ, session
  }}
  className={`flex flex-col items-center justify-center gap-1 p-2 transition-all border-b border-silver-DEFAULT/20 last:border-b-0 ${
  isActive 
- ? 'bg-glacier-DEFAULT/20 text-glacier-bright shadow-[inset_0_0_10px_rgba(212,175,55,0.2)]' 
+ ? 'bg-glacier-DEFAULT/20 text-glacier-bright shadow-[inset_0_0_10px_rgba(79,164,184,0.2)]' 
  : 'text-white/60 hover:text-white hover:bg-white/5'
  }`}
  title={tool.label}

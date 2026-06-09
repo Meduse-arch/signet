@@ -463,8 +463,8 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
  onClick={() => setShowForge(true)}
  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/30 text-glacier-bright hover:bg-glacier-DEFAULT/20 transition-all font-quantico text-xs font-black uppercase tracking-widest group shadow-lg"
  >
- <Hammer size={14} className="group-hover:rotate-12 transition-transform" />
- {t('context.openForge', "Ouvrir la Forge")}
+ <Plus size={14} className="group-hover:rotate-90 transition-transform" />
+ {t('common.add', "Ajouter")}
  </button>
  </div>
 
@@ -611,8 +611,8 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
  onClick={() => setShowSkillArchive(true)}
  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/30 text-glacier-bright hover:bg-glacier-DEFAULT/20 transition-all font-quantico text-xs font-black uppercase tracking-widest group shadow-lg"
  >
- <Zap size={14} className="group-hover:scale-110 transition-transform" />
- {t('context.openGrimoire', "Ouvrir le Grimoire")}
+ <Plus size={14} className="group-hover:rotate-90 transition-transform" />
+ {t('common.add', "Ajouter")}
  </button>
  </div>
 
@@ -711,8 +711,8 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
  onClick={() => setShowQuestArchive(true)}
  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/30 text-glacier-bright hover:bg-glacier-DEFAULT/20 transition-all font-quantico text-xs font-black uppercase tracking-widest group shadow-lg"
  >
- <Target size={14} className="group-hover:scale-110 transition-transform" />
- {t('context.openJournal', "Ouvrir le Journal")}
+ <Plus size={14} className="group-hover:rotate-90 transition-transform" />
+ {t('common.add', "Ajouter")}
  </button>
  </div>
 

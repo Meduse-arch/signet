@@ -134,10 +134,10 @@ export class BoardScene extends Container {
         this.rulerGraphics.clear();
         this.rulerGraphics.moveTo(this.rulerStartPos.x, this.rulerStartPos.y);
         this.rulerGraphics.lineTo(pos.x, pos.y);
-        this.rulerGraphics.stroke({ color: 0xF59E0B, width: 4, alpha: 0.8 });
+        this.rulerGraphics.stroke({ color: 0x4FA4B8, width: 4, alpha: 0.8 });
         
-        this.rulerGraphics.circle(this.rulerStartPos.x, this.rulerStartPos.y, 6).fill(0xF59E0B);
-        this.rulerGraphics.circle(pos.x, pos.y, 6).fill(0xF59E0B);
+        this.rulerGraphics.circle(this.rulerStartPos.x, this.rulerStartPos.y, 6).fill(0x4FA4B8);
+        this.rulerGraphics.circle(pos.x, pos.y, 6).fill(0x4FA4B8);
 
         const distancePixels = Math.hypot(pos.x - this.rulerStartPos.x, pos.y - this.rulerStartPos.y);
         const distanceCases = Math.round((distancePixels / this.currentGridSize) * 10) / 10;
@@ -394,7 +394,7 @@ export class BoardScene extends Container {
     }
   }
 
-  public triggerPing(x: number, y: number, color: number = 0xF59E0B) {
+  public triggerPing(x: number, y: number, color: number = 0x4FA4B8) {
     const pingGfx = new Graphics();
     pingGfx.x = x;
     pingGfx.y = y;
