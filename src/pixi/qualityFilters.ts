@@ -31,7 +31,7 @@ export interface FilterParams {
  * Sample un canvas offscreen pour extraire luminosité, saturation et température.
  * On ne lit qu'une grille de ~200 pixels pour rester instantané.
  */
-export async function analyzeImagePalette(img: HTMLImageElement): Promise<PaletteAnalysis> {
+export async function analyzeImagePalette(img: HTMLImageElement | ImageBitmap): Promise<PaletteAnalysis> {
   const SAMPLE_SIZE = 200;
 
   const canvas = document.createElement('canvas');
@@ -106,36 +106,34 @@ function lerp(a: number, b: number, t: number): number {
  * - Map chaude (désert, lave) → bloom et saturation réduits car les jaunes/oranges
  *   s'emballent très vite
  */
-export function computeFilterParams(analysis: PaletteAnalysis): FilterParams {
+export function computeFilterParams(analysis: PaletteAnalysis, intensity: 'off' | 'soft' | 'normal' = 'normal'): FilterParams {
   const { avgLuminosity, avgSaturation, temperature } = analysis;
 
-  // Bloom : [0.4 .. 1.4] — plancher relevé pour rester visible même sur map claire
-  let bloomStrength = lerp(1.4, 0.4, avgLuminosity);
+  // Normal: Bloom plus visible [0.15 .. 0.6]
+  let bloomStrength = lerp(0.6, 0.15, avgLuminosity);
+  let contrastBoost = lerp(0.18, 0.05, avgSaturation);
+  let saturationBoost = lerp(0.12, 0.0, avgSaturation);
 
-  // Contraste : [0.08 .. 0.18] — toujours un minimum perceptible
-  let contrastBoost = lerp(0.18, 0.08, avgSaturation);
-
-  // Saturation : [0.0 .. 0.15] — zéro si déjà très saturé
-  let saturationBoost = lerp(0.15, 0.0, avgSaturation);
-
-  // Maps chaudes (désert, savane) : bride la saturation pour ne pas faire exploser
-  // les jaunes/oranges, mais le bloom reste intact — il joue sur la luminosité, pas la teinte.
-  // Légère compensation contraste pour donner de la profondeur aux ombres.
   if (temperature === 'warm') {
     saturationBoost *= 0.5;
     contrastBoost *= 1.2;
   }
 
-  // Maps froides (donjons, océans) : bloom et saturation légèrement renforcés
   if (temperature === 'cold') {
     bloomStrength *= 1.15;
     saturationBoost *= 1.2;
   }
 
+  if (intensity === 'soft') {
+    bloomStrength *= 0.4;
+    contrastBoost *= 0.5;
+    saturationBoost *= 0.5;
+  }
+
   return {
-    bloomStrength: Math.max(0.3, bloomStrength),   // plancher relevé : toujours visible
-    bloomQuality: 4,
-    contrastBoost: Math.max(0.06, contrastBoost),  // toujours un minimum perceptible
+    bloomStrength: Math.max(0.02, bloomStrength),
+    bloomQuality: 2,
+    contrastBoost: Math.max(0.01, contrastBoost),
     saturationBoost: Math.max(0, saturationBoost),
   };
 }
@@ -149,30 +147,38 @@ export function computeFilterParams(analysis: PaletteAnalysis): FilterParams {
  * Retourne `null` si la qualité n'est pas 'high'.
  */
 export async function buildHighQualityFilters(
-  img: HTMLImageElement | null
+  img: HTMLImageElement | ImageBitmap | null,
+  overridePalette?: PaletteAnalysis,
+  intensity: 'off' | 'soft' | 'normal' = 'normal'
 ): Promise<[BloomFilter, ColorMatrixFilter] | null> {
+  if (intensity === 'off') return null;
+
   let params: FilterParams;
 
-  if (img) {
+  if (overridePalette) {
+    params = computeFilterParams(overridePalette, intensity);
+    console.log('[qualityFilters] Using override palette:', overridePalette);
+    console.log('[qualityFilters] Computed filter params:', params);
+  } else if (img) {
     const analysis = await analyzeImagePalette(img);
-    params = computeFilterParams(analysis);
+    params = computeFilterParams(analysis, intensity);
 
     console.log('[qualityFilters] Palette analysis:', analysis);
     console.log('[qualityFilters] Computed filter params:', params);
   } else {
-    // Pas d'image (map chunk) → valeurs conservatives
+    // Pas d'image ni de palette fournie → valeurs conservatives
     params = {
-      bloomStrength: 0.5,
-      bloomQuality: 4,
-      contrastBoost: 0.08,
-      saturationBoost: 0.06,
+      bloomStrength: intensity === 'soft' ? 0.05 : 0.2,
+      bloomQuality: 2,
+      contrastBoost: intensity === 'soft' ? 0.02 : 0.05,
+      saturationBoost: intensity === 'soft' ? 0.02 : 0.05,
     };
   }
 
   const bloom = new BloomFilter({
     strength: params.bloomStrength,
     quality: params.bloomQuality,
-    resolution: window.devicePixelRatio || 1,
+    resolution: 1, // Fixé à 1 pour les perfs (évite la surchauffe sur écrans Retina)
   });
 
   const colorMatrix = new ColorMatrixFilter();

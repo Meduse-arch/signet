@@ -1,11 +1,12 @@
 import { Application, Container, Graphics, Text, Ticker } from 'pixi.js';
-import { buildHighQualityFilters } from './qualityFilters';
+import { buildHighQualityFilters, PaletteAnalysis } from './qualityFilters';
 import { MapLayer } from './MapLayer';
 import { FogOfWar } from './FogOfWar';
 import { TokenSprite, TokenData } from './TokenSprite';
 import { throttle } from '../utils/throttle';
 import { useCombatStore } from '../store/combat';
 import { useSettingsStore } from '../store/settings';
+import { useToolsStore } from '../store/tools';
 
 export class BoardScene extends Container {
   private unsubCombat?: () => void;
@@ -28,27 +29,34 @@ export class BoardScene extends Container {
   private rulerGraphics: Graphics;
   private rulerText: Text;
   private rulerStartPos: { x: number, y: number } | null = null;
+  public onRulerUpdate: ((start: { x: number, y: number } | null, end: { x: number, y: number } | null) => void) | null = null;
+  private remoteRulers: Map<string, { graphics: Graphics, text: Text }> = new Map();
+  private environmentContainer: Container;
 
   constructor(app: Application) {
     super();
     this.app = app;
 
     this.mapLayer = new MapLayer();
-    
+
     this.fow = new FogOfWar();
     this.tokenLayer = new Container();
     this.tokenLayer.sortableChildren = true;
-    
+
+    this.environmentContainer = new Container();
+    this.environmentContainer.sortableChildren = true;
+    this.environmentContainer.addChild(this.mapLayer);
+    this.environmentContainer.addChild(this.tokenLayer);
+
     this.rulerGraphics = new Graphics();
     this.rulerGraphics.zIndex = 200;
-    
+
     this.rulerText = new Text({ text: '', style: { fill: 0xffffff, fontSize: 16, stroke: { color: 0x000000, width: 4 } } });
     this.rulerText.zIndex = 201;
     this.rulerText.visible = false;
     this.rulerText.anchor.set(0.5);
 
-    this.addChild(this.mapLayer);
-    this.addChild(this.tokenLayer);
+    this.addChild(this.environmentContainer);
     this.addChild(this.rulerGraphics);
     this.addChild(this.rulerText);
     this.addChild(this.fow);
@@ -67,7 +75,7 @@ export class BoardScene extends Container {
     this.unsubCombat = useCombatStore.subscribe((state) => {
       this.tokens.forEach((token, id) => {
         // Gérer les cas où l'ID de combat est soit characterId soit mapId_characterId
-        const isActive = state.isActive && state.activeActorId && 
+        const isActive = state.isActive && state.activeActorId &&
           (id === state.activeActorId || id.endsWith(`_${state.activeActorId}`) || state.activeActorId.endsWith(`_${id}`));
         token.setActiveTurnEffect(!!isActive);
       });
@@ -82,21 +90,21 @@ export class BoardScene extends Container {
     this.app.canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
       const scaleFactor = e.deltaY < 0 ? 1.1 : 0.9;
-      
+
       const rect = this.app.canvas.getBoundingClientRect();
-      const worldPos = { 
-        x: e.clientX - rect.left, 
-        y: e.clientY - rect.top 
+      const worldPos = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
       };
-      
+
       const before = this.toLocal(worldPos);
       this.scale.x *= scaleFactor;
       this.scale.y *= scaleFactor;
-      
+
       // Limit scale (min: 0.1, max: 5)
       if (this.scale.x < 0.1) this.scale.set(0.1);
       if (this.scale.x > 5) this.scale.set(5);
-      
+
       const after = this.toLocal(worldPos);
       this.x += (after.x - before.x) * this.scale.x;
       this.y += (after.y - before.y) * this.scale.y;
@@ -121,7 +129,8 @@ export class BoardScene extends Container {
         this.rulerText.visible = false;
       } else if (this.currentTool === 'ping') {
         const pos = this.toLocal(e.global);
-        this.triggerPing(pos.x, pos.y);
+        const radius = useToolsStore.getState().pingRadius;
+        this.triggerPing(pos.x, pos.y, radius, 0x4FA4B8);
         if (this.onPing) this.onPing(pos.x, pos.y);
       }
     });
@@ -137,22 +146,26 @@ export class BoardScene extends Container {
       } else if (this.currentTool === 'ruler') {
         if (!this.rulerStartPos) return;
         const pos = this.toLocal(e.global);
-        
+
         this.rulerGraphics.clear();
         this.rulerGraphics.moveTo(this.rulerStartPos.x, this.rulerStartPos.y);
         this.rulerGraphics.lineTo(pos.x, pos.y);
         this.rulerGraphics.stroke({ color: 0x4FA4B8, width: 4, alpha: 0.8 });
-        
+
         this.rulerGraphics.circle(this.rulerStartPos.x, this.rulerStartPos.y, 6).fill(0x4FA4B8);
         this.rulerGraphics.circle(pos.x, pos.y, 6).fill(0x4FA4B8);
 
         const distancePixels = Math.hypot(pos.x - this.rulerStartPos.x, pos.y - this.rulerStartPos.y);
         const distanceCases = Math.round((distancePixels / this.currentGridSize) * 10) / 10;
-        
+
         this.rulerText.text = `${distanceCases} cases`;
         this.rulerText.x = (this.rulerStartPos.x + pos.x) / 2;
         this.rulerText.y = (this.rulerStartPos.y + pos.y) / 2 - 15;
         this.rulerText.visible = true;
+
+        if (this.onRulerUpdate) {
+          this.onRulerUpdate(this.rulerStartPos, pos);
+        }
       }
     });
 
@@ -160,6 +173,7 @@ export class BoardScene extends Container {
       this.dragging = false;
       if (this.currentTool === 'ruler') {
         this.rulerStartPos = null;
+        // On ne clear pas la règle pour qu'elle reste affichée jusqu'à nouvel ordre !
       }
     };
 
@@ -205,7 +219,7 @@ export class BoardScene extends Container {
 
       token.moveTo(targetX, targetY, true); // Immediate
       if (this.onTokenMove) {
-          this.onTokenMove(token.id, targetX, targetY);
+        this.onTokenMove(token.id, targetX, targetY);
       }
     }
   };
@@ -253,16 +267,25 @@ export class BoardScene extends Container {
    * Applique les filtres haute qualité adaptatifs sur la scène.
    * Passe l'image source à l'analyseur de palette si disponible.
    */
-  private async applyQualityFilters(img: HTMLImageElement | null = null): Promise<void> {
-    const quality = useSettingsStore.getState().visualQuality;
-    if (quality !== 'high') {
-      this.filters = [];
+  public async applyQualityFilters(img: HTMLImageElement | null = null, overridePalette?: PaletteAnalysis, intensity: 'off' | 'soft' | 'normal' = 'normal'): Promise<void> {
+    
+    // Nettoyer les anciens filtres pour éviter les fuites de VRAM
+    if (this.environmentContainer.filters) {
+      if (Array.isArray(this.environmentContainer.filters)) {
+        this.environmentContainer.filters.forEach(f => f.destroy());
+      } else {
+        (this.environmentContainer.filters as any).destroy();
+      }
+    }
+    
+    if (intensity === 'off') {
+      this.environmentContainer.filters = [];
       return;
     }
 
-    const filters = await buildHighQualityFilters(img);
+    const filters = await buildHighQualityFilters(img, overridePalette, intensity);
     if (filters) {
-      this.filters = filters;
+      this.environmentContainer.filters = filters;
     }
   }
 
@@ -297,7 +320,7 @@ export class BoardScene extends Container {
       this.scale.set(scale);
       this.x = this.app.screen.width / 2;
       this.y = this.app.screen.height / 2;
-      
+
       // On s'assure d'appliquer les contraintes dès le départ
       this.constrainPan();
     }
@@ -307,7 +330,7 @@ export class BoardScene extends Container {
     console.log(`[BoardScene] Loading manifest: ${width}x${height}, grid: ${gridSize}`);
     this.mapLayer.clear();
     this.mapLayer.setMapDimensions(width, height, gridSize);
-    
+
     // Auto-fit or center
     const screenW = this.app.screen.width;
     const screenH = this.app.screen.height;
@@ -315,30 +338,26 @@ export class BoardScene extends Container {
     if (width > 0 && height > 0 && screenW > 0) {
       const scaleX = screenW / width;
       const scaleY = screenH / height;
-      
+
       // On calcule l'échelle pour que l'image s'adapte à l'écran (zoom arrière max)
       // Math.min pour tout voir, Math.max pour couvrir. On prend Math.min par défaut pour le confort.
-      const scale = Math.min(scaleX, scaleY, 1.0); 
+      const scale = Math.min(scaleX, scaleY, 1.0);
       this.scale.set(scale);
-      
+
       // On centre la scène (le 0,0 de BoardScene sera au centre de l'écran)
       // Comme MapLayer centre son contenu sur 0,0, ça centre la map.
       this.x = screenW / 2;
       this.y = screenH / 2;
-      
+
       console.log(`[BoardScene] Scaled to ${scale.toFixed(4)} and centered at ${this.x},${this.y}`);
-      
+
       // On réinitialise la position initiale pour le drag
       this.initialScenePos = { x: this.x, y: this.y };
-      
+
       // On s'assure de rester dans les clous
       this.constrainPan();
     }
 
-    const quality = useSettingsStore.getState().visualQuality;
-    if (quality === 'high') {
-      this.applyQualityFilters(null); // null = pas d'image à analyser, valeurs conservatives
-    }
   }
 
   async paintChunk(chunkId: string, x: number, y: number, data: ArrayBuffer) {
@@ -352,16 +371,16 @@ export class BoardScene extends Container {
   addToken(data: TokenData) {
     const existing = this.tokens.get(data.id);
     if (existing) {
-        console.log('[BoardScene] Updating existing token:', data.name);
-        existing.updateData(data); // Met à jour l'image si elle vient d'arriver
-        if (!isNaN(data.x) && !isNaN(data.y)) {
-            existing.moveTo(data.x, data.y);
-        }
-        return;
+      console.log('[BoardScene] Updating existing token:', data.name);
+      existing.updateData(data); // Met à jour l'image si elle vient d'arriver
+      if (!isNaN(data.x) && !isNaN(data.y)) {
+        existing.moveTo(data.x, data.y);
+      }
+      return;
     }
 
     console.log('[BoardScene] Adding token:', data.name, 'at', data.x, data.y);
-    
+
     // ✅ Optimisation : Throttle des mouvements pour éviter de saturer le réseau
     const throttledMove = throttle((x: number, y: number) => {
       if (this.onTokenMove) this.onTokenMove(data.id, x, y);
@@ -369,15 +388,15 @@ export class BoardScene extends Container {
 
     const token = new TokenSprite(data, this.app, throttledMove);
     token.gridSize = this.mapLayer.getGridSize();
-    
+
     // Sélection pour clavier
     token.on('pointerdown', () => {
-        this.selectedTokenId = data.id;
+      this.selectedTokenId = data.id;
     });
 
     token.onRightClickCallback = (x: number, y: number) => {
-        console.log('[BoardScene] onRightClickCallback déclenché pour', data.id, 'onTokenRightClick présent ?', !!this.onTokenRightClick);
-        if (this.onTokenRightClick) this.onTokenRightClick(data.id, x, y);
+      console.log('[BoardScene] onRightClickCallback déclenché pour', data.id, 'onTokenRightClick présent ?', !!this.onTokenRightClick);
+      if (this.onTokenRightClick) this.onTokenRightClick(data.id, x, y);
     };
 
     this.tokens.set(data.id, token);
@@ -435,58 +454,125 @@ export class BoardScene extends Container {
   }
 
   public setTool(tool: string) {
+    if (this.currentTool === tool) return;
     this.currentTool = tool;
+
+    // Clear the ruler when switching tools
     if (tool !== 'ruler') {
       this.rulerGraphics.clear();
       this.rulerText.visible = false;
+      if (this.onRulerUpdate) {
+        this.onRulerUpdate(null, null);
+      }
     }
   }
 
-  public triggerPing(x: number, y: number, color: number = 0x4FA4B8) {
+  public triggerPing(x: number, y: number, targetRadiusCases: number = 1, color: number = 0x4FA4B8) {
     const pingGfx = new Graphics();
     pingGfx.x = x;
     pingGfx.y = y;
     pingGfx.zIndex = 200;
     this.addChild(pingGfx);
-    
+
+    const targetRadiusPx = targetRadiusCases * this.currentGridSize;
     let radius = 0;
     let alpha = 1;
-    
+
     const tickerFn = (ticker: Ticker) => {
-        radius += 4 * ticker.deltaTime;
-        alpha -= 0.02 * ticker.deltaTime;
-        
-        if (alpha <= 0) {
-            this.app.ticker.remove(tickerFn);
-            pingGfx.destroy();
-            return;
-        }
-        
-        const safeAlpha = Math.max(0, alpha);
-        
-        pingGfx.clear();
-        pingGfx.circle(0, 0, radius).stroke({ color: color, width: 4, alpha: safeAlpha });
-        
-        // Inner circle
-        pingGfx.circle(0, 0, 6).fill({ color: color, alpha: safeAlpha });
+      // Vitesse d'expansion proportionnelle à la taille finale pour garder une animation nerveuse
+      const speed = Math.max(200, targetRadiusPx * 2);
+      radius += speed * ticker.deltaTime * 0.01;
+      alpha -= 0.02 * ticker.deltaTime;
+
+      if (alpha <= 0) {
+        this.app.ticker.remove(tickerFn);
+        pingGfx.destroy();
+        return;
+      }
+
+      const safeAlpha = Math.max(0, alpha);
+      const currentRadius = Math.min(radius, targetRadiusPx * 1.5); // Limite visuelle avant fade out
+
+      pingGfx.clear();
+
+      // Hexagon Draw
+      const sides = 6;
+      const coords = [];
+      for (let i = 0; i < sides; i++) {
+        const angle = (i * Math.PI) / 3;
+        // Rotation offset de PI/6 pour avoir l'hexagone pointant vers le haut
+        const rotatedAngle = angle + Math.PI / 6;
+        coords.push(currentRadius * Math.cos(rotatedAngle), currentRadius * Math.sin(rotatedAngle));
+      }
+
+      if (coords.length > 0) {
+        pingGfx.poly(coords).stroke({ color: color, width: 4, alpha: safeAlpha });
+        // Remplissage léger
+        pingGfx.poly(coords).fill({ color: color, alpha: safeAlpha * 0.1 });
+      }
+
+      // Inner center
+      pingGfx.circle(0, 0, 6).fill({ color: color, alpha: safeAlpha });
     };
-    
+
     this.app.ticker.add(tickerFn);
+  }
+
+  public updateRemoteRuler(peerId: string, start: { x: number, y: number } | null, end: { x: number, y: number } | null, color: number = 0xD2D7DF) {
+    let ruler = this.remoteRulers.get(peerId);
+
+    if (!start || !end) {
+      if (ruler) {
+        ruler.graphics.destroy();
+        ruler.text.destroy();
+        this.remoteRulers.delete(peerId);
+      }
+      return;
+    }
+
+    if (!ruler) {
+      const graphics = new Graphics();
+      graphics.zIndex = 199; // Juste sous la règle locale
+      const text = new Text({ text: '', style: { fill: color, fontSize: 14, stroke: { color: 0x000000, width: 3 } } });
+      text.zIndex = 199;
+      text.anchor.set(0.5);
+
+      this.addChild(graphics);
+      this.addChild(text);
+      ruler = { graphics, text };
+      this.remoteRulers.set(peerId, ruler);
+    }
+
+    ruler.graphics.clear();
+    ruler.graphics.moveTo(start.x, start.y);
+    ruler.graphics.lineTo(end.x, end.y);
+    ruler.graphics.stroke({ color: color, width: 3, alpha: 0.6 });
+
+    ruler.graphics.circle(start.x, start.y, 5).fill(color);
+    ruler.graphics.circle(end.x, end.y, 5).fill(color);
+
+    const distancePixels = Math.hypot(end.x - start.x, end.y - start.y);
+    const distanceCases = Math.round((distancePixels / this.currentGridSize) * 10) / 10;
+
+    ruler.text.text = `${distanceCases} cases`;
+    ruler.text.x = (start.x + end.x) / 2;
+    ruler.text.y = (start.y + end.y) / 2 - 15;
+    ruler.text.visible = true;
   }
 
   zoomToToken(id: string) {
     const token = this.tokens.get(id);
     if (!token) return;
-    
+
     const scale = 1.5;
     this.scale.set(scale);
-    
+
     const screenW = this.app.screen.width;
     const screenH = this.app.screen.height;
-    
+
     this.x = screenW / 2 - (token.x * scale);
     this.y = screenH / 2 - (token.y * scale);
-    
+
     this.constrainPan();
   }
 

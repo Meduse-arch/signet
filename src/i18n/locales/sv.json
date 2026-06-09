@@ -2,7 +2,7 @@
   "app": {
     "name": "Signet",
     "subtitle": "Virtual Tabletop",
-    "version": "Signet Engine v1.0.4 — Stabil Bygg"
+    "version": "Signet Engine v1.0.0 — Stabil Bygg"
   },
   "auth": {
     "pressToStart": "Tryck MELLANSLAG för att börja",

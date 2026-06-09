@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type VisualQuality = 'low' | 'medium' | 'high';
+export type ShadersIntensity = 'off' | 'soft' | 'normal';
 
 export interface Keybindings {
   moveUp: string[];
@@ -12,10 +13,12 @@ export interface Keybindings {
 
 interface SettingsState {
   visualQuality: VisualQuality;
+  shadersIntensity: ShadersIntensity;
   runeTrailEnabled: boolean;
   keybindings: Keybindings;
   keyboardInitialized: boolean;
   setVisualQuality: (quality: VisualQuality) => void;
+  setShadersIntensity: (intensity: ShadersIntensity) => void;
   setRuneTrailEnabled: (enabled: boolean) => void;
   setKeybinding: (action: keyof Keybindings, slotIndex: 0 | 1, key: string | null) => void;
   detectKeyboardLayout: () => Promise<void>;
@@ -32,10 +35,12 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
       visualQuality: 'medium', // Default to medium for smooth performance out of the box
+      shadersIntensity: 'normal',
       runeTrailEnabled: true,
       keybindings: defaultKeybindings,
       keyboardInitialized: false,
       setVisualQuality: (quality) => set({ visualQuality: quality }),
+      setShadersIntensity: (intensity) => set({ shadersIntensity: intensity }),
       setRuneTrailEnabled: (enabled) => set({ runeTrailEnabled: enabled }),
       detectKeyboardLayout: async () => {
         const state = get();

@@ -2,7 +2,7 @@
   "app": {
     "name": "Signet",
     "subtitle": "Virtual Tabletop",
-    "version": "Signet Engine v1.0.4 — Wersja Stabilna"
+    "version": "Signet Engine v1.0.0 — Wersja Stabilna"
   },
   "auth": {
     "pressToStart": "Naciśnij SPACJĘ, aby rozpocząć",

@@ -21,7 +21,7 @@ type SettingsCategory = 'general' | 'graphics' | 'controls' | 'account';
 export function SettingsView() {
   const { t, i18n } = useTranslation();
   const { logout, user } = useAuthStore();
-  const { keybindings, setKeybinding, visualQuality, setVisualQuality, runeTrailEnabled, setRuneTrailEnabled } = useSettingsStore();
+  const { keybindings, setKeybinding, visualQuality, setVisualQuality, shadersIntensity, setShadersIntensity, runeTrailEnabled, setRuneTrailEnabled } = useSettingsStore();
   
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const [listeningSlot, setListeningSlot] = useState<{ action: keyof Keybindings, index: 0 | 1 } | null>(null);
@@ -195,6 +195,42 @@ export function SettingsView() {
                     >
                       <span className="font-quantico font-bold tracking-[0.2em] uppercase text-sm">{q.label}</span>
                       {isActive && <Icons.Check className="w-5 h-5 text-glacier-bright" />}
+                      {!isActive && <div className="w-5 h-5 rounded-full border border-silver-DEFAULT/30 group-hover:border-silver-DEFAULT/60 transition-colors" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Shaders (Post-Processing) */}
+              <div className="flex items-center gap-4 mb-6 pt-6 border-t border-silver-DEFAULT/10">
+                <Icons.Sparkles className="w-8 h-8 text-glacier-bright" />
+                <h2 className="text-2xl font-black text-white font-quantico uppercase tracking-widest">{t('settings.shaders', 'Shaders (Post-Processing)')}</h2>
+              </div>
+              <p className="text-silver-bright/60 font-quantico uppercase tracking-widest text-sm mb-8">
+                {t('settings.shadersDesc', 'Active les effets de lumière avancés (Bloom, Contraste dynamique) sur les cartes')}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { id: 'off', label: t('settings.shadersOff', 'Désactivé') },
+                  { id: 'soft', label: t('settings.shadersSoft', 'Léger') },
+                  { id: 'normal', label: t('settings.shadersNormal', 'Normal') }
+                ].map((s) => {
+                  const isActive = shadersIntensity === s.id;
+                  const isOff = s.id === 'off';
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setShadersIntensity(s.id as any)}
+                      className={`relative flex items-center justify-between p-5 rounded-2xl border transition-all duration-300 group ${
+                        isActive 
+                          ? (isOff 
+                              ? 'bg-red-500/10 border-red-500/50 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.2)]'
+                              : 'bg-glacier-DEFAULT/10 border-silver-DEFAULT text-glacier-bright shadow-[0_0_20px_rgba(79,164,184,0.2)]')
+                          : 'bg-black/60 border-silver-DEFAULT/20 text-silver-bright hover:border-silver-DEFAULT/50 hover:bg-white/5'
+                      }`}
+                    >
+                      <span className="font-quantico font-bold tracking-[0.2em] uppercase text-sm">{s.label}</span>
+                      {isActive && (isOff ? <Icons.X className="w-5 h-5 text-red-400" /> : <Icons.Check className="w-5 h-5 text-glacier-bright" />)}
                       {!isActive && <div className="w-5 h-5 rounded-full border border-silver-DEFAULT/30 group-hover:border-silver-DEFAULT/60 transition-colors" />}
                     </button>
                   );

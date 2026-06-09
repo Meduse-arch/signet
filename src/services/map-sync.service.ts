@@ -4,6 +4,7 @@ import { transferService } from './transfer.service';
 import { dbStorage } from './db.storage';
 import { swarmService } from './swarm.service';
 import { evictionManager } from './eviction.manager';
+import { analyzeImagePalette } from '../pixi/qualityFilters';
 
 // SHA-256 via crypto.subtle (sécurisé) avec fallback en JS pur pour les contextes LAN HTTP
 async function calculateHash(buffer: ArrayBuffer): Promise<string> {
@@ -316,12 +317,16 @@ class MapSyncService {
     const encoded = encoder.encode(hashesConcat);
     const globalHash = await calculateHash(encoded.buffer.slice(encoded.byteOffset, encoded.byteOffset + encoded.byteLength));
 
+    // Analyser la palette de l'image source pour le manifest réseau
+    const palette = await analyzeImagePalette(bitmap);
+
     const manifest: ChunkManifest = {
       map_id: mapId,
       global_hash: globalHash,
       grid_size: gridSize,
       width: bitmap.width,
       height: bitmap.height,
+      palette,
       chunks: entries
     };
 

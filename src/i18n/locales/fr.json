@@ -2,7 +2,7 @@
   "app": {
     "name": "Signet",
     "subtitle": "Virtual Tabletop",
-    "version": "Signet Engine v1.0.4 — Build Stable"
+    "version": "Signet Engine v1.0.0 — Build Stable"
   },
   "auth": {
     "pressToStart": "Appuyez sur ESPACE pour commencer",
@@ -396,6 +396,11 @@
     "general": "Général",
     "visualQuality": "Qualité Visuelle",
     "visualQualityDesc": "Ajustez la qualité graphique pour améliorer les performances",
+    "shaders": "Shaders (Post-Processing)",
+    "shadersDesc": "Active les effets de lumière avancés (Bloom, Contraste dynamique) sur les cartes",
+    "shadersOff": "Désactivé",
+    "shadersSoft": "Léger",
+    "shadersNormal": "Normal",
     "qualityLow": "Basse",
     "qualityMedium": "Moyenne",
     "qualityHigh": "Haute",

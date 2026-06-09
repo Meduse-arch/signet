@@ -1,3 +1,5 @@
+import { PaletteAnalysis } from '../pixi/qualityFilters';
+
 export interface ImageCompressor {
   /**
    * Compresses an image file (e.g., PNG, JPEG) into an optimized ArrayBuffer (typically WebP).
@@ -27,6 +29,7 @@ export interface ChunkManifest {
   grid_size?: number;
   width?: number;
   height?: number;
+  palette?: PaletteAnalysis;
   chunks: ChunkManifestEntry[];
 }
 

@@ -11,13 +11,17 @@ import { useSessionStore } from '../store/session';
 import { BrowserImageCompressor } from '../services/browser-image-compressor';
 import { dbStorage } from '../services/db.storage';
 import { useSettingsStore } from '../store/settings';
+import { useToolsStore } from '../store/tools';
 
 export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: string, currentMapId?: string, imageUrl?: string) {
   const boardRef = useRef<BoardScene | null>(null);
   const { onData, broadcast, sendTo, peerId } = usePeer();
   const { isHost } = usePeersStore();
+  const shareRuler = useToolsStore(state => state.shareRuler);
+  const shadersIntensity = useSettingsStore(state => state.shadersIntensity);
   const session = useSessionStore(state => state.sessions.find(s => s.id === sessionId));
   const cachedMapBuffer = useRef<{ buffer: ArrayBuffer; type: string } | null>(null);
+  const paintDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState<{
     loaded: number;
@@ -38,37 +42,64 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
     onTokenRightClickRef.current = fn as any;
   }, []);
-  const chunkQueue = useRef<{mapId: string, chunk: any, data: ArrayBuffer}[]>([]);
-  const pendingManifest = useRef<{mapId: string, manifest: any, missingChunks: any[], hostPeerId: string} | null>(null);
+  const chunkQueue = useRef<{ mapId: string, chunk: any, data: ArrayBuffer }[]>([]);
+  const pendingManifest = useRef<{ mapId: string, manifest: any, missingChunks: any[], hostPeerId: string } | null>(null);
 
   const getCenterView = useCallback(() => {
     if (!boardRef.current || !containerRef.current) return { x: 0, y: 0 };
-    
+
     // On calcule le centre du container en coordonnée "monde" Pixi
     const container = containerRef.current;
     const centerX = container.offsetWidth / 2;
     const centerY = container.offsetHeight / 2;
-    
+
     // On convertit ce point local au container vers le repère local de la scène
     return boardRef.current.toLocal({ x: centerX, y: centerY });
   }, [containerRef]);
 
   const paintMapFromCache = useCallback(async (mapId: string, manifest: any) => {
-    setLoadingProgress({ loaded: 0, total: manifest.chunks.length, active: true, status: 'painting_cache' });
-    let loadedCount = 0;
-    for (const chunk of manifest.chunks) {
-      if (currentMapIdRef.current !== mapId) return;
-      const record = await dbStorage.getChunk(chunk.id);
-      if (record?.data && record.status === 'complete') {
-        if (boardRef.current && isReady) {
-          boardRef.current.paintChunk(chunk.id, chunk.x, chunk.y, record.data);
+    // Annule un appel précédent qui n'a pas encore démarré
+    if (paintDebounceRef.current) clearTimeout(paintDebounceRef.current);
+
+    paintDebounceRef.current = setTimeout(async () => {
+      paintDebounceRef.current = null;
+
+      // Masquer la scène pendant le chargement
+      if (boardRef.current) boardRef.current.alpha = 0;
+
+      setLoadingProgress({ loaded: 0, total: manifest.chunks.length, active: true, status: 'painting_cache' });
+      let loadedCount = 0;
+      for (const chunk of manifest.chunks) {
+        if (currentMapIdRef.current !== mapId) return;
+        const record = await dbStorage.getChunk(chunk.id);
+        if (record?.data && record.status === 'complete') {
+          if (boardRef.current) {
+            boardRef.current.paintChunk(chunk.id, chunk.x, chunk.y, record.data);
+          }
         }
+        loadedCount++;
+        // On met juste à jour pour la forme, mais sans charger l'interface avec la barre
       }
-      loadedCount++;
-      // On met juste à jour pour la forme, mais sans charger l'interface avec la barre
-    }
-    setLoadingProgress({ loaded: manifest.chunks.length, total: manifest.chunks.length, active: false, status: 'complete' });
-  }, [isReady]);
+      setLoadingProgress({ loaded: manifest.chunks.length, total: manifest.chunks.length, active: false, status: 'complete' });
+
+      // Appliquer les filtres haute qualité une seule fois, quand tous les chunks sont peints
+      if (boardRef.current && currentMapIdRef.current === mapId) {
+        await boardRef.current.applyQualityFilters(null, manifest.palette, shadersIntensity);
+
+        // Fade in smooth
+        let alpha = 0;
+        const fadeIn = () => {
+          if (!boardRef.current || currentMapIdRef.current !== mapId) return;
+          alpha += 0.05;
+          boardRef.current.alpha = Math.min(alpha, 1);
+          if (alpha < 1) {
+            requestAnimationFrame(fadeIn);
+          }
+        };
+        fadeIn();
+      }
+    }, 50); // 50ms suffit pour absorber les appels en rafale
+  }, []); // boardRef.current lu directement, pas de dep reactive
 
   const retryLoad = useCallback(() => {
     if (!currentMapIdRef.current || isHost) return;
@@ -84,16 +115,16 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
 
     console.log(`[useBoard] Processing manifest for ${mapId}. Missing: ${missingChunks.length}`);
-    
+
     // On utilise les dimensions réelles si présentes, sinon on calcule à partir des chunks
     let width = manifest.width;
     let height = manifest.height;
 
     if (!width || !height) {
-        const maxX = Math.max(...manifest.chunks.map((c: any) => c.x));
-        const maxY = Math.max(...manifest.chunks.map((c: any) => c.y));
-        width = (maxX + 1) * 512;
-        height = (maxY + 1) * 512;
+      const maxX = Math.max(...manifest.chunks.map((c: any) => c.x));
+      const maxY = Math.max(...manifest.chunks.map((c: any) => c.y));
+      width = (maxX + 1) * 512;
+      height = (maxY + 1) * 512;
     }
 
     const gridSize = manifest.grid_size || 50;
@@ -125,13 +156,13 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       console.warn('[useBoard] Attempted to load map before board is ready');
       return;
     }
-    
+
     console.log('[useBoard] Loading map:', url, 'with grid size:', gridSize);
     setLoadingProgress({ loaded: 0, total: 100, active: true, status: 'painting_cache' });
-    
+
     // Attendre 300ms pour que le brouillard masque l'écran avant de charger
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     await boardRef.current.loadMap(url, format, gridSize);
     setLoadingProgress({ loaded: 100, total: 100, active: false, status: 'complete' });
 
@@ -146,13 +177,13 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         const response = await fetch(finalUrl);
         const blob = await response.blob();
         cachedMapBuffer.current = { buffer: await blob.arrayBuffer(), type: blob.type };
-        
+
         if (currentMapIdRef.current) {
           console.log('[Host] Buffer size:', cachedMapBuffer.current.buffer.byteLength);
           console.log('[Host] Compression et découpage de la map en cours...');
           await mapSyncService.broadcastNewMap(
-            currentMapIdRef.current, 
-            blob, 
+            currentMapIdRef.current,
+            blob,
             new BrowserImageCompressor(),
             gridSize
           );
@@ -165,7 +196,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
 
   const setGridSize = useCallback((size: number) => {
     if (boardRef.current) {
-        boardRef.current.setGridSize(size);
+      boardRef.current.setGridSize(size);
     }
   }, []);
 
@@ -175,22 +206,22 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   useEffect(() => {
     const unsubManifest = mapSyncService.onManifestReceived((mapId, manifest, missingChunks, hostPeerId) => {
       if (mapId !== currentMapIdRef.current) {
-          console.log(`[useBoard] Ignoring manifest for ${mapId} (current: ${currentMapIdRef.current})`);
-          return;
+        console.log(`[useBoard] Ignoring manifest for ${mapId} (current: ${currentMapIdRef.current})`);
+        return;
       }
-      
+
       if (!boardRef.current || !isReady) {
         console.log(`[useBoard] Pixi not ready, queuing manifest for ${mapId}`);
         pendingManifest.current = { mapId, manifest, missingChunks, hostPeerId };
         return;
       }
-      
+
       processManifest(mapId, manifest, missingChunks, hostPeerId);
     });
 
     const unsubChunk = mapSyncService.onChunkReady((mapId, chunk, data) => {
       if (mapId !== currentMapIdRef.current) return;
-      
+
       setLoadingProgress(prev => {
         if (!prev.active) return prev;
         const newLoaded = prev.loaded + 1;
@@ -223,13 +254,13 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       if (pendingManifest.current) {
         const { mapId, manifest, missingChunks, hostPeerId } = pendingManifest.current;
         if (mapId === currentMapIdRef.current) {
-            processManifest(mapId, manifest, missingChunks, hostPeerId);
-            
-            // Si la map était déjà complète, on déclenche l'hydratation maintenant que Pixi est prêt
-            if (missingChunks.length === 0) {
-                console.log(`[useBoard] Retrying hydration for complete map ${mapId}`);
-                paintMapFromCache(mapId, manifest);
-            }
+          processManifest(mapId, manifest, missingChunks, hostPeerId);
+
+          // Si la map était déjà complète, on déclenche l'hydratation maintenant que Pixi est prêt
+          if (missingChunks.length === 0) {
+            console.log(`[useBoard] Retrying hydration for complete map ${mapId}`);
+            paintMapFromCache(mapId, manifest);
+          }
         }
         pendingManifest.current = null;
       }
@@ -238,10 +269,10 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         // Filtrer les chunks qui ne correspondent plus à la map actuelle
         const validChunks = chunkQueue.current.filter(c => c.mapId === currentMapIdRef.current);
         if (validChunks.length > 0) {
-            console.log(`[useBoard] Replaying ${validChunks.length} queued chunks for ${currentMapIdRef.current}`);
-            validChunks.forEach(({ chunk, data }) => {
-              boardRef.current!.paintChunk(chunk.id, chunk.x, chunk.y, data);
-            });
+          console.log(`[useBoard] Replaying ${validChunks.length} queued chunks for ${currentMapIdRef.current}`);
+          validChunks.forEach(({ chunk, data }) => {
+            boardRef.current!.paintChunk(chunk.id, chunk.x, chunk.y, data);
+          });
         }
         chunkQueue.current = [];
       }
@@ -270,6 +301,12 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
   }, []);
 
+  useEffect(() => {
+    if (!shareRuler) {
+      broadcast({ type: 'RULER_UPDATE', payload: { start: null, end: null } });
+    }
+  }, [shareRuler, broadcast]);
+
   // 1. Initialisation de Pixi (Une seule fois)
   useEffect(() => {
     const container = containerRef.current;
@@ -282,7 +319,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     async function init() {
       console.log('[useBoard] Initializing Pixi Application');
       app = new PIXI.Application();
-      
+
       const quality = useSettingsStore.getState().visualQuality;
       const resolutionMap = { low: 0.5, medium: 1, high: window.devicePixelRatio || 1 };
       const antialiasMap = { low: false, medium: false, high: true };
@@ -340,7 +377,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       console.log('[useBoard] Requesting destruction of Pixi Application and clearing caches');
       isDestroyed = true;
       setIsReady(false);
-      
+
       // ✅ Vider les caches globaux de Pixi pour éviter de réutiliser des textures d'une autre session
       if (typeof PIXI !== 'undefined') {
         try {
@@ -361,12 +398,13 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
   }, [containerRef]); // On ne dépend que du container
 
   // Gestion du onTokenMove avec les IDs à jour
-  useEffect(() => { 
-      currentMapIdRef.current = currentMapId; 
-      // ✅ MJ : On vide les files d'attente lors d'un changement de map manuel
-      pendingManifest.current = null;
-      chunkQueue.current = [];
-      console.log(`[useBoard] Scene change detected, queues cleared for: ${currentMapId}`);
+  useEffect(() => {
+    currentMapIdRef.current = currentMapId;
+    // ✅ MJ : On vide les files d'attente lors d'un changement de map manuel
+    pendingManifest.current = null;
+    chunkQueue.current = [];
+    if (paintDebounceRef.current) clearTimeout(paintDebounceRef.current);
+    console.log(`[useBoard] Scene change detected, queues cleared for: ${currentMapId}`);
   }, [currentMapId]);
 
   useEffect(() => {
@@ -396,57 +434,78 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       };
 
       boardRef.current.onPing = (x, y) => {
-        broadcast({ type: 'PING', payload: { x, y } });
+        const { sharePing, pingRadius } = useToolsStore.getState();
+        if (sharePing) {
+          broadcast({ type: 'PING', payload: { x, y, radius: pingRadius } });
+        }
+      };
+
+      boardRef.current.onRulerUpdate = (start, end) => {
+        const { shareRuler } = useToolsStore.getState();
+        if (shareRuler) {
+          broadcast({ type: 'RULER_UPDATE', payload: { start, end } });
+        }
       };
     }
   }, [isReady, isHost, sessionId, broadcast, sendTo]);
+
+  // Réagir au toggle des Shaders en direct
+  useEffect(() => {
+    if (isReady && boardRef.current) {
+      boardRef.current.applyQualityFilters(null, pendingManifest.current?.manifest?.palette, shadersIntensity);
+    }
+  }, [shadersIntensity, isReady]);
 
   // 2. Chargement initial et synchronisation
   useEffect(() => {
     if (!currentMapId || isHost) return;
 
     let timeoutId: NodeJS.Timeout;
+    let isCancelled = false;
 
     const checkAndRequestMap = async () => {
-        // Déclencher le brouillard immédiatement
-        setLoadingProgress({ loaded: 0, total: 100, active: true, status: 'painting_cache' });
-        
-        // Attendre 300ms que le brouillard masque l'écran avant de changer la carte
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Si la map a rechangé entre temps, on abandonne
-        if (currentMapIdRef.current !== currentMapId) return;
+      // Déclencher le brouillard immédiatement
+      setLoadingProgress({ loaded: 0, total: 100, active: true, status: 'painting_cache' });
 
-        const existing = await dbStorage.getMap(currentMapId);
-        if (existing) {
-            console.log(`[useBoard] Map ${currentMapId} trouvée en cache, hydratation...`);
-            if (isReady) {
-                const maxX = Math.max(...existing.manifest.chunks.map(c => c.x));
-                const maxY = Math.max(...existing.manifest.chunks.map(c => c.y));
-                const width = existing.manifest.width || (maxX + 1) * 512;
-                const height = existing.manifest.height || (maxY + 1) * 512;
-                boardRef.current?.loadManifest(width, height, existing.manifest.grid_size || 50);
-                paintMapFromCache(currentMapId, existing.manifest);
-            }
-        } else {
-            console.log(`[useBoard] Map ${currentMapId} manquante, demande du manifest au MJ...`);
-            setLoadingProgress({ loaded: 0, total: 0, active: true, status: 'waiting_manifest' });
-            broadcast({ type: 'REQUEST_MAP_MANIFEST', payload: { mapId: currentMapId } });
-            
-            timeoutId = setTimeout(() => {
-                setLoadingProgress(prev => {
-                    if (prev.active && prev.status === 'waiting_manifest') {
-                        return { ...prev, status: 'error', error: "Impossible de récupérer la carte auprès de l'hôte. Veuillez vérifier la connexion." };
-                    }
-                    return prev;
-                });
-            }, 8000);
+      // Attendre 300ms que le brouillard masque l'écran avant de changer la carte
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      if (isCancelled) return;
+
+      // Si la map a rechangé entre temps, on abandonne
+      if (currentMapIdRef.current !== currentMapId) return;
+
+      const existing = await dbStorage.getMap(currentMapId);
+      if (existing) {
+        console.log(`[useBoard] Map ${currentMapId} trouvée en cache, hydratation...`);
+        if (isReady) {
+          const maxX = Math.max(...existing.manifest.chunks.map(c => c.x));
+          const maxY = Math.max(...existing.manifest.chunks.map(c => c.y));
+          const width = existing.manifest.width || (maxX + 1) * 512;
+          const height = existing.manifest.height || (maxY + 1) * 512;
+          boardRef.current?.loadManifest(width, height, existing.manifest.grid_size || 50);
+          paintMapFromCache(currentMapId, existing.manifest);
         }
+      } else {
+        console.log(`[useBoard] Map ${currentMapId} manquante, demande du manifest au MJ...`);
+        setLoadingProgress({ loaded: 0, total: 0, active: true, status: 'waiting_manifest' });
+        broadcast({ type: 'REQUEST_MAP_MANIFEST', payload: { mapId: currentMapId } });
+
+        timeoutId = setTimeout(() => {
+          setLoadingProgress(prev => {
+            if (prev.active && prev.status === 'waiting_manifest') {
+              return { ...prev, status: 'error', error: "Impossible de récupérer la carte auprès de l'hôte. Veuillez vérifier la connexion." };
+            }
+            return prev;
+          });
+        }, 8000);
+      }
     };
     checkAndRequestMap();
 
     return () => {
-        if (timeoutId) clearTimeout(timeoutId);
+      isCancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [currentMapId, isHost, isReady, broadcast, paintMapFromCache]);
 
@@ -463,8 +522,15 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       } else if (data.type === 'TOKEN_REMOVE') {
         boardRef.current.removeToken(data.payload.id);
       } else if (data.type === 'PING') {
-        boardRef.current.triggerPing(data.payload.x, data.payload.y);
+        boardRef.current.triggerPing(data.payload.x, data.payload.y, data.payload.radius || 1, 0xD2D7DF);
         // Le MJ relaie le ping aux autres joueurs
+        if (isHost && fromPeerId) {
+          usePeersStore.getState().connections.forEach(peer => {
+            if (peer !== fromPeerId) sendTo(peer, data);
+          });
+        }
+      } else if (data.type === 'RULER_UPDATE') {
+        boardRef.current.updateRemoteRuler(fromPeerId || 'unknown', data.payload.start, data.payload.end);
         if (isHost && fromPeerId) {
           usePeersStore.getState().connections.forEach(peer => {
             if (peer !== fromPeerId) sendTo(peer, data);
@@ -500,7 +566,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     }
   }, []);
 
-  
+
   useEffect(() => {
     const handleZoom = (e: CustomEvent<{ id: string }>) => {
       if (boardRef.current) {

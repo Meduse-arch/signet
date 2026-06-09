@@ -2,7 +2,7 @@
   "app": {
     "name": "Signet",
     "subtitle": "Virtual Tabletop",
-    "version": "Signet Engine v1.0.4 — 安定版"
+    "version": "Signet Engine v1.0.0 — 安定版"
   },
   "auth": {
     "pressToStart": "スペースキーを押してスタート",
