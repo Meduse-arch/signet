@@ -437,6 +437,21 @@ export function useAudioSync(sessionId: string) {
     return readyCount >= connections.length || connections.length === 0;
   }, [isHost, syncStatus]);
 
+  const localPauseAmbiance = useCallback(() => {
+    audioService.pauseAmbiance();
+    if (msePlayer) msePlayer.pause();
+  }, [msePlayer]);
+
+  const localResumeAmbiance = useCallback(() => {
+    if (isPlaying) {
+      if (isMseTrackRef.current) {
+        if (msePlayer) msePlayer.play();
+      } else {
+        audioService.resumeAmbiance();
+      }
+    }
+  }, [isPlaying, msePlayer]);
+
   // État MSE exposé pour l'UI joueur (optionnel)
   const mseState = {
     state: msePlayer.state,
@@ -454,6 +469,8 @@ export function useAudioSync(sessionId: string) {
     mseState,
     playAmbiance,
     pauseAmbiance,
+    localPauseAmbiance,
+    localResumeAmbiance,
     seekAudio,
     playSFX,
     deleteAudio,

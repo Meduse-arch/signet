@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Play, Square, Volume2, X, Music, RadioReceiver } from 'lucide-react';
+import { Upload, Play, Square, Volume2, X, Music, RadioReceiver, Search } from 'lucide-react';
 import { useAudioSync } from '../../hooks/useAudioSync';
 import { dbStorage } from '../../services/db.storage';
 import { audioService } from '../../services/audio.service';
@@ -22,10 +22,14 @@ interface AudioFile {
 export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManagerProps) {
  const [tracks, setTracks] = useState<AudioFile[]>([]);
  const [sfxs, setSfxs] = useState<AudioFile[]>([]);
+ const [globalSearch, setGlobalSearch] = useState('');
  const fileInputRef = useRef<HTMLInputElement>(null);
  const [uploadingState, setUploadingState] = useState<{type: 'track' | 'sfx', name: string} | null>(null);
  
  const { connections } = usePeersStore();
+
+ const filteredTracks = tracks.filter(t => t.title.toLowerCase().includes(globalSearch.toLowerCase()));
+ const filteredSfxs = sfxs.filter(s => s.title.toLowerCase().includes(globalSearch.toLowerCase()));
 
  useEffect(() => {
  // Load from IndexedDB
@@ -127,14 +131,28 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
  return (
  <div className="absolute bottom-16 left-6 w-80 max-h-96 bg-[#0D0D0F]/95 backdrop-blur-xl border border-silver-DEFAULT/30 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden pointer-events-auto">
  
- <div className="flex items-center justify-between p-3 border-b border-white/10 bg-black/40">
- <h3 className="font-quantico text-silver-bright font-bold tracking-wider flex items-center gap-2">
- <Music size={16} /> Jukebox
- </h3>
- <button onClick={onClose} className="text-white/50 hover:text-white transition-colors">
- <X size={18} />
- </button>
- </div>
+  <div className="flex items-center justify-between p-3 border-b border-white/10 bg-black/40 gap-4">
+  <h3 className="font-quantico text-silver-bright font-bold tracking-wider flex items-center gap-2 shrink-0">
+  <Music size={16} /> Jukebox
+  </h3>
+  
+  <div className="flex-1 relative">
+    <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
+      <Search size={12} className="text-white/30" />
+    </div>
+    <input 
+      type="text" 
+      placeholder="Rechercher..." 
+      value={globalSearch}
+      onChange={e => setGlobalSearch(e.target.value)}
+      className="w-full bg-white/5 border border-white/10 rounded-full py-1 pl-7 pr-3 text-xs text-white/80 placeholder:text-white/30 focus:outline-none focus:border-white/20 transition-colors"
+    />
+  </div>
+
+  <button onClick={onClose} className="text-white/50 hover:text-white transition-colors shrink-0">
+  <X size={18} />
+  </button>
+  </div>
 
  <div className="flex-1 overflow-y-auto p-3 custom-scrollbar flex flex-col gap-4">
  
@@ -163,8 +181,9 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
  </div>
  </div>
  )}
- {tracks.length === 0 && uploadingState?.type !== 'track' && <span className="text-xs text-white/30 italic">Aucune musique</span>}
- {tracks.map(t => {
+
+ {filteredTracks.length === 0 && uploadingState?.type !== 'track' && <span className="text-xs text-white/30 italic">Aucune musique</span>}
+ {filteredTracks.map(t => {
  const isLong = t.size >= 5 * 60 * (128_000 / 8);
  const readyCount = Object.keys(audioSync.syncStatus[t.hash] || {}).length;
  // Les pistes longues (MSE) sont toujours prêtes car elles se streament en live !
@@ -228,8 +247,9 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
  </div>
  </div>
  )}
- {sfxs.length === 0 && uploadingState?.type !== 'sfx' && <span className="text-xs text-white/30 italic col-span-2">Aucun son</span>}
- {sfxs.map(s => {
+
+ {filteredSfxs.length === 0 && uploadingState?.type !== 'sfx' && <span className="text-xs text-white/30 italic col-span-2">Aucun son</span>}
+ {filteredSfxs.map(s => {
  const readyCount = Object.keys(audioSync.syncStatus[s.hash] || {}).length;
  const isReady = readyCount >= connections.length || connections.length === 0;
  return (

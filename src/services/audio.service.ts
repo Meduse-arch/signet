@@ -83,6 +83,12 @@ class AudioService {
     }
   }
 
+  public resumeAmbiance() {
+    if (this.ambianceTrack && !this.ambianceTrack.howl.playing()) {
+      this.ambianceTrack.howl.play(this.ambianceTrack.soundId);
+    }
+  }
+
   public getAmbiancePosition(): number {
     if (this.ambianceTrack && this.ambianceTrack.howl.playing()) {
        return this.ambianceTrack.howl.seek(this.ambianceTrack.soundId) as number;
