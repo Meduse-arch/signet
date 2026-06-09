@@ -138,17 +138,17 @@ export function ItemDetailContent({
  </div>
  
  {/* Conteneur scrollable dédié pour les modificateurs */}
- <div className="max-h-32 overflow-y-auto custom-scrollbar pr-1">
+ <div className="max-h-32 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1">
  <div className="space-y-1.5">
  {item.modifiers && item.modifiers.length > 0 ? (
  <>
  {item.modifiers.map((m: any, i: number) => (
  <div 
  key={i} 
- className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 transition-all hover:border-silver-DEFAULT/20"
+ className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 transition-all hover:border-silver-DEFAULT/20"
  >
- <div className="flex flex-col">
- <span className="text-xs font-quantico font-black text-white/60 uppercase tracking-widest">{getTargetName(m)}</span>
+ <div className="flex flex-col min-w-0">
+ <span className="text-xs font-quantico font-black text-white/60 uppercase tracking-widest truncate">{getTargetName(m)}</span>
  <span className="text-[6px] font-mono text-silver-bright/30 uppercase">
  {m.target === 'stat' ? t('context.attribute', 'Attribut') : t('context.resource', 'Ressource')}
  </span>

@@ -119,7 +119,7 @@ export function QuestDetailContent({
  </div>
  
  {/* Conteneur scrollable dédié pour les récompenses */}
- <div className="max-h-48 overflow-y-auto custom-scrollbar pr-1">
+ <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 min-h-0">
  <div className="space-y-4">
  {/* Participants supprimés pour raisons RP */}
 
@@ -128,16 +128,16 @@ export function QuestDetailContent({
  <div className="space-y-1.5">
  {quest.rewards.map((reward, i) => (
  <div 
- key={i} 
- className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 transition-all hover:border-silver-DEFAULT/20"
+ key={reward.id || i} 
+ className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-2 hover:border-silver-DEFAULT/30 transition-all"
  >
- <div className="flex flex-col">
- <span className="text-xs font-quantico font-black text-white/60 uppercase tracking-widest">{reward.type}</span>
+ <div className="flex flex-col min-w-0">
+ <span className="text-xs font-quantico font-black text-white/60 uppercase tracking-widest truncate">{reward.type}</span>
  <span className="text-[6px] font-mono text-silver-bright/30 uppercase truncate max-w-[100px]">
  {reward.description || t('context.mysticValue', 'Valeur mystique')}
  </span>
  </div>
- <span className="text-xs font-quantico font-black text-glacier-bright">
+ <span className="text-xs font-quantico font-black text-glacier-bright whitespace-nowrap">
  {reward.type === 'Experience' ? `+${reward.value} XP` : (reward.value ? `x${reward.value}` : t('context.unique', 'UNIQUE').toUpperCase())}
  </span>
  </div>

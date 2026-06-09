@@ -7,6 +7,7 @@ export interface SkillModifier {
   mode: 'flat' | 'percent' | 'dice';
   value: number;
   formula?: string;
+  description?: string;
 }
 
 export interface SkillEffect {

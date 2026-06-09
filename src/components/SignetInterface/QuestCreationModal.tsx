@@ -104,7 +104,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  </header>
 
  {/* SCROLLABLE CONTENT */}
- <main className="flex-1 overflow-y-auto custom-scrollbar p-8 lg:p-12 grid grid-cols-1 lg:grid-cols-2 gap-12">
+ <main className="flex-1 overflow-y-auto custom-scrollbar p-8 lg:p-12 space-y-12 max-w-3xl mx-auto w-full">
  
  {/* COLONNE GAUCHE : IDENTITÉ */}
  <div className="space-y-10">
@@ -181,7 +181,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  <Plus size={16} />
  </button>
  </div>
- <div className="space-y-4">
+ <div className="space-y-3 max-h-72 overflow-y-auto custom-scrollbar pr-2">
  {rewards.map((reward) => (
  <div key={reward.id} className="p-5 rounded-[1.5rem] bg-white/[0.02] border border-white/5 space-y-4 relative group hover:border-silver-DEFAULT/30 transition-all animate-in slide-in-from-right-4 duration-300">
  <button 

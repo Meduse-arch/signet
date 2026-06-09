@@ -139,7 +139,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  sender_id: user?.id,
  sender_name: character.name,
  is_skill_roll: true,
- description: `Modifie ${m.targetId}`
+ description: m.description || `Modifie ${m.targetId}`
  });
  }
  return { ...m, value: rollRes.total };

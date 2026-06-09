@@ -174,8 +174,8 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
 
  {/* Scrollable Body */}
  <div className="flex-1 overflow-y-auto custom-scrollbar p-8 lg:p-12 space-y-12">
- {/* Main Form Sections */}
- <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      {/* Main Form Sections */}
+      <div className="space-y-12 max-w-3xl mx-auto w-full">
  
  {/* Colonne Gauche : Identité */}
  <div className="space-y-8">
@@ -274,7 +274,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  </button>
  </div>
  
- <div className="space-y-3">
+ <div className="space-y-3 max-h-72 overflow-y-auto custom-scrollbar pr-2">
  {modifiers.map((m, i) => (
  <div key={i} className="flex flex-col gap-3 p-5 bg-white/[0.02] border border-white/5 rounded-[1.5rem] relative group hover:border-silver-DEFAULT/30 transition-all animate-in slide-in-from-right-4 duration-300">
  <div className="flex gap-3">
