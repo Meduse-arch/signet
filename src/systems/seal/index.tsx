@@ -28,7 +28,7 @@ import { usePeer } from '../../hooks/usePeer';
 import { CharacterHUD } from '../../components/CharacterHUD';
 import { CombatHUD } from '../../components/CombatHUD';
 import { AudioHUD } from '../../components/AudioHUD';
-import { Pause, MonitorPlay, Zap, ZapOff } from 'lucide-react';
+import { Pause, MonitorPlay, Zap, ZapOff, LogOut } from 'lucide-react';
 import { useSessionStore } from '../../store/session';
 import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
@@ -42,13 +42,14 @@ import { useCombatStore } from '../../store/combat';
 interface SealEngineProps {
  sessionId: string;
  onPause?: () => void;
+ onLeave?: () => void;
  players?: { peer_id: string; pseudo: string; role?: number }[];
  imageUrl?: string;
  lobbyMode?: boolean;
  isHost?: boolean;
 }
 
-export default function SealEngine({ sessionId, onPause, players = [], imageUrl: propImageUrl, lobbyMode, isHost: propIsHost }: SealEngineProps) {
+export default function SealEngine({ sessionId, onPause, onLeave, players = [], imageUrl: propImageUrl, lobbyMode, isHost: propIsHost }: SealEngineProps) {
  const { windows, openWindow, closeWindow, focusWindow, updatePosition } = useSignetInterface(sessionId);
  const { characterManagementId, setCharacterManagement } = useUIStore();
  const { peerId, connections } = usePeersStore();
@@ -422,9 +423,15 @@ export default function SealEngine({ sessionId, onPause, players = [], imageUrl:
  {!lobbyMode && (
  <>
  {isMJ && onPause && (
- <button onClick={onPause} className="fixed top-8 right-8 z-[150] group flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#0D0D0F]/80 backdrop-blur-xl border border-silver-DEFAULT/40 text-silver-bright hover:text-glacier-bright transition-all active:scale-95">
+ <button onClick={onPause} className="fixed top-8 right-8 z-[150] group flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#0D0D0F]/80 backdrop-blur-xl border border-silver-DEFAULT/40 text-silver-bright hover:text-glacier-bright transition-all active:scale-95" title="Mettre la session en pause">
  <Pause size={18} />
  <span className="text-[10px] font-quantico font-black tracking-[0.2em] uppercase">Pause</span>
+ </button>
+ )}
+ {!isMJ && (
+ <button onClick={onLeave || (() => window.location.reload())} className="fixed top-8 right-8 z-[150] group flex items-center gap-3 px-5 py-3 rounded-2xl bg-red-500/10 backdrop-blur-xl border border-red-500/30 text-red-400 hover:text-white hover:bg-red-500 hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all active:scale-95" title="Quitter la session">
+ <LogOut size={18} />
+ <span className="text-[10px] font-quantico font-black tracking-[0.2em] uppercase">Quitter</span>
  </button>
  )}
  <SignetLauncher sessionId={sessionId} onOpenWindow={openWindow} securityLevel={user?.role} />

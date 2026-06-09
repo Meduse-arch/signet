@@ -129,42 +129,17 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
  </button>
  </div>
  ) : (
-  <div className="flex items-center gap-2">
-  <button 
-  onClick={() => window.location.reload()} 
-  className="text-white/40 hover:text-red-500 transition-colors"
-  title="Quitter la session"
-  >
-  <Icons.LogOut size={16} />
-  </button>
-  
-  <button 
-  onClick={() => {
-    if (isLocallyPaused) {
-      setIsLocallyPaused(false);
-      audioSync.localResumeAmbiance();
-    } else {
-      setIsLocallyPaused(true);
-      audioSync.localPauseAmbiance();
-    }
-  }}
-  disabled={!audioSync.currentHash || !audioSync.isTrackReady(audioSync.currentHash)}
-  className="text-white hover:text-silver-bright hover:scale-110 transition-all disabled:opacity-30 disabled:hover:text-white disabled:hover:scale-100 ml-2"
-  title={isLocallyPaused ? "Reprendre (local)" : "Mettre en pause (local)"}
-  >
-  {isLocallyPaused ? <Play size={18} fill="currentColor" /> : <Pause size={18} fill="currentColor" />}
-  </button>
-
-  <div className="text-silver-bright flex h-5 items-end gap-[2px] ml-1">
-  {audioSync.isPlaying && !isLocallyPaused && (
-  <>
-  <div className="w-1 bg-current h-full animate-[pulse_1s_ease-in-out_infinite]" />
-  <div className="w-1 bg-current h-2/3 animate-[pulse_1.2s_ease-in-out_infinite_0.2s]" />
-  <div className="w-1 bg-current h-4/5 animate-[pulse_0.8s_ease-in-out_infinite_0.4s]" />
-  </>
-  )}
-  </div>
-  </div>
+   <div className="flex items-center gap-2">
+   <div className="text-silver-bright flex h-5 items-end gap-[2px] ml-1">
+   {audioSync.isPlaying && (
+   <>
+   <div className="w-1 bg-current h-full animate-[pulse_1s_ease-in-out_infinite]" />
+   <div className="w-1 bg-current h-2/3 animate-[pulse_1.2s_ease-in-out_infinite_0.2s]" />
+   <div className="w-1 bg-current h-4/5 animate-[pulse_0.8s_ease-in-out_infinite_0.4s]" />
+   </>
+   )}
+   </div>
+   </div>
  )}
  
  <span className="text-[10px] text-white/40 font-quantico tracking-[0.2em] uppercase mt-1 group-hover:text-white/80 transition-colors drop-shadow-md">

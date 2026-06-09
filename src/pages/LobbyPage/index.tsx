@@ -347,6 +347,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
  setIsGameStarted(false);
  broadcast({ type: 'SESSION_PAUSE', payload: {} });
  }}
+ onLeave={onLeave}
  sessionId={sessionData?.id || sessionId}
  imageUrl={sessionImage}
  players={players}

@@ -7,18 +7,19 @@ interface SystemRouterProps {
  isMJ: boolean;
  isHost: boolean;
  onPause: () => void;
+ onLeave?: () => void;
  sessionId: string;
  imageUrl?: string;
  players: { peer_id: string; pseudo: string; role?: number }[];
  lobbyMode?: boolean;
 }
 
-export function SystemRouter({ system, isMJ, isHost, onPause, sessionId, imageUrl, players, lobbyMode }: SystemRouterProps) {
+export function SystemRouter({ system, isMJ, isHost, onPause, onLeave, sessionId, imageUrl, players, lobbyMode }: SystemRouterProps) {
  const safeSystem = typeof system === 'string' ? system.toLowerCase() : 'unknown';
 
  const renderSystem = () => {
  if (safeSystem === 'seal') {
- return <SealEngine sessionId={sessionId} onPause={onPause} players={players} imageUrl={imageUrl} lobbyMode={lobbyMode} isHost={isHost} />;
+ return <SealEngine sessionId={sessionId} onPause={onPause} onLeave={onLeave} players={players} imageUrl={imageUrl} lobbyMode={lobbyMode} isHost={isHost} />;
  }
  return (
  <div className="flex-1 flex flex-col items-center justify-center bg-black text-glacier-bright font-quantico">
