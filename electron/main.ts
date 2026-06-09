@@ -18,6 +18,7 @@ function createWindow() {
     width: 1280,
     height: 800,
     title: "Signet",
+    icon: path.join(__dirname, '../src/assets/logo.svg'),
     backgroundColor: '#0D0D0F',
     frame: false,
     webPreferences: {

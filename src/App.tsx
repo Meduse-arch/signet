@@ -4,7 +4,6 @@ import { HubPage } from './pages/HubPage';
 import { LobbyPage } from './pages/LobbyPage';
 import { AuthPage } from './pages/AuthPage';
 import { ExternalWindowPage } from './pages/ExternalWindowPage';
-import { SwarmSimulationPage } from './pages/SwarmSimulationPage';
 import { useAuthStore } from './store/auth';
 import { useSettingsStore } from './store/settings';
 import { TitleBar } from './components/TitleBar';
@@ -17,17 +16,7 @@ function MainApp() {
  const [isAuthorized, setIsAuthorized] = useState(false);
  const { user } = useAuthStore();
 
- useEffect(() => {
- const params = new URLSearchParams(window.location.search);
- const simUser = params.get('sim_user');
- const simSession = params.get('sim_session');
- 
- if (simUser && simSession) {
- useAuthStore.getState().setUser({ id: simUser, pseudo: simUser, role: 0 });
- setIsAuthorized(true);
- setActiveSessionId(simSession);
- }
- }, []);
+
 
  // Gérer la transition fluide entre Hub et Lobby
  const handleEnterSession = (id: string) => {
@@ -122,7 +111,7 @@ export function App() {
  <HashRouter>
  <Routes>
  <Route path="/" element={<MainApp />} />
- <Route path="/sim" element={<SwarmSimulationPage />} />
+
  <Route path="/external/:type/:sessionId" element={<ExternalWindowWrapper />} />
  </Routes>
  </HashRouter>
