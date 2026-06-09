@@ -399,6 +399,10 @@
     "qualityLow": "Låg",
     "qualityMedium": "Medium",
     "qualityHigh": "Hög",
-    "graphics": "Grafik"
+    "graphics": "Grafik",
+    "runeTrail": "Runspår",
+    "runeTrailDesc": "Visar ett magiskt spår som följer muspekaren i Hubben",
+    "enabled": "Aktiverad",
+    "disabled": "Inaktiverad"
   }
 }

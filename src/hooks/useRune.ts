@@ -50,7 +50,6 @@ export function useRune(containerRef: RefObject<HTMLDivElement>): void {
           resolution: resolutionMap[quality],
           autoDensity: true,
         })
-
         if (isDestroyed) {
           if (app) {
             app.destroy({ removeView: true })
@@ -144,7 +143,7 @@ export function useRune(containerRef: RefObject<HTMLDivElement>): void {
         }
 
         const onMouseMove = (e: MouseEvent): void => {
-          if (!container) return
+          if (!container || !useSettingsStore.getState().runeTrailEnabled) return
           const rect = container.getBoundingClientRect()
           mouseX = e.clientX - rect.left
           mouseY = e.clientY - rect.top

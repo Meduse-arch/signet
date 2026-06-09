@@ -399,6 +399,10 @@
     "qualityLow": "低",
     "qualityMedium": "中",
     "qualityHigh": "高",
-    "graphics": "グラフィックス"
+    "graphics": "グラフィックス",
+    "runeTrail": "ルーンの軌跡",
+    "runeTrailDesc": "ハブでカーソルを追従する魔法の軌跡を表示します",
+    "enabled": "有効",
+    "disabled": "無効"
   }
 }

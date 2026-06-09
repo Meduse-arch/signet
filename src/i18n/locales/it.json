@@ -399,6 +399,10 @@
     "qualityLow": "Bassa",
     "qualityMedium": "Media",
     "qualityHigh": "Alta",
-    "graphics": "Grafica"
+    "graphics": "Grafica",
+    "runeTrail": "Scia di Rune",
+    "runeTrailDesc": "Mostra una scia magica che segue il cursore nell'Hub",
+    "enabled": "Abilitato",
+    "disabled": "Disabilitato"
   }
 }

@@ -21,7 +21,7 @@ type SettingsCategory = 'general' | 'graphics' | 'controls' | 'account';
 export function SettingsView() {
   const { t, i18n } = useTranslation();
   const { logout, user } = useAuthStore();
-  const { keybindings, setKeybinding, visualQuality, setVisualQuality } = useSettingsStore();
+  const { keybindings, setKeybinding, visualQuality, setVisualQuality, runeTrailEnabled, setRuneTrailEnabled } = useSettingsStore();
   
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const [listeningSlot, setListeningSlot] = useState<{ action: keyof Keybindings, index: 0 | 1 } | null>(null);
@@ -200,6 +200,42 @@ export function SettingsView() {
                   );
                 })}
               </div>
+
+              {/* Traînée de Runes (Souris) */}
+              <div className="flex items-center gap-4 mb-6 pt-6 border-t border-silver-DEFAULT/10">
+                <Icons.MousePointer2 className="w-8 h-8 text-glacier-bright" />
+                <h2 className="text-2xl font-black text-white font-quantico uppercase tracking-widest">{t('settings.runeTrail', 'Traînée de Runes')}</h2>
+              </div>
+              <p className="text-silver-bright/60 font-quantico uppercase tracking-widest text-sm mb-8">
+                {t('settings.runeTrailDesc', 'Affiche une traînée magique suivant le curseur dans le Hub')}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => setRuneTrailEnabled(true)}
+                  className={`relative flex items-center justify-between p-5 rounded-2xl border transition-all duration-300 group ${
+                    runeTrailEnabled 
+                      ? 'bg-glacier-DEFAULT/10 border-silver-DEFAULT text-glacier-bright shadow-[0_0_20px_rgba(79,164,184,0.2)]' 
+                      : 'bg-black/60 border-silver-DEFAULT/20 text-silver-bright hover:border-silver-DEFAULT/50 hover:bg-white/5'
+                  }`}
+                >
+                  <span className="font-quantico font-bold tracking-[0.2em] uppercase text-sm">{t('settings.enabled', 'Activé')}</span>
+                  {runeTrailEnabled && <Icons.Check className="w-5 h-5 text-glacier-bright" />}
+                  {!runeTrailEnabled && <div className="w-5 h-5 rounded-full border border-silver-DEFAULT/30 group-hover:border-silver-DEFAULT/60 transition-colors" />}
+                </button>
+                <button
+                  onClick={() => setRuneTrailEnabled(false)}
+                  className={`relative flex items-center justify-between p-5 rounded-2xl border transition-all duration-300 group ${
+                    !runeTrailEnabled 
+                      ? 'bg-red-500/10 border-red-500/50 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.2)]' 
+                      : 'bg-black/60 border-silver-DEFAULT/20 text-silver-bright hover:border-silver-DEFAULT/50 hover:bg-white/5'
+                  }`}
+                >
+                  <span className="font-quantico font-bold tracking-[0.2em] uppercase text-sm">{t('settings.disabled', 'Désactivé')}</span>
+                  {!runeTrailEnabled && <Icons.X className="w-5 h-5 text-red-400" />}
+                  {runeTrailEnabled && <div className="w-5 h-5 rounded-full border border-silver-DEFAULT/30 group-hover:border-silver-DEFAULT/60 transition-colors" />}
+                </button>
+              </div>
+
             </div>
           )}
 

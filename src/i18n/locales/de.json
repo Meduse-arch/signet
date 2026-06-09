@@ -399,6 +399,10 @@
     "qualityLow": "Niedrig",
     "qualityMedium": "Mittel",
     "qualityHigh": "Hoch",
-    "graphics": "Grafik"
+    "graphics": "Grafik",
+    "runeTrail": "Runenspur",
+    "runeTrailDesc": "Zeigt eine magische Spur an, die dem Cursor im Hub folgt",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert"
   }
 }

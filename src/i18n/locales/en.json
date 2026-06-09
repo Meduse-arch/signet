@@ -399,6 +399,10 @@
     "qualityLow": "Low",
     "qualityMedium": "Medium",
     "qualityHigh": "High",
-    "graphics": "Graphics"
+    "graphics": "Graphics",
+    "runeTrail": "Rune Trail",
+    "runeTrailDesc": "Displays a magical trail following the cursor in the Hub",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
   }
 }

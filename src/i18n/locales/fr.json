@@ -399,6 +399,10 @@
     "qualityLow": "Basse",
     "qualityMedium": "Moyenne",
     "qualityHigh": "Haute",
-    "graphics": "Graphiques"
+    "graphics": "Graphiques",
+    "runeTrail": "Traînée de Runes",
+    "runeTrailDesc": "Affiche une traînée magique suivant le curseur dans le Hub",
+    "enabled": "Activé",
+    "disabled": "Désactivé"
   }
 }

@@ -12,9 +12,11 @@ export interface Keybindings {
 
 interface SettingsState {
   visualQuality: VisualQuality;
+  runeTrailEnabled: boolean;
   keybindings: Keybindings;
   keyboardInitialized: boolean;
   setVisualQuality: (quality: VisualQuality) => void;
+  setRuneTrailEnabled: (enabled: boolean) => void;
   setKeybinding: (action: keyof Keybindings, slotIndex: 0 | 1, key: string | null) => void;
   detectKeyboardLayout: () => Promise<void>;
 }
@@ -30,9 +32,11 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
       visualQuality: 'medium', // Default to medium for smooth performance out of the box
+      runeTrailEnabled: true,
       keybindings: defaultKeybindings,
       keyboardInitialized: false,
       setVisualQuality: (quality) => set({ visualQuality: quality }),
+      setRuneTrailEnabled: (enabled) => set({ runeTrailEnabled: enabled }),
       detectKeyboardLayout: async () => {
         const state = get();
         if (state.keyboardInitialized) return; // Only do this once
