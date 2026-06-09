@@ -1,4 +1,5 @@
 import { Application, Container, Graphics, Text, Ticker } from 'pixi.js';
+import { buildHighQualityFilters } from './qualityFilters';
 import { MapLayer } from './MapLayer';
 import { FogOfWar } from './FogOfWar';
 import { TokenSprite, TokenData } from './TokenSprite';
@@ -56,6 +57,11 @@ export class BoardScene extends Container {
     this.y = app.screen.height / 2;
 
     this.setupInteractivity();
+
+    // ====== SHADERS HAUTE QUALITÉ ======
+    // Les filtres adaptatifs sont appliqués après loadMap() via applyQualityFilters()
+    // car on a besoin de l'image pour analyser la palette.
+    // =====================================
 
     // Abonnement au store de combat pour les halos visuels
     this.unsubCombat = useCombatStore.subscribe((state) => {
@@ -243,9 +249,44 @@ export class BoardScene extends Container {
     this.tokens.forEach(t => t.gridSize = size);
   }
 
+  /**
+   * Applique les filtres haute qualité adaptatifs sur la scène.
+   * Passe l'image source à l'analyseur de palette si disponible.
+   */
+  private async applyQualityFilters(img: HTMLImageElement | null = null): Promise<void> {
+    const quality = useSettingsStore.getState().visualQuality;
+    if (quality !== 'high') {
+      this.filters = [];
+      return;
+    }
+
+    const filters = await buildHighQualityFilters(img);
+    if (filters) {
+      this.filters = filters;
+    }
+  }
+
   async loadMap(url: string, format?: string, gridSize: number = 50) {
+    // Charger l'image pour l'analyse de palette AVANT de passer à MapLayer
+    let imgForAnalysis: HTMLImageElement | null = null;
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      await new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve(); // on continue même si ça échoue
+        img.src = url;
+      });
+      if (img.naturalWidth > 0) imgForAnalysis = img;
+    } catch {
+      // pas bloquant
+    }
+
     await this.mapLayer.loadMap(url, format, gridSize);
-    
+
+    // Appliquer les filtres adaptatifs maintenant qu'on a l'image
+    await this.applyQualityFilters(imgForAnalysis);
+
     // Auto-fit or center
     const imgBounds = this.mapLayer.getImageBounds();
     if (imgBounds.width > 0 && imgBounds.height > 0) {
@@ -292,6 +333,11 @@ export class BoardScene extends Container {
       
       // On s'assure de rester dans les clous
       this.constrainPan();
+    }
+
+    const quality = useSettingsStore.getState().visualQuality;
+    if (quality === 'high') {
+      this.applyQualityFilters(null); // null = pas d'image à analyser, valeurs conservatives
     }
   }
 

@@ -42,6 +42,7 @@
     "idb": "^8.0.3",
     "lucide-react": "^0.344.0",
     "peerjs": "^1.5.2",
+    "pixi-filters": "^6.1.5",
     "pixi.js": "^8.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
