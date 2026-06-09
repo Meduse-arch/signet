@@ -93,15 +93,84 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
     const targetInstanceId = item.instanceId || (item.isStack ? item.instances[0] : null);
     if (!targetInstanceId) return;
 
+    const newEquipped = !item.equipped;
+    let rolledValues = item.rolledValues || [];
+    const diceResults: any[] = [];
+
+    // Si on équipe, on calcule les dés
+    if (newEquipped && item.modifiers) {
+      const { parseAndRoll } = await import('../../services/des.service');
+      const { DEFAULT_STATS, DEFAULT_BARS } = await import('../../systems/seal/constants');
+      
+      const statValues: Record<string, number> = {};
+      const labelMapping: Record<string, string> = {};
+      
+      DEFAULT_STATS.forEach(s => {
+        statValues[s.id] = character.stats?.[s.id] || 20;
+        labelMapping[s.id] = s.name;
+      });
+      DEFAULT_BARS.forEach(b => {
+        statValues[b.id] = character.bars?.[b.id] || 100;
+        labelMapping[b.id] = b.name;
+      });
+
+      rolledValues = [];
+      
+      item.modifiers.forEach((m: any, idx: number) => {
+        if (m.mode === 'dice' && m.formula) {
+          let formula = m.formula;
+          const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
+          sortedStats.forEach((key) => {
+            const val = statValues[key];
+            const label = labelMapping[key];
+            const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
+            formula = formula.replace(regex, `(${label}=${val})`);
+          });
+          
+          console.log('[DEBUG INV DICE] Original formula:', m.formula);
+          console.log('[DEBUG INV DICE] Processed formula:', formula);
+          
+          const rollRes = parseAndRoll(formula);
+          console.log('[DEBUG INV DICE] Roll Result:', rollRes);
+          
+          rolledValues[idx] = rollRes.total;
+          
+          if (rollRes.rolls.length > 0) {
+            diceResults.push({
+              rolls: rollRes.rolls || [],
+              total: rollRes.total,
+              bonus: 0,
+              diceString: m.formula,
+              label: `Bonus ${m.targetId}`,
+              groups: rollRes.groups,
+              color: '#d4af37',
+              secret: false,
+              timestamp: Date.now(),
+              sender_id: user?.id,
+              sender_name: character.name
+            });
+          }
+        } else {
+          rolledValues[idx] = 0; // fallback
+        }
+      });
+    }
+
     const updatedChar = {
       ...character,
       inventory: (character.inventory || []).map((i: any) => 
-        (i.instanceId === targetInstanceId) ? { ...i, equipped: !i.equipped } : i
+        (i.instanceId === targetInstanceId) ? { ...i, equipped: newEquipped, rolledValues } : i
       )
     };
     addOrUpdateCharacter(updatedChar, false);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+    
+    if (diceResults.length > 0) {
+      const { useDiceStore } = await import('../../store/dice');
+      useDiceStore.getState().setDiceResult(diceResults);
+      diceResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+    }
     
     const updatedItem = updatedChar.inventory.find((i: any) => i.instanceId === targetInstanceId);
     if (updatedItem) {

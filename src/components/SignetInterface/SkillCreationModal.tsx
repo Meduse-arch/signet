@@ -331,8 +331,8 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                                     <option value="damage">{t('context.damage', "Dégâts")}</option>
                                     <option value="heal">{t('context.heal', "Soin")}</option>
                                     <option value="pure_roll">{t('context.pureRoll', "Jet Simple")}</option>
-                                    <option value="buff">{t('context.buff', "Bonus temporaire")}</option>
-                                    <option value="debuff">{t('context.debuff', "Malus (Affliction)")}</option>
+                                    <option value="buff">{t('context.buff', "Bonus (Narratif)")}</option>
+                                    <option value="debuff">{t('context.debuff', "Malus (Narratif)")}</option>
                                     <option value="utility">{t('context.utility', "Utilité")}</option>
                                 </select>
                                 <div className="col-span-2 flex gap-2">
@@ -382,31 +382,56 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                 </div>
                 <div className="space-y-3">
                     {modifiers.map((m, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5 group hover:border-gold-DEFAULT/30 transition-all animate-in slide-in-from-right-4 duration-300">
-                            <select 
-                                value={m.target} 
-                                onChange={e => updateModifier(i, { target: e.target.value })}
-                                className="w-28 bg-black border border-white/10 rounded-xl px-3 py-2.5 text-[11px] font-cinzel font-black text-gold-DEFAULT uppercase outline-none"
-                            >
-                                <option value="stat">{t('context.attribute', "ATTRIBUT").toUpperCase()}</option>
-                                <option value="bar">{t('context.resource', "RESSOURCE").toUpperCase()}</option>
-                            </select>
-                            <select 
-                                value={m.targetId} 
-                                onChange={e => updateModifier(i, { targetId: e.target.value })}
-                                className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs font-cinzel font-bold text-white uppercase outline-none focus:border-gold-bright"
-                            >
-                                {m.target === 'stat' ? statDefs.map((s: any) => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>) : barDefs.map((b: any) => <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>)}
-                            </select>
-                            <input 
-                                type="number" 
-                                value={m.value} 
-                                onChange={e => updateModifier(i, { value: parseInt(e.target.value) || 0 })}
-                                className="w-20 bg-gold-DEFAULT/10 border border-gold-DEFAULT/40 rounded-xl px-3 py-2.5 text-[11px] font-mono text-gold-bright text-center outline-none focus:border-gold-bright"
-                            />
-                            <button onClick={() => setModifiers(modifiers.filter((_, idx) => idx !== i))} className="p-2 rounded-full text-white/60 hover:text-red-500 hover:bg-red-500/10 transition-all">
-                                <Trash2 size={14} />
-                            </button>
+                        <div key={i} className="flex flex-col gap-3 p-4 rounded-2xl bg-white/[0.02] border border-white/5 group hover:border-gold-DEFAULT/30 transition-all animate-in slide-in-from-right-4 duration-300">
+                            <div className="flex items-center gap-3">
+                                <select 
+                                    value={m.target} 
+                                    onChange={e => updateModifier(i, { target: e.target.value as any })}
+                                    className="w-28 bg-black border border-white/10 rounded-xl px-3 py-2.5 text-[11px] font-cinzel font-black text-gold-DEFAULT uppercase outline-none"
+                                >
+                                    <option value="stat">{t('context.attribute', "ATTRIBUT").toUpperCase()}</option>
+                                    <option value="bar">{t('context.resource', "RESSOURCE").toUpperCase()}</option>
+                                </select>
+                                <select 
+                                    value={m.targetId} 
+                                    onChange={e => updateModifier(i, { targetId: e.target.value })}
+                                    className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs font-cinzel font-bold text-white uppercase outline-none focus:border-gold-bright"
+                                >
+                                    {m.target === 'stat' ? statDefs.map((s: any) => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>) : barDefs.map((b: any) => <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>)}
+                                </select>
+                                <button onClick={() => setModifiers(modifiers.filter((_, idx) => idx !== i))} className="p-2 rounded-full text-white/60 hover:text-red-500 hover:bg-red-500/10 transition-all">
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                            <div className="flex gap-3 items-center">
+                                <select 
+                                    value={m.mode || 'flat'} 
+                                    onChange={e => updateModifier(i, { mode: e.target.value as any })}
+                                    className="flex-[2] bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[11px] text-white/60 font-cinzel outline-none appearance-none cursor-pointer text-center"
+                                >
+                                    <option value="flat">{t('context.flatValue', "VALEUR FIXE")}</option>
+                                    <option value="percent">{t('context.percent', "POURCENTAGE")}</option>
+                                    <option value="dice">{t('context.diceRoll', "JET DE DÉS")}</option>
+                                </select>
+                                <div className="flex-1">
+                                    {m.mode === 'dice' ? (
+                                        <input 
+                                            type="text" 
+                                            placeholder="1d6..."
+                                            value={m.formula || ''} 
+                                            onChange={e => updateModifier(i, { formula: e.target.value })}
+                                            className="w-full bg-gold-DEFAULT/10 border-2 border-gold-DEFAULT/40 rounded-xl px-2 py-2 text-xs text-gold-bright text-center font-mono outline-none focus:border-gold-bright"
+                                        />
+                                    ) : (
+                                        <input 
+                                            type="number" 
+                                            value={m.value} 
+                                            onChange={e => updateModifier(i, { value: parseInt(e.target.value) || 0 })}
+                                            className="w-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/40 rounded-xl px-3 py-2.5 text-[11px] font-mono text-gold-bright text-center outline-none focus:border-gold-bright"
+                                        />
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     ))}
                 </div>

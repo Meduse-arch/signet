@@ -87,15 +87,116 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
   const handleToggleSkillActive = async (skillToToggle: any) => {
     if (!character) return;
     const newActive = !skillToToggle.is_active;
+    
+    let updatedModifiers = skillToToggle.modifiers;
+    const diceResults: any[] = [];
+    
+    // Si on active, on calcule les valeurs des dés
+    if (newActive && updatedModifiers) {
+      const { parseAndRoll } = await import('../../services/des.service');
+      const { DEFAULT_STATS, DEFAULT_BARS } = await import('../../systems/seal/constants');
+      
+      const statValues: Record<string, number> = {};
+      const labelMapping: Record<string, string> = {};
+      
+      DEFAULT_STATS.forEach(s => {
+        statValues[s.id] = character.stats?.[s.id] || 20;
+        labelMapping[s.id] = s.name;
+      });
+      DEFAULT_BARS.forEach(b => {
+        statValues[b.id] = character.bars?.[b.id] || 100;
+        labelMapping[b.id] = b.name;
+      });
+      
+      updatedModifiers = updatedModifiers.map((m: any) => {
+        if (m.mode === 'dice' && m.formula) {
+          let formula = m.formula;
+          const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
+          sortedStats.forEach((key) => {
+            const val = statValues[key];
+            const label = labelMapping[key];
+            const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
+            formula = formula.replace(regex, `(${label}=${val})`);
+          });
+          
+          console.log('[DEBUG DICE] Original formula:', m.formula);
+          console.log('[DEBUG DICE] Processed formula:', formula);
+          
+          const rollRes = parseAndRoll(formula);
+          console.log('[DEBUG DICE] Roll Result:', rollRes);
+          
+          if (rollRes.rolls.length > 0) {
+            diceResults.push({
+              rolls: rollRes.rolls || [],
+              total: rollRes.total,
+              bonus: 0,
+              diceString: m.formula,
+              label: `Bonus ${m.targetId}`,
+              groups: rollRes.groups,
+              color: '#3b82f6',
+              secret: false,
+              timestamp: Date.now(),
+              sender_id: user?.id,
+              sender_name: character.name
+            });
+          }
+          return { ...m, value: rollRes.total };
+        }
+        return m;
+      });
+
+      if (skillToToggle.effects && skillToToggle.effects.length > 0) {
+        skillToToggle.effects.forEach((eff: any) => {
+          if (eff.mode === 'dice' && eff.formula) {
+            let formula = eff.formula;
+            const sortedStats = Object.keys(statValues).sort((a, b) => b.length - a.length);
+            sortedStats.forEach((key) => {
+              const val = statValues[key];
+              const label = labelMapping[key];
+              const regex = new RegExp(`(?<=\\b|d)${key}\\b`, 'gi');
+              formula = formula.replace(regex, `(${label}=${val})`);
+            });
+
+            console.log('[DEBUG EFF DICE] Original:', eff.formula);
+            console.log('[DEBUG EFF DICE] Processed:', formula);
+
+            const rollRes = parseAndRoll(formula);
+            
+            if (rollRes.rolls.length > 0) {
+              diceResults.push({
+                rolls: rollRes.rolls || [],
+                total: rollRes.total,
+                bonus: 0,
+                diceString: eff.formula,
+                label: eff.description || skillToToggle.name,
+                groups: rollRes.groups,
+                color: '#d4af37',
+                secret: false,
+                timestamp: Date.now(),
+                sender_id: user?.id,
+                sender_name: character.name
+              });
+            }
+          }
+        });
+      }
+    }
+
     const updatedChar = {
       ...character,
       custom_skills: (character.custom_skills || []).map((s: any) => 
-        (s.id === skillToToggle.id) ? { ...s, is_active: newActive } : s
+        (s.id === skillToToggle.id) ? { ...s, is_active: newActive, modifiers: updatedModifiers } : s
       )
     };
     addOrUpdateCharacter(updatedChar, false);
     if (window.electronAPI) await addSessionCharacter(updatedChar);
     broadcast({ type: 'CHAR_UPDATE', payload: updatedChar });
+    
+    if (diceResults.length > 0) {
+      const { useDiceStore } = await import('../../store/dice');
+      useDiceStore.getState().setDiceResult(diceResults);
+      diceResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+    }
 
     // Broadcast log de compétence
     const logPayload = {
