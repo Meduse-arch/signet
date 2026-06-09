@@ -285,8 +285,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  <SkillCreationModal sessionId={sessionId} />
 
  <div className="flex-1 flex overflow-hidden">
- {/* ─── LISTE DES SKILLS (Panneau Gauche) ─── */}
- <div className={`flex-1 flex flex-col p-4 gap-4 min-w-0 transition-all duration-500 ${isWideView && selectedSkill ? 'border-r border-white/5 max-w-[45%]' : 'max-w-full'}`}>
+ <div className={`flex-1 flex flex-col p-4 gap-4 min-w-0 transition-all duration-500`}>
  {isMJ && character && (
  <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5 shrink-0 shadow-inner">
  <button
@@ -475,7 +474,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
 
  {/* ─── PANNEAU DE DÉTAIL (Mode Codex) ─── */}
  {isWideView && (
- <div className={`transition-all duration-500 overflow-hidden bg-black/20 flex flex-col ${selectedSkill ? 'w-[384px] shrink-0 border-l border-white/5 opacity-100' : 'w-0 opacity-0'}`}>
+ <div className={`transition-all duration-500 overflow-hidden bg-black/20 flex flex-col min-h-0 ${selectedSkill ? 'w-[384px] shrink-0 border-l border-white/5 opacity-100' : 'w-0 opacity-0'}`}>
  {selectedSkill ? (
  <div className="flex-1 flex flex-col min-h-0 animate-in slide-in-from-right-4 duration-500 relative">
  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
@@ -484,10 +483,11 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  <X size={14} />
  </button>
  </div>
- <div className="flex-1 overflow-hidden flex flex-col min-h-0 [&>div]:h-full [&>div]:flex-1">
+ <div className="flex-1 overflow-hidden flex flex-col min-h-0">
  <SkillDetailContent 
  skill={selectedSkill} 
  isMJ={isMJ}
+ fullHeight={true}
  onEdit={effectiveTab === 'forge' && isMJ ? () => setShowSkillCreateModal(true, selectedSkill, 'forge') : (effectiveTab === 'inventory' ? () => setShowSkillCreateModal(true, selectedSkill, 'inventory') : undefined)}
  onDelete={effectiveTab === 'forge' && isMJ ? () => handleDeleteSkillTemplate(selectedSkill.id) : (effectiveTab === 'inventory' && isMJ ? () => handleRemoveFromCharacter(selectedSkill) : undefined)}
  />

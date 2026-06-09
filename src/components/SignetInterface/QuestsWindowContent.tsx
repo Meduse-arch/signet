@@ -95,7 +95,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
 
  <div className="flex-1 flex overflow-hidden">
  {/* ─── LISTE DES QUÊTES (Panneau Gauche) ─── */}
- <div className={`flex-1 flex flex-col p-4 gap-4 min-w-0 transition-all duration-500 ${isWideView && selectedQuest ? 'border-r border-white/5 max-w-[45%]' : 'max-w-full'}`}>
+ <div className={`flex-1 flex flex-col p-4 gap-4 min-w-0 transition-all duration-500`}>
  <div className="flex gap-2 shrink-0">
  <div className="relative flex-1">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-silver-bright/40" />
@@ -201,7 +201,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
 
  {/* ─── PANNEAU DE DÉTAIL (Mode Codex) ─── */}
  {isWideView && (
- <div className={`transition-all duration-500 overflow-hidden bg-black/20 flex flex-col ${selectedQuest ? 'w-[384px] shrink-0 border-l border-white/5 opacity-100' : 'w-0 opacity-0'}`}>
+ <div className={`transition-all duration-500 overflow-hidden bg-black/20 flex flex-col min-h-0 ${selectedQuest ? 'w-[384px] shrink-0 border-l border-white/5 opacity-100' : 'w-0 opacity-0'}`}>
  {selectedQuest ? (
  <div className="flex-1 flex flex-col min-h-0 animate-in slide-in-from-right-4 duration-500 relative">
  <div className="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 shrink-0">
@@ -210,10 +210,11 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
  <X size={14} />
  </button>
  </div>
- <div className="flex-1 overflow-hidden flex flex-col min-h-0 [&>div]:h-full [&>div]:flex-1">
+ <div className="flex-1 overflow-hidden flex flex-col min-h-0">
  <QuestDetailContent 
  quest={selectedQuest} 
  sessionId={sessionId} 
+ fullHeight={true}
  isMJ={isMJ}
  onEdit={isMJ ? () => setShowQuestCreateModal(true, selectedQuest) : undefined}
  onDelete={isMJ ? () => { if(window.confirm(t('context.deleteQuest', "Effacer ce récit ?"))) { removeQuest(sessionId, selectedQuest.id); setSelectedQuest(null); } } : undefined}

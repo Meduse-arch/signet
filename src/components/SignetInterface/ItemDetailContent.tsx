@@ -17,6 +17,7 @@ interface ItemDetailContentProps {
  onGive?: () => void;
  isMJ?: boolean;
  showActions?: boolean;
+ fullHeight?: boolean;
 }
 
 export function ItemDetailContent({ 
@@ -28,7 +29,8 @@ export function ItemDetailContent({
  onDelete, 
  onGive, 
  isMJ,
- showActions = true 
+ showActions = true,
+ fullHeight = false
 }: ItemDetailContentProps) {
  const { t } = useTranslation();
  const { items } = useItemsStore();
@@ -62,7 +64,7 @@ export function ItemDetailContent({
  );
 
  const isEquipped = item.equipped;
- const isConsumable = item.category === 'Consommable';
+ const isConsumable = item.category === 'Consumable';
 
  const getTargetName = (m: any) => {
  if (m.target === 'stat') return DEFAULT_STATS.find(s => s.id === m.targetId)?.name || m.targetId;
@@ -75,7 +77,7 @@ export function ItemDetailContent({
  }, [item, character?.inventory]);
 
  return (
- <div className="w-full min-h-0 flex flex-col relative overflow-hidden bg-[#0D0D0F]">
+ <div className={`w-full min-h-0 flex flex-col relative overflow-hidden bg-[#0D0D0F] ${fullHeight ? 'flex-1' : ''}`}>
  {/* ─── BLOCK IMAGE (Plus compact) ─── */}
  <div 
  className="relative h-32 shrink-0 flex items-center justify-center overflow-hidden border-b border-silver-DEFAULT/20"
@@ -129,8 +131,8 @@ export function ItemDetailContent({
  </div>
  </div>
 
- {/* BLOCK MODIFICATEURS (Flexible, prend le reste) ─── */}
- <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-4 py-3 min-h-0 space-y-4">
+ {/* BLOCK MODIFICATEURS */}
+ <div className="shrink-0 max-h-[350px] overflow-y-auto overflow-x-hidden custom-scrollbar px-4 py-3 min-h-0 space-y-4">
  <div>
  <div className="flex items-center gap-2 mb-3 opacity-40">
  <div className="h-px flex-1 bg-glacier-DEFAULT/30" />
