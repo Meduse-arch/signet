@@ -6,6 +6,7 @@
  * Les composants importent depuis : `import { Icons } from '@/components/ui/Icons'`
  */
 import {
+ AlertTriangle,
  Activity,
  ArrowDownToLine,
  ArrowLeft,
@@ -14,6 +15,7 @@ import {
  BookOpen,
  Check,
  ChevronDown,
+  ChevronUp,
  ChevronLeft,
  ChevronRight,
  Dices,
@@ -102,6 +104,7 @@ import {
  * ```
  */
 export const Icons = {
+  AlertTriangle,
  // --- Navigation & Actions générales ---
  Search,
  Plus,
@@ -109,6 +112,7 @@ export const Icons = {
  X,
  Check,
  ChevronDown,
+  ChevronUp,
  ChevronLeft,
  ChevronRight,
  ExternalLink,

@@ -137,7 +137,9 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  secret: false,
  timestamp: Date.now(),
  sender_id: user?.id,
- sender_name: character.name
+ sender_name: character.name,
+ is_skill_roll: true,
+ description: `Modifie ${m.targetId}`
  });
  }
  return { ...m, value: rollRes.total };
@@ -168,13 +170,15 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  total: rollRes.total,
  bonus: 0,
  diceString: eff.formula,
- label: eff.description || skillToToggle.name,
+ label: eff.type === 'damage' ? 'Dégâts' : eff.type === 'heal' ? 'Soin' : eff.type === 'buff' ? 'Amélioration' : eff.type === 'debuff' ? 'Malédiction' : 'Utilitaire',
  groups: rollRes.groups,
  color: '#d4af37',
  secret: false,
  timestamp: Date.now(),
  sender_id: user?.id,
- sender_name: character.name
+ sender_name: character.name,
+ is_skill_roll: true,
+ description: eff.description
  });
  }
  }
@@ -203,9 +207,11 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  skill_id: skillToToggle.id,
  skill_name: skillToToggle.name,
  skill_type: skillToToggle.type,
+ description: skillToToggle.description,
  action: newActive ? 'Activée' : 'Désactivée',
  sender_id: user?.id,
  sender_name: character.name,
+ results: diceResults
  };
  broadcast({ type: 'SKILL_USED', payload: logPayload });
  activityLogService.addLog({

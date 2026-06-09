@@ -54,6 +54,11 @@ export async function getSessionLogs(sessionId: string): Promise<SessionLog[]> {
   }));
 }
 
+export async function clearSessionLogs(sessionId: string): Promise<boolean> {
+  if (!window.electronAPI) return false;
+  return window.electronAPI.clearSessionLogs(sessionId);
+}
+
 export async function addSessionLog(sessionId: string, log: SessionLog): Promise<void> {
   if (!window.electronAPI) return;
   return window.electronAPI.addLog(sessionId, log);

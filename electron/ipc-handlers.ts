@@ -636,8 +636,22 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       const db = getSessionDb(sessionId);
       db.prepare('INSERT INTO logs (id, type, action, details, timestamp, character_id, character_name) VALUES (?, ?, ?, ?, ?, ?, ?)')
         .run(log.id, log.type, log.action, JSON.stringify(log.details), log.timestamp, log.character_id, log.character_name);
+        
+      // Enforce limit: Keep only last 100 logs
+      db.prepare('DELETE FROM logs WHERE id NOT IN (SELECT id FROM logs ORDER BY timestamp DESC LIMIT 100)').run();
     } catch (e) {
       console.error('[DB] logs:add error', e);
+    }
+  });
+
+  ipcMain.handle('logs:clear', (_, sessionId) => {
+    try {
+      const db = getSessionDb(sessionId);
+      db.prepare('DELETE FROM logs').run();
+      return true;
+    } catch (e) {
+      console.error('[DB] logs:clear error', e);
+      return false;
     }
   });
 

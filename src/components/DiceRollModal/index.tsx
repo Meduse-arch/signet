@@ -1,4 +1,6 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+
+import { Icons } from '../ui/Icons';
 import { createPortal } from 'react-dom';
 import { useDiceStore } from '../../store/dice';
 import { usePeer } from '../../hooks/usePeer';

@@ -111,6 +111,7 @@ export interface ElectronAPI {
   removeMap: (sessionId: string, id: string) => Promise<void>;
   getLogs: (sessionId: string) => Promise<any[]>;
   addLog: (sessionId: string, log: any) => Promise<void>;
+  clearSessionLogs: (sessionId: string) => Promise<boolean>;
   getQuests: (sessionId: string) => Promise<any[]>;
   addQuest: (sessionId: string, quest: any) => Promise<boolean>;
   removeQuest: (sessionId: string, id: string) => Promise<boolean>;
@@ -158,6 +159,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeMap: (sessionId: string, id: string) => ipcRenderer.invoke('maps:remove', sessionId, id),
   getLogs: (sessionId: string) => ipcRenderer.invoke('logs:getAll', sessionId),
   addLog: (sessionId: string, log: any) => ipcRenderer.invoke('logs:add', sessionId, log),
+  clearSessionLogs: (sessionId: string) => ipcRenderer.invoke('logs:clear', sessionId),
   getQuests: (sessionId: string) => ipcRenderer.invoke('quests:getAll', sessionId),
   addQuest: (sessionId: string, quest: any) => ipcRenderer.invoke('quests:add', sessionId, quest),
   removeQuest: (sessionId: string, id: string) => ipcRenderer.invoke('quests:remove', sessionId, id),

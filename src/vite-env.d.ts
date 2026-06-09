@@ -30,6 +30,7 @@ declare global {
       removeMap: (sessionId: string, id: string) => Promise<void>;
       getLogs: (sessionId: string) => Promise<any[]>;
       addLog: (sessionId: string, log: any) => Promise<void>;
+      clearSessionLogs: (sessionId: string) => Promise<boolean>;
       getQuests: (sessionId: string) => Promise<any[]>;
       addQuest: (sessionId: string, quest: any) => Promise<boolean>;
       removeQuest: (sessionId: string, id: string) => Promise<boolean>;

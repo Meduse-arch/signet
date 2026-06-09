@@ -1,5 +1,5 @@
 import { peerService } from './peer.service';
-import { addSessionLog, getSessionLogs, SessionLog } from './db.service';
+import { addSessionLog, getSessionLogs, clearSessionLogs, SessionLog } from './db.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,7 +58,7 @@ class ActivityLogService {
 
         // ── Jets de Dés ──────────────────────────────────────────────────────
         case 'DICE_ROLL':
-          if (!msg.payload.secret) {
+          if (!msg.payload.secret && !msg.payload.is_skill_roll) {
             this.addLog({
               type: 'des',
               action: `Lance ${msg.payload.label || msg.payload.diceString}`,
@@ -76,30 +76,33 @@ class ActivityLogService {
 
         case 'SECRET_DICE_ROLL':
           // Log uniquement reçu par le MJ ou explicitement loggé
-          this.addLog({
-            type: 'des',
-            action: `Lance ${msg.payload.label || msg.payload.diceString} (Secret)`,
-            details: {
-              rolls: msg.payload.rolls,
-              total: msg.payload.total,
-              diceString: msg.payload.diceString,
-              formula: msg.payload.diceString,
-            },
-            character_id: msg.payload.sender_id,
-            character_name: msg.payload.sender_name,
-          });
+          if (!msg.payload.is_skill_roll) {
+            this.addLog({
+              type: 'des',
+              action: `Lance ${msg.payload.label || msg.payload.diceString} (Secret)`,
+              details: {
+                rolls: msg.payload.rolls,
+                total: msg.payload.total,
+                diceString: msg.payload.diceString,
+                formula: msg.payload.diceString,
+              },
+              character_id: msg.payload.sender_id,
+              character_name: msg.payload.sender_name,
+            });
+          }
           break;
 
         // ── Compétences ──────────────────────────────────────────────────────
         case 'SKILL_USED':
           this.addLog({
             type: 'skill',
-            action: `Utilise : ${msg.payload.skill_name}`,
+            action: `${msg.payload.action || 'Utilise'} : ${msg.payload.skill_name}`,
             details: {
               skill_id: msg.payload.skill_id,
               skill_name: msg.payload.skill_name,
               skill_type: msg.payload.skill_type,
               description: msg.payload.description,
+              results: msg.payload.results,
             },
             character_id: msg.payload.sender_id,
             character_name: msg.payload.sender_name,
@@ -213,6 +216,20 @@ class ActivityLogService {
     // Envoie immédiatement l'état actuel
     cb([...this.buffer]);
     return () => this.listeners.delete(cb);
+  }
+
+  /** Vide les logs (localement et en DB) */
+  async clearLogs() {
+    this.buffer = [];
+    this.notify();
+    
+    if (this.sessionId) {
+      try {
+        await clearSessionLogs(this.sessionId);
+      } catch (err) {
+        console.warn('[ActivityLog] Impossible de vider la DB', err);
+      }
+    }
   }
 
   // ─── Privé ────────────────────────────────────────────────────────────────

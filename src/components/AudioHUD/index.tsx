@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { Icons } from '../ui/Icons';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Volume2, VolumeX, Music, Repeat } from 'lucide-react';
 import { useAudioSync } from '../../hooks/useAudioSync';
 import { useAuthStore } from '../../store/auth';
@@ -137,7 +138,7 @@ export function AudioHUD({ sessionId }: AudioHUDProps) {
  className="text-white/40 hover:text-red-500 transition-colors"
  title="Quitter la session"
  >
- <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+ <Icons.LogOut size={16} />
  </button>
  <div className="text-silver-bright flex h-5 items-end gap-[2px]">
  {audioSync.isPlaying && (

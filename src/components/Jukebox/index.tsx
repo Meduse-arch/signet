@@ -1,4 +1,6 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+
+import { Icons } from '../ui/Icons';
 import { useAudioStore } from '../../store/audio';
 import { TrackItem } from './TrackItem';
 import { dbStorage } from '../../services/db.storage';

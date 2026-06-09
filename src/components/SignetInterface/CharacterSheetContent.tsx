@@ -585,11 +585,11 @@ export function CharacterSheetContent({
  });
 
  // Ressources (Bars) - Résolution uniquement par ID
- const barDefs = character?.settings?.bars || [
- { id: 'hp', name: 'Points de Vie' },
- { id: 'mana', name: 'Mana' },
- { id: 'stamina', name: 'Endurance' }
- ];
+ const barDefs = (character as any)?.settings?.bars || [
+    { id: 'hp', name: 'Points de Vie' },
+    { id: 'mana', name: 'Mana' },
+    { id: 'stamina', name: 'Endurance' }
+  ];
  barDefs.forEach((b: any) => {
  const val = (character.bars || {})[b.id] || 0;
  statValues[b.id.toLowerCase()] = val;
@@ -737,7 +737,7 @@ export function CharacterSheetContent({
  labelMapping[s.id.toLowerCase()] = s.name;
  });
 
- const barDefs = character?.settings?.bars || [
+ const barDefs = (character as any)?.settings?.bars || [
  { id: 'hp', name: 'Points de Vie' },
  { id: 'mana', name: 'Mana' },
  { id: 'stamina', name: 'Endurance' }
