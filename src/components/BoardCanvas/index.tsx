@@ -473,7 +473,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  {/* Menu Contextuel du MJ (HUD) */}
  {mjMenu.visible && (
  <div 
- className="absolute z-50 flex items-center gap-2 px-3 py-2 bg-black/60 backdrop-blur-md border border-silver-DEFAULT/30 rounded-full shadow-[0_0_15px_rgba(212,175,55,0.2)] origin-bottom"
+ className="absolute z-50 flex items-center gap-2 px-3 py-2 bg-black/60 backdrop-blur-md border border-silver-DEFAULT/30 rounded-full shadow-[0_0_15px_rgba(79,164,184,0.2)] origin-bottom"
  style={{ 
  left: mjMenu.x, 
  top: mjMenu.y - 30, // Juste au-dessus du token

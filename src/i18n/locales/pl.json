@@ -38,7 +38,8 @@
     "createSession": "Utwórz Sesję",
     "logout": "Wyloguj",
     "disconnect": "Odłącz",
-    "grade": "Rola"
+    "grade": "Rola",
+    "settings": "Ustawienia"
   },
   "lobby": {
     "share": "UDOSTĘPNIJ",
@@ -318,7 +319,6 @@
     "monthsAgo": "{{count}} miesięcy temu",
     "yearsAgo": "Ponad rok temu"
   },
-
   "bestiary": {
     "searchPlaceholder": "SZUKAJ...",
     "restrictedAccess": "Ograniczony Dostęp",
@@ -349,7 +349,6 @@
     "possessEntity": "Przejmij kontrolę",
     "banish": "Usuń"
   },
-
   "seal": {
     "settingsTitle": "Ustawienia Systemu",
     "creation": "Tworzenie",
@@ -373,5 +372,27 @@
     "number": "Liczba",
     "sides": "Ściany",
     "rerolls": "Przerzuty"
+  },
+  "settings": {
+    "title": "USTAWIENIA",
+    "language": "Język",
+    "controls": "Sterowanie",
+    "moveToken": "Przesuń Postać",
+    "panMap": "Przesuń Mapę",
+    "zoomMap": "Powiększ / Pomniejsz",
+    "fullscreen": "Pełny Ekran",
+    "keys": "Klawisze",
+    "clickDrag": "Lewy Klik + Przeciągnij",
+    "mouseWheel": "Kółko Myszy",
+    "logout": "Wyloguj",
+    "account": "Konto",
+    "removeKey": "Usuń klawisz",
+    "selectLanguage": "Wybierz język interfejsu",
+    "logoutDesc": "Zamknij obecną sesję i wróć do ekranu logowania.",
+    "moveUp": "W górę",
+    "moveDown": "W dół",
+    "moveLeft": "W lewo",
+    "moveRight": "W prawo",
+    "general": "Ogólne"
   }
 }

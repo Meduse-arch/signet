@@ -38,7 +38,8 @@
     "createSession": "Sitzung erstellen",
     "logout": "Abmelden",
     "disconnect": "Trennen",
-    "grade": "Rolle"
+    "grade": "Rolle",
+    "settings": "Einstellungen"
   },
   "lobby": {
     "share": "TEILEN",
@@ -371,5 +372,27 @@
     "number": "Anzahl",
     "sides": "Seiten",
     "rerolls": "Neuversuche"
+  },
+  "settings": {
+    "title": "EINSTELLUNGEN",
+    "language": "Sprache",
+    "controls": "Steuerung",
+    "moveToken": "Charakter bewegen",
+    "panMap": "Karte verschieben",
+    "zoomMap": "Hinein- / Herauszoomen",
+    "fullscreen": "Vollbild",
+    "keys": "Tasten",
+    "clickDrag": "Linksklick + Ziehen",
+    "mouseWheel": "Mausrad",
+    "logout": "Abmelden",
+    "account": "Konto",
+    "removeKey": "Taste entfernen",
+    "selectLanguage": "Wählen Sie die Sprache der Benutzeroberfläche",
+    "logoutDesc": "Aktuelle Sitzung schließen und zum Anmeldebildschirm zurückkehren.",
+    "moveUp": "Oben",
+    "moveDown": "Unten",
+    "moveLeft": "Links",
+    "moveRight": "Rechts",
+    "general": "Allgemein"
   }
 }

@@ -63,7 +63,7 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
  />
  <button 
  onClick={handleAdd}
- className="px-3 rounded-lg bg-glacier-DEFAULT text-black hover:shadow-[0_0_10px_rgba(212,175,55,0.3)] transition-all flex items-center justify-center self-center h-8"
+ className="px-3 rounded-lg bg-glacier-DEFAULT text-black hover:shadow-[0_0_10px_rgba(79,164,184,0.3)] transition-all flex items-center justify-center self-center h-8"
  >
  <Plus size={16} />
  </button>

@@ -52,7 +52,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
  {label && (
  <label
  htmlFor={inputId}
- className="text-[10px] font-quantico font-black text-gold-muted tracking-widest uppercase ml-1"
+ className="text-[10px] font-quantico font-black text-glacier-muted tracking-widest uppercase ml-1"
  >
  {label}
  </label>
@@ -62,7 +62,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
  <div className="relative group">
  {/* Icône gauche */}
  {leftIcon && (
- <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gold-muted group-focus-within:text-glacier-bright transition-colors duration-200 pointer-events-none">
+ <span className="absolute left-4 top-1/2 -translate-y-1/2 text-glacier-muted group-focus-within:text-glacier-bright transition-colors duration-200 pointer-events-none">
  {leftIcon}
  </span>
  )}
@@ -78,7 +78,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
  // Focus : bordure plus lumineuse + légère lueur
  'focus:border-silver-DEFAULT/60 focus:ring-1 focus:ring-gold-DEFAULT/20',
  // Placeholder plus lisible (ni trop fort, ni invisible)
- 'placeholder:text-gold-muted/50 placeholder:font-inter placeholder:italic',
+ 'placeholder:text-glacier-muted/50 placeholder:font-inter placeholder:italic',
  // Texte principal
  'text-glacier-bright',
  // Disabled

@@ -125,7 +125,7 @@ export const DiceRollModal: React.FC = () => {
  }`}>{displayRune}</span>
  ) : (
  <div className="flex flex-col items-center gap-1 animate-in fade-in duration-300">
- <span className="text-2xl font-quantico text-glacier-bright opacity-70 animate-pulse drop-shadow-[0_0_10px_rgba(212,175,55,0.6)]">{rollInfo.char}</span>
+ <span className="text-2xl font-quantico text-glacier-bright opacity-70 animate-pulse drop-shadow-[0_0_10px_rgba(79,164,184,0.6)]">{rollInfo.char}</span>
  <div className="relative flex items-center justify-center">
  {diceResult.length === 1 && (() => {
  const match = diceResult[0].diceString.match(/(\d+)d\(?([^=)]+)=?(\d+)?\)?/)

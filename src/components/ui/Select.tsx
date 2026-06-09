@@ -93,7 +93,7 @@ export function Select({
  >
  {/* Libellé */}
  {label && (
- <span className="text-[10px] font-quantico font-black text-gold-muted tracking-widest uppercase ml-1">
+ <span className="text-[10px] font-quantico font-black text-glacier-muted tracking-widest uppercase ml-1">
  {label}
  </span>
  )}
@@ -118,11 +118,11 @@ export function Select({
  <span className="flex items-center gap-2 tracking-widest uppercase truncate">
  {selectedOption?.icon}
  {selectedOption ? selectedOption.label : (
- <span className="text-gold-muted/60 font-inter italic normal-case tracking-normal">{actualPlaceholder}</span>
+ <span className="text-glacier-muted/60 font-inter italic normal-case tracking-normal">{actualPlaceholder}</span>
  )}
  </span>
  <Icons.ChevronDown
- className={`w-4 h-4 text-gold-muted shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-glacier-bright' : ''}`}
+ className={`w-4 h-4 text-glacier-muted shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-glacier-bright' : ''}`}
  />
  </button>
 
@@ -142,14 +142,14 @@ export function Select({
  {searchable && (
  <div className="p-2 border-b border-silver-DEFAULT/10">
  <div className="relative">
- <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gold-muted/60 pointer-events-none" />
+ <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-glacier-muted/60 pointer-events-none" />
  <input
  type="text"
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
  placeholder={t('common.searchPlaceholder', 'Rechercher…')}
  autoFocus
- className="w-full bg-transparent pl-8 pr-3 py-2 text-[11px] font-inter italic text-glacier-bright placeholder:text-gold-muted/40 outline-none"
+ className="w-full bg-transparent pl-8 pr-3 py-2 text-[11px] font-inter italic text-glacier-bright placeholder:text-glacier-muted/40 outline-none"
  />
  </div>
  </div>
@@ -158,7 +158,7 @@ export function Select({
  {/* Liste des options */}
  <div className="max-h-52 overflow-y-auto custom-scrollbar">
  {filteredOptions.length === 0 ? (
- <div className="px-4 py-4 text-xs italic font-inter text-gold-muted/50 text-center">
+ <div className="px-4 py-4 text-xs italic font-inter text-glacier-muted/50 text-center">
  {actualEmptyMessage}
  </div>
  ) : (

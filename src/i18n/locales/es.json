@@ -38,7 +38,8 @@
     "createSession": "Crear Sesión",
     "logout": "Cerrar sesión",
     "disconnect": "Desconectar",
-    "grade": "Rol"
+    "grade": "Rol",
+    "settings": "Ajustes"
   },
   "lobby": {
     "share": "COMPARTIR",
@@ -318,7 +319,6 @@
     "monthsAgo": "Hace {{count}} meses",
     "yearsAgo": "Hace más de un año"
   },
-
   "bestiary": {
     "searchPlaceholder": "BUSCAR...",
     "restrictedAccess": "Acceso Restringido",
@@ -349,7 +349,6 @@
     "possessEntity": "Tomar posesión",
     "banish": "Eliminar"
   },
-
   "seal": {
     "settingsTitle": "Configuración del Sistema",
     "creation": "Creación",
@@ -373,5 +372,27 @@
     "number": "Número",
     "sides": "Caras",
     "rerolls": "Repeticiones"
+  },
+  "settings": {
+    "title": "AJUSTES",
+    "language": "Idioma",
+    "controls": "Controles",
+    "moveToken": "Mover Personaje",
+    "panMap": "Desplazar Mapa",
+    "zoomMap": "Acercar / Alejar",
+    "fullscreen": "Pantalla Completa",
+    "keys": "Teclas",
+    "clickDrag": "Clic Izquierdo + Arrastrar",
+    "mouseWheel": "Rueda del Ratón",
+    "logout": "Cerrar sesión",
+    "account": "Cuenta",
+    "removeKey": "Quitar tecla",
+    "selectLanguage": "Selecciona el idioma de la interfaz",
+    "logoutDesc": "Cerrar la sesión actual y volver a la pantalla de inicio de sesión.",
+    "moveUp": "Arriba",
+    "moveDown": "Abajo",
+    "moveLeft": "Izquierda",
+    "moveRight": "Derecha",
+    "general": "General"
   }
 }

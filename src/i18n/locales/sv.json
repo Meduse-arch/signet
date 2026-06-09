@@ -38,7 +38,8 @@
     "createSession": "Skapa session",
     "logout": "Logga ut",
     "disconnect": "Koppla från",
-    "grade": "Roll"
+    "grade": "Roll",
+    "settings": "Inställningar"
   },
   "lobby": {
     "share": "DELA",
@@ -318,7 +319,6 @@
     "monthsAgo": "För {{count}} månader sedan",
     "yearsAgo": "För över ett år sedan"
   },
-
   "bestiary": {
     "searchPlaceholder": "SÖK...",
     "restrictedAccess": "Begränsad Åtkomst",
@@ -349,7 +349,6 @@
     "possessEntity": "Ta kontroll",
     "banish": "Ta bort"
   },
-
   "seal": {
     "settingsTitle": "Systeminställningar",
     "creation": "Skapande",
@@ -373,5 +372,27 @@
     "number": "Antal",
     "sides": "Sidor",
     "rerolls": "Omslag"
+  },
+  "settings": {
+    "title": "INSTÄLLNINGAR",
+    "language": "Språk",
+    "controls": "Kontroller",
+    "moveToken": "Flytta Karaktär",
+    "panMap": "Panorera Karta",
+    "zoomMap": "Zooma In / Ut",
+    "fullscreen": "Helskärm",
+    "keys": "Tangenter",
+    "clickDrag": "Vänsterklick + Dra",
+    "mouseWheel": "Mushjul",
+    "logout": "Logga ut",
+    "account": "Konto",
+    "removeKey": "Ta bort tangent",
+    "selectLanguage": "Välj gränssnittsspråk",
+    "logoutDesc": "Stäng den aktuella sessionen och återgå till inloggningsskärmen.",
+    "moveUp": "Upp",
+    "moveDown": "Ner",
+    "moveLeft": "Vänster",
+    "moveRight": "Höger",
+    "general": "Allmänt"
   }
 }

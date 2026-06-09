@@ -394,7 +394,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
  key={item.instanceId || `stack-${item.id}-${idx}`} 
  onClick={() => setSelectedItem(item, false)}
  className={`group relative rounded-xl p-2.5 transition-all cursor-pointer flex items-center gap-3 overflow-hidden ${
- isActive ? 'border-gold-bright bg-glacier-DEFAULT/10 shadow-[0_0_15px_rgba(157, 168, 184,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-silver-DEFAULT/30'
+ isActive ? 'border-glacier-bright bg-glacier-DEFAULT/10 shadow-[0_0_15px_rgba(157, 168, 184,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-silver-DEFAULT/30'
  }`}
  >
  <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center relative overflow-hidden shrink-0 shadow-inner">
@@ -422,7 +422,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
  {item.category === 'Consommable' ? (
  <button 
  onClick={(e) => { e.stopPropagation(); handleUseItem(item); }}
- className="p-1.5 rounded-lg bg-glacier-DEFAULT text-black hover:bg-gold-bright transition-all"
+ className="p-1.5 rounded-lg bg-glacier-DEFAULT text-black hover:bg-glacier-bright transition-all"
  title={t('common.use', "Utiliser")}
  >
  <Zap size={10} />
@@ -433,7 +433,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
  className={`p-1.5 rounded-lg transition-all ${
  item.equipped 
  ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/40' 
- : 'bg-glacier-DEFAULT text-black group-hover:bg-gold-bright transition-colors'
+ : 'bg-glacier-DEFAULT text-black group-hover:bg-glacier-bright transition-colors'
  }`}
  title={item.equipped ? t('common.unequip', "Déséquiper") : t('common.equip', "Équiper")}
  >
@@ -491,7 +491,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
  key={item.id} 
  onClick={() => setSelectedItem(item, false)}
  className={`group relative rounded-xl p-2.5 transition-all cursor-pointer flex items-center gap-3 overflow-hidden ${
- isActive ? 'border-gold-bright bg-glacier-DEFAULT/10 shadow-[0_0_15px_rgba(157, 168, 184,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-silver-DEFAULT/30'
+ isActive ? 'border-glacier-bright bg-glacier-DEFAULT/10 shadow-[0_0_15px_rgba(157, 168, 184,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-silver-DEFAULT/30'
  }`}
  >
  <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center relative overflow-hidden shrink-0 shadow-inner">

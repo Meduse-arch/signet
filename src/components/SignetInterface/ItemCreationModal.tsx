@@ -144,15 +144,15 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
 
  return (
  <div className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 lg:p-10 animate-in fade-in zoom-in-95 duration-300">
- <div className="bg-[#0D0D0F] border border-silver-DEFAULT/40 rounded-[2rem] w-full max-w-4xl max-h-[90vh] shadow-[0_0_100px_rgba(0,0,0,0.8),0_0_40px_rgba(212,175,55,0.1)] flex flex-col overflow-hidden relative">
+ <div className="bg-[#0D0D0F] border border-silver-DEFAULT/40 rounded-[2rem] w-full max-w-4xl max-h-[90vh] shadow-[0_0_100px_rgba(0,0,0,0.8),0_0_40px_rgba(79,164,184,0.1)] flex flex-col overflow-hidden relative">
  
  {/* Decorative Golden Line Top */}
- <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />
+ <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-glacier-bright to-transparent opacity-50" />
 
  {/* Header Noble Fixed */}
  <header className="shrink-0 bg-black/40 p-6 lg:p-8 border-b border-silver-DEFAULT/20 flex justify-between items-center z-20">
  <div className="flex items-center gap-5">
- <div className="p-4 rounded-2xl bg-glacier-DEFAULT text-black shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-transform hover:scale-110 duration-500">
+ <div className="p-4 rounded-2xl bg-glacier-DEFAULT text-black shadow-[0_0_20px_rgba(79,164,184,0.4)] transition-transform hover:scale-110 duration-500">
  {itemCreationType === 'forge' ? <Hammer size={28} /> : <Package size={28} />}
  </div>
  <div>
@@ -181,14 +181,14 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  <div className="space-y-8">
  <div className="flex flex-col gap-3">
  <label className="text-xs font-quantico font-black text-silver-bright/70 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
- <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> {t('context.itemName', "Nom de l'objet")}
+ <div className="w-1.5 h-1.5 rounded-full bg-glacier-bright animate-pulse" /> {t('context.itemName', "Nom de l'objet")}
  </label>
  <input 
  type="text" 
  placeholder={t('context.itemNamePlaceholder', "NOM DE L'ARTÉFACT...")} 
  value={name} 
  onChange={e => setName(e.target.value)} 
- className="bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-quantico text-white placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner" 
+ className="bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-quantico text-white placeholder:text-white/30 focus:border-glacier-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(79,164,184,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner" 
  autoFocus 
  />
  </div>
@@ -198,7 +198,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  <select 
  value={category} 
  onChange={e => setCategory(e.target.value)}
- className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-xs font-quantico text-white uppercase focus:border-gold-bright outline-none appearance-none cursor-pointer"
+ className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-xs font-quantico text-white uppercase focus:border-glacier-bright outline-none appearance-none cursor-pointer"
  >
  {CATEGORIES.map(c => (
  <option key={c.id} value={c.id} className="bg-[#0D0D0F]">
@@ -214,7 +214,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  placeholder={t('context.itemDescPlaceholder', "Récitez ici la légende qui entoure cet artefact...")} 
  value={description} 
  onChange={e => setDescription(e.target.value)} 
- className="bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 outline-none transition-all resize-none h-32 shadow-inner custom-scrollbar" 
+ className="bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-glacier-bright focus:bg-black/80 outline-none transition-all resize-none h-32 shadow-inner custom-scrollbar" 
  />
  </div>
  </div>
@@ -239,7 +239,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  placeholder={t('context.urlPlaceholder', "URL OU IDENTIFIANT...")} 
  value={imageUrl} 
  onChange={e => setImageUrl(e.target.value)} 
- className="flex-1 bg-black/60 border border-silver-DEFAULT/20 rounded-xl px-4 py-3 text-xs font-mono text-glacier-bright/60 placeholder:text-white/30 focus:border-gold-bright outline-none transition-all" 
+ className="flex-1 bg-black/60 border border-silver-DEFAULT/20 rounded-xl px-4 py-3 text-xs font-mono text-glacier-bright/60 placeholder:text-white/30 focus:border-glacier-bright outline-none transition-all" 
  />
  <button 
  onClick={() => fileInputRef.current?.click()}
@@ -269,7 +269,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  <h3 className="text-xs font-quantico font-black text-glacier-bright uppercase tracking-[0.3em] flex items-center gap-2">
  <Sparkles size={16} className="text-glacier-bright animate-pulse" /> {t('context.statModifiers', "Modificateurs de stats")}
  </h3>
- <button onClick={addModifier} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT text-black font-quantico text-[11px] font-black tracking-widest border-2 border-silver-DEFAULT hover:bg-gold-bright transition-all">
+ <button onClick={addModifier} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT text-black font-quantico text-[11px] font-black tracking-widest border-2 border-silver-DEFAULT hover:bg-glacier-bright transition-all">
  <Plus size={14} /> {t('common.add', "Ajouter")}
  </button>
  </div>
@@ -317,14 +317,14 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  placeholder="1d6..."
  value={m.formula || ''} 
  onChange={e => updateModifier(i, { formula: e.target.value })}
- className="w-full bg-glacier-DEFAULT/10 border-2 border-silver-DEFAULT/40 rounded-xl px-2 py-2 text-xs text-glacier-bright text-center font-mono outline-none focus:border-gold-bright"
+ className="w-full bg-glacier-DEFAULT/10 border-2 border-silver-DEFAULT/40 rounded-xl px-2 py-2 text-xs text-glacier-bright text-center font-mono outline-none focus:border-glacier-bright"
  />
  ) : (
  <input 
  type="number" 
  value={m.value} 
  onChange={e => updateModifier(i, { value: parseInt(e.target.value) || 0 })}
- className="w-full bg-glacier-DEFAULT/10 border-2 border-silver-DEFAULT/40 rounded-xl px-2 py-2 text-xs text-glacier-bright text-center font-mono outline-none focus:border-gold-bright"
+ className="w-full bg-glacier-DEFAULT/10 border-2 border-silver-DEFAULT/40 rounded-xl px-2 py-2 text-xs text-glacier-bright text-center font-mono outline-none focus:border-glacier-bright"
  />
  )}
  </div>
@@ -352,7 +352,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  {/* Footer Fixed Noble & Visible */}
  <footer className="shrink-0 p-8 lg:p-10 border-t border-silver-DEFAULT/30 bg-black/60 backdrop-blur-3xl z-30 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
  {/* Decorative line below content */}
- <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold-bright/20 to-transparent" />
+ <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-glacier-bright/20 to-transparent" />
  
  <div className="flex gap-4">
  <button 
@@ -367,7 +367,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  className={`flex-[2] py-5 text-[11px] font-quantico font-black tracking-[0.4em] rounded-2xl transition-all flex justify-center items-center gap-4 relative group overflow-hidden border-2 ${
  !name.trim()
  ? 'bg-black/20 text-white/40 border-white/15 cursor-not-allowed'
- : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_40px_rgba(212,175,55,0.4)]'
+ : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:bg-glacier-bright hover:shadow-[0_0_40px_rgba(79,164,184,0.4)]'
  }`}
  >
  {name.trim() && <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />}

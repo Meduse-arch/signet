@@ -461,7 +461,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
  <h3 className="text-xs font-quantico font-black text-silver-bright/60 uppercase tracking-widest">{t('context.currentInventory', "Inventaire Actuel")}</h3>
  <button 
  onClick={() => setShowForge(true)}
- className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/30 text-glacier-bright hover:bg-glacier-DEFAULT/20 transition-all font-quantico text-xs font-black uppercase tracking-widest group shadow-lg"
+ className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT text-black border border-silver-DEFAULT hover:bg-glacier-bright transition-all font-quantico text-xs font-black uppercase tracking-widest group shadow-lg"
  >
  <Plus size={14} className="group-hover:rotate-90 transition-transform" />
  {t('common.add', "Ajouter")}
@@ -609,7 +609,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
  <h3 className="text-xs font-quantico font-black text-silver-bright/60 uppercase tracking-widest">{t('context.assignedSkills', "Compétences Assignées")}</h3>
  <button 
  onClick={() => setShowSkillArchive(true)}
- className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/30 text-glacier-bright hover:bg-glacier-DEFAULT/20 transition-all font-quantico text-xs font-black uppercase tracking-widest group shadow-lg"
+ className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT text-black border border-silver-DEFAULT hover:bg-glacier-bright transition-all font-quantico text-xs font-black uppercase tracking-widest group shadow-lg"
  >
  <Plus size={14} className="group-hover:rotate-90 transition-transform" />
  {t('common.add', "Ajouter")}
@@ -709,7 +709,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
  <h3 className="text-xs font-quantico font-black text-silver-bright/60 uppercase tracking-widest">{t('context.assignedQuests', "Quêtes Assignées")}</h3>
  <button 
  onClick={() => setShowQuestArchive(true)}
- className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/30 text-glacier-bright hover:bg-glacier-DEFAULT/20 transition-all font-quantico text-xs font-black uppercase tracking-widest group shadow-lg"
+ className="flex items-center gap-2 px-4 py-2 rounded-xl bg-glacier-DEFAULT text-black border border-silver-DEFAULT hover:bg-glacier-bright transition-all font-quantico text-xs font-black uppercase tracking-widest group shadow-lg"
  >
  <Plus size={14} className="group-hover:rotate-90 transition-transform" />
  {t('common.add', "Ajouter")}
@@ -821,7 +821,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
  </button>
  <button 
  onClick={handleSave}
- className="flex items-center gap-3 px-12 py-3 rounded-full bg-glacier-DEFAULT text-black hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-105 transition-all group font-quantico font-black text-xs uppercase tracking-[0.2em]"
+ className="flex items-center gap-3 px-12 py-3 rounded-full bg-glacier-DEFAULT text-black hover:shadow-[0_0_30px_rgba(79,164,184,0.4)] hover:scale-105 transition-all group font-quantico font-black text-xs uppercase tracking-[0.2em]"
  >
  <Save size={14} className="group-hover:rotate-12 transition-transform" />
  {t('common.save', "Enregistrer")}

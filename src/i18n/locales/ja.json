@@ -38,7 +38,8 @@
     "createSession": "セッション作成",
     "logout": "ログアウト",
     "disconnect": "ログアウト",
-    "grade": "役割"
+    "grade": "役割",
+    "settings": "設定"
   },
   "lobby": {
     "share": "共有",
@@ -371,5 +372,27 @@
     "number": "数",
     "sides": "面",
     "rerolls": "リロール"
+  },
+  "settings": {
+    "title": "設定",
+    "language": "言語",
+    "controls": "操作",
+    "moveToken": "キャラクターを移動",
+    "panMap": "マップを移動",
+    "zoomMap": "ズームイン / ズームアウト",
+    "fullscreen": "全画面",
+    "keys": "キー",
+    "clickDrag": "左クリック + ドラッグ",
+    "mouseWheel": "マウスホイール",
+    "logout": "ログアウト",
+    "account": "アカウント",
+    "removeKey": "キーを削除",
+    "selectLanguage": "インターフェイス言語を選択",
+    "logoutDesc": "現在のセッションを終了し、ログイン画面に戻ります。",
+    "moveUp": "上",
+    "moveDown": "下",
+    "moveLeft": "左",
+    "moveRight": "右",
+    "general": "一般"
   }
 }

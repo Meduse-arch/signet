@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Icons } from '../ui/Icons';
 import { useUIStore } from '../../store/ui';
 import { SecurityLevel, useAuthStore } from '../../store/auth';
-import { LanguageModal, languages } from '../LanguageModal';
+
 import logo from '../../assets/logo.svg';
 import { SignetLogo } from '../ui/SignetLogo';
 
@@ -18,7 +18,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
  const { logout, user } = useAuthStore();
  const isMJ = user && user.role >= SecurityLevel.MJ;
 
- const [langModalOpen, setLangModalOpen] = useState(false);
+
 
  const navItems = [
  { id: 'library', icon: Icons.Library, label: t('sidebar.library'), action: () => setActiveTab('library') },
@@ -113,47 +113,24 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
  </div>
  
  <div className="p-3 pb-8 border-t border-silver-DEFAULT/30 space-y-3 relative z-10 bg-black/20">
- {sidebarOpen && user && (
- <div className="px-3 py-2 mb-2 rounded-lg bg-glacier-DEFAULT/5 border border-silver-DEFAULT/30">
- <div className="flex items-center gap-3">
- <div className="w-2 h-2 rounded-full bg-gold-bright animate-pulse shadow-[0_0_8px_rgba(212,160,23,0.6)]"></div>
- <span className="text-xs font-quantico font-black text-glacier-bright tracking-widest truncate">
- {user.pseudo}
- </span>
- </div>
- <div className="mt-1 text-xs font-mono text-silver-bright drop-shadow-md/60 uppercase tracking-tighter ml-5">
- {t('sidebar.grade')}: {user.role}
- </div>
- </div>
- )}
  
  <div className="flex flex-col gap-1">
- {/* Language Switcher */}
- <button
- onClick={() => setLangModalOpen(true)}
- className={`w-full flex items-center ${sidebarOpen ? 'justify-start px-3 gap-4' : 'justify-center'} py-2.5 rounded-xl hover:bg-glacier-DEFAULT/5 text-silver-bright drop-shadow-md/60 hover:text-glacier-bright transition-all group`}
- title={!sidebarOpen ? "Language" : undefined}
- >
- <Icons.Globe className="w-5 h-5 group-hover:rotate-12 transition-transform" />
- <span className={`text-xs font-quantico font-black tracking-[0.1em] uppercase whitespace-nowrap transition-all duration-300 ${
- sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
- }`}>
- {languages.find(l => i18n.language.startsWith(l.code))?.label || 'Français'}
- </span>
- </button>
-
- <button
- onClick={logout}
- className={`w-full flex items-center ${sidebarOpen ? 'justify-start px-3 gap-4' : 'justify-center'} py-2.5 rounded-xl hover:bg-red-500/10 text-silver-bright drop-shadow-md/60 hover:text-red-400 transition-all group`}
- title={!sidebarOpen ? t('sidebar.disconnect') : undefined}
- >
- <Icons.LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
- <span className={`text-xs font-quantico font-black tracking-[0.1em] uppercase whitespace-nowrap transition-all duration-300 ${
- sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
- }`}>
- {t('sidebar.logout')}
- </span>
- </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`w-full flex items-center ${sidebarOpen ? 'justify-start px-3 gap-4' : 'justify-center'} py-2.5 rounded-xl transition-all group ${
+            activeTab === 'settings' 
+              ? 'bg-glacier-DEFAULT/10 border-silver-DEFAULT/30 text-glacier-bright shadow-rune-glacier border' 
+              : 'hover:bg-glacier-DEFAULT/5 text-silver-bright drop-shadow-md/60 hover:text-glacier-bright border border-transparent hover:border-silver-DEFAULT/30'
+          }`}
+          title={!sidebarOpen ? t('sidebar.settings') : undefined}
+        >
+          <Icons.Settings className={`w-5 h-5 transition-transform duration-500 ${activeTab === 'settings' ? 'rotate-90 text-glacier-bright' : 'group-hover:rotate-45'}`} />
+          <span className={`text-xs font-quantico font-black tracking-[0.1em] uppercase whitespace-nowrap transition-all duration-300 ${
+            sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
+          }`}>
+            {t('sidebar.settings')}
+          </span>
+        </button>
  
  <button
  onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -164,10 +141,7 @@ export function Sidebar({ onSearchToggle, onKeyOpen }: SidebarProps) {
  </div>
  </div>
 
- <LanguageModal 
- isOpen={langModalOpen} 
- onClose={() => setLangModalOpen(false)} 
- />
+
  </div>
  );
 }

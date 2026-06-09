@@ -4,7 +4,6 @@
     "subtitle": "Virtual Tabletop",
     "version": "Signet Engine v1.0.4 — Build Stable"
   },
-
   "auth": {
     "pressToStart": "Appuyez sur ESPACE pour commencer",
     "loginTitle": "Connexion",
@@ -21,7 +20,6 @@
     "switchToSignup": "Pas encore de compte ? Inscrivez-vous",
     "switchToLogin": "Déjà membre ? Connectez-vous"
   },
-
   "hub": {
     "archivesRevealed_one": "{{count}} Session trouvée",
     "archivesRevealed_other": "{{count}} Sessions trouvées",
@@ -33,7 +31,6 @@
     "editSubmitLabel": "Enregistrer",
     "createSubmitLabel": "Créer"
   },
-
   "sidebar": {
     "library": "Bibliothèque",
     "search": "Rechercher",
@@ -41,9 +38,9 @@
     "createSession": "Créer Session",
     "logout": "Déconnecter",
     "disconnect": "Se déconnecter",
-    "grade": "Rôle"
+    "grade": "Rôle",
+    "settings": "Paramètres"
   },
-
   "lobby": {
     "share": "PARTAGER",
     "copied": "COPIÉ",
@@ -60,7 +57,6 @@
     "rolePlayer": "JOUEUR",
     "defaultPlayer": "Joueur"
   },
-
   "session": {
     "archiveTitle": "Titre de la session",
     "archivePlaceholder": "Ex: Le Tombeau des Anciens",
@@ -77,7 +73,6 @@
     "unknownSystem": "Système Inconnu",
     "summoned": "Créée"
   },
-
   "titlebar": {
     "reintegrate": "Réintégrer",
     "scenes": "SCÈNES",
@@ -86,7 +81,6 @@
     "inventory": "INVENTAIRE",
     "players": "JOUEURS"
   },
-
   "filters": {
     "system": "Système",
     "all": "Tous",
@@ -98,7 +92,6 @@
     "az": "A-Z",
     "reset": "Réinitialiser"
   },
-
   "common": {
     "loading": "Chargement...",
     "save": "Enregistrer",
@@ -132,7 +125,6 @@
     "remove": "Retirer",
     "all": "Tout"
   },
-
   "modals": {
     "createItem": "Créer un objet",
     "addItem": "Ajouter un objet",
@@ -151,7 +143,6 @@
     "newMap": "NOUVELLE CARTE",
     "activeMap": "CARTE ACTIVE"
   },
-
   "context": {
     "forgeTitle": "Création d'objets — Base de données",
     "forgeTitleChar": "Ajouter à l'inventaire du personnage",
@@ -321,7 +312,6 @@
     "tagNamePlaceholder": "Nom du tag...",
     "noTags": "Aucun tag..."
   },
-
   "time": {
     "today": "Aujourd'hui",
     "yesterday": "Hier",
@@ -329,7 +319,6 @@
     "monthsAgo": "Il y a {{count}} mois",
     "yearsAgo": "Il y a plus d'un an"
   },
-
   "bestiary": {
     "searchPlaceholder": "RECHERCHER...",
     "restrictedAccess": "Accès Restreint",
@@ -360,7 +349,6 @@
     "possessEntity": "Prendre possession",
     "banish": "Supprimer"
   },
-
   "seal": {
     "settingsTitle": "Paramètres du Système",
     "creation": "Création",
@@ -384,5 +372,27 @@
     "number": "Nombre",
     "sides": "Faces",
     "rerolls": "Relances"
+  },
+  "settings": {
+    "title": "PARAMÈTRES",
+    "language": "Langue",
+    "controls": "Contrôles",
+    "moveToken": "Déplacer le personnage",
+    "panMap": "Déplacer la caméra",
+    "zoomMap": "Zoomer / Dézoomer",
+    "fullscreen": "Plein écran",
+    "keys": "Touches",
+    "clickDrag": "Clic Gauche + Glisser",
+    "mouseWheel": "Molette Souris",
+    "logout": "Se déconnecter",
+    "account": "Compte",
+    "removeKey": "Retirer la touche",
+    "selectLanguage": "Sélectionnez la langue de l'interface",
+    "logoutDesc": "Fermer la session actuelle et retourner à l'écran de connexion.",
+    "moveUp": "Haut",
+    "moveDown": "Bas",
+    "moveLeft": "Gauche",
+    "moveRight": "Droite",
+    "general": "Général"
   }
 }

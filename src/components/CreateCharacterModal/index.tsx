@@ -386,7 +386,7 @@ export function CreateCharacterModal({
  type="number"
  value={stats[stat.id]}
  onChange={(e) => handleStatChange(stat.id, parseInt(e.target.value) || 0)}
- className="w-8 bg-transparent border-b border-silver-DEFAULT/30 text-center font-mono font-bold text-sm text-glacier-bright focus:outline-none focus:border-gold-bright transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:border-none"
+ className="w-8 bg-transparent border-b border-silver-DEFAULT/30 text-center font-mono font-bold text-sm text-glacier-bright focus:outline-none focus:border-glacier-bright transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:border-none"
  />
  {(isMJ || !isEditing) && <button onClick={() => handleStatChange(stat.id, stats[stat.id] + 1)} className="w-6 h-6 flex items-center justify-center rounded bg-glacier-DEFAULT/10 text-glacier-bright hover:bg-glacier-DEFAULT/20 transition-colors">+</button>}
  </>
@@ -457,7 +457,7 @@ export function CreateCharacterModal({
  className={`w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-3 rounded-full transition-all group font-quantico font-black border-2 ${
  (!name.trim() || (settings?.sheetMode === 'manual' && pointsLeft < 0) || (settings?.sheetMode === 'roll' && Object.values(stats).some(v => v === 0)))
  ? 'bg-black/20 text-white/40 border-white/15 cursor-not-allowed pointer-events-none'
- : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] shadow-[0_0_30px_rgba(212,175,55,0.1)]'
+ : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:bg-glacier-bright hover:shadow-[0_0_40px_rgba(79,164,184,0.4)] shadow-[0_0_30px_rgba(79,164,184,0.1)]'
  }`}
  >
  <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />

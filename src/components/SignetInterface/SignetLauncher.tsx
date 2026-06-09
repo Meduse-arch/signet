@@ -127,7 +127,7 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
  opacity: isOpen ? 1 : 0,
  transitionDelay: `${index * 40}ms`,
  }}
- className={`absolute top-0 left-0 -ml-5 -mt-5 flex items-center justify-center w-10 h-10 rounded-full bg-[#0D0D0F]/80 backdrop-blur-xl border border-silver-DEFAULT/40 text-silver-bright hover:text-glacier-bright hover:bg-[#0D0D0F]/90 hover:border-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isOpen ? 'pointer-events-auto' : ''}`}
+ className={`absolute top-0 left-0 -ml-5 -mt-5 flex items-center justify-center w-10 h-10 rounded-full bg-[#0D0D0F]/80 backdrop-blur-xl border border-silver-DEFAULT/40 text-silver-bright hover:text-glacier-bright hover:bg-[#0D0D0F]/90 hover:border-glacier-bright hover:shadow-[0_0_20px_rgba(79,164,184,0.4)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isOpen ? 'pointer-events-auto' : ''}`}
  >
  {item.icon}
  {/* Tooltip Alchemy-style */}
@@ -146,16 +146,16 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
  >
  {/* Cercles holographiques rotatifs (Jarvis effect) */}
  <div className={`absolute inset-[-10px] rounded-full border-t-2 border-l-2 border-silver-DEFAULT/40 transition-transform duration-[3000ms] ease-linear ${isOpen ? 'rotate-[360deg] scale-110' : 'rotate-0 scale-100'}`} />
- <div className={`absolute inset-[-4px] rounded-full border-b-2 border-r-2 border-gold-bright/30 transition-transform duration-[2000ms] ease-linear ${isOpen ? '-rotate-[360deg] scale-105' : 'rotate-0 scale-100'}`} />
+ <div className={`absolute inset-[-4px] rounded-full border-b-2 border-r-2 border-glacier-bright/30 transition-transform duration-[2000ms] ease-linear ${isOpen ? '-rotate-[360deg] scale-105' : 'rotate-0 scale-100'}`} />
  
  {/* Cœur de l'orbe */}
- <div className="absolute inset-0 bg-[#0D0D0F]/80 backdrop-blur-2xl rounded-full border border-silver-DEFAULT/30 shadow-[0_0_20px_rgba(212,175,55,0.1)] group-hover:shadow-[0_0_30px_rgba(212,175,55,0.3)] group-hover:border-silver-DEFAULT/60 transition-all duration-500" />
+ <div className="absolute inset-0 bg-[#0D0D0F]/80 backdrop-blur-2xl rounded-full border border-silver-DEFAULT/30 shadow-[0_0_20px_rgba(79,164,184,0.1)] group-hover:shadow-[0_0_30px_rgba(79,164,184,0.3)] group-hover:border-silver-DEFAULT/60 transition-all duration-500" />
  
  <div className={`relative flex items-center justify-center w-full h-full transition-all duration-500 ${isOpen ? 'rotate-90' : 'rotate-0'}`}>
  {isOpen ? (
  <X className="text-glacier-bright animate-in zoom-in duration-300" size={26} />
  ) : (
- <SignetLogo mode="hover" imgClassName="w-10 h-10 drop-shadow-[0_0_15px_rgba(212,175,55,0.6)]" />
+ <SignetLogo mode="hover" imgClassName="w-10 h-10 drop-shadow-[0_0_15px_rgba(79,164,184,0.6)]" />
  )}
  </div>
  </button>

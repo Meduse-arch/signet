@@ -125,7 +125,7 @@ export function LancerDes({ sessionId }: { sessionId: string }) {
  <button
  key={faces}
  onClick={() => executerLancer('', faces)}
- className="w-12 h-12 rounded-xl bg-black/40 border border-silver-DEFAULT/30 flex items-center justify-center font-quantico font-black text-glacier-bright hover:scale-110 hover:border-gold-bright transition-all shadow-lg"
+ className="w-12 h-12 rounded-xl bg-black/40 border border-silver-DEFAULT/30 flex items-center justify-center font-quantico font-black text-glacier-bright hover:scale-110 hover:border-glacier-bright transition-all shadow-lg"
  >
  D{faces}
  </button>

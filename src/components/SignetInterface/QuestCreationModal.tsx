@@ -77,15 +77,15 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
 
  return createPortal(
  <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 lg:p-10 animate-in fade-in zoom-in-95 duration-300">
- <div className="w-full max-w-4xl max-h-[90vh] bg-[#0D0D0F] border border-silver-DEFAULT/40 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8),0_0_40px_rgba(212,175,55,0.1)] flex flex-col overflow-hidden relative">
+ <div className="w-full max-w-4xl max-h-[90vh] bg-[#0D0D0F] border border-silver-DEFAULT/40 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8),0_0_40px_rgba(79,164,184,0.1)] flex flex-col overflow-hidden relative">
  
  {/* Decorative Golden Line Top */}
- <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />
+ <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-glacier-bright to-transparent opacity-50" />
 
  {/* HEADER FIXED */}
  <header className="shrink-0 p-6 lg:p-8 border-b border-silver-DEFAULT/20 flex justify-between items-center bg-black/40 z-20">
  <div className="flex items-center gap-5">
- <div className="p-4 rounded-2xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/20 text-glacier-bright shadow-lg shadow-gold-DEFAULT/5 transition-transform hover:scale-110 duration-500">
+ <div className="p-4 rounded-2xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/20 text-glacier-bright shadow-lg shadow-glacier-DEFAULT/5 transition-transform hover:scale-110 duration-500">
  <Scroll size={28} className="animate-pulse" />
  </div>
  <div>
@@ -110,7 +110,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  <div className="space-y-10">
  <section className="space-y-6">
  <h3 className="text-xs font-quantico font-black text-silver-bright/70 uppercase tracking-[0.3em] flex items-center gap-3">
- <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> {t('context.informations', "Informations")}
+ <div className="w-1.5 h-1.5 rounded-full bg-glacier-bright animate-pulse" /> {t('context.informations', "Informations")}
  </h3>
  <div className="space-y-6">
  <div className="space-y-2">
@@ -120,7 +120,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  value={title} 
  onChange={e => setTitle(e.target.value)} 
  placeholder={t('context.questTitlePlaceholder', "NOM DU RÉCIT...")}
- className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-quantico text-white placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner"
+ className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-quantico text-white placeholder:text-white/30 focus:border-glacier-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(79,164,184,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner"
  />
  </div>
  <div className="space-y-2">
@@ -130,7 +130,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  onChange={e => setDescription(e.target.value)}
  placeholder={t('context.questDescPlaceholder', "DÉCRIVEZ LES ÉPREUVES ET LES MOTIVATIONS...")}
  rows={6}
- className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 outline-none transition-all shadow-inner custom-scrollbar resize-none"
+ className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-glacier-bright focus:bg-black/80 outline-none transition-all shadow-inner custom-scrollbar resize-none"
  />
  </div>
  </div>
@@ -142,7 +142,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  <select 
  value={status} 
  onChange={e => setStatus(e.target.value as any)}
- className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-xs font-quantico text-white uppercase focus:border-gold-bright outline-none appearance-none cursor-pointer"
+ className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-xs font-quantico text-white uppercase focus:border-glacier-bright outline-none appearance-none cursor-pointer"
  >
  <option value="En cours">{t('context.inProgress', "En cours")}</option>
  <option value="Terminée">{t('context.completed', "Terminée")}</option>
@@ -157,7 +157,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  value={imageUrl} 
  onChange={e => setImageUrl(e.target.value)}
  placeholder={t('context.questImagePlaceholder', "URL DU SCEAU...")}
- className="flex-1 bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-4 py-4 text-[11px] font-mono text-white/60 focus:border-gold-bright outline-none"
+ className="flex-1 bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-4 py-4 text-[11px] font-mono text-white/60 focus:border-glacier-bright outline-none"
  />
  <label className="p-4 rounded-2xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/20 text-glacier-bright hover:bg-glacier-DEFAULT/20 cursor-pointer transition-all relative">
  {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
@@ -177,7 +177,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  <h3 className="text-xs font-quantico font-black text-glacier-bright uppercase tracking-[0.3em] flex items-center gap-3">
  <Gift size={16} className="text-glacier-bright animate-pulse" /> {t('context.rewards', "Récompenses")}
  </h3>
- <button onClick={addReward} className="p-2 rounded-xl bg-glacier-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
+ <button onClick={addReward} className="p-2 rounded-xl bg-glacier-DEFAULT text-black hover:bg-glacier-bright transition-all shadow-lg">
  <Plus size={16} />
  </button>
  </div>
@@ -194,7 +194,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  <select 
  value={reward.type} 
  onChange={e => updateReward(reward.id, { type: e.target.value })}
- className="bg-black border border-white/10 rounded-xl px-4 py-3 text-xs font-quantico text-white uppercase outline-none focus:border-gold-bright"
+ className="bg-black border border-white/10 rounded-xl px-4 py-3 text-xs font-quantico text-white uppercase outline-none focus:border-glacier-bright"
  >
  <option value="Experience">{t('context.experience', "Expérience (XP)")}</option>
  <option value="Item">{t('context.item', "Objet")}</option>
@@ -204,7 +204,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  type="number" 
  value={reward.value} 
  onChange={e => updateReward(reward.id, { value: parseInt(e.target.value) || 0 })}
- className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[12px] font-mono text-glacier-bright text-center outline-none focus:border-gold-bright"
+ className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[12px] font-mono text-glacier-bright text-center outline-none focus:border-glacier-bright"
  />
  </div>
  <input 
@@ -229,7 +229,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
 
  {/* FOOTER FIXED & NOBLE */}
  <footer className="shrink-0 p-8 lg:p-10 border-t border-silver-DEFAULT/30 bg-black/60 backdrop-blur-3xl z-30 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
- <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold-bright/20 to-transparent" />
+ <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-glacier-bright/20 to-transparent" />
  
  <div className="flex gap-4">
  <button 
@@ -244,7 +244,7 @@ export function QuestCreationModal({ sessionId }: QuestCreationModalProps) {
  className={`flex-[2] py-5 text-[11px] font-quantico font-black tracking-[0.4em] rounded-2xl transition-all flex justify-center items-center gap-4 relative group overflow-hidden border-2 ${
  !title.trim()
  ? 'bg-black/20 text-white/40 border-white/15 cursor-not-allowed'
- : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_40px_rgba(212,175,55,0.4)]'
+ : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:bg-glacier-bright hover:shadow-[0_0_40px_rgba(79,164,184,0.4)]'
  }`}
  >
  {title.trim() && <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />}

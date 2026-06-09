@@ -139,7 +139,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
  <div 
  key={quest.id}
  className={`group relative p-3 rounded-xl border transition-all flex items-center gap-3 overflow-hidden ${
- isActive ? 'border-gold-bright bg-glacier-DEFAULT/10 shadow-[0_0_15px_rgba(212,175,55,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-silver-DEFAULT/30'
+ isActive ? 'border-glacier-bright bg-glacier-DEFAULT/10 shadow-[0_0_15px_rgba(79,164,184,0.1)]' : 'border-white/[0.05] bg-white/[0.02] hover:border-silver-DEFAULT/30'
  }`}
  >
  <div className="w-12 h-12 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center overflow-hidden shrink-0 relative shadow-inner">

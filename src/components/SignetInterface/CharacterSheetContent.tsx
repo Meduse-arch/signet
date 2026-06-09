@@ -491,7 +491,7 @@ export function CharacterSheetContent({
  </button>
  <button 
  onClick={submitAvatarChange}
- className="px-4 py-1.5 rounded-lg bg-glacier-DEFAULT text-black border border-silver-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_15px_rgba(157, 168, 184,0.3)] text-xs font-quantico font-black uppercase tracking-wider transition-all"
+ className="px-4 py-1.5 rounded-lg bg-glacier-DEFAULT text-black border border-silver-DEFAULT hover:bg-glacier-bright hover:shadow-[0_0_15px_rgba(157, 168, 184,0.3)] text-xs font-quantico font-black uppercase tracking-wider transition-all"
  >
  Enregistrer
  </button>

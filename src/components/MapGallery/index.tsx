@@ -34,7 +34,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap, onAddMap }: MapGal
  key={map.id}
  onClick={() => onSelectMap(map)}
  className={`relative shrink-0 w-24 h-14 rounded-lg overflow-hidden snap-start border-2 transition-all group ${
- currentMapId === map.id ? 'border-gold-bright shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-transparent hover:border-silver-DEFAULT/50'
+ currentMapId === map.id ? 'border-glacier-bright shadow-[0_0_10px_rgba(79,164,184,0.4)]' : 'border-transparent hover:border-silver-DEFAULT/50'
  }`}
  >
  <AssetImage url={map.url} alt={map.name} className="w-full h-full object-cover" />
@@ -42,7 +42,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap, onAddMap }: MapGal
  <span className="text-xs font-quantico text-white truncate w-full">{map.name}</span>
  </div>
  {currentMapId === map.id && (
- <div className="absolute top-1 right-1 bg-gold-bright rounded-full p-0.5">
+ <div className="absolute top-1 right-1 bg-glacier-bright rounded-full p-0.5">
  <Check className="w-2 h-2 text-black" />
  </div>
  )}
@@ -59,7 +59,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap, onAddMap }: MapGal
  {/* Gallery Button */}
  <button
  onClick={() => setIsModalOpen(true)}
- className="p-3 rounded-2xl bg-glacier-DEFAULT text-black shadow-lg hover:shadow-gold-DEFAULT/20 transition-all active:scale-95 group"
+ className="p-3 rounded-2xl bg-glacier-DEFAULT text-black shadow-lg hover:shadow-glacier-DEFAULT/20 transition-all active:scale-95 group"
  >
  <Grid className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" />
  </button>
@@ -142,7 +142,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
  key={map.id}
  onClick={() => onSelect(map)}
  className={`group relative aspect-video rounded-2xl overflow-hidden border-2 cursor-pointer transition-all ${
- currentMapId === map.id ? 'border-gold-bright' : 'border-transparent hover:border-silver-DEFAULT/30'
+ currentMapId === map.id ? 'border-glacier-bright' : 'border-transparent hover:border-silver-DEFAULT/30'
  }`}
  >
  <AssetImage url={map.url} alt={map.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -158,7 +158,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
  </div>
 
  {currentMapId === map.id && (
- <div className="absolute top-3 right-3 bg-gold-bright text-black p-1 rounded-full">
+ <div className="absolute top-3 right-3 bg-glacier-bright text-black p-1 rounded-full">
  <Check className="w-3 h-3" />
  </div>
  )}
@@ -232,7 +232,7 @@ function MapGalleryModal({ maps, currentMapId, onClose, onSelect, onAdd }: Modal
  className={`flex-2 px-8 py-3 rounded-xl text-xs font-quantico font-bold transition-all border-2 ${
  !newName || !newUrl
  ? 'bg-black/20 text-white/40 border-white/15 cursor-not-allowed'
- : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]'
+ : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:bg-glacier-bright hover:shadow-[0_0_20px_rgba(79,164,184,0.3)]'
  }`}
  >
  {t('common.add', 'Ajouter la carte')}

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 interface UIState {
   sidebarOpen: boolean;
-  activeTab: 'library' | 'search' | 'key' | 'forge';
+  activeTab: 'library' | 'search' | 'key' | 'forge' | 'settings';
   showModal: boolean;
   showCreateModal: boolean;
   itemCreationType: 'forge' | 'inventory' | null;
@@ -32,7 +32,7 @@ interface UIState {
   setAutoSync: (sync: boolean) => void;
 
   setSidebarOpen: (open: boolean) => void;
-  setActiveTab: (tab: 'library' | 'search' | 'key' | 'forge') => void;
+  setActiveTab: (tab: 'library' | 'search' | 'key' | 'forge' | 'settings') => void;
   setShowModal: (show: boolean) => void;
   setShowCreateModal: (show: boolean, type?: 'forge' | 'inventory' | null, category?: string, item?: any) => void;
   setSelectedItem: (item: any | null, openModal?: boolean) => void;

@@ -135,7 +135,7 @@ if (!myCharacter) {
  title={controlledCharacterId ? "Ouvrir la fiche de l'entité possédée" : "Ouvrir le Bestiaire"}
  >
  <div className="absolute inset-[-6px] rounded-full border border-silver-DEFAULT/30 bg-[#0D0D0F]/80 backdrop-blur-xl group-hover/avatar:border-silver-DEFAULT/60 shadow-[0_4px_30px_rgba(0,0,0,0.6)] transition-all duration-500 ease-linear" />
- <div className="relative w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-silver-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)] overflow-hidden">
+ <div className="relative w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-silver-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(79,164,184,0.2)] overflow-hidden">
  {controlledCharacterId ? (
  characters.find(c => c.id === controlledCharacterId)?.image_url ? (
  <AssetImage src={characters.find(c => c.id === controlledCharacterId)?.image_url} alt="" className="w-full h-full object-cover" />
@@ -207,7 +207,7 @@ if (!myCharacter) {
  title="Ouvrir la fiche de personnage"
  >
  <div className="absolute inset-[-6px] rounded-full border border-silver-DEFAULT/30 bg-[#0D0D0F]/80 backdrop-blur-xl group-hover/avatar:border-silver-DEFAULT/60 shadow-[0_4px_30px_rgba(0,0,0,0.6)] transition-all duration-500 ease-linear" />
- <div className="relative w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-silver-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(212,175,55,0.2)] overflow-hidden">
+ <div className="relative w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-silver-DEFAULT/40 flex items-center justify-center shadow-[inset_0_0_15px_rgba(79,164,184,0.2)] overflow-hidden">
  {image_url ? (
  <AssetImage src={image_url} alt={name} className="w-full h-full object-cover" />
  ) : (
@@ -220,7 +220,7 @@ if (!myCharacter) {
  onClick={handleToggleToken}
  className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
  tokenStatus
- ? 'bg-glacier-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
+ ? 'bg-glacier-DEFAULT text-black shadow-[0_0_15px_rgba(79,164,184,0.4)]' 
  : 'bg-black/80 text-silver-bright border-silver-DEFAULT/40 hover:border-silver-DEFAULT'
  }`}
  title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}

@@ -107,7 +107,7 @@ export function TitleBar() {
  return (
  <div className="relative flex items-center justify-between h-8 bg-[#0D0D0F] border-b border-silver-DEFAULT/30 select-none z-[9999] overflow-hidden shrink-0" style={{ WebkitAppRegion: 'drag' } as any}>
  {/* Effet lumineux de ligne façon Jarvis */}
- <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" /> <div className="flex items-center gap-2 px-3 relative z-10">
+ <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-glacier-bright to-transparent opacity-50" /> <div className="flex items-center gap-2 px-3 relative z-10">
  <SignetLogo mode="hover" imgClassName="w-4 h-4" />
  <span className="text-xs font-quantico font-black tracking-widest text-silver-bright ">
  {title}

@@ -113,7 +113,7 @@ export function AuthPage({ onEnterApp }: AuthPageProps) {
  {/* AUTH MODAL */}
  {showAuthModal && (
  <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-700">
- <div className="w-full max-w-md bg-[#0D0D0F] border-2 border-silver-DEFAULT/40 rounded-[2.5rem] p-10 shadow-[0_0_50px_rgba(212,175,55,0.15)] relative overflow-hidden animate-in zoom-in-95 duration-500">
+ <div className="w-full max-w-md bg-[#0D0D0F] border-2 border-silver-DEFAULT/40 rounded-[2.5rem] p-10 shadow-[0_0_50px_rgba(79,164,184,0.15)] relative overflow-hidden animate-in zoom-in-95 duration-500">
  <div className="absolute inset-0 bg-grimoire-texture opacity-[0.05] pointer-events-none" />
  
  <div className="relative z-10">

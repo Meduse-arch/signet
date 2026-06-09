@@ -80,7 +80,7 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
  {/* Anneau rotatif façon Jarvis/HUD */}
  <div className="absolute inset-[-4px] rounded-full border border-silver-DEFAULT/40 group-hover:border-silver-DEFAULT/50 group-hover:rotate-180 transition-all duration-1000 ease-linear" />
  
- <div className="w-12 h-12 rounded-full bg-[#0D0D0F]/80 backdrop-blur-xl border border-silver-DEFAULT/40 flex items-center justify-center text-glacier-bright text-lg font-quantico font-black shadow-[0_0_20px_rgba(212,175,55,0.15)] group-hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] transition-all overflow-hidden">
+ <div className="w-12 h-12 rounded-full bg-[#0D0D0F]/80 backdrop-blur-xl border border-silver-DEFAULT/40 flex items-center justify-center text-glacier-bright text-lg font-quantico font-black shadow-[0_0_20px_rgba(79,164,184,0.15)] group-hover:shadow-[0_0_30px_rgba(79,164,184,0.4)] transition-all overflow-hidden">
  {selfChar?.image_url ? (
  <AssetImage src={selfChar.image_url} alt="" className="w-full h-full object-cover" />
  ) : (
@@ -94,7 +94,7 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
  onClick={() => handleToggleToken(selfChar.id)}
  className={`absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
  tokenStatus[selfChar.id]
- ? 'bg-glacier-DEFAULT text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
+ ? 'bg-glacier-DEFAULT text-black shadow-[0_0_15px_rgba(79,164,184,0.4)]' 
  : 'bg-black/80 text-silver-bright border-silver-DEFAULT/40 hover:border-silver-DEFAULT'
  }`}
  title={tokenStatus[selfChar.id] ? "Retirer votre figurine du plateau" : "Placer votre figurine sur la carte"}
@@ -112,7 +112,7 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
  <div className="flex items-center gap-2">
  <span className="text-sm text-silver-bright font-quantico tracking-widest uppercase drop-shadow-md">{user?.pseudo}</span>
  {isHost && (
- <span className="text-[11px] bg-glacier-DEFAULT text-black px-1.5 py-0.5 rounded-sm font-black uppercase tracking-widest shadow-[0_0_10px_rgba(212,175,55,0.4)]">MJ</span>
+ <span className="text-[11px] bg-glacier-DEFAULT text-black px-1.5 py-0.5 rounded-sm font-black uppercase tracking-widest shadow-[0_0_10px_rgba(79,164,184,0.4)]">MJ</span>
  )}
  </div>
  <div className="flex items-center gap-2 mt-0.5">

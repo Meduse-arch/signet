@@ -4,6 +4,7 @@ import { FogOfWar } from './FogOfWar';
 import { TokenSprite, TokenData } from './TokenSprite';
 import { throttle } from '../utils/throttle';
 import { useCombatStore } from '../store/combat';
+import { useSettingsStore } from '../store/settings';
 
 export class BoardScene extends Container {
   private unsubCombat?: () => void;
@@ -176,13 +177,14 @@ export class BoardScene extends Container {
     let dy = 0;
     const grid = token.gridSize || 50;
 
-    switch (e.key.toLowerCase()) {
-      case 'z': case 'arrowup': dy = -grid; break;
-      case 's': case 'arrowdown': dy = grid; break;
-      case 'q': case 'arrowleft': dx = -grid; break;
-      case 'd': case 'arrowright': dx = grid; break;
-      default: return;
-    }
+    const key = e.key.toLowerCase();
+    const { keybindings } = useSettingsStore.getState();
+
+    if (keybindings.moveUp.includes(key)) dy = -grid;
+    else if (keybindings.moveDown.includes(key)) dy = grid;
+    else if (keybindings.moveLeft.includes(key)) dx = -grid;
+    else if (keybindings.moveRight.includes(key)) dx = grid;
+    else return;
 
     if (dx !== 0 || dy !== 0) {
       e.preventDefault();

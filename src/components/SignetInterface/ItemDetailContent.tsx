@@ -181,7 +181,7 @@ export function ItemDetailContent({
  {isConsumable ? (
  <button 
  onClick={onUse}
- className="w-full py-2.5 rounded-xl font-quantico font-black text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 border bg-gold-bright text-black border-gold-bright hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]"
+ className="w-full py-2.5 rounded-xl font-quantico font-black text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 border bg-glacier-bright text-black border-glacier-bright hover:shadow-[0_0_20px_rgba(79,164,184,0.3)]"
  >
  <Zap size={12} /> {t('common.use', 'Utiliser').toUpperCase()}
  </button>
@@ -191,7 +191,7 @@ export function ItemDetailContent({
  className={`w-full py-2.5 rounded-xl font-quantico font-black text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 border ${
  isEquipped 
  ? 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20' 
- : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]'
+ : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:shadow-[0_0_20px_rgba(79,164,184,0.3)]'
  }`}
  >
  {isEquipped ? <Trash2 size={12} /> : <Shield size={12} />}

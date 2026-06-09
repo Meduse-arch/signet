@@ -173,7 +173,7 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
  </h4>
  <div className="grid grid-cols-2 gap-3">
  <div className="space-y-1 col-span-2">
- <label className="text-xs font-quantico text-gold-muted uppercase tracking-widest">{t('context.locationName', "Nom du lieu")}</label>
+ <label className="text-xs font-quantico text-glacier-muted uppercase tracking-widest">{t('context.locationName', "Nom du lieu")}</label>
  <input 
  autoFocus
  type="text" 
@@ -184,7 +184,7 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
  />
  </div>
  <div className="space-y-1 col-span-2">
- <label className="text-xs font-quantico text-gold-muted uppercase tracking-widest">{t('context.imageUrl', "URL de l'image")}</label>
+ <label className="text-xs font-quantico text-glacier-muted uppercase tracking-widest">{t('context.imageUrl', "URL de l'image")}</label>
  <input 
  type="text" 
  value={newUrl}
@@ -194,7 +194,7 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
  />
  </div>
  <div className="space-y-1 col-span-2">
- <label className="text-xs font-quantico text-gold-muted uppercase tracking-widest">{t('context.gridSizePixels', "Taille de la Grille (Pixels)")}</label>
+ <label className="text-xs font-quantico text-glacier-muted uppercase tracking-widest">{t('context.gridSizePixels', "Taille de la Grille (Pixels)")}</label>
  <div className="flex items-center gap-3">
  <input 
  type="range"
@@ -203,7 +203,7 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
  step="5"
  value={gridSize}
  onChange={e => setGridSize(parseInt(e.target.value))}
- className="flex-1 accent-gold-DEFAULT"
+ className="flex-1 accent-glacier-DEFAULT"
  />
  <span className="text-xs font-mono text-glacier-bright w-8 text-right">{gridSize}</span>
  </div>

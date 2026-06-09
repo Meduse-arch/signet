@@ -235,7 +235,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
  </div>
  <button 
  onClick={() => setShowTemplateSelector(true)}
- className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/30 text-glacier-bright hover:bg-glacier-DEFAULT/20 transition-all font-quantico text-xs font-black uppercase tracking-widest shadow-lg group"
+ className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-glacier-DEFAULT text-black border border-silver-DEFAULT hover:bg-glacier-bright transition-all font-quantico text-xs font-black uppercase tracking-widest shadow-lg group"
  >
  <Plus size={14} className="group-hover:rotate-90 transition-transform" />
  {t('common.create', 'Créer')}

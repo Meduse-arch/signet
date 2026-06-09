@@ -103,7 +103,7 @@ export function MapTransitionOverlay({ progress, onRetry }: MapTransitionOverlay
  <div className="relative w-24 h-24 flex items-center justify-center">
  <div className="absolute inset-0 border-4 border-silver-DEFAULT/10 rounded-full"></div>
  <div className="absolute inset-0 border-4 border-silver-DEFAULT rounded-full border-t-transparent animate-spin"></div>
- <div className="absolute inset-2 border-2 border-gold-bright/30 rounded-full border-b-transparent animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+ <div className="absolute inset-2 border-2 border-glacier-bright/30 rounded-full border-b-transparent animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
  {progress.status !== 'waiting_manifest' && (
  <span className="text-glacier-bright font-quantico font-bold text-lg">{percentage}%</span>
  )}

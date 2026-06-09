@@ -4,7 +4,6 @@
     "subtitle": "Virtual Tabletop",
     "version": "Signet Engine v1.0.4 — Stable Build"
   },
-
   "auth": {
     "pressToStart": "Press SPACE to start",
     "loginTitle": "Log In",
@@ -21,7 +20,6 @@
     "switchToSignup": "No account yet? Sign up",
     "switchToLogin": "Already a member? Log in"
   },
-
   "hub": {
     "archivesRevealed_one": "{{count}} Session found",
     "archivesRevealed_other": "{{count}} Sessions found",
@@ -33,7 +31,6 @@
     "editSubmitLabel": "Save",
     "createSubmitLabel": "Create"
   },
-
   "sidebar": {
     "library": "Library",
     "search": "Search",
@@ -41,9 +38,9 @@
     "createSession": "Create Session",
     "logout": "Log out",
     "disconnect": "Disconnect",
-    "grade": "Role"
+    "grade": "Role",
+    "settings": "Settings"
   },
-
   "lobby": {
     "share": "SHARE",
     "copied": "COPIED",
@@ -60,7 +57,6 @@
     "rolePlayer": "PLAYER",
     "defaultPlayer": "Player"
   },
-
   "session": {
     "archiveTitle": "Session Title",
     "archivePlaceholder": "e.g. The Tomb of the Ancients",
@@ -77,7 +73,6 @@
     "unknownSystem": "Unknown System",
     "summoned": "Created"
   },
-
   "titlebar": {
     "reintegrate": "Reintegrate",
     "scenes": "SCENES",
@@ -86,7 +81,6 @@
     "inventory": "INVENTORY",
     "players": "PLAYERS"
   },
-
   "filters": {
     "system": "System",
     "all": "All",
@@ -98,7 +92,6 @@
     "az": "A-Z",
     "reset": "Reset"
   },
-
   "common": {
     "loading": "Loading...",
     "save": "Save",
@@ -132,7 +125,6 @@
     "remove": "Remove",
     "all": "All"
   },
-
   "modals": {
     "createItem": "Create Item",
     "addItem": "Add Item",
@@ -151,7 +143,6 @@
     "newMap": "NEW MAP",
     "activeMap": "ACTIVE MAP"
   },
-
   "context": {
     "forgeTitle": "Item Creation — Database",
     "forgeTitleChar": "Add to Character's Inventory",
@@ -321,7 +312,6 @@
     "tagNamePlaceholder": "Tag name...",
     "noTags": "No tags..."
   },
-
   "time": {
     "today": "Today",
     "yesterday": "Yesterday",
@@ -329,7 +319,6 @@
     "monthsAgo": "{{count}} months ago",
     "yearsAgo": "More than a year ago"
   },
-
   "bestiary": {
     "searchPlaceholder": "SEARCH...",
     "restrictedAccess": "Restricted Access",
@@ -360,7 +349,6 @@
     "possessEntity": "Take possession",
     "banish": "Delete"
   },
-
   "seal": {
     "settingsTitle": "System Settings",
     "creation": "Creation",
@@ -384,5 +372,27 @@
     "number": "Number",
     "sides": "Sides",
     "rerolls": "Rerolls"
+  },
+  "settings": {
+    "title": "SETTINGS",
+    "language": "Language",
+    "controls": "Controls",
+    "moveToken": "Move Character",
+    "panMap": "Pan Map",
+    "zoomMap": "Zoom In / Out",
+    "fullscreen": "Fullscreen",
+    "keys": "Keys",
+    "clickDrag": "Left Click + Drag",
+    "mouseWheel": "Mouse Wheel",
+    "logout": "Log out",
+    "account": "Account",
+    "removeKey": "Remove key",
+    "selectLanguage": "Select interface language",
+    "logoutDesc": "Close current session and return to login screen.",
+    "moveUp": "Up",
+    "moveDown": "Down",
+    "moveLeft": "Left",
+    "moveRight": "Right",
+    "general": "General"
   }
 }

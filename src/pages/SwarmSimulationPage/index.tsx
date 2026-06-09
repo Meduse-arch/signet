@@ -32,7 +32,7 @@ export function SwarmSimulationPage() {
  return (
  <div className="w-full h-screen bg-[#050507] flex flex-col items-center justify-center text-white">
  <TitleBar />
- <div className="bg-[#0D0D0F] p-8 rounded-xl border border-silver-DEFAULT/40 shadow-[0_0_20px_rgba(212,175,55,0.1)] w-96 flex flex-col items-center z-10">
+ <div className="bg-[#0D0D0F] p-8 rounded-xl border border-silver-DEFAULT/40 shadow-[0_0_20px_rgba(79,164,184,0.1)] w-96 flex flex-col items-center z-10">
  <h1 className="text-2xl font-quantico text-silver-bright mb-6 uppercase tracking-widest text-center">Swarm Simulation</h1>
  
  <div className="w-full mb-4">
@@ -58,7 +58,7 @@ export function SwarmSimulationPage() {
 
  <button 
  onClick={startSim}
- className="w-full bg-glacier-DEFAULT text-black font-bold uppercase tracking-widest px-6 py-3 rounded-md hover:bg-gold-bright transition-colors"
+ className="w-full bg-glacier-DEFAULT text-black font-bold uppercase tracking-widest px-6 py-3 rounded-md hover:bg-glacier-bright transition-colors"
  >
  Lancer la Simulation
  </button>

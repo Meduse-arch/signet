@@ -143,15 +143,15 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
 
  return createPortal(
  <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 lg:p-10 animate-in fade-in zoom-in-95 duration-300">
- <div className="w-full max-w-4xl max-h-[90vh] bg-[#0D0D0F] border border-silver-DEFAULT/40 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8),0_0_40px_rgba(212,175,55,0.1)] flex flex-col overflow-hidden relative">
+ <div className="w-full max-w-4xl max-h-[90vh] bg-[#0D0D0F] border border-silver-DEFAULT/40 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8),0_0_40px_rgba(79,164,184,0.1)] flex flex-col overflow-hidden relative">
  
  {/* Decorative Golden Line Top */}
- <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />
+ <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-glacier-bright to-transparent opacity-50" />
 
  {/* HEADER FIXED */}
  <header className="shrink-0 p-6 lg:p-8 border-b border-silver-DEFAULT/20 flex justify-between items-center bg-black/40 z-20">
  <div className="flex items-center gap-5">
- <div className="p-4 rounded-2xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/20 text-glacier-bright shadow-lg shadow-gold-DEFAULT/5 transition-transform hover:scale-110 duration-500">
+ <div className="p-4 rounded-2xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/20 text-glacier-bright shadow-lg shadow-glacier-DEFAULT/5 transition-transform hover:scale-110 duration-500">
  <Sparkles size={28} className="animate-pulse" />
  </div>
  <div>
@@ -176,7 +176,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  <div className="space-y-10">
  <section className="space-y-6">
  <h3 className="text-xs font-quantico font-black text-silver-bright/70 uppercase tracking-[0.3em] flex items-center gap-3">
- <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" /> {t('context.informations', "Informations")}
+ <div className="w-1.5 h-1.5 rounded-full bg-glacier-bright animate-pulse" /> {t('context.informations', "Informations")}
  </h3>
  <div className="space-y-6">
  <div className="space-y-2">
@@ -186,7 +186,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  value={name} 
  onChange={e => setName(e.target.value)} 
  placeholder={t('context.skillNamePlaceholder', "NOM DE L'ARCANE...")}
- className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-quantico text-white placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner"
+ className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-quantico text-white placeholder:text-white/30 focus:border-glacier-bright focus:bg-black/80 focus:shadow-[0_0_15px_rgba(79,164,184,0.1)] outline-none transition-all uppercase tracking-widest shadow-inner"
  />
  </div>
  <div className="space-y-2">
@@ -196,7 +196,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  onChange={e => setDescription(e.target.value)}
  placeholder={t('context.skillDescPlaceholder', "DÉCRIVEZ LA NATURE DE CET ARCANNE...")}
  rows={4}
- className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-gold-bright focus:bg-black/80 outline-none transition-all shadow-inner custom-scrollbar resize-none"
+ className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-glacier-bright focus:bg-black/80 outline-none transition-all shadow-inner custom-scrollbar resize-none"
  />
  </div>
  <div className="space-y-2">
@@ -248,7 +248,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  <select 
  value={type} 
  onChange={e => setType(e.target.value as any)}
- className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-xs font-quantico text-white uppercase focus:border-gold-bright outline-none appearance-none cursor-pointer"
+ className="w-full bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-xs font-quantico text-white uppercase focus:border-glacier-bright outline-none appearance-none cursor-pointer"
  >
  <option value="active">{t('context.activeSkill', "Compétence Active")}</option>
  <option value="passive_auto">{t('context.passiveSkill', "Passif Permanent")}</option>
@@ -263,7 +263,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  value={imageUrl} 
  onChange={e => setImageUrl(e.target.value)}
  placeholder={t('context.urlOrSeal', "URL OU SCEAU...")}
- className="flex-1 bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-4 py-4 text-[11px] font-mono text-white/60 focus:border-gold-bright outline-none"
+ className="flex-1 bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-4 py-4 text-[11px] font-mono text-white/60 focus:border-glacier-bright outline-none"
  />
  <label className="p-4 rounded-2xl bg-glacier-DEFAULT/10 border border-silver-DEFAULT/20 text-glacier-bright hover:bg-glacier-DEFAULT/20 cursor-pointer transition-all relative">
  {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
@@ -299,7 +299,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                   <select 
                     value={c.barId} 
                     onChange={e => updateCost(c.id, { barId: e.target.value })}
-                    className="bg-black border border-white/10 rounded-xl px-3 py-2 text-[11px] font-quantico text-white uppercase focus:border-gold-bright outline-none"
+                    className="bg-black border border-white/10 rounded-xl px-3 py-2 text-[11px] font-quantico text-white uppercase focus:border-glacier-bright outline-none"
                   >
                     {DEFAULT_BARS.map(b => (
                       <option key={b.id} value={b.id}>{b.name}</option>
@@ -308,7 +308,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                   <select 
                     value={c.mode} 
                     onChange={e => updateCost(c.id, { mode: e.target.value })}
-                    className="bg-black border border-white/10 rounded-xl px-3 py-2 text-[11px] font-quantico text-white uppercase focus:border-gold-bright outline-none"
+                    className="bg-black border border-white/10 rounded-xl px-3 py-2 text-[11px] font-quantico text-white uppercase focus:border-glacier-bright outline-none"
                   >
                     <option value="fixed">{t('context.fixedValue', 'Fixe')}</option>
                     <option value="percent">{t('context.percentage', 'Pourcentage (%)')}</option>
@@ -322,14 +322,14 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
                     value={c.formula || ''} 
                     onChange={e => updateCost(c.id, { formula: e.target.value })}
                     placeholder="ex: 1d6 + strength"
-                    className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[12px] font-mono text-glacier-bright text-center outline-none focus:border-gold-bright w-full"
+                    className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[12px] font-mono text-glacier-bright text-center outline-none focus:border-glacier-bright w-full"
                   />
                 ) : (
                   <input 
                     type="number" 
                     value={c.value} 
                     onChange={e => updateCost(c.id, { value: parseInt(e.target.value) || 0 })}
-                    className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[12px] font-mono text-glacier-bright text-center outline-none focus:border-gold-bright w-full"
+                    className="bg-black border border-white/10 rounded-xl px-4 py-3 text-[12px] font-mono text-glacier-bright text-center outline-none focus:border-glacier-bright w-full"
                   />
                 )}
               </div>
@@ -348,7 +348,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  <h3 className="text-xs font-quantico font-black text-glacier-bright uppercase tracking-[0.3em] flex items-center gap-3">
  <Zap size={16} className="text-glacier-bright animate-pulse" /> {t('context.actionAndRolls', "Actions & Jets de Dés")}
  </h3>
- <button onClick={addEffect} className="p-2 rounded-xl bg-glacier-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
+ <button onClick={addEffect} className="p-2 rounded-xl bg-glacier-DEFAULT text-black hover:bg-glacier-bright transition-all shadow-lg">
  <Plus size={16} />
  </button>
  </div>
@@ -365,7 +365,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  <select 
  value={eff.type} 
  onChange={e => updateEffect(eff.id, { type: e.target.value })}
- className="col-span-1 bg-black border border-white/10 rounded-xl px-3 py-2 text-[11px] font-quantico text-white uppercase outline-none focus:border-gold-bright"
+ className="col-span-1 bg-black border border-white/10 rounded-xl px-3 py-2 text-[11px] font-quantico text-white uppercase outline-none focus:border-glacier-bright"
  >
  <option value="damage">{t('context.damage', "Dégâts")}</option>
  <option value="heal">{t('context.heal', "Soin")}</option>
@@ -388,7 +388,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  value={eff.mode === 'dice' ? eff.formula : eff.valeur}
  onChange={e => updateEffect(eff.id, eff.mode === 'dice' ? { formula: e.target.value } : { valeur: parseInt(e.target.value) })}
  placeholder={eff.mode === 'dice' ? "1d6..." : "0"}
- className="flex-1 bg-glacier-DEFAULT/10 border border-silver-DEFAULT/40 rounded-xl px-3 py-2 text-[11px] font-mono text-glacier-bright text-center outline-none focus:border-gold-bright"
+ className="flex-1 bg-glacier-DEFAULT/10 border border-silver-DEFAULT/40 rounded-xl px-3 py-2 text-[11px] font-mono text-glacier-bright text-center outline-none focus:border-glacier-bright"
  />
  </div>
  </div>
@@ -415,7 +415,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  <h3 className="text-xs font-quantico font-black text-glacier-bright uppercase tracking-[0.3em] flex items-center gap-3" title="S'applique passivement au personnage quand la compétence est équipée">
  <BarChart2 size={16} className="text-glacier-bright" /> {t('context.passiveAuras', "Bonus Passifs Permanents")}
  </h3>
- <button onClick={addModifier} className="p-2 rounded-xl bg-glacier-DEFAULT text-black hover:bg-gold-bright transition-all shadow-lg">
+ <button onClick={addModifier} className="p-2 rounded-xl bg-glacier-DEFAULT text-black hover:bg-glacier-bright transition-all shadow-lg">
  <Plus size={16} />
  </button>
  </div>
@@ -434,7 +434,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  <select 
  value={m.targetId} 
  onChange={e => updateModifier(i, { targetId: e.target.value })}
- className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs font-quantico font-bold text-white uppercase outline-none focus:border-gold-bright"
+ className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs font-quantico font-bold text-white uppercase outline-none focus:border-glacier-bright"
  >
  {m.target === 'stat' ? statDefs.map((s: any) => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>) : barDefs.map((b: any) => <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>)}
  </select>
@@ -459,14 +459,14 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  placeholder="1d6..."
  value={m.formula || ''} 
  onChange={e => updateModifier(i, { formula: e.target.value })}
- className="w-full bg-glacier-DEFAULT/10 border-2 border-silver-DEFAULT/40 rounded-xl px-2 py-2 text-xs text-glacier-bright text-center font-mono outline-none focus:border-gold-bright"
+ className="w-full bg-glacier-DEFAULT/10 border-2 border-silver-DEFAULT/40 rounded-xl px-2 py-2 text-xs text-glacier-bright text-center font-mono outline-none focus:border-glacier-bright"
  />
  ) : (
  <input 
  type="number" 
  value={m.value} 
  onChange={e => updateModifier(i, { value: parseInt(e.target.value) || 0 })}
- className="w-full bg-glacier-DEFAULT/10 border border-silver-DEFAULT/40 rounded-xl px-3 py-2.5 text-[11px] font-mono text-glacier-bright text-center outline-none focus:border-gold-bright"
+ className="w-full bg-glacier-DEFAULT/10 border border-silver-DEFAULT/40 rounded-xl px-3 py-2.5 text-[11px] font-mono text-glacier-bright text-center outline-none focus:border-glacier-bright"
  />
  )}
  </div>
@@ -481,7 +481,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
 
  {/* FOOTER FIXED & NOBLE */}
  <footer className="shrink-0 p-8 lg:p-10 border-t border-silver-DEFAULT/30 bg-black/60 backdrop-blur-3xl z-30 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
- <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold-bright/20 to-transparent" />
+ <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-glacier-bright/20 to-transparent" />
  
  <div className="flex gap-4">
  <button 
@@ -496,7 +496,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  className={`flex-[2] py-5 text-[11px] font-quantico font-black tracking-[0.4em] rounded-2xl transition-all flex justify-center items-center gap-4 relative group overflow-hidden border-2 ${
  !name.trim()
  ? 'bg-black/20 text-white/40 border-white/15 cursor-not-allowed'
- : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:bg-gold-bright hover:shadow-[0_0_40px_rgba(212,175,55,0.4)]'
+ : 'bg-glacier-DEFAULT text-black border-silver-DEFAULT hover:bg-glacier-bright hover:shadow-[0_0_40px_rgba(79,164,184,0.4)]'
  }`}
  >
  {name.trim() && <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />}

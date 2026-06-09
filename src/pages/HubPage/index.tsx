@@ -11,6 +11,7 @@ import { SecurityLevel, useAuthStore } from '../../store/auth';
 import { generateSessionKey } from '../../services/peer.service';
 import { Session } from '../../services/session.service';
 import { AdminItemsView } from '../../components/Admin/AdminItemsView';
+import { SettingsView } from '../../components/SettingsView';
 import { useTranslation } from 'react-i18next';
 import { Icons } from '../../components/ui/Icons';
 import { Button } from '../../components/ui/Button';
@@ -77,8 +78,8 @@ export function HubPage({ onEnterSession }: HubPageProps) {
  const el = sessionRefs.current.get(id);
  if (el) {
  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
- el.classList.add('ring-2', 'ring-gold-bright', 'ring-offset-4', 'ring-offset-black');
- setTimeout(() => el.classList.remove('ring-2', 'ring-gold-bright', 'ring-offset-4', 'ring-offset-black'), 2000);
+ el.classList.add('ring-2', 'ring-glacier-bright', 'ring-offset-4', 'ring-offset-black');
+ setTimeout(() => el.classList.remove('ring-2', 'ring-glacier-bright', 'ring-offset-4', 'ring-offset-black'), 2000);
  }
  };
 
@@ -186,6 +187,8 @@ export function HubPage({ onEnterSession }: HubPageProps) {
 
  {activeTab === 'forge' && isMJ ? (
  <AdminItemsView sessionId="global" />
+ ) : activeTab === 'settings' ? (
+ <SettingsView />
  ) : (
  <>
  <header className="flex flex-col items-center justify-center px-8 py-12 relative z-10 shrink-0">
@@ -194,11 +197,11 @@ export function HubPage({ onEnterSession }: HubPageProps) {
  Signet
  </h1>
  <div className="flex items-center justify-center gap-4">
- <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
+ <div className="h-px w-12 bg-gradient-to-r from-transparent via-glacier-muted to-transparent" />
  <span className="text-xs font-quantico text-silver-bright drop-shadow-md tracking-[0.2em] uppercase italic">
  {t('hub.archivesRevealed', { count: filteredSessions.length })}
  </span>
- <div className="h-px w-12 bg-gradient-to-r from-transparent via-gold-muted to-transparent" />
+ <div className="h-px w-12 bg-gradient-to-r from-transparent via-glacier-muted to-transparent" />
  </div>
  </div>
  </header>

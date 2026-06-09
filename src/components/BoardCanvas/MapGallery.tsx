@@ -69,7 +69,7 @@ export function MapGallery({ maps, currentMapId, onSelectMap }: MapGalleryProps)
  }}
  className={`relative group aspect-video rounded-lg overflow-hidden border-2 transition-all ${
  currentMapId === map.id 
- ? 'border-silver-DEFAULT shadow-[0_0_15px_rgba(212,175,55,0.3)]' 
+ ? 'border-silver-DEFAULT shadow-[0_0_15px_rgba(79,164,184,0.3)]' 
  : 'border-white/5 hover:border-white/20'
  }`}
  >

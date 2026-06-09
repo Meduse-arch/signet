@@ -75,7 +75,7 @@ export function GiveItemModal({ sessionId, targetCharacterName, onClose, onGive 
  onClick={() => setSelectedItem(item)}
  className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
  selectedItem?.id === item.id 
- ? 'bg-glacier-DEFAULT/20 border-silver-DEFAULT shadow-[0_0_15px_rgba(212,175,55,0.2)]' 
+ ? 'bg-glacier-DEFAULT/20 border-silver-DEFAULT shadow-[0_0_15px_rgba(79,164,184,0.2)]' 
  : 'bg-white/5 border-transparent hover:border-silver-DEFAULT/30 hover:bg-white/10'
  }`}
  >
@@ -103,7 +103,7 @@ export function GiveItemModal({ sessionId, targetCharacterName, onClose, onGive 
  {selectedItem ? (
  <div className="flex flex-col h-full p-6">
  <div className="flex-1">
- <div className="w-20 h-20 mx-auto rounded-xl bg-black/60 border border-silver-DEFAULT/30 flex items-center justify-center mb-4 shadow-[inset_0_0_20px_rgba(212,175,55,0.1)]">
+ <div className="w-20 h-20 mx-auto rounded-xl bg-black/60 border border-silver-DEFAULT/30 flex items-center justify-center mb-4 shadow-[inset_0_0_20px_rgba(79,164,184,0.1)]">
  {selectedItem.image_url ? (
  <AssetImage src={selectedItem.image_url} alt="" className="w-full h-full object-cover rounded-xl" />
  ) : (
@@ -138,7 +138,7 @@ export function GiveItemModal({ sessionId, targetCharacterName, onClose, onGive 
 
  <button 
  onClick={handleGive}
- className="w-full py-3 rounded-xl bg-glacier-DEFAULT hover:bg-gold-bright text-black font-quantico font-black text-xs tracking-widest uppercase transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:shadow-[0_0_25px_rgba(212,175,55,0.5)] active:scale-95"
+ className="w-full py-3 rounded-xl bg-glacier-DEFAULT hover:bg-glacier-bright text-black font-quantico font-black text-xs tracking-widest uppercase transition-all shadow-[0_0_15px_rgba(79,164,184,0.3)] hover:shadow-[0_0_25px_rgba(79,164,184,0.5)] active:scale-95"
  >
  Confirmer le Transfert
  </button>

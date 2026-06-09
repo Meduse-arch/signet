@@ -52,7 +52,7 @@ export function SearchBar({
  className={`
  group flex items-center gap-2.5 px-6 py-2 rounded-full border transition-all duration-300
  ${isFilteringActive 
- ? 'border-silver-DEFAULT text-glacier-bright bg-glacier-DEFAULT/10 shadow-[0_0_15px_rgba(212,175,55,0.2)] font-bold' 
+ ? 'border-silver-DEFAULT text-glacier-bright bg-glacier-DEFAULT/10 shadow-[0_0_15px_rgba(79,164,184,0.2)] font-bold' 
  : 'border-slate-400/30 text-slate-400 opacity-70 hover:opacity-100 hover:border-slate-400/60'
  }
  `}
@@ -62,7 +62,7 @@ export function SearchBar({
  {isFilteringActive ? `Filtres (${activeFiltersCount + (value ? 1 : 0)})` : 'Filtres'}
  </span>
  {isFilteringActive && (
- <div className="w-1.5 h-1.5 rounded-full bg-gold-bright animate-pulse" />
+ <div className="w-1.5 h-1.5 rounded-full bg-glacier-bright animate-pulse" />
  )}
  </button>
  </div>
@@ -70,7 +70,7 @@ export function SearchBar({
  {/* 3. QUICK RESULTS LIST */}
  {results.length > 0 && (
  <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-500">
- <h3 className="text-[11px] font-black text-gold-muted/50 tracking-[0.2em] uppercase mb-4 px-1">Résultats Rapides</h3>
+ <h3 className="text-[11px] font-black text-glacier-muted/50 tracking-[0.2em] uppercase mb-4 px-1">Résultats Rapides</h3>
  <ul className="space-y-1">
  {results.slice(0, 10).map((res) => (
  <li key={res.id}>

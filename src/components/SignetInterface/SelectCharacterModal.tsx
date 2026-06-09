@@ -35,7 +35,7 @@ export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectChar
  onClick={() => setSelectedCharId(char.id)}
  className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
  selectedCharId === char.id 
- ? 'bg-glacier-DEFAULT/20 border-silver-DEFAULT shadow-[0_0_15px_rgba(212,175,55,0.2)]' 
+ ? 'bg-glacier-DEFAULT/20 border-silver-DEFAULT shadow-[0_0_15px_rgba(79,164,184,0.2)]' 
  : 'bg-white/5 border-transparent hover:border-silver-DEFAULT/30 hover:bg-white/10'
  }`}
  >
@@ -85,7 +85,7 @@ export function SelectCharacterModal({ onClose, onSelect, itemName }: SelectChar
  disabled={!selectedCharId || quantity < 1}
  className={`w-full py-3 rounded-xl font-quantico font-black text-xs tracking-widest uppercase transition-all shadow-lg active:scale-95 ${
  selectedCharId && quantity > 0 
- ? 'bg-glacier-DEFAULT hover:bg-gold-bright text-black shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:shadow-[0_0_25px_rgba(212,175,55,0.5)]'
+ ? 'bg-glacier-DEFAULT hover:bg-glacier-bright text-black shadow-[0_0_15px_rgba(79,164,184,0.3)] hover:shadow-[0_0_25px_rgba(79,164,184,0.5)]'
  : 'bg-white/5 text-white/60 cursor-not-allowed'
  }`}
  >

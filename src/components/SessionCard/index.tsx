@@ -20,7 +20,7 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
  className={`
  group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500
  bg-white/[0.03] backdrop-blur-md border border-white/10
- hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(212,175,55,0.1)]
+ hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(79,164,184,0.1)]
  hover:border-silver-DEFAULT/40 hover:bg-white/[0.06]
  ${isActive ? 'border-silver-DEFAULT shadow-rune-gold' : ''}
  `}
@@ -89,7 +89,7 @@ export function SessionCard({ session, isActive, onClick, onEdit, onDelete, canE
  </div>
  
  <div className="flex justify-between items-center text-[11px] font-medium tracking-wider">
- <span className="text-gold-muted uppercase opacity-70">{session.system || t('common.unknownSystem', 'Arcane Inconnue')}</span>
+ <span className="text-glacier-muted uppercase opacity-70">{session.system || t('common.unknownSystem', 'Arcane Inconnue')}</span>
  <span className="text-white/70 italic font-inter">
  {formatRelativeDate(session.lastPlayed)}
  </span>

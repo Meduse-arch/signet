@@ -370,7 +370,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
  <h1 className="text-lg font-black text-glacier-bright tracking-widest uppercase">{sessionData?.name || 'Lobby'}</h1>
  <div className="flex items-center gap-2 text-[8px] font-quantico">
  <span className={`w-1.5 h-1.5 rounded-full ${status === 'connected' ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`} />
- <span className="text-gold-muted uppercase tracking-widest">{status}</span>
+ <span className="text-glacier-muted uppercase tracking-widest">{status}</span>
  </div>
  </div>
  </div>
@@ -414,9 +414,9 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
  <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
  <div className="space-y-6">
  <div className="space-y-2">
- <span className="text-[10px] font-black text-gold-muted tracking-[0.3em] uppercase">{t('lobby.waitingChronicles')}</span>
+ <span className="text-[10px] font-black text-glacier-muted tracking-[0.3em] uppercase">{t('lobby.waitingChronicles')}</span>
  <h2 className="text-5xl font-black text-white uppercase tracking-tighter leading-none">{sessionData?.name}</h2>
- <p className="text-gold-muted italic font-inter">{t('lobby.systemStory', { system: sessionData?.system })}</p>
+ <p className="text-glacier-muted italic font-inter">{t('lobby.systemStory', { system: sessionData?.system })}</p>
  </div>
  {isHost && (
  <Button
@@ -433,7 +433,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
  </div>
  <div className="bg-black/40 border border-silver-DEFAULT/20 rounded-[2.5rem] p-8 backdrop-blur-xl relative overflow-hidden">
  <div className="absolute inset-0 bg-grimoire-texture opacity-[0.03] pointer-events-none" />
- <h3 className="text-[10px] font-black text-gold-muted uppercase tracking-[0.3em] mb-6 flex items-center gap-2 relative z-10"><Icons.Users size={14}/> {t('lobby.playerCircle')}</h3>
+ <h3 className="text-[10px] font-black text-glacier-muted uppercase tracking-[0.3em] mb-6 flex items-center gap-2 relative z-10"><Icons.Users size={14}/> {t('lobby.playerCircle')}</h3>
  <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar relative z-10 pr-2">
  {players.map(p => (
  <div key={p.peer_id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5 group hover:border-silver-DEFAULT/30 transition-all">
@@ -441,7 +441,7 @@ export function LobbyPage({ sessionId, onLeave }: LobbyPageProps) {
  <div className="w-10 h-10 rounded-full bg-glacier-DEFAULT/10 border border-silver-DEFAULT/20 flex items-center justify-center text-xs font-black text-glacier-bright font-quantico shadow-inner">{p.pseudo.charAt(0)}</div>
  <div className="flex flex-col">
  <span className="text-sm font-bold text-white/90 tracking-wide">{p.pseudo}</span>
- <span className="text-[8px] text-gold-muted/60 uppercase font-black tracking-widest">{getRoleLabelLocal(p.role)}</span>
+ <span className="text-[8px] text-glacier-muted/60 uppercase font-black tracking-widest">{getRoleLabelLocal(p.role)}</span>
  </div>
  </div>
  {p.pseudo === 'MJ' && <Icons.Zap size={12} className="text-glacier-bright animate-pulse" />}

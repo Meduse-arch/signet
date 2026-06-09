@@ -100,7 +100,7 @@ export function DraggableWindow({
  {/* Header */}
  <div className={`window-header relative flex items-center justify-between px-4 py-2 bg-gradient-to-r from-transparent via-gold-DEFAULT/10 to-transparent border-b border-silver-DEFAULT/20 select-none overflow-hidden shrink-0 ${isExternal ? '' : 'cursor-grab active:cursor-grabbing'}`}>
  {/* Effet lumineux de ligne façon Jarvis */}
- <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-50" />
+ <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-glacier-bright to-transparent opacity-50" />
  
  <span className="text-xs font-quantico font-black text-silver-bright tracking-[0.3em] uppercase pointer-events-none">
  {title}
