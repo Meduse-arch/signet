@@ -27,6 +27,8 @@ class AssetSyncService {
   private compressor = new BrowserImageCompressor();
   /** Promesses en attente d'un ASSET_RESPONSE (fallback pull) */
   private pendingRequests: Map<string, ((blobUrl: string) => void)[]> = new Map();
+  /** Listeners pour la résolution dynamique d'assets reçus plus tard */
+  private listeners: Map<string, Set<(blobUrl: string) => void>> = new Map();
 
   constructor() {
     peerService.onData((data, fromPeerId) => {
@@ -42,6 +44,23 @@ class AssetSyncService {
   // ──────────────────────────────────────────────────────────────────────────
   // API PUBLIQUE
   // ──────────────────────────────────────────────────────────────────────────
+
+  onAssetReady(hash: string, callback: (blobUrl: string) => void) {
+    if (!this.listeners.has(hash)) {
+      this.listeners.set(hash, new Set());
+    }
+    this.listeners.get(hash)!.add(callback);
+    return () => {
+      this.listeners.get(hash)?.delete(callback);
+    };
+  }
+
+  private notifyListeners(hash: string, blobUrl: string) {
+    const callbacks = this.listeners.get(hash);
+    if (callbacks) {
+      callbacks.forEach(cb => cb(blobUrl));
+    }
+  }
 
   /**
    * MJ : Compresse une image, la stocke en IndexedDB, retourne son URL asset://
@@ -182,6 +201,8 @@ class AssetSyncService {
     });
 
     const blobUrl = URL.createObjectURL(new Blob([data], { type: mime }));
+
+    this.notifyListeners(hash, blobUrl);
 
     // Résoudre les promesses en attente (cas pull)
     const callbacks = this.pendingRequests.get(hash);

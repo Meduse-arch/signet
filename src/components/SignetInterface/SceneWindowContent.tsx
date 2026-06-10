@@ -1,9 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
-import { Plus, Check, X, Eye, EyeOff, Settings2, Trash2 } from 'lucide-react';
+import { Plus, Check, X, Eye, EyeOff, Settings2, Trash2, Upload, Loader2 } from 'lucide-react';
 import { MapItem } from '../BoardCanvas';
 import { SecurityLevel, useAuthStore } from '../../store/auth';
 import { useTranslation } from 'react-i18next';
-
+import { useAssetUpload } from '../../hooks/useAssetUpload';
+import { AssetImage } from '../AssetImage';
 interface SceneWindowContentProps {
  sessionId: string;
  scenes: MapItem[];
@@ -23,6 +24,11 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
  const [newName, setNewName] = useState('');
  const [newUrl, setNewUrl] = useState('');
  const [gridSize, setGridSize] = useState(50);
+
+ const { isUploading, fileInputRef, handleFileUpload } = useAssetUpload(
+ newUrl,
+ (url) => setNewUrl(url)
+ );
 
  const { user } = useAuthStore();
  const isMJ = user && user.role >= SecurityLevel.MJ;
@@ -81,13 +87,13 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
  } ${scene.is_hidden && scene.id !== 'initial-scene' ? 'opacity-60 grayscale-[0.5]' : ''}`}
  >
  {/* Map Image Background */}
- <div 
- className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
- style={{ 
- backgroundImage: `url(${scene.url})`,
- filter: currentSceneId === scene.id ? 'brightness(0.6) saturate(1)' : 'brightness(0.3) saturate(0.5)' 
- }}
- />
+ <AssetImage 
+  src={scene.url}
+  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+  style={{ 
+  filter: currentSceneId === scene.id ? 'brightness(0.6) saturate(1)' : 'brightness(0.3) saturate(0.5)' 
+  }}
+  />
  
  {/* Overlay Gradient */}
  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent" />
@@ -185,13 +191,31 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
  </div>
  <div className="space-y-1 col-span-2">
  <label className="text-xs font-quantico text-glacier-muted uppercase tracking-widest">{t('context.imageUrl', "URL de l'image")}</label>
+ <div className="flex gap-2">
  <input 
  type="text" 
  value={newUrl}
  onChange={e => setNewUrl(e.target.value)}
  placeholder="https://..."
- className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white focus:border-silver-DEFAULT/50 outline-none"
+ className="flex-1 w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white focus:border-silver-DEFAULT/50 outline-none"
  />
+ <button 
+ type="button"
+ onClick={() => fileInputRef.current?.click()}
+ disabled={isUploading}
+ className="p-1.5 rounded bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center min-w-[32px]"
+ title={t('common.importLocal', 'Importer un fichier local')}
+ >
+ {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+ </button>
+ <input 
+ type="file" 
+ ref={fileInputRef} 
+ className="hidden" 
+ accept="image/*"
+ onChange={handleFileUpload}
+ />
+ </div>
  </div>
  <div className="space-y-1 col-span-2">
  <label className="text-xs font-quantico text-glacier-muted uppercase tracking-widest">{t('context.gridSizePixels', "Taille de la Grille (Pixels)")}</label>
