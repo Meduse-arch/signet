@@ -139,24 +139,21 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
  })}
  </div>
 
- {/* Main Orb / Jarvis Core */}
+ {/* Main Button - Just the logo */}
  <button
  onClick={() => setIsOpen(!isOpen)}
- className="relative w-16 h-16 rounded-full flex items-center justify-center transition-transform duration-500 z-10 group"
+ className="relative w-16 h-16 flex items-center justify-center z-10 group outline-none"
  >
- {/* Cercles holographiques rotatifs (Jarvis effect) */}
- <div className={`absolute inset-[-10px] rounded-full border-t-2 border-l-2 border-silver-DEFAULT/40 transition-transform duration-[3000ms] ease-linear ${isOpen ? 'rotate-[360deg] scale-110' : 'rotate-0 scale-100'}`} />
- <div className={`absolute inset-[-4px] rounded-full border-b-2 border-r-2 border-glacier-bright/30 transition-transform duration-[2000ms] ease-linear ${isOpen ? '-rotate-[360deg] scale-105' : 'rotate-0 scale-100'}`} />
+ {/* Fond du bouton (Hexagone Suspendu) */}
+ <div className="absolute inset-0 transition-all duration-500 drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] group-hover:drop-shadow-[0_0_15px_rgba(79,164,184,0.4)]">
+ {/* Liseré extérieur (Bordure) */}
+ <div className="absolute inset-0 bg-silver/30 group-hover:bg-glacier/80 transition-colors duration-500 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)]" />
+ {/* Cœur en verre fumé */}
+ <div className="absolute inset-[1px] bg-[#0D0D0F]/80 backdrop-blur-2xl [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)]" />
+ </div>
  
- {/* Cœur de l'orbe */}
- <div className="absolute inset-0 bg-[#0D0D0F]/80 backdrop-blur-2xl rounded-full border border-silver-DEFAULT/30 shadow-[0_0_20px_rgba(79,164,184,0.1)] group-hover:shadow-[0_0_30px_rgba(79,164,184,0.3)] group-hover:border-silver-DEFAULT/60 transition-all duration-500" />
- 
- <div className={`relative flex items-center justify-center w-full h-full transition-all duration-500 ${isOpen ? 'rotate-90' : 'rotate-0'}`}>
- {isOpen ? (
- <X className="text-glacier-bright animate-in zoom-in duration-300" size={26} />
- ) : (
- <SignetLogo mode="hover" imgClassName="w-10 h-10 drop-shadow-[0_0_15px_rgba(79,164,184,0.6)]" />
- )}
+ <div className={`relative flex items-center justify-center w-full h-full transition-transform duration-500 ${isOpen ? 'rotate-180' : 'rotate-0'}`}>
+ <SignetLogo mode="hover" imgClassName="w-10 h-10 drop-shadow-[0_0_15px_rgba(79,164,184,0.6)] group-hover:drop-shadow-[0_0_25px_rgba(79,164,184,0.8)] transition-all" />
  </div>
  </button>
  </div>
