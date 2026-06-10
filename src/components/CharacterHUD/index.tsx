@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Shield, Zap, Heart, Plus, Activity, Layout, Ghost } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { usePeersStore } from '../../store/peers';
@@ -9,7 +9,7 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { addSessionCharacter, Character } from '../../services/characters.service';
 import { DEFAULT_BARS } from '../../systems/seal/constants';
 import { useSignetStore } from '../../store/signet';
-import { useMapStore } from '../../store/map';
+
 import { AssetImage } from '../AssetImage';
 
 interface CharacterHUDProps {
@@ -25,9 +25,6 @@ export function CharacterHUD({ sessionId }: CharacterHUDProps) {
  const { broadcast, onData } = usePeer();
  const [isModalOpen, setIsModalOpen] = useState(false);
  
- const tokenStatuses = useMapStore(state => state.tokenStatuses);
- const setStoreTokenStatus = useMapStore(state => state.setTokenStatus);
-
  const openWindow = useSignetStore(state => state.openWindow);
  const isMJ = !!user && user.role >= SecurityLevel.MJ;
 
@@ -40,46 +37,7 @@ const myCharacter = useMemo(() => {
  return characters.find(c => c.user_id === user?.id);
 }, [characters, controlledCharacterId, user?.id]);
 
- const tokenStatus = useMemo(() => {
- return myCharacter ? !!tokenStatuses[myCharacter.id] : false;
- }, [myCharacter, tokenStatuses]);
 
- // Sync token status via network and store
- useEffect(() => {
- // Écouter les changements de tokens pour tout le monde
- const unsub = onData((data: any) => {
- if (data.type === 'TOKEN_ADD') {
- setStoreTokenStatus(data.payload.id, true);
- }
- if (data.type === 'TOKEN_REMOVE') {
- setStoreTokenStatus(data.payload.id, false);
- }
- if (data.type === 'INITIAL_SYNC_REPLY') {
- // ... handle initial token list if needed
- }
- });
-
- return () => unsub();
- }, [onData, setStoreTokenStatus]);
-
- const handleToggleToken = (e: React.MouseEvent) => {
- e.stopPropagation();
- console.log('[PlayerHUD] Click sur le bouton de jeton !', myCharacter?.name);
- if (!myCharacter) return;
- 
- const isCurrentlyOnMap = !!tokenStatuses[myCharacter.id];
- console.log('[PlayerHUD] Statut actuel du jeton:', isCurrentlyOnMap, 'MJ:', isMJ);
-
- if (isMJ) {
- const channel = new BroadcastChannel(`board_actions_${sessionId}`);
- channel.postMessage({ type: 'TOGGLE_TOKEN', payload: { id: myCharacter.id } });
- channel.close();
- setStoreTokenStatus(myCharacter.id, !isCurrentlyOnMap);
- } else {
- console.log('[PlayerHUD] Envoi de TOGGLE_TOKEN_REQUEST via P2P...');
- broadcast({ type: 'TOGGLE_TOKEN_REQUEST', payload: { id: myCharacter.id } });
- }
- };
 
  const handleCreateSave = async (data: { 
  name: string; 
@@ -147,18 +105,6 @@ if (!myCharacter) {
  )}
  </div>
  
-  {/* Token Toggle Button for controlled character */}
-  {controlledCharacterId && (
-  <button 
-  onClick={handleToggleToken}
-  className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border border-[#0D0D0F] shadow-sm transition-colors z-20 ${
-  tokenStatus
-  ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' 
-  : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'
-  }`}
-  title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
-  />
-  )}
 
  <div className="absolute -top-1 -right-1 bg-glacier-DEFAULT text-black text-xs font-quantico font-black px-1.5 py-0.5 rounded shadow-lg">MJ</div>
  </div>
@@ -215,19 +161,7 @@ if (!myCharacter) {
  )}
  </div>
 
- {/* Token Toggle Button */}
-  <button 
-  onClick={handleToggleToken}
-  className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full border border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
-  tokenStatus
-  ? 'bg-glacier-DEFAULT text-black shadow-[0_0_15px_rgba(79,164,184,0.4)]' 
-  : 'bg-black/80 text-silver-bright hover:bg-black'
-  }`}
-  title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
-  >
-  <Plus size={12} className={`transition-transform duration-500 ${tokenStatus ? 'rotate-45' : ''}`} />
-  </button>
- 
+
   {/* Open Sheet Button Overlay */}
   <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] transition-opacity">
   <Layout className="w-5 h-5 text-glacier-bright" />

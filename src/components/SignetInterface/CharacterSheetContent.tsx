@@ -1021,25 +1021,23 @@ export function CharacterSheetContent({
  <div className="flex-shrink-0 flex items-center gap-3 p-2 bg-black/40 border-b border-silver-DEFAULT/10">
  <div className="relative">
  <div 
- className="w-8 h-8 shrink-0 rounded-full border border-silver-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-silver-DEFAULT transition-colors"
+ className="w-8 h-8 shrink-0 bg-black/60 overflow-hidden cursor-pointer hover:brightness-125 transition-all [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)]"
  onClick={handleAvatarClick}
  >
  {image_url ? <AssetImage src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-silver-bright font-quantico font-black">{name.charAt(0)}</div>}
  </div>
- <button 
- onClick={toggleTokenPlacement}
- className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#0D0D0F] shadow-lg transition-all flex items-center justify-center ${
- isTokenOnMap 
- ? 'bg-glacier-DEFAULT text-black shadow-[0_0_15px_rgba(157, 168, 184,0.4)]' 
- : 'bg-black/80 text-silver-bright border-silver-DEFAULT/40 hover:border-silver-DEFAULT'
- }`}
- title={isTokenOnMap ? "Retirer de la carte" : "Placer sur la carte"}
- >
- <Plus size={12} className={`transition-transform duration-500 ${isTokenOnMap ? 'rotate-45' : ''}`} />
- </button>
  </div>
  <div className="flex-1 min-w-0">
  <h2 className="text-xs font-quantico font-black text-glacier-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
+ <div className="text-[9px] font-mono mt-0.5 text-silver-DEFAULT/60 flex items-center gap-1">
+ <span>Token : </span>
+ <button 
+ onClick={toggleTokenPlacement}
+ className={`px-2 py-0.5 rounded-md font-black uppercase transition-all text-black shadow-sm hover:brightness-110 ${isTokenOnMap ? 'bg-glacier shadow-[0_0_8px_rgba(79,164,184,0.4)]' : 'bg-silver'}`}
+ >
+ {isTokenOnMap ? 'on' : 'off'}
+ </button>
+ </div>
  </div>
  </div>
 
@@ -1070,19 +1068,23 @@ export function CharacterSheetContent({
  <div className="flex-shrink-0 flex items-center gap-4 mb-4 p-3 bg-black/40 border border-silver-DEFAULT/15 rounded-xl shadow-lg">
  <div className="relative">
  <div 
- className="w-14 h-14 shrink-0 rounded-full border-2 border-silver-DEFAULT/30 bg-black/60 overflow-hidden cursor-pointer hover:border-silver-DEFAULT transition-colors"
+ className="w-14 h-14 shrink-0 bg-black/60 overflow-hidden cursor-pointer hover:brightness-125 transition-all [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)]"
  onClick={handleAvatarClick}
  >
  {image_url ? <AssetImage src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-silver-bright font-quantico font-black text-2xl">{name.charAt(0)}</div>}
  </div>
- <button 
- onClick={toggleTokenPlacement}
- className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0D0D0F] shadow-sm transition-colors ${isTokenOnMap ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'}`}
- title={isTokenOnMap ? "Retirer de la carte" : "Placer sur la carte"}
- />
  </div>
  <div className="flex-1 min-w-0">
  <h1 className="text-xl font-quantico font-black text-glacier-bright uppercase tracking-[0.2em] truncate" title={name}>{name}</h1>
+ <div className="text-xs font-mono mt-1 text-silver-DEFAULT/60 flex items-center gap-1">
+ <span>Token : </span>
+ <button 
+ onClick={toggleTokenPlacement}
+ className={`px-2.5 py-0.5 rounded-md font-black uppercase transition-all text-black shadow-sm hover:brightness-110 ${isTokenOnMap ? 'bg-glacier shadow-[0_0_10px_rgba(79,164,184,0.4)]' : 'bg-silver'}`}
+ >
+ {isTokenOnMap ? 'on' : 'off'}
+ </button>
+ </div>
  </div>
  </div>
 
