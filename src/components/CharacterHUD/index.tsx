@@ -147,18 +147,18 @@ if (!myCharacter) {
  )}
  </div>
  
- {/* Token Toggle Button for controlled character */}
- {controlledCharacterId && (
+  {/* Token Toggle Button for controlled character */}
+  {controlledCharacterId && (
   <button 
   onClick={handleToggleToken}
-  className={`absolute -bottom-1 -right-1 w-6 h-6 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] shadow-sm transition-colors z-20 ${
+  className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border border-[#0D0D0F] shadow-sm transition-colors z-20 ${
   tokenStatus
   ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' 
   : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]'
   }`}
- title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
- />
- )}
+  title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
+  />
+  )}
 
  <div className="absolute -top-1 -right-1 bg-glacier-DEFAULT text-black text-xs font-quantico font-black px-1.5 py-0.5 rounded shadow-lg">MJ</div>
  </div>
@@ -218,15 +218,15 @@ if (!myCharacter) {
  {/* Token Toggle Button */}
   <button 
   onClick={handleToggleToken}
-  className={`absolute -bottom-1 -right-1 w-7 h-7 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] shadow-lg transition-all z-20 flex items-center justify-center ${
+  className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full border border-[#0D0D0F] shadow-lg transition-all z-20 flex items-center justify-center ${
   tokenStatus
   ? 'bg-glacier-DEFAULT text-black shadow-[0_0_15px_rgba(79,164,184,0.4)]' 
   : 'bg-black/80 text-silver-bright hover:bg-black'
   }`}
- title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
- >
- <Plus size={12} className={`transition-transform duration-500 ${tokenStatus ? 'rotate-45' : ''}`} />
- </button>
+  title={tokenStatus ? "Retirer de la carte" : "Placer sur la carte"}
+  >
+  <Plus size={12} className={`transition-transform duration-500 ${tokenStatus ? 'rotate-45' : ''}`} />
+  </button>
  
   {/* Open Sheet Button Overlay */}
   <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] transition-opacity">
