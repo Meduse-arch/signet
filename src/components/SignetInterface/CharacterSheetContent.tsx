@@ -1019,13 +1019,11 @@ export function CharacterSheetContent({
  <div className="flex flex-col h-full w-full overflow-hidden">
  {/* ── Header ── */}
  <div className="flex-shrink-0 flex items-center gap-3 p-2 bg-black/40 border-b border-silver-DEFAULT/10">
- <div className="relative">
  <div 
- className="w-8 h-8 shrink-0 bg-black/60 overflow-hidden cursor-pointer hover:brightness-125 transition-all [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)]"
- onClick={handleAvatarClick}
+   onClick={handleAvatarClick}
+   className="w-[28px] h-8 shrink-0 bg-black/60 overflow-hidden cursor-pointer hover:brightness-125 transition-all [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)]"
  >
  {image_url ? <AssetImage src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-silver-bright font-quantico font-black">{name.charAt(0)}</div>}
- </div>
  </div>
  <div className="flex-1 min-w-0">
  <h2 className="text-xs font-quantico font-black text-glacier-bright truncate uppercase tracking-widest" title={name}>{name}</h2>
@@ -1066,13 +1064,11 @@ export function CharacterSheetContent({
  <div className="flex flex-col h-full w-full overflow-hidden p-4">
  {/* ── Header ── */}
  <div className="flex-shrink-0 flex items-center gap-4 mb-4 p-3 bg-black/40 border border-silver-DEFAULT/15 rounded-xl shadow-lg">
- <div className="relative">
  <div 
- className="w-14 h-14 shrink-0 bg-black/60 overflow-hidden cursor-pointer hover:brightness-125 transition-all [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)]"
- onClick={handleAvatarClick}
+   onClick={handleAvatarClick}
+   className="w-[49px] h-14 shrink-0 bg-black/60 overflow-hidden cursor-pointer hover:brightness-125 transition-all [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)]"
  >
  {image_url ? <AssetImage src={image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-silver-bright font-quantico font-black text-2xl">{name.charAt(0)}</div>}
- </div>
  </div>
  <div className="flex-1 min-w-0">
  <h1 className="text-xl font-quantico font-black text-glacier-bright uppercase tracking-[0.2em] truncate" title={name}>{name}</h1>

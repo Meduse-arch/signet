@@ -142,7 +142,7 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
  {/* Main Button - Just the logo */}
  <button
  onClick={() => setIsOpen(!isOpen)}
- className="relative w-16 h-16 flex items-center justify-center z-10 group outline-none"
+ className="relative w-[55px] h-16 flex items-center justify-center z-10 group outline-none"
  >
  {/* Fond du bouton (Hexagone Suspendu) */}
  <div className="absolute inset-0 transition-all duration-500 drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] group-hover:drop-shadow-[0_0_15px_rgba(79,164,184,0.4)]">

@@ -1,5 +1,6 @@
 import { Container, Graphics, Text, TextStyle, FederatedPointerEvent, Sprite, Texture, Application } from 'pixi.js';
 import { assetSyncService } from '../services/asset-sync.service';
+import { pixelToHex, hexRound, hexToPixel } from '../utils/hexMath';
 
 export interface TokenData {
   id: string;
@@ -250,9 +251,14 @@ export class TokenSprite extends Container {
       let targetY = newPosition.y + this.dragOffset.y;
 
       if (!event.shiftKey && this.gridSize > 0) {
-        // Snap au centre de la case
-        targetX = Math.floor(targetX / this.gridSize) * this.gridSize + this.gridSize / 2;
-        targetY = Math.floor(targetY / this.gridSize) * this.gridSize + this.gridSize / 2;
+        // Snap au centre de l'hexagone le plus proche
+        const hexSize = this.gridSize / 2;
+        const hex = pixelToHex(targetX, targetY, hexSize);
+        const rounded = hexRound(hex.q, hex.r);
+        const center = hexToPixel(rounded.q, rounded.r, hexSize);
+        
+        targetX = center.x;
+        targetY = center.y;
       }
 
       this.x = targetX;

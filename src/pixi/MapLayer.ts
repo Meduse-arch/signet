@@ -1,4 +1,5 @@
 import { Container, Sprite, Texture, Graphics } from 'pixi.js';
+import { pixelToHex, hexToPixel, getHexCorners } from '../utils/hexMath';
 
 export class MapLayer extends Container {
   private mapSprite: Sprite | null = null;
@@ -34,28 +35,54 @@ export class MapLayer extends Container {
       return;
     }
 
-    // --- GRILLE (5% plus grand que l'image) ---
+    // --- GRILLE HEXAGONALE (5% plus grand que l'image) ---
     const gridPaddingX = imgWidth * 0.05;
     const gridPaddingY = imgHeight * 0.05;
     const gridTotalWidth = imgWidth + gridPaddingX;
     const gridTotalHeight = imgHeight + gridPaddingY;
 
-    const minX = Math.floor((-gridTotalWidth / 2) / step) * step;
-    const maxX = Math.ceil((gridTotalWidth / 2) / step) * step;
-    const minY = Math.floor((-gridTotalHeight / 2) / step) * step;
-    const maxY = Math.ceil((gridTotalHeight / 2) / step) * step;
+    const minX = -gridTotalWidth / 2;
+    const maxX = gridTotalWidth / 2;
+    const minY = -gridTotalHeight / 2;
+    const maxY = gridTotalHeight / 2;
+
+    // La taille du pas "step" (ex: 50) représente la hauteur totale voulue de l'hexagone.
+    // Le rayon "size" de l'hexagone est donc step / 2.
+    const size = step / 2;
+
+    const topLeft = pixelToHex(minX, minY, size);
+    const bottomRight = pixelToHex(maxX, maxY, size);
+    const topRight = pixelToHex(maxX, minY, size);
+    const bottomLeft = pixelToHex(minX, maxY, size);
+
+    const minQ = Math.floor(Math.min(topLeft.q, bottomRight.q, topRight.q, bottomLeft.q)) - 1;
+    const maxQ = Math.ceil(Math.max(topLeft.q, bottomRight.q, topRight.q, bottomLeft.q)) + 1;
+    const minR = Math.floor(Math.min(topLeft.r, bottomRight.r, topRight.r, bottomLeft.r)) - 1;
+    const maxR = Math.ceil(Math.max(topLeft.r, bottomRight.r, topRight.r, bottomLeft.r)) + 1;
 
     // Pixi v8 style
-    this.gridGraphics
-      .setStrokeStyle({ color: 0xFFFFFF, alpha: 0.15, width: 1 });
+    this.gridGraphics.alpha = 0.15;
+    this.gridGraphics.setStrokeStyle({ color: 0xFFFFFF, alpha: 1, width: 1 });
 
-    for (let x = minX; x <= maxX; x += step) {
-      this.gridGraphics.moveTo(x, minY);
-      this.gridGraphics.lineTo(x, maxY);
-    }
-    for (let y = minY; y <= maxY; y += step) {
-      this.gridGraphics.moveTo(minX, y);
-      this.gridGraphics.lineTo(maxX, y);
+    // Tracer uniquement 3 bords par hexagone (en bas à droite, en bas, en bas à gauche)
+    // pour éviter que les lignes se superposent et doublent d'opacité, sauf aux bordures.
+    // Pour simplifier on trace tout, l'alpha global du gridGraphics gère l'opacité.
+    for (let q = minQ; q <= maxQ; q++) {
+      for (let r = minR; r <= maxR; r++) {
+        const center = hexToPixel(q, r, size);
+        
+        // Culling
+        if (center.x + size < minX || center.x - size > maxX || center.y + size < minY || center.y - size > maxY) {
+          continue;
+        }
+
+        const corners = getHexCorners(center.x, center.y, size);
+        this.gridGraphics.moveTo(corners[0], corners[1]);
+        for (let i = 2; i < 12; i += 2) {
+          this.gridGraphics.lineTo(corners[i], corners[i + 1]);
+        }
+        this.gridGraphics.lineTo(corners[0], corners[1]);
+      }
     }
     this.gridGraphics.stroke();
   }

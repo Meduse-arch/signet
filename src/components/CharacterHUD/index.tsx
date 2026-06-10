@@ -93,7 +93,7 @@ if (!myCharacter) {
  title={controlledCharacterId ? "Ouvrir la fiche de l'entité possédée" : "Ouvrir le Bestiaire"}
  >
   <div className="absolute inset-[-6px] [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] bg-[#0D0D0F]/80 backdrop-blur-xl group-hover/avatar:bg-silver-DEFAULT/20 shadow-[0_4px_30px_rgba(0,0,0,0.6)] transition-all duration-500 ease-linear" />
-  <div className="relative w-16 h-16 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] bg-black/60 backdrop-blur-md flex items-center justify-center shadow-[inset_0_0_15px_rgba(79,164,184,0.2)] overflow-hidden">
+  <div className="relative w-[55px] h-16 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] bg-black/60 backdrop-blur-md flex items-center justify-center shadow-[inset_0_0_15px_rgba(79,164,184,0.2)] overflow-hidden">
   {controlledCharacterId ? (
  characters.find(c => c.id === controlledCharacterId)?.image_url ? (
  <AssetImage src={characters.find(c => c.id === controlledCharacterId)?.image_url} alt="" className="w-full h-full object-cover" />
@@ -153,7 +153,7 @@ if (!myCharacter) {
  title="Ouvrir la fiche de personnage"
  >
   <div className="absolute inset-[-6px] [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] bg-[#0D0D0F]/80 backdrop-blur-xl group-hover/avatar:bg-silver-DEFAULT/20 shadow-[0_4px_30px_rgba(0,0,0,0.6)] transition-all duration-500 ease-linear" />
-  <div className="relative w-16 h-16 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] bg-black/60 backdrop-blur-md flex items-center justify-center shadow-[inset_0_0_15px_rgba(79,164,184,0.2)] overflow-hidden">
+  <div className="relative w-[55px] h-16 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] bg-black/60 backdrop-blur-md flex items-center justify-center shadow-[inset_0_0_15px_rgba(79,164,184,0.2)] overflow-hidden">
   {image_url ? (
  <AssetImage src={image_url} alt={name} className="w-full h-full object-cover" />
  ) : (

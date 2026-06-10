@@ -9,6 +9,7 @@ import { mapSyncService } from '../../services/map-sync.service';
 import { BrowserImageCompressor } from '../../services/browser-image-compressor';
 import { MapTransitionOverlay } from './MapTransitionOverlay';
 import { assetSyncService } from '../../services/asset-sync.service';
+import { pixelToHex, hexRound, hexToPixel } from '../../utils/hexMath';
 import { useCharactersStore } from '../../store/characters';
 import { Eye, EyeOff, Link, Unlink, Trash2 } from 'lucide-react';
 import { ToolboxHUD, ToolType } from '../ToolboxHUD';
@@ -191,10 +192,18 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  syncChannel.close();
  }
  } else {
- // Ajouter le token au centre
- const center = getCenterView();
- const x = isNaN(center.x) ? 0 : Math.round(center.x);
- const y = isNaN(center.y) ? 0 : Math.round(center.y);
+      // Ajouter le token au centre, aligné sur la grille hexagonale
+      const currentMap = maps.find(m => m.id === currentMapId);
+      const gridSize = currentMap?.grid_size || 50;
+      const hexSize = gridSize / 2;
+
+      const rawCenter = getCenterView();
+      const hex = pixelToHex(rawCenter.x, rawCenter.y, hexSize);
+      const rounded = hexRound(hex.q, hex.r);
+      const center = hexToPixel(rounded.q, rounded.r, hexSize);
+
+      const x = isNaN(center.x) ? 0 : Math.round(center.x);
+      const y = isNaN(center.y) ? 0 : Math.round(center.y);
 
  // ✅ Résoudre l'image en asset:// avant diffusion aux joueurs
  const resolvedImageUrl = await assetSyncService.resolveLocalImage(char.image_url);
@@ -228,7 +237,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  syncChannel.close();
  }
  }
- }, [isHost, currentMapId, mapTokens, sessionId, getCenterView, broadcast, addToken, updateTokenList, setTokenStatus, removeToken, isExternalMap]);
+ }, [isHost, currentMapId, mapTokens, sessionId, getCenterView, broadcast, addToken, updateTokenList, setTokenStatus, removeToken, isExternalMap, maps]);
 
  // Synchronisation des changements de map et tokens pour les joueurs
  useEffect(() => {

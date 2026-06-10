@@ -3,6 +3,7 @@ import { buildHighQualityFilters, PaletteAnalysis } from './qualityFilters';
 import { MapLayer } from './MapLayer';
 import { FogOfWar } from './FogOfWar';
 import { TokenSprite, TokenData } from './TokenSprite';
+import { pixelToHex, hexRound, hexToPixel } from '../utils/hexMath';
 import { throttle } from '../utils/throttle';
 import { useCombatStore } from '../store/combat';
 import { useSettingsStore } from '../store/settings';
@@ -155,8 +156,16 @@ export class BoardScene extends Container {
         this.rulerGraphics.circle(this.rulerStartPos.x, this.rulerStartPos.y, 6).fill(0x4FA4B8);
         this.rulerGraphics.circle(pos.x, pos.y, 6).fill(0x4FA4B8);
 
-        const distancePixels = Math.hypot(pos.x - this.rulerStartPos.x, pos.y - this.rulerStartPos.y);
-        const distanceCases = Math.round((distancePixels / this.currentGridSize) * 10) / 10;
+        const hexSize = this.currentGridSize / 2;
+        const startPosHex = pixelToHex(this.rulerStartPos.x, this.rulerStartPos.y, hexSize);
+        const endPosHex = pixelToHex(pos.x, pos.y, hexSize);
+        const startHex = hexRound(startPosHex.q, startPosHex.r);
+        const endHex = hexRound(endPosHex.q, endPosHex.r);
+        const distanceCases = Math.max(
+          Math.abs(startHex.q - endHex.q),
+          Math.abs(startHex.r - endHex.r),
+          Math.abs((startHex.s || (-startHex.q - startHex.r)) - (endHex.s || (-endHex.q - endHex.r)))
+        );
 
         this.rulerText.text = `${distanceCases} cases`;
         this.rulerText.x = (this.rulerStartPos.x + pos.x) / 2;
@@ -196,14 +205,15 @@ export class BoardScene extends Container {
     let dx = 0;
     let dy = 0;
     const grid = token.gridSize || 50;
+    const hexSize = grid / 2;
 
     const key = e.key.toLowerCase();
     const { keybindings } = useSettingsStore.getState();
 
-    if (keybindings.moveUp.includes(key)) dy = -grid;
-    else if (keybindings.moveDown.includes(key)) dy = grid;
-    else if (keybindings.moveLeft.includes(key)) dx = -grid;
-    else if (keybindings.moveRight.includes(key)) dx = grid;
+    if (keybindings.moveUp.includes(key)) dy = -hexSize * 1.5;
+    else if (keybindings.moveDown.includes(key)) dy = hexSize * 1.5;
+    else if (keybindings.moveLeft.includes(key)) dx = -hexSize * Math.sqrt(3);
+    else if (keybindings.moveRight.includes(key)) dx = hexSize * Math.sqrt(3);
     else return;
 
     if (dx !== 0 || dy !== 0) {
@@ -212,9 +222,11 @@ export class BoardScene extends Container {
       let targetY = token.y + dy;
 
       if (!e.shiftKey && grid > 0) {
-        // Snap au centre de la case
-        targetX = Math.floor(targetX / grid) * grid + grid / 2;
-        targetY = Math.floor(targetY / grid) * grid + grid / 2;
+        const hex = pixelToHex(targetX, targetY, hexSize);
+        const rounded = hexRound(hex.q, hex.r);
+        const center = hexToPixel(rounded.q, rounded.r, hexSize);
+        targetX = center.x;
+        targetY = center.y;
       }
 
       token.moveTo(targetX, targetY, true); // Immediate
@@ -551,8 +563,16 @@ export class BoardScene extends Container {
     ruler.graphics.circle(start.x, start.y, 5).fill(color);
     ruler.graphics.circle(end.x, end.y, 5).fill(color);
 
-    const distancePixels = Math.hypot(end.x - start.x, end.y - start.y);
-    const distanceCases = Math.round((distancePixels / this.currentGridSize) * 10) / 10;
+    const hexSize = this.currentGridSize / 2;
+    const startPosHex = pixelToHex(start.x, start.y, hexSize);
+    const endPosHex = pixelToHex(end.x, end.y, hexSize);
+    const startHex = hexRound(startPosHex.q, startPosHex.r);
+    const endHex = hexRound(endPosHex.q, endPosHex.r);
+    const distanceCases = Math.max(
+      Math.abs(startHex.q - endHex.q),
+      Math.abs(startHex.r - endHex.r),
+      Math.abs((startHex.s || (-startHex.q - startHex.r)) - (endHex.s || (-endHex.q - endHex.r)))
+    );
 
     ruler.text.text = `${distanceCases} cases`;
     ruler.text.x = (start.x + end.x) / 2;
