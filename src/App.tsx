@@ -7,6 +7,7 @@ import { ExternalWindowPage } from './pages/ExternalWindowPage';
 import { useAuthStore } from './store/auth';
 import { useSettingsStore } from './store/settings';
 import { TitleBar } from './components/TitleBar';
+import { ConfirmDialog } from './components/ui/ConfirmDialog';
 import logo from './assets/logo.svg';
 
 function MainApp() {
@@ -115,6 +116,7 @@ export function App() {
  <Route path="/external/:type/:sessionId" element={<ExternalWindowWrapper />} />
  </Routes>
  </HashRouter>
+ <ConfirmDialog />
  </div>
  </div>
  );

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useQuestsStore } from '../../store/quests';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
+import { useConfirmStore } from '../../store/confirm';
 import { 
  Scroll, 
  Search, 
@@ -78,7 +79,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
  sessionId={sessionId} 
  isMJ={isMJ}
  onEdit={isMJ ? () => setShowQuestCreateModal(true, selectedQuest) : undefined}
- onDelete={isMJ ? () => { if(window.confirm(t('context.deleteQuest', "Effacer ce récit ?"))) { removeQuest(sessionId, selectedQuest.id); setSelectedQuest(null); } } : undefined}
+ onDelete={isMJ ? async () => { if(await useConfirmStore.getState().ask(t('context.deleteQuest', "Effacer ce récit ?"))) { removeQuest(sessionId, selectedQuest.id); setSelectedQuest(null); } } : undefined}
  showActions={false}
  />
  <button 
@@ -177,7 +178,7 @@ export function QuestsWindowContent({ sessionId }: QuestsWindowContentProps) {
  {isMJ && (
  <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-opacity ml-1 border-l border-white/10 pl-1">
  <button 
- onClick={(e) => { e.stopPropagation(); if(window.confirm(t('context.deleteQuest', "Effacer ce récit ?"))) removeQuest(sessionId, quest.id); }}
+ onClick={async (e) => { e.stopPropagation(); if(await useConfirmStore.getState().ask(t('context.deleteQuest', "Effacer ce récit ?"))) removeQuest(sessionId, quest.id); }}
  className="p-1.5 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 transition-colors"
  title={t('common.delete', "Supprimer")}
  >

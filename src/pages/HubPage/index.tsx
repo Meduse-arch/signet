@@ -12,6 +12,7 @@ import { generateSessionKey } from '../../services/peer.service';
 import { Session } from '../../services/session.service';
 import { AdminItemsView } from '../../components/Admin/AdminItemsView';
 import { SettingsView } from '../../components/SettingsView';
+import { useConfirmStore } from '../../store/confirm';
 import { useTranslation } from 'react-i18next';
 import { Icons } from '../../components/ui/Icons';
 import { Button } from '../../components/ui/Button';
@@ -101,8 +102,8 @@ export function HubPage({ onEnterSession }: HubPageProps) {
  setEditingSession(null);
  };
 
- const handleDeleteSession = (session: Session) => {
- if (window.confirm(t('hub.confirmDelete'))) {
+ const handleDeleteSession = async (session: Session) => {
+ if (await useConfirmStore.getState().ask(t('hub.confirmDelete'))) {
  removeSession(session.id);
  }
  };

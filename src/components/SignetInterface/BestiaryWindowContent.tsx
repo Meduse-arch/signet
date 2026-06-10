@@ -3,6 +3,7 @@ import { useCharactersStore } from '../../store/characters';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useSessionStore } from '../../store/session';
 import { useUIStore } from '../../store/ui';
+import { useConfirmStore } from '../../store/confirm';
 import { usePeer } from '../../hooks/usePeer';
 import { Ghost, User, Plus, Search, Trash2, Shield, Heart, Zap, Settings, Sword, Skull, BookOpen, X, ChevronRight } from 'lucide-react';
 import { addSessionCharacter, updateSessionCharacter, removeSessionCharacter, Character } from '../../services/characters.service';
@@ -176,7 +177,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
  };
 
  const handleDeleteNPC = async (npc: Character) => {
- if (!confirm(`Dissoudre définitivement ${npc.name} ?`)) return;
+ if (!(await useConfirmStore.getState().ask(`Dissoudre définitivement ${npc.name} ?`))) return;
 
  if (window.electronAPI) {
  await removeSessionCharacter(sessionId, npc.id);
@@ -425,7 +426,7 @@ export function BestiaryWindowContent({ sessionId }: BestiaryWindowContentProps)
  setEditingNPC({
  id: '',
  session_id: sessionId,
- name: 'Nouvelle Entité',
+ name: '',
  stats: {},
  skills: {},
  bars: {},

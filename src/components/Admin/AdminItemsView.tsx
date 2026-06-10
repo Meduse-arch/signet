@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useItemsStore } from '../../store/items';
 import { Package, Plus, Trash2, Search, Info, Shield, Sword, FlaskConical, Sparkles, Hammer, Upload, Loader2 } from 'lucide-react';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
+import { useConfirmStore } from '../../store/confirm';
 
 const CATEGORIES = ['Arme', 'Armure', 'Consommable', 'Artéfact', 'Divers'];
 
@@ -39,7 +40,7 @@ export function AdminItemsView({ sessionId }: { sessionId: string }) {
  };
 
  const handleDeleteForgeItem = async (id: string) => {
- if (!window.confirm("Supprimer cet artefact de la forge ?")) return;
+ if (!(await useConfirmStore.getState().ask("Supprimer cet artefact de la forge ?"))) return;
  await removeItem(sessionId, id);
  };
 

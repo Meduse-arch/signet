@@ -3,6 +3,7 @@ import { useCharactersStore } from '../../store/characters';
 import { useItemsStore } from '../../store/items';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
+import { useConfirmStore } from '../../store/confirm';
 import { usePeer } from '../../hooks/usePeer';
 import { activityLogService } from '../../services/activity-log.service';
 import { Package, Plus, Trash2, Search, Hammer, User, Shield, Star, Sword, Sparkles, Gem, FlaskConical, ChevronRight, PenTool, Zap, X } from 'lucide-react';
@@ -263,7 +264,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
  const confirmMessage = item.isStack 
  ? t('context.destroyAll', `Détruire tous les exemplaires de ${item.name} ?`, { name: item.name })
  : t('context.destroyOne', `Détruire ${item.name} ?`, { name: item.name });
- if (!character || !isMJ || !window.confirm(confirmMessage)) return;
+ if (!character || !isMJ || !(await useConfirmStore.getState().ask(confirmMessage))) return;
 
  const updatedChar = {
  ...character,
@@ -281,7 +282,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
  };
 
  const handleDeleteForgeItem = async (id: string) => {
- if (!isMJ || !window.confirm(t('context.deleteArtifact', "Supprimer cet artefact de la forge ?"))) return;
+ if (!isMJ || !(await useConfirmStore.getState().ask(t('context.deleteArtifact', "Supprimer cet artefact de la forge ?")))) return;
  await removeItem(sessionId, id);
  };
 

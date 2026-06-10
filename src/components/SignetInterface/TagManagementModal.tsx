@@ -3,6 +3,7 @@ import { Tag as TagIcon, Plus, X, Trash2, Palette } from 'lucide-react';
 import { ModalContainer } from '../ModalContainer';
 import { useTagsStore } from '../../store/tags';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
+import { useConfirmStore } from '../../store/confirm';
 import { usePeer } from '../../hooks/usePeer';
 import { useTranslation } from 'react-i18next';
 
@@ -36,7 +37,7 @@ export function TagManagementModal({ sessionId, onClose }: TagManagementModalPro
  };
 
  const handleDelete = async (id: string) => {
- if (!window.confirm(t('context.deleteTagConfirm', "Supprimer ce signe des archives ?"))) return;
+ if (!(await useConfirmStore.getState().ask(t('context.deleteTagConfirm', "Supprimer ce signe des archives ?")))) return;
  await removeTag(sessionId, id);
  broadcast({ type: 'TAG_DELETE', payload: { id } });
  };

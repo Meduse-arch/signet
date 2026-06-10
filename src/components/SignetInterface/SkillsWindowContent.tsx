@@ -4,6 +4,7 @@ import { useCharactersStore } from '../../store/characters';
 import { useTagsStore } from '../../store/tags';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
+import { useConfirmStore } from '../../store/confirm';
 import { usePeer } from '../../hooks/usePeer';
 import { activityLogService } from '../../services/activity-log.service';
 import { 
@@ -239,7 +240,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  };
 
  const handleRemoveFromCharacter = async (skill: any) => {
- if (!character || !isMJ || !window.confirm(t('context.forgetSkill', `Oublier ${skill.name} ?`, { name: skill.name }))) return;
+ if (!character || !isMJ || !(await useConfirmStore.getState().ask(t('context.forgetSkill', `Oublier ${skill.name} ?`, { name: skill.name })))) return;
  const updatedChar = {
  ...character,
  custom_skills: (character.custom_skills || []).filter((s: any) => s.id !== skill.id)
@@ -251,7 +252,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  };
 
  const handleDeleteSkillTemplate = async (id: string) => {
- if (!isMJ || !window.confirm(t('context.deleteSkill', "Supprimer cette compétence du codex ?"))) return;
+ if (!isMJ || !(await useConfirmStore.getState().ask(t('context.deleteSkill', "Supprimer cette compétence du codex ?")))) return;
  await removeSkill(sessionId, id);
  if (selectedSkill?.id === id) setSelectedSkill(null);
  };

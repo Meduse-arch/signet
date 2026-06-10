@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { Plus, Check, X, Eye, EyeOff, Settings2, Trash2, Upload, Loader2 } from 'lucide-react';
 import { MapItem } from '../BoardCanvas';
 import { SecurityLevel, useAuthStore } from '../../store/auth';
+import { useConfirmStore } from '../../store/confirm';
 import { useTranslation } from 'react-i18next';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { AssetImage } from '../AssetImage';
@@ -144,9 +145,9 @@ export function SceneWindowContent({ sessionId, scenes, currentSceneId, onSelect
  {scene.is_hidden ? <EyeOff size={14} /> : <Eye size={14} />}
  </button>
  <button
- onClick={(e) => {
+ onClick={async (e) => {
  e.stopPropagation();
- if (window.confirm(t('context.confirmDeleteScene', 'Supprimer définitivement ce plan ?'))) {
+ if (await useConfirmStore.getState().ask(t('context.confirmDeleteScene', 'Supprimer définitivement ce plan ?'))) {
  onRemoveScene?.(scene.id);
  }
  }}

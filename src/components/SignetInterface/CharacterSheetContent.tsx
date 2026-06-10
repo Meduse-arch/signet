@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { Plus, Trash2, Settings, Upload, Loader2 } from 'lucide-react';
 import { useCharactersStore } from '../../store/characters';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
+import { useConfirmStore } from '../../store/confirm';
 import { useSessionStore } from '../../store/session';
 import { useDiceStore } from '../../store/dice';
 import { useUIStore } from '../../store/ui';
@@ -287,7 +288,7 @@ export function CharacterSheetContent({
  if (!character) return;
  if (!isMJ && !isOwner) return;
  
- if (!confirm(`Souhaitez-vous vraiment bannir ${character.name} de l'Archive ?`)) return;
+ if (!(await useConfirmStore.getState().ask(`Souhaitez-vous vraiment bannir ${character.name} de l'Archive ?`))) return;
 
  if (window.electronAPI) {
  await removeSessionCharacter(sessionId, character.id);
