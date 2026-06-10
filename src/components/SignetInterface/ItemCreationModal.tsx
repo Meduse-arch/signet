@@ -10,6 +10,7 @@ import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { addSessionCharacter } from '../../services/characters.service';
 import { useSessionStore } from '../../store/session';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
+import { useTagsStore } from '../../store/tags';
 import { AssetImage } from '../AssetImage';
 import { useTranslation } from 'react-i18next';
 
@@ -40,7 +41,9 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  const [description, setDescription] = useState('');
  const [category, setCategory] = useState('Divers');
  const { imageUrl, setImageUrl, isUploading, fileInputRef, previewUrl, handleFileUpload } = useAssetUpload();
+ const { tags } = useTagsStore();
  const [modifiers, setModifiers] = useState<ItemModifier[]>([]);
+ const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
  useEffect(() => {
  if (showCreateModal && itemToEdit) {
@@ -49,6 +52,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  setCategory(itemToEdit.category || 'Divers');
  setImageUrl(itemToEdit.image_url || '');
  setModifiers(itemToEdit.modifiers || []);
+ setSelectedTags(itemToEdit.tags || []);
  } else if (showCreateModal) {
  resetForm();
  }
@@ -65,6 +69,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  setCategory('Divers');
  setImageUrl('');
  setModifiers([]);
+ setSelectedTags([]);
  };
 
  const handleClose = () => {
@@ -110,7 +115,8 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  category,
  image_url: imageUrl,
  effects: [],
- modifiers
+ modifiers,
+ tags: selectedTags
  };
 
  if (itemCreationType === 'forge') {
@@ -216,6 +222,44 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  onChange={e => setDescription(e.target.value)} 
  className="bg-black/60 border border-silver-DEFAULT/20 rounded-2xl px-5 py-4 text-sm font-garamond italic text-white/70 placeholder:text-white/30 focus:border-glacier-bright focus:bg-black/80 outline-none transition-all resize-none h-32 shadow-inner custom-scrollbar" 
  />
+ </div>
+
+ <div className="flex flex-col gap-3">
+ <div className="flex items-center justify-between">
+ <label className="text-[11px] font-quantico font-black text-white/70 uppercase tracking-widest ml-1">{t('context.tags', "Tags & Catégories")}</label>
+ <div className="flex gap-2">
+ <select 
+ className="flex-1 bg-black/60 border border-silver-DEFAULT/20 rounded-lg px-2 py-1 text-xs text-white outline-none cursor-pointer"
+ value=""
+ onChange={(e) => {
+ const val = e.target.value;
+ if (val && !selectedTags.includes(val)) setSelectedTags([...selectedTags, val]);
+ }}
+ >
+ <option value="" disabled>{t('common.select', "Sélectionner...")}</option>
+ {tags.filter(t => !selectedTags.includes(t.id)).map(t => (
+ <option key={t.id} value={t.id}>{t.name}</option>
+ ))}
+ </select>
+ </div>
+ </div>
+ <div className="flex flex-wrap gap-2">
+ {selectedTags.length === 0 && (
+ <span className="text-[11px] font-garamond italic text-white/30">{t('context.noTags', "Aucun tag sélectionné...")}</span>
+ )}
+ {selectedTags.map(tagId => {
+ const tag = tags.find(t => t.id === tagId);
+ if (!tag) return null;
+ return (
+ <div key={tag.id} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-quantico text-white uppercase tracking-widest" style={{ borderLeftColor: tag.color, borderLeftWidth: '2px' }}>
+ <span>{tag.name}</span>
+ <button onClick={() => setSelectedTags(selectedTags.filter(id => id !== tag.id))} className="text-white/40 hover:text-red-400 transition-colors ml-1">
+ <X size={10} />
+ </button>
+ </div>
+ );
+ })}
+ </div>
  </div>
  </div>
 

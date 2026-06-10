@@ -175,7 +175,9 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
  
  const updatedItem = updatedChar.inventory.find((i: any) => i.instanceId === targetInstanceId);
  if (updatedItem) {
+ if (selectedItem?.instanceId === targetInstanceId || (item.isStack && selectedItem?.id === item.id)) {
  setSelectedItem(updatedItem, false);
+ }
 
  // Log + Broadcast ITEM_EQUIPPED
  const logPayload = {

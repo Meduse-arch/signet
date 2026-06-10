@@ -5,9 +5,15 @@ import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
-import { SealSettingsModal } from './SealSettingsModal';
-import { DEFAULT_SEAL_SETTINGS } from '../../systems/seal/constants';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
+import SealSystem from '../../systems/seal';
+import type { GameSystem } from '../../systems/core/types';
+
+// ── Registry of systems available in the session creation modal ──────────────
+const SYSTEM_REGISTRY: GameSystem[] = [
+  SealSystem,
+  // Add new systems here, e.g.: Srd5System
+];
 
 interface SessionModalProps {
  isOpen: boolean;
@@ -18,9 +24,7 @@ interface SessionModalProps {
  submitLabel?: string;
 }
 
-const AVAILABLE_SYSTEMS = ['Seal'];
-
-const SYSTEM_OPTIONS = AVAILABLE_SYSTEMS.map((s) => ({ value: s, label: s }));
+const SYSTEM_OPTIONS = SYSTEM_REGISTRY.map((s) => ({ value: s.id, label: s.name }));
 
 export function CreateSessionModal({
  isOpen,
@@ -51,14 +55,17 @@ export function CreateSessionModal({
  }
  }, [isOpen, initialData]);
 
- const handleSelectSystem = (sys: string) => {
- setSystem(sys);
- if (sys.toLowerCase() === 'seal' && Object.keys(settings).length === 0) {
- setSettings(DEFAULT_SEAL_SETTINGS);
- } else if (sys.toLowerCase() !== system.toLowerCase()) {
- setSettings({});
- }
- };
+  const handleSelectSystem = (sysId: string) => {
+  setSystem(sysId);
+  const found = SYSTEM_REGISTRY.find(s => s.id === sysId);
+  if (found && Object.keys(settings).length === 0) {
+    setSettings(found.defaultSettings);
+  } else if (sysId !== system) {
+    setSettings({});
+    const newFound = SYSTEM_REGISTRY.find(s => s.id === sysId);
+    if (newFound) setSettings(newFound.defaultSettings);
+  }
+  };
 
  const isValid = name.trim() && system.trim();
 
@@ -125,20 +132,33 @@ export function CreateSessionModal({
  searchable
  />
 
- {/* Bouton paramètres du système */}
- {system.toLowerCase() === 'seal' && (
- <div className="animate-in fade-in slide-in-from-left-2 duration-300">
- <Button
- variant="secondary"
- size="md"
- fullWidth
- leftIcon={<Icons.Settings2 className="w-3.5 h-3.5" />}
- onClick={() => setIsSettingsOpen(true)}
- >
- {t('session.arcaneSettings')}
- </Button>
- </div>
- )}
+  {/* Bouton paramètres du système */}
+  {(() => {
+    const activeSystem = SYSTEM_REGISTRY.find(s => s.id === system);
+    if (!activeSystem) return null;
+    const SystemSettingsModal = activeSystem.components.SettingsModal;
+    return (
+      <>
+        <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
+            leftIcon={<Icons.Settings2 className="w-3.5 h-3.5" />}
+            onClick={() => setIsSettingsOpen(true)}
+          >
+            {t('session.arcaneSettings')}
+          </Button>
+        </div>
+        <SystemSettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          settings={settings}
+          onSave={setSettings}
+        />
+      </>
+    );
+  })()}
 
  {/* URL de l'image */}
  <div className="flex gap-2 items-end">
@@ -169,16 +189,6 @@ export function CreateSessionModal({
  </div>
  </div>
  </Modal>
-
- {/* Modale des paramètres Seal */}
- {system.toLowerCase() === 'seal' && (
- <SealSettingsModal
- isOpen={isSettingsOpen}
- onClose={() => setIsSettingsOpen(false)}
- settings={settings}
- onSave={setSettings}
- />
- )}
  </>
  );
 }

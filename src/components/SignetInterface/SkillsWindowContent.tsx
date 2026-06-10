@@ -6,6 +6,7 @@ import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
 import { useConfirmStore } from '../../store/confirm';
 import { usePeer } from '../../hooks/usePeer';
+import { useDiceStore } from '../../store/dice';
 import { activityLogService } from '../../services/activity-log.service';
 import { 
  Sparkles, 
@@ -41,7 +42,8 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  const { skills, removeSkill } = useSkillsStore();
  const { tags } = useTagsStore();
  const { setShowSkillCreateModal, setSelectedSkill, selectedSkill } = useUIStore();
- const { broadcast } = usePeer();
+ const { broadcast, sendTo } = usePeer();
+ const { setDiceResult } = useDiceStore();
 
  const [activeTab, setActiveTab] = useState<'inventory' | 'forge'>('inventory');
  const [search, setSearch] = useState('');
@@ -224,6 +226,98 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  });
  };
 
+ const handleUseSkill = async (skill: any) => {
+    if (!character) return;
+    const { parseAndRoll } = await import('../../services/des.service');
+    const { DEFAULT_STATS, DEFAULT_BARS } = await import('../../systems/seal/constants');
+    const diceResults: any[] = [];
+    const statValues: Record<string, number> = {};
+    const labelMapping: Record<string, string> = {};
+
+    // Calcul des modificateurs actifs (objets équipés + passifs auto/toggle)
+    const statsFlat: Record<string, number> = {};
+    const globalSkills = useSkillsStore.getState().skills;
+
+    (character.inventory || []).forEach((item: any) => {
+      if (item.equipped && item.modifiers) {
+        item.modifiers.forEach((m: any, idx: number) => {
+          if (m.target === 'stat') {
+            if (m.mode === 'dice') statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + (item.rolledValues?.[idx] || 0);
+            else statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + (m.value || 0);
+          }
+        });
+      }
+    });
+
+    (character.custom_skills || []).forEach((cs: any) => {
+      const template = globalSkills.find(s => s.id === cs.id);
+      if (!template) return;
+      const sk = { ...template, is_active: cs.is_active, modifiers: cs.modifiers || template.modifiers };
+      
+      const isAuto = sk.type === 'passive_auto';
+      const isToggleActive = sk.type === 'passive_toggle' && sk.is_active;
+      // Pour les passifs conditionnels, simplifions en vérifiant que le skill actif possède les tags requis
+      let isActive = isAuto || isToggleActive;
+      if (!isActive && sk.type === 'passive_conditional' && sk.condition_tags && sk.condition_tags.length > 0) {
+        const pool = new Set<string>();
+        (character.inventory || []).forEach((i: any) => { if (i.equipped && i.tags) i.tags.forEach((t: string) => pool.add(t)); });
+        (character.custom_skills || []).forEach((c: any) => {
+          const tpl = globalSkills.find(s => s.id === c.id);
+          if (tpl && (tpl.type === 'passive_auto' || (tpl.type === 'passive_toggle' && c.is_active)) && tpl.tags) {
+            tpl.tags.forEach((t: string) => pool.add(t));
+          }
+        });
+        if (skill.tags) skill.tags.forEach((t: string) => pool.add(t));
+        isActive = sk.condition_tags.every((t: string) => pool.has(t));
+      }
+
+      if (isActive && sk.modifiers) {
+        sk.modifiers.forEach((m: any) => {
+          if (m.target === 'stat') {
+            // Note: On applique flat ici, mais normalement on applique base + round(base*percent/100)
+            if (m.mode === 'percent') {
+                const base = character.stats?.[m.targetId] || 20;
+                statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + Math.round(base * (m.value / 100));
+            } else {
+                statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + (m.value || 0);
+            }
+          }
+        });
+      }
+    });
+
+    DEFAULT_STATS.forEach(s => {
+      const base = character.stats?.[s.id] || 20;
+      const mod = statsFlat[s.id] || 0;
+      statValues[s.id.toLowerCase()] = base + mod;
+      labelMapping[s.id.toLowerCase()] = s.name;
+    });
+    DEFAULT_BARS.forEach(b => {
+      statValues[b.id.toLowerCase()] = (character.bars?.[b.id] || 0);
+      labelMapping[b.id.toLowerCase()] = b.name;
+    });
+
+    if (skill.effects && skill.effects.length > 0) {
+      skill.effects.forEach((eff: any) => {
+        const label = eff.description || skill.name;
+        const formulaStr = eff.formula || '';
+        if (eff.mode === 'dice' && formulaStr) {
+          let formula = formulaStr;
+          Object.keys(statValues).sort((a, b) => b.length - a.length).forEach(key => {
+            formula = formula.replace(new RegExp(`(?<=\\b|d)${key}\\b`, 'gi'), `(${labelMapping[key]}=${statValues[key]})`);
+          });
+          const rollRes = parseAndRoll(formula);
+          diceResults.push({ rolls: rollRes.rolls || [], total: rollRes.total, bonus: 0, diceString: formulaStr, label, groups: rollRes.groups, color: '#d4af37', secret: false, timestamp: Date.now(), sender_id: user?.id, sender_name: character.name });
+        } else if (eff.valeur !== undefined) {
+          diceResults.push({ rolls: [eff.valeur], total: eff.valeur, bonus: 0, diceString: 'Fixe', label, color: '#d4af37', secret: false, timestamp: Date.now(), sender_id: user?.id, sender_name: character.name });
+        }
+      });
+    }
+    const finalResults = diceResults.length > 0 ? diceResults : [{ rolls: [], total: 0, bonus: 0, diceString: 'Utilisation', label: skill.name, color: '#d4af37', secret: false, timestamp: Date.now(), sender_id: user?.id, sender_name: character.name }];
+    setDiceResult(finalResults);
+    finalResults.forEach(r => broadcast({ type: 'DICE_ROLL', payload: r }));
+  };
+
  const handleGiveSkillToCharacter = async (skill: any) => {
  if (!character || !isMJ) return;
  if (character.custom_skills?.some((s: any) => s.id === skill.id)) {
@@ -385,6 +479,15 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  {effectiveTab === 'inventory' ? (
  <>
  <div className={`transition-all duration-300 ${isEquipped ? 'opacity-100' : 'opacity-30 group-hover:opacity-100'}`}>
+ {skill.type === 'active' && (
+ <button 
+ onClick={(e) => { e.stopPropagation(); handleUseSkill(skill); }}
+ className="p-1.5 rounded-lg bg-glacier-DEFAULT/20 text-glacier-bright border border-glacier-DEFAULT/30 hover:bg-glacier-DEFAULT/40 transition-all"
+ title={t('context.useSkill', "Utiliser")}
+ >
+ <Zap size={10} />
+ </button>
+ )}
  {skill.type === 'passive_toggle' && (
  <button 
  onClick={(e) => { e.stopPropagation(); handleToggleSkillActive(skill); }}

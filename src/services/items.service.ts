@@ -15,6 +15,7 @@ export interface Item {
   image_url?: string;
   modifiers: ItemModifier[];
   effects: any[];
+  tags?: string[];
 }
 
 export const itemsService = {

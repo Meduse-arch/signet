@@ -1,21 +1,20 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Trash2, Settings, Upload, Loader2 } from 'lucide-react';
-import { useCharactersStore } from '../../store/characters';
-import { useAuthStore, SecurityLevel } from '../../store/auth';
-import { useConfirmStore } from '../../store/confirm';
-import { useSessionStore } from '../../store/session';
-import { useDiceStore } from '../../store/dice';
-import { useUIStore } from '../../store/ui';
-import { useSkillsStore } from '../../store/skills';
-import { DEFAULT_STATS, DEFAULT_BARS, DEFAULT_SKILLS } from '../../systems/seal/constants';
-import { usePeer } from '../../hooks/usePeer';
-import { addSessionCharacter, removeSessionCharacter } from '../../services/characters.service';
-import { lancerDes, parseAndRoll } from '../../services/des.service';
-import { addSessionLog } from '../../services/db.service';
-import { useMapStore } from '../../store/map';
-import { MapItem } from '../BoardCanvas';
-import { useAssetUpload } from '../../hooks/useAssetUpload';
-import { AssetImage } from '../AssetImage';
+import { useCharactersStore } from '../../../store/characters';
+import { useAuthStore, SecurityLevel } from '../../../store/auth';
+import { useConfirmStore } from '../../../store/confirm';
+import { useSessionStore } from '../../../store/session';
+import { useDiceStore } from '../../../store/dice';
+import { useUIStore } from '../../../store/ui';
+import { useSkillsStore } from '../../../store/skills';
+import { DEFAULT_STATS, DEFAULT_BARS } from '../constants';
+import { usePeer } from '../../../hooks/usePeer';
+import { addSessionCharacter, removeSessionCharacter } from '../../../services/characters.service';
+import { lancerDes, parseAndRoll } from '../../../services/des.service';
+import { addSessionLog } from '../../../services/db.service';
+import { useMapStore } from '../../../store/map';
+import { useAssetUpload } from '../../../hooks/useAssetUpload';
+import { AssetImage } from '../../../components/AssetImage';
 
 interface CharacterSheetContentProps {
  sessionId: string;
@@ -231,7 +230,7 @@ function SnapColumn({
 }
 
  // ── Main component ───────────────────────────────────────────────────────────
-export function CharacterSheetContent({
+export function SealCharacterSheet({
  sessionId,
  variant = 'popup',
  forceCharacterId,
@@ -361,88 +360,109 @@ export function CharacterSheetContent({
  return custom_skills.map((cs: any) => {
  const template = skills.find(s => s.id === cs.id);
  if (!template) return cs;
- return { ...template, is_active: cs.is_active, modifiers: cs.modifiers || template.modifiers };
+ return { ...template, is_active: cs.is_active, modifiers: cs.modifiers || template.modifiers, tags: cs.tags || template.tags };
  });
  }, [custom_skills, skills]);
 
-  // Calculer les modificateurs d'équipement et de compétences complexes
-  const calculatedModifiers = useMemo(() => {
-    const statsFlat: Record<string, number> = {};
-    const statsPercent: Record<string, number> = {};
-    const barsFlat: Record<string, { value: number; max: number }> = {};
+ // Calculer les modificateurs d'équipement et de compétences complexes
+ const calculateMods = useCallback((extraTags: string[] = []) => {
+  const statsFlat: Record<string, number> = {};
+  const statsPercent: Record<string, number> = {};
+  const barsFlat: Record<string, { value: number; max: number }> = {};
+  
+  if (!character) return { stats: {}, bars: {} };
 
-    if (!character) return { stats: {}, bars: {} };
+  // Construire le réservoir de tags actifs (séparé par source)
+  const activeItemTags = new Set<string>(extraTags);
+  const activeSkillTags = new Set<string>();
+  inventory.forEach((item: any) => {
+    if (item.equipped && item.tags) {
+      item.tags.forEach((t: string) => activeItemTags.add(t));
+    }
+  });
+  reactiveSkills.forEach((skill: any) => {
+    const isAuto = skill.type === 'passive_auto';
+    const isToggleActive = skill.type === 'passive_toggle' && skill.is_active;
+    if ((isAuto || isToggleActive) && skill.tags) {
+      skill.tags.forEach((t: string) => activeSkillTags.add(t));
+    }
+  });
 
-    // Réservoir de tags actifs (séparé par source)
-    const activeItemTags = new Set<string>();
-    const activeSkillTags = new Set<string>();
-    inventory.forEach((item: any) => {
-      if (item.equipped && item.tags) item.tags.forEach((t: string) => activeItemTags.add(t));
-    });
-    reactiveSkills.forEach((skill: any) => {
-      const isAuto = skill.type === 'passive_auto';
-      const isToggleActive = skill.type === 'passive_toggle' && skill.is_active;
-      if ((isAuto || isToggleActive) && skill.tags) skill.tags.forEach((t: string) => activeSkillTags.add(t));
-    });
+  const checkCondition = (skill: any): boolean => {
+    if (!skill.condition_tags || skill.condition_tags.length === 0) return false;
+    const cType = skill.condition_type || 'both';
+    const pool = new Set<string>();
+    if (cType === 'item' || cType === 'both' || cType === 'les_deux') activeItemTags.forEach(t => pool.add(t));
+    if (cType === 'skill' || cType === 'both' || cType === 'les_deux') activeSkillTags.forEach(t => pool.add(t));
+    return skill.condition_tags.every((t: string) => pool.has(t));
+  };
 
-    const checkCondition = (skill: any): boolean => {
-      if (!skill.condition_tags || skill.condition_tags.length === 0) return false;
-      const cType = skill.condition_type || 'both';
-      const pool = new Set<string>();
-      if (cType === 'item' || cType === 'both' || cType === 'les_deux') activeItemTags.forEach(t => pool.add(t));
-      if (cType === 'skill' || cType === 'both' || cType === 'les_deux') activeSkillTags.forEach(t => pool.add(t));
-      return skill.condition_tags.every((t: string) => pool.has(t));
-    };
+  // 1. Modificateurs d'objets (Inventaire)
+  inventory.forEach((item: any) => {
+  if (item.equipped && item.modifiers) {
+  item.modifiers.forEach((m: any, idx: number) => {
+  if (m.target === 'stat') {
+  if (m.mode === 'percent') {
+  statsPercent[m.targetId] = (statsPercent[m.targetId] || 0) + m.value;
+  } else if (m.mode === 'dice') {
+  statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + (item.rolledValues?.[idx] || 0);
+  } else {
+  statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
+  }
+  } else if (m.target === 'bar') {
+  if (item.category === 'Arme') return;
+  if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
+  const prop = m.targetProperty || 'max';
+  if (m.mode === 'dice') {
+  barsFlat[m.targetId][prop as 'value' | 'max'] += (item.rolledValues?.[idx] || 0);
+  } else {
+  barsFlat[m.targetId][prop as 'value' | 'max'] += m.value;
+  }
+  }
+  });
+  }
+  });
 
-    // 1. Modificateurs d'objets équipés
-    inventory.forEach((item: any) => {
-      if (item.equipped && item.modifiers) {
-        item.modifiers.forEach((m: any, idx: number) => {
-          if (m.target === 'stat') {
-            if (m.mode === 'percent') statsPercent[m.targetId] = (statsPercent[m.targetId] || 0) + m.value;
-            else if (m.mode === 'dice') statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + (item.rolledValues?.[idx] || 0);
-            else statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
-          } else if (m.target === 'bar') {
-            if (item.category === 'Arme') return;
-            if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
-            const prop = m.targetProperty || 'max';
-            barsFlat[m.targetId][prop as 'value' | 'max'] += m.mode === 'dice' ? (item.rolledValues?.[idx] || 0) : m.value;
-          }
-        });
-      }
-    });
+  // 2. Modificateurs de compétences (Reactive Skills)
+  reactiveSkills.forEach((skill: any) => {
+  const isAuto = skill.type === 'passive_auto';
+  const isToggleActive = skill.type === 'passive_toggle' && skill.is_active;
+  const isConditional = skill.type === 'passive_conditional';
+  
+  let isActive = false;
+  if (isAuto || isToggleActive) isActive = true;
+  else if (isConditional) isActive = checkCondition(skill);
+  
+  if (isActive && skill.modifiers) {
+  skill.modifiers.forEach((m: any) => {
+  if (m.target === 'stat') {
+  if (m.mode === 'percent') {
+  statsPercent[m.targetId] = (statsPercent[m.targetId] || 0) + m.value;
+  } else {
+  statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
+  }
+  } else if (m.target === 'bar') {
+  if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
+  const prop = m.targetProperty || 'max';
+  barsFlat[m.targetId][prop as 'value' | 'max'] += m.value;
+  }
+  });
+  }
+  });
 
-    // 2. Modificateurs de compétences (auto, toggle actif, conditionnels)
-    reactiveSkills.forEach((skill: any) => {
-      const isAuto = skill.type === 'passive_auto';
-      const isToggleActive = skill.type === 'passive_toggle' && skill.is_active;
-      const isConditional = skill.type === 'passive_conditional';
+  // Calculer les bonus finaux des stats
+  const statsFinal: Record<string, number> = {};
+  statDefs.forEach((s: any) => {
+  const base = stats[s.id] || 20;
+  const flat = statsFlat[s.id] || 0;
+  const percent = statsPercent[s.id] || 0;
+  statsFinal[s.id] = flat + Math.round(base * (percent / 100));
+  });
 
-      const isActive = isAuto || isToggleActive || (isConditional && checkCondition(skill));
-
-      if (isActive && skill.modifiers) {
-        skill.modifiers.forEach((m: any) => {
-          if (m.target === 'stat') {
-            if (m.mode === 'percent') statsPercent[m.targetId] = (statsPercent[m.targetId] || 0) + m.value;
-            else statsFlat[m.targetId] = (statsFlat[m.targetId] || 0) + m.value;
-          } else if (m.target === 'bar') {
-            if (!barsFlat[m.targetId]) barsFlat[m.targetId] = { value: 0, max: 0 };
-            const prop = m.targetProperty || 'max';
-            barsFlat[m.targetId][prop as 'value' | 'max'] += m.value;
-          }
-        });
-      }
-    });
-
-    // Calculer les bonus finaux des stats
-    const statsFinal: Record<string, number> = {};
-    statDefs.forEach((s: any) => {
-      const base = stats[s.id] || 20;
-      statsFinal[s.id] = (statsFlat[s.id] || 0) + Math.round(base * ((statsPercent[s.id] || 0) / 100));
-    });
-
-    return { stats: statsFinal, bars: barsFlat };
+  return { stats: statsFinal, bars: barsFlat };
   }, [character, inventory, stats, statDefs, reactiveSkills]);
+
+  const calculatedModifiers = useMemo(() => calculateMods([]), [calculateMods]);
 
  if (!character) {
  return (
@@ -582,16 +602,17 @@ export function CharacterSheetContent({
  const handleToggleSkill = async (skillId: string) => {
  if (!character) return;
 
- // 1. Collecter les valeurs des attributs pour le remplacement
+ const s = (character.custom_skills || []).find((s: any) => s.id === skillId);
+ if (!s) return;
+
  const statValues: Record<string, number> = {};
  const labelMapping: Record<string, string> = {};
  
  // Attributs (Stats) - Résolution uniquement par ID
  statDefs.forEach((s: any) => {
- const val = (character.stats || {})[s.id] || 20;
+ const base = stats[s.id] || 20;
  const itemMod = calculatedModifiers.stats[s.id] || 0;
- const finalVal = val + itemMod;
- statValues[s.id.toLowerCase()] = finalVal;
+ statValues[s.id.toLowerCase()] = base + itemMod;
  labelMapping[s.id.toLowerCase()] = s.name;
  });
 
@@ -737,14 +758,21 @@ export function CharacterSheetContent({
  if (!character) return;
  const diceResults: any[] = [];
  
+ // Injection temporaire des tags de la compétence active pour déclencher les passifs conditionnels
+ let tempCalculatedMods = calculatedModifiers;
+ if (skill.tags && skill.tags.length > 0) {
+    tempCalculatedMods = calculateMods(skill.tags);
+ }
+
  // 1. Collecter les valeurs des attributs pour le remplacement
  const statValues: Record<string, number> = {};
  const labelMapping: Record<string, string> = {};
  
  statDefs.forEach((s: any) => {
- const val = stats[s.id] || 20;
- const itemMod = calculatedModifiers.stats[s.id] || 0;
- statValues[s.id.toLowerCase()] = val + itemMod;
+ const val = (character.stats || {})[s.id] || 20;
+ const itemMod = tempCalculatedMods.stats[s.id] || 0;
+ const finalVal = val + itemMod;
+ statValues[s.id.toLowerCase()] = finalVal;
  labelMapping[s.id.toLowerCase()] = s.name;
  });
 
@@ -969,6 +997,7 @@ export function CharacterSheetContent({
   const renderSkill = (skill: unknown) => {
     const s = skill as any;
     const skillType = s.type || 'active';
+    
     return (
       <div
         key={s.id}
@@ -995,7 +1024,7 @@ export function CharacterSheetContent({
         </div>
         <div className="flex items-center gap-1 ml-2">
           {skillType === 'active' && (
-            <button
+            <button 
               onClick={(e) => { e.stopPropagation(); handleUseSkill(s); }}
               className="p-1 rounded bg-glacier-DEFAULT/10 text-silver-bright hover:bg-glacier-DEFAULT/20 transition-all"
             >
@@ -1003,7 +1032,7 @@ export function CharacterSheetContent({
             </button>
           )}
           {skillType === 'passive_toggle' && (
-            <button
+            <button 
               onClick={(e) => { e.stopPropagation(); handleToggleSkill(s.id); }}
               className={`p-1 rounded transition-all ${s.is_active ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/60 hover:text-white'}`}
             >

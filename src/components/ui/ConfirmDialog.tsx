@@ -9,7 +9,7 @@ export function ConfirmDialog() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div className="bg-[#0D0D0F] border border-red-500/30 rounded-2xl max-w-sm w-full p-6 shadow-[0_0_50px_rgba(239,68,68,0.2)] animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center gap-4 mb-6">
           <div className="p-3 bg-red-500/10 rounded-full text-red-500">

@@ -27,7 +27,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  
  const [name, setName] = useState('');
  const [description, setDescription] = useState('');
- const [type, setType] = useState<'active' | 'passive_auto' | 'passive_toggle'>('active');
+ const [type, setType] = useState<'active' | 'passive_auto' | 'passive_toggle' | 'passive_conditional'>('active');
  const { imageUrl, setImageUrl, isUploading, handleFileUpload } = useAssetUpload();
  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -202,21 +202,21 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  <div className="space-y-2">
  <div className="flex items-center justify-between">
  <label className="text-[11px] font-quantico font-black text-white/70 uppercase tracking-widest ml-1">{t('context.tags', "Tags & Catégories")}</label>
- <div className="relative">
+ <div className="flex gap-2">
  <select 
- className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+ className="flex-1 bg-black/60 border border-silver-DEFAULT/20 rounded-lg px-2 py-1 text-xs text-white outline-none cursor-pointer"
  value=""
  onChange={(e) => {
  const val = e.target.value;
  if (val && !selectedTags.includes(val)) setSelectedTags([...selectedTags, val]);
  }}
  >
- <option value="" disabled>+</option>
+ <option value="" disabled>{t('common.select', "Sélectionner...")}</option>
  {tags.filter(t => !selectedTags.includes(t.id)).map(t => (
  <option key={t.id} value={t.id}>{t.name}</option>
  ))}
  </select>
- <button className="p-1.5 rounded-lg bg-glacier-DEFAULT/10 hover:bg-glacier-DEFAULT/20 border border-silver-DEFAULT/20 text-glacier-bright transition-colors pointer-events-none">
+ <button onClick={() => setShowTagManager(true)} className="px-2 py-1 rounded-lg bg-glacier-DEFAULT/10 hover:bg-glacier-DEFAULT/20 border border-silver-DEFAULT/20 text-glacier-bright transition-colors">
  <Plus size={14} />
  </button>
  </div>
@@ -253,6 +253,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  <option value="active">{t('context.activeSkill', "Compétence Active")}</option>
  <option value="passive_auto">{t('context.passiveSkill', "Passif Permanent")}</option>
  <option value="passive_toggle">{t('context.auraSkill', "Aura Activable")}</option>
+ <option value="passive_conditional">{t('context.conditionalPassive', "Passif Conditionnel")}</option>
  </select>
  </div>
  <div className="space-y-2">
@@ -476,6 +477,77 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  </div>
  </section>
 
+ {/* CONDITIONS (POUR PASSIF CONDITIONNEL) */}
+ {type === 'passive_conditional' && (
+ <section className="space-y-6">
+ <div className="flex items-center justify-between border-b border-silver-DEFAULT/20 pb-3">
+ <h3 className="text-xs font-quantico font-black text-glacier-bright uppercase tracking-[0.3em] flex items-center gap-3">
+ <Shuffle size={16} className="text-glacier-bright" /> {t('context.activationConditions', "Conditions d'Activation")}
+ </h3>
+ </div>
+ <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+ <p className="text-[11px] font-quantico text-silver-bright/60 uppercase tracking-widest leading-relaxed">
+ {t('context.conditionalDesc', "Le passif ne sera actif QUE si le personnage détient ou active au moins l'un des tags sélectionnés ci-dessous.")}
+ </p>
+ <div className="flex flex-col gap-3">
+  <label className="text-[11px] font-quantico font-black text-white/70 uppercase tracking-widest ml-1">{t('context.conditionSource', "Source des tags")}</label>
+  <div className="grid grid-cols-3 gap-2">
+  {[
+  { value: 'item', label: '🗡 Objet équipé' },
+  { value: 'skill', label: '⚡ Compétence active' },
+  { value: 'both', label: '✦ Les deux' },
+  ].map(opt => (
+  <button
+  key={opt.value}
+  type="button"
+  onClick={() => setConditionType(opt.value as any)}
+  className={`py-2 px-2 rounded-xl text-[10px] font-quantico font-black uppercase tracking-widest border transition-all ${conditionType === opt.value || (opt.value === 'both' && (conditionType === 'none' || conditionType === 'les_deux')) ? 'bg-glacier-DEFAULT/20 border-glacier-bright text-glacier-bright' : 'bg-black/40 border-white/10 text-white/50 hover:border-white/30'}`}
+  >
+  {opt.label}
+  </button>
+  ))}
+  </div>
+  </div>
+  <div className="flex flex-col gap-3">
+  <label className="text-[11px] font-quantico font-black text-white/70 uppercase tracking-widest ml-1">{t('context.requiredTags', "Tags Requis (Condition)")}</label>
+ <div className="flex gap-2">
+ <select 
+ className="flex-1 bg-black/60 border border-silver-DEFAULT/20 rounded-lg px-2 py-1 text-xs text-white outline-none cursor-pointer"
+ value=""
+ onChange={(e) => {
+ const val = e.target.value;
+ if (val && !conditionTags.includes(val)) setConditionTags([...conditionTags, val]);
+ setConditionType('both');
+ }}
+ >
+ <option value="" disabled>{t('common.select', "Sélectionner un tag requis...")}</option>
+ {tags.filter(t => !conditionTags.includes(t.id)).map(t => (
+ <option key={t.id} value={t.id}>{t.name}</option>
+ ))}
+ </select>
+ </div>
+ <div className="flex flex-wrap gap-2">
+ {conditionTags.length === 0 && (
+ <span className="text-[11px] font-garamond italic text-white/30">{t('context.noTagsRequired', "Aucun tag requis...")}</span>
+ )}
+ {conditionTags.map(tagId => {
+ const tag = tags.find(t => t.id === tagId);
+ if (!tag) return null;
+ return (
+ <div key={tag.id} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-quantico text-white uppercase tracking-widest" style={{ borderLeftColor: tag.color, borderLeftWidth: '2px' }}>
+ <span>{tag.name}</span>
+ <button onClick={() => setConditionTags(conditionTags.filter(id => id !== tag.id))} className="text-white/40 hover:text-red-400 transition-colors ml-1">
+ <X size={10} />
+ </button>
+ </div>
+ );
+ })}
+ </div>
+ </div>
+ </div>
+ </section>
+ )}
+
  </div>
  </main>
 
@@ -505,6 +577,9 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  </button>
  </div>
  </footer>
+ {showTagManager && (
+ <TagManagementModal sessionId={sessionId} onClose={() => setShowTagManager(false)} />
+ )}
  </div>
  </div>,
  document.body

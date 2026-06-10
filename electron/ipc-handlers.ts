@@ -64,7 +64,8 @@ function getSessionDb(inputId: string): Database.Database {
           category TEXT,
           image_url TEXT,
           effects TEXT,
-          modifiers TEXT
+          modifiers TEXT,
+          tags TEXT
         );
 
         CREATE TABLE IF NOT EXISTS skills (
@@ -196,6 +197,10 @@ function getSessionDb(inputId: string): Database.Database {
       if (!itemTableInfo.some(col => col.name === 'modifiers')) {
         console.log(`[DB] Migration: Ajout de la colonne modifiers à la table items pour la session ${realSessionId}`);
         db.exec('ALTER TABLE items ADD COLUMN modifiers TEXT');
+      }
+      if (!itemTableInfo.some(col => col.name === 'tags')) {
+        console.log(`[DB] Migration: Ajout de la colonne tags à la table items pour la session ${realSessionId}`);
+        db.exec('ALTER TABLE items ADD COLUMN tags TEXT');
       }
 
       const combatActorsTableInfo = db.prepare("PRAGMA table_info(combat_actors)").all() as any[];
@@ -522,7 +527,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
       return items.map(i => ({
         ...i,
         effects: i.effects ? JSON.parse(i.effects) : [],
-        modifiers: i.modifiers ? JSON.parse(i.modifiers) : []
+        modifiers: i.modifiers ? JSON.parse(i.modifiers) : [],
+        tags: i.tags ? JSON.parse(i.tags) : []
       }));
     } catch (err) {
       console.error('[DB] Erreur items:getAll:', err);
@@ -534,9 +540,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
     try {
       const db = getSessionDb(sessionId);
       db.prepare(`
-        INSERT OR REPLACE INTO items (id, name, description, category, image_url, effects, modifiers)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(item.id, item.name, item.description, item.category, item.image_url, JSON.stringify(item.effects || []), JSON.stringify(item.modifiers || []));
+        INSERT OR REPLACE INTO items (id, name, description, category, image_url, effects, modifiers, tags)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(item.id, item.name, item.description, item.category, item.image_url, JSON.stringify(item.effects || []), JSON.stringify(item.modifiers || []), JSON.stringify(item.tags || []));
       return true;
     } catch (err) {
       console.error('[DB] Erreur items:add:', err);
