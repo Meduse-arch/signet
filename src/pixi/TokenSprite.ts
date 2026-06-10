@@ -119,7 +119,9 @@ export class TokenSprite extends Container {
     if (data.image_url) {
       this.loadImage(data.image_url);
     }
-    this.app.ticker.add(this.updateInterpolation, this);
+    if (this.app && this.app.ticker) {
+      this.app.ticker.add(this.updateInterpolation, this);
+    }
   }
 
   private updateInterpolation() {
@@ -186,7 +188,8 @@ export class TokenSprite extends Container {
       const radius = 18;
       const points = [];
       for (let i = 0; i < 6; i++) {
-        points.push(radius * Math.cos(i * Math.PI / 3), radius * Math.sin(i * Math.PI / 3));
+        const angle = i * Math.PI / 3 + Math.PI / 6;
+        points.push(radius * Math.cos(angle), radius * Math.sin(angle));
       }
       mask.poly(points).fill(0xffffff);
       
@@ -208,12 +211,13 @@ export class TokenSprite extends Container {
     const radius = 20;
     const points = [];
     for (let i = 0; i < 6; i++) {
-      points.push(radius * Math.cos(i * Math.PI / 3), radius * Math.sin(i * Math.PI / 3));
+      const angle = i * Math.PI / 3 + Math.PI / 6;
+      points.push(radius * Math.cos(angle), radius * Math.sin(angle));
     }
     this.bgGraphics
       .poly(points)
       .fill(selected ? 0x0E1116 : 0x000000)
-      .stroke({ color: selected ? 0x4FA4B8 : 0x4A5462, width: 2 });
+      .stroke({ color: selected ? 0x4FA4B8 : 0x000000, width: 2 });
   }
 
   private dragging = false;
@@ -322,27 +326,33 @@ export class TokenSprite extends Container {
       const radius = 24;
       const points = [];
       for (let i = 0; i < 6; i++) {
-        points.push(radius * Math.cos(i * Math.PI / 3), radius * Math.sin(i * Math.PI / 3));
+        const angle = i * Math.PI / 3 + Math.PI / 6;
+        points.push(radius * Math.cos(angle), radius * Math.sin(angle));
       }
       ring
         .poly(points)
-        .stroke({ color: 0x8BE0F2, width: 2.5, alpha: 0.75 });
+        .stroke({ color: 0x9DA8B8, width: 2.5, alpha: 0.75 });
         
-      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 3) {
+      for (let i = 0; i < 6; i++) {
+        const angle = i * Math.PI / 3 + Math.PI / 6;
         ring
-          // keep the little dots as circles, but colored glacier
+          // keep the little dots as circles, but colored silver
           .circle(Math.cos(angle) * 24, Math.sin(angle) * 24, 2.5)
-          .fill({ color: 0x8BE0F2, alpha: 0.9 });
+          .fill({ color: 0x9DA8B8, alpha: 0.9 });
       }
 
       this.activeRing.addChild(ring);
       this.addChildAt(this.activeRing, 0);
 
-      this.app.ticker.add(this.animateActiveRing, this);
+      if (this.app && this.app.ticker) {
+        this.app.ticker.add(this.animateActiveRing, this);
+      }
     } else {
       if (!this.activeRing) return;
 
-      this.app.ticker.remove(this.animateActiveRing, this);
+      if (this.app && this.app.ticker) {
+        this.app.ticker.remove(this.animateActiveRing, this);
+      }
       this.removeChild(this.activeRing);
       this.activeRing.destroy({ children: true });
       this.activeRing = null;
@@ -357,8 +367,10 @@ export class TokenSprite extends Container {
   }
 
   override destroy(options?: any) {
-    this.app.ticker.remove(this.updateInterpolation, this);
-    this.app.ticker.remove(this.animateActiveRing, this);
+    if (this.app && this.app.ticker) {
+      this.app.ticker.remove(this.updateInterpolation, this);
+      this.app.ticker.remove(this.animateActiveRing, this);
+    }
     super.destroy(options);
   }
 }

@@ -272,7 +272,12 @@ export default function SealEngine({ sessionId, onPause, onLeave, players = [], 
  };
 
  if (window.electronAPI) {
- window.electronAPI.saveCombatState(sessionId, syncPayload);
+ window.electronAPI.saveCombatState(sessionId, {
+ is_active: rawState.isActive,
+ current_round: rawState.currentRound,
+ active_actor_id: rawState.activeActorId,
+ actors: rawState.actors
+ });
  }
  
  broadcast({ type: 'COMBAT_STATE_UPDATE', payload: syncPayload });

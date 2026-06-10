@@ -38,7 +38,14 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
  isInitiativeWindowOpen: rawState.isInitiativeWindowOpen
  };
 
- if (window.electronAPI) window.electronAPI.saveCombatState(sessionId, payload);
+    if (window.electronAPI) {
+      window.electronAPI.saveCombatState(sessionId, {
+        is_active: rawState.isActive,
+        current_round: rawState.currentRound,
+        active_actor_id: rawState.activeActorId,
+        actors: rawState.actors
+      });
+    }
  
  // Synchro locale fenêtres MJ
  const channel = new BroadcastChannel(`signet_sync_${sessionId}`);
