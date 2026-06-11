@@ -160,6 +160,7 @@ export function DraggableWindow({
  nodeRef={nodeRef}
  handle=".window-header"
  defaultPosition={defaultPosition}
+ bounds="parent"
  onStart={onFocus}
  onStop={(_e, data) => onPositionChange?.(data.x, data.y)}
  >
