@@ -36,6 +36,7 @@ import { useTagsStore } from '../../store/tags';
 import { useUIStore } from '../../store/ui';
 import { mapSyncService } from '../../services/map-sync.service';
 import { useCombatStore } from '../../store/combat';
+import { useMapStore } from '../../store/map';
 import type { GameSystem } from './types';
 
 interface CoreEngineProps {
@@ -76,6 +77,12 @@ export function CoreEngine({ sessionId, systemConfig, onPause, onLeave, players 
     return (session as any)?.maps || [];
   });
   const [currentMapId, setCurrentMapId] = useState<string>('');
+  const setStoreMapId = useMapStore(state => state.setCurrentMapId);
+
+  // Sync avec l'état global pour que useAudioSync puisse savoir sur quelle carte on est
+  useEffect(() => {
+    setStoreMapId(currentMapId);
+  }, [currentMapId, setStoreMapId]);
 
   // Sync automatique de l'écran externe quand on active le toggle
   useEffect(() => {

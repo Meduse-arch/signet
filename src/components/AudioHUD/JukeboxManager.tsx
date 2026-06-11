@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Play, Square, Volume2, X, Music, RadioReceiver, Search } from 'lucide-react';
+import { Upload, Play, Square, Volume2, X, Music, RadioReceiver, Search, MapPin } from 'lucide-react';
 import { useAudioSync } from '../../hooks/useAudioSync';
 import { dbStorage } from '../../services/db.storage';
 import { audioService } from '../../services/audio.service';
 import { calculateHash } from '../../services/transfer.service';
 import { usePeersStore } from '../../store/peers';
+import { useToolsStore } from '../../store/tools';
+import { useMapStore } from '../../store/map';
 
 interface JukeboxManagerProps {
  sessionId: string;
@@ -226,10 +228,27 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
  <div>
  <div className="flex items-center justify-between mb-2">
  <h4 className="text-xs text-white/60 font-bold uppercase tracking-widest flex items-center gap-1"><RadioReceiver size={14}/> Soundboard</h4>
- <label className="cursor-pointer text-cyan-400/70 hover:text-cyan-400 flex items-center gap-1 text-xs">
- <Upload size={14} /> Importer
- <input type="file" accept="audio/*" className="hidden" onChange={(e) => handleFileUpload(e, true)} disabled={!!uploadingState} />
- </label>
+ <div className="flex items-center gap-2">
+  <button 
+    onClick={() => {
+      const active = useToolsStore.getState().isPlacingSound;
+      useToolsStore.getState().setIsPlacingSound(!active);
+      if (active) useToolsStore.getState().setSpatialTarget(null);
+    }}
+    className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded transition-colors ${
+      useToolsStore((state) => state.isPlacingSound) 
+        ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-500/50 shadow-[0_0_8px_rgba(6,182,212,0.5)] animate-pulse' 
+        : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-transparent'
+    }`}
+    title="Placer un son sur la carte (Spatial 3D)"
+  >
+    <MapPin size={12} /> {useToolsStore((state) => state.isPlacingSound) ? 'Cliquez sur la carte...' : 'Placer'}
+  </button>
+  <label className="cursor-pointer text-cyan-400/70 hover:text-cyan-400 flex items-center gap-1 text-xs">
+  <Upload size={14} /> Importer
+  <input type="file" accept="audio/*" className="hidden" onChange={(e) => handleFileUpload(e, true)} disabled={!!uploadingState} />
+  </label>
+ </div>
  </div>
  
  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
@@ -256,7 +275,18 @@ export function JukeboxManager({ sessionId, onClose, audioSync }: JukeboxManager
  <div key={s.hash} className="relative group flex items-center gap-1">
  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isReady ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
  <button
- onClick={() => audioSync.playSFX(s.hash)}
+ onClick={() => {
+  const toolsState = useToolsStore.getState();
+  if (toolsState.isPlacingSound && toolsState.spatialTarget) {
+    const currentMapId = useMapStore.getState().currentMapId;
+    audioSync.playSFX(s.hash, undefined, undefined, { ...toolsState.spatialTarget, mapId: currentMapId || '' });
+    toolsState.setIsPlacingSound(false);
+    toolsState.setSpatialTarget(null);
+  } else {
+    // Jouer globalement (sans coords spatiales)
+    audioSync.playSFX(s.hash);
+  }
+ }}
  className={`w-full text-left text-xs py-1.5 px-2 rounded truncate transition-colors bg-cyan-500/10 border border-cyan-500/20 hover:border-cyan-500/50 hover:bg-cyan-500/20 text-cyan-100`}
  title={s.title}
  >

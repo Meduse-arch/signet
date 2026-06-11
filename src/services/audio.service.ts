@@ -1,4 +1,5 @@
 import { Howl, Howler } from 'howler';
+import { useToolsStore } from '../store/tools';
 
 interface AudioTrack {
   hash: string;
@@ -15,8 +16,19 @@ class AudioService {
   // Stockage en RAM des très gros fichiers (évite IndexedDB et FileReader massifs)
   public memoryAudioFiles: Map<string, File> = new Map();
 
+  private lastListenerPos = { x: 0, y: 0, z: 0 };
+
   constructor() {
     Howler.volume(this._masterVolume);
+    // Position par défaut du listener (au centre de l'écran ou à 0,0)
+    Howler.pos(0, 0, 0);
+  }
+
+  public updateListenerPosition(x: number, y: number) {
+    if (this.lastListenerPos.x !== x || this.lastListenerPos.y !== y) {
+      this.lastListenerPos = { x, y, z: 0 };
+      Howler.pos(x, y, 0);
+    }
   }
 
   public setMasterVolume(vol: number) {
@@ -131,26 +143,73 @@ class AudioService {
 
   /**
    * Joue un effet sonore (SFX) one-shot.
+   * Peut être spatialisé si des coordonnées sont fournies.
    */
-  public playSFX(hash: string, audioData: ArrayBuffer, mime: string = 'audio/mp3') {
+  public playSFX(hash: string, audioData: ArrayBuffer, mime: string = 'audio/mp3', spatial?: { x: number, y: number }) {
     const blob = new Blob([audioData], { type: mime });
     const blobUrl = URL.createObjectURL(blob);
 
     const sfxHowl = new Howl({
       src: [blobUrl],
       format: [mime.split('/')[1] || 'mp3'],
-      html5: false, // Web Audio API (meilleur pour SFX courts)
+      html5: false, // Web Audio API (meilleur pour SFX courts et REQUIS pour la 3D)
       loop: false,
       volume: 1,
       onend: () => {
         sfxHowl.unload();
         URL.revokeObjectURL(blobUrl);
         this.sfxTracks.delete(hash);
+        
+        if (spatial) {
+          useToolsStore.getState().setSpatialTarget(null);
+        }
+      },
+      onstop: () => {
+        sfxHowl.unload();
+        URL.revokeObjectURL(blobUrl);
+        this.sfxTracks.delete(hash);
+        
+        if (spatial) {
+          useToolsStore.getState().setSpatialTarget(null);
+        }
       }
     });
 
-    this.sfxTracks.set(hash, { hash, howl: sfxHowl, blobUrl });
-    sfxHowl.play();
+    try {
+      if (spatial) {
+        // Calcul manuel du volume basé sur la distance pour éviter les bugs Web Audio
+        const dx = spatial.x - this.lastListenerPos.x;
+        const dy = spatial.y - this.lastListenerPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        let targetVolume = 1;
+        const refDist = 300;
+        const maxDist = 3000;
+        
+        if (distance >= maxDist) {
+          targetVolume = 0.01; // Évite 0 absolu qui peut buguer Howler
+        } else if (distance > refDist) {
+          targetVolume = 1 - ((distance - refDist) / (maxDist - refDist));
+        }
+
+        sfxHowl.volume(targetVolume);
+
+        // On désactive le PannerNode 3D complet car il peut bugger sur certains navigateurs
+        // On le remplace par un simple panoramique stéréo (gauche/droite)
+        let pan = dx / 1000; // 1000 pixels de décalage = son totalement d'un côté
+        if (pan > 1) pan = 1;
+        if (pan < -1) pan = -1;
+        
+        console.log(`[AudioService] Spatial SFX - Distance: ${Math.round(distance)}px, Volume: ${targetVolume.toFixed(2)}, Pan: ${pan.toFixed(2)}`);
+        
+        sfxHowl.stereo(pan);
+      }
+
+      const soundId = sfxHowl.play();
+      this.sfxTracks.set(hash, { hash, howl: sfxHowl, blobUrl, soundId });
+    } catch (e: any) {
+      alert("Erreur Howler: " + e.message);
+    }
   }
 }
 

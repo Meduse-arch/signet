@@ -21,12 +21,16 @@ interface ToolsState {
   paintType: PaintType;
   isEraserActive: boolean;
   paintRadius: number;
+  isPlacingSound: boolean;
+  spatialTarget: { x: number; y: number; q: number; r: number } | null;
   setShareRuler: (share: boolean) => void;
   setSharePing: (share: boolean) => void;
   setPingRadius: (radius: number) => void;
   setPaintType: (type: PaintType) => void;
   setIsEraserActive: (active: boolean) => void;
   setPaintRadius: (radius: number) => void;
+  setIsPlacingSound: (active: boolean) => void;
+  setSpatialTarget: (target: { x: number; y: number; q: number; r: number } | null) => void;
 }
 
 export const useToolsStore = create<ToolsState>()(
@@ -38,12 +42,16 @@ export const useToolsStore = create<ToolsState>()(
       paintType: 'wall' as PaintType,
       isEraserActive: false,
       paintRadius: 1,
+      isPlacingSound: false,
+      spatialTarget: null,
       setShareRuler: (share) => set({ shareRuler: share }),
       setSharePing: (share) => set({ sharePing: share }),
       setPingRadius: (radius) => set({ pingRadius: radius }),
       setPaintType: (type) => set({ paintType: type }),
       setIsEraserActive: (active) => set({ isEraserActive: active }),
       setPaintRadius: (radius) => set({ paintRadius: radius }),
+      setIsPlacingSound: (active) => set({ isPlacingSound: active }), // On ne clear PAS la cible pour qu'elle reste affichée pdt le son
+      setSpatialTarget: (target) => set({ spatialTarget: target }),
     }),
     {
       name: 'signet-tools-storage',

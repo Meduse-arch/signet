@@ -60,6 +60,13 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  setMapTokens([]);
  }, [sessionId]);
 
+ // Met à jour le token contrôlé dans la scène PIXI pour l'audio spatial (entre autres)
+ useEffect(() => {
+   if (isReady) {
+     setControlledToken(currentCharacterId || null);
+   }
+ }, [currentCharacterId, isReady, setControlledToken]);
+
  // Synchronisation MJ : Préparation de la map quand l'ID change
  useEffect(() => {
  if (!isReady || !isHost || !currentMapId) return;

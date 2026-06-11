@@ -29,6 +29,7 @@ import { useSkillsStore } from '../../store/skills';
 import { useQuestsStore } from '../../store/quests';
 import { useTagsStore } from '../../store/tags';
 import { useUIStore } from '../../store/ui';
+import { useMapStore } from '../../store/map';
 import { getSessionPlayers } from '../../services/session.service';
 import { getSessionMaps, addSessionMap } from '../../services/maps.service';
 import { getSessionCharacters } from '../../services/characters.service';
@@ -57,6 +58,11 @@ export function ExternalWindowPage() {
 
  const [maps, setMaps] = useState<MapItem[]>([]);
  const [currentMapId, setCurrentMapId] = useState<string>('');
+ const setStoreMapId = useMapStore(state => state.setCurrentMapId);
+
+ useEffect(() => {
+   setStoreMapId(currentMapId);
+ }, [currentMapId, setStoreMapId]);
 
  const playersList = players.length > 0 ? players : [
  ...(user ? [{ peer_id: user.id, pseudo: user.pseudo, role: user.role }] : []),

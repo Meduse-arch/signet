@@ -4,6 +4,7 @@ import { audioService } from '../services/audio.service';
 import { dbStorage } from '../services/db.storage';
 import { transferService } from '../services/transfer.service';
 import { usePeersStore } from '../store/peers';
+import { useMapStore } from '../store/map';
 import { useMseAudioPlayer } from './useMseAudioPlayer';
 import {
   buildStreamPlan,
@@ -151,21 +152,30 @@ export function useAudioSync(sessionId: string) {
 
       // ── SFX ─────────────────────────────────────────────────────────────────
       else if (data.type === 'AUDIO_SFX') {
-        const { hash, mime } = data.payload;
+        const { hash, mime, spatial } = data.payload;
+        
+        // Si le son est spatial et qu'on n'est pas sur la même map, on l'ignore silencieusement
+        if (spatial) {
+          const currentMapId = useMapStore.getState().currentMapId;
+          if (spatial.mapId !== currentMapId) {
+            return;
+          }
+        }
+
         const asset = await dbStorage.getAsset(hash);
         if (asset) {
-          audioService.playSFX(hash, asset.data, asset.mime);
+          audioService.playSFX(hash, asset.data, asset.mime, spatial);
           if (!isHost) sendTo(fromPeerId, { type: 'AUDIO_READY', payload: { hash } });
         } else {
-          sendTo(fromPeerId, { type: 'AUDIO_REQUEST_SFX', payload: { hash, mime } });
+          sendTo(fromPeerId, { type: 'AUDIO_REQUEST_SFX', payload: { hash, mime, spatial } });
         }
       }
 
       else if (isHost && data.type === 'AUDIO_REQUEST_SFX') {
-        const { hash } = data.payload;
+        const { hash, spatial } = data.payload;
         const asset = await dbStorage.getAsset(hash);
         if (asset) {
-          transferService.sendChunkPaced(`sfx_${hash}`, asset.data, hash, fromPeerId);
+          transferService.sendChunkPaced(`sfx_${hash}${spatial ? `|${spatial.x},${spatial.y},${spatial.mapId}` : ''}`, asset.data, hash, fromPeerId);
         }
       }
 
@@ -230,7 +240,15 @@ export function useAudioSync(sessionId: string) {
           audioService.playAmbiance(hash, data, 'audio/mp3', target.position);
         }
       } else if (chunkId.startsWith('sfx_')) {
-        const hash = chunkId.replace('sfx_', '');
+        let hash = chunkId.replace('sfx_', '');
+        let spatial: {x: number, y: number, mapId: string} | undefined = undefined;
+        if (hash.includes('|')) {
+          const parts = hash.split('|');
+          hash = parts[0];
+          const coords = parts[1].split(',');
+          spatial = { x: parseFloat(coords[0]), y: parseFloat(coords[1]), mapId: coords[2] };
+        }
+
         await dbStorage.putAsset({
           hash, data, mime: 'audio/mp3', size: data.byteLength, last_accessed: Date.now(),
         });
@@ -238,7 +256,14 @@ export function useAudioSync(sessionId: string) {
           const hostId = usePeersStore.getState().connections[0];
           if (hostId) sendTo(hostId, { type: 'AUDIO_READY', payload: { hash } });
         }
-        audioService.playSFX(hash, data, 'audio/mp3');
+        const currentMapId = useMapStore.getState().currentMapId || '';
+        console.log(`[AudioSync] Reçu SFX ${hash}. mapId du son: ${spatial?.mapId}, ma map: ${currentMapId}`);
+        if (!spatial || spatial.mapId === currentMapId) {
+          console.log(`[AudioSync] Joue le son localement!`);
+          audioService.playSFX(hash, data, 'audio/mp3', spatial);
+        } else {
+          console.warn(`[AudioSync] Son ignoré car pas sur la même carte !`);
+        }
       }
     });
 
@@ -393,15 +418,26 @@ export function useAudioSync(sessionId: string) {
     broadcast({ type: 'AUDIO_PAUSE', payload: {} });
   }, [isHost, broadcast]);
 
-  const playSFX = useCallback(async (hash: string, fileData?: ArrayBuffer, mime?: string) => {
+  const playSFX = useCallback(async (hash: string, fileData?: ArrayBuffer, mime?: string, spatial?: {x: number, y: number, mapId: string}) => {
     if (!isHost) return;
     if (fileData && mime) {
       await dbStorage.putAsset({ hash, data: fileData, mime, size: fileData.byteLength, last_accessed: Date.now() });
     }
     const asset = await dbStorage.getAsset(hash);
     if (!asset) return;
-    audioService.playSFX(hash, asset.data, asset.mime);
-    broadcast({ type: 'AUDIO_SFX', payload: { hash, mime: asset.mime } });
+    
+    // Joue localement
+    const currentMapId = useMapStore.getState().currentMapId || '';
+    console.log(`[AudioSync MJ] Lancement SFX ${hash}. mapId du son: ${spatial?.mapId}, ma map: ${currentMapId}`);
+    if (!spatial || spatial.mapId === currentMapId) {
+      console.log(`[AudioSync MJ] Joue le son localement!`);
+      audioService.playSFX(hash, asset.data, asset.mime, spatial);
+    } else {
+      console.warn(`[AudioSync MJ] Son ignoré localement car mapId différent !`);
+    }
+    
+    // Diffuse aux joueurs
+    broadcast({ type: 'AUDIO_SFX', payload: { hash, mime: asset.mime, spatial } });
   }, [isHost, broadcast]);
 
   const deleteAudio = useCallback((hash: string) => {

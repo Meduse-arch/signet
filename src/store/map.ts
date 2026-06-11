@@ -2,14 +2,18 @@ import { create } from 'zustand';
 import { setupStoreSync, emitStoreSync } from './utils/storeSync';
 
 interface MapState {
+  currentMapId: string | null;
   tokenStatuses: Record<string, boolean>; // characterId -> isOnMap
+  setCurrentMapId: (id: string | null) => void;
   setTokenStatus: (characterId: string, isOnMap: boolean, skipSync?: boolean) => void;
   updateTokenList: (characterIds: string[], skipSync?: boolean) => void;
   initialize: (sessionId: string) => void;
 }
 
 export const useMapStore = create<MapState>((set, get) => ({
+  currentMapId: null,
   tokenStatuses: {},
+  setCurrentMapId: (id) => set({ currentMapId: id }),
   setTokenStatus: (characterId, isOnMap, skipSync = false) => {
     set((state) => ({ 
       tokenStatuses: { ...state.tokenStatuses, [characterId]: isOnMap } 

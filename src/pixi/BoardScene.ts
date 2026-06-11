@@ -3,7 +3,7 @@ import { buildHighQualityFilters, PaletteAnalysis } from './qualityFilters';
 import { MapLayer } from './MapLayer';
 import { FogOfWar } from './FogOfWar';
 import { TokenSprite, TokenData } from './TokenSprite';
-import { pixelToHex, hexRound, hexToPixel } from '../utils/hexMath';
+import { pixelToHex, hexRound, hexToPixel, getHexCorners } from '../utils/hexMath';
 import { PaintLayer, PaintCell } from './PaintLayer';
 import { FogOverlayLayer } from './FogOverlayLayer';
 import { WeatherOverlayLayer } from './WeatherOverlayLayer';
@@ -12,6 +12,7 @@ import { useCombatStore } from '../store/combat';
 import { useSettingsStore } from '../store/settings';
 import { useToolsStore } from '../store/tools';
 import { PAINT_TYPE_COLORS, PaintType } from '../store/tools';
+import { audioService } from '../services/audio.service';
 
 export class BoardScene extends Container {
   private unsubCombat?: () => void;
@@ -27,6 +28,7 @@ export class BoardScene extends Container {
   public onTokenRightClick?: (id: string, x: number, y: number) => void;
   public onPaintUpdate?: (cells: Map<string, PaintCell>) => void;
   private selectedTokenId: string | null = null;
+  private controlledTokenId: string | null = null;
 
   private dragging = false;
   private dragStart = { x: 0, y: 0 };
@@ -41,6 +43,7 @@ export class BoardScene extends Container {
   public onRulerUpdate: ((start: { x: number, y: number } | null, end: { x: number, y: number } | null) => void) | null = null;
   private remoteRulers: Map<string, { graphics: Graphics, text: Text }> = new Map();
   private environmentContainer: Container;
+  private spatialMarkerGraphics: Graphics;
   /** Cases mur reçues par un joueur depuis le MJ (pas dans paintLayer local) */
   private clientWallCells: Set<string> = new Set();
 
@@ -72,7 +75,11 @@ export class BoardScene extends Container {
     this.rulerText.visible = false;
     this.rulerText.anchor.set(0.5);
 
+    this.spatialMarkerGraphics = new Graphics();
+    this.spatialMarkerGraphics.zIndex = 202;
+
     this.addChild(this.environmentContainer);
+    this.addChild(this.spatialMarkerGraphics);
     this.addChild(this.rulerGraphics);
     this.addChild(this.rulerText);
     this.addChild(this.fow);
@@ -96,6 +103,47 @@ export class BoardScene extends Container {
           (id === state.activeActorId || id.endsWith(`_${state.activeActorId}`) || state.activeActorId.endsWith(`_${id}`));
         token.setActiveTurnEffect(!!isActive);
       });
+    });
+
+    this.app.ticker.add(() => {
+      const toolsStore = useToolsStore.getState();
+      this.spatialMarkerGraphics.clear();
+      
+      if (toolsStore.isPlacingSound) {
+        const mousePos = this.app.renderer.events.pointer.global;
+        if (mousePos) {
+          const localPos = this.environmentContainer.toLocal(mousePos);
+          
+          // Dessiner le curseur temporaire
+          this.spatialMarkerGraphics.circle(localPos.x, localPos.y, 10).fill({ color: 0x06B6D4, alpha: 0.5 });
+          this.spatialMarkerGraphics.stroke({ color: 0x06B6D4, width: 2 });
+        }
+      }
+      
+      if (toolsStore.spatialTarget) {
+        const target = toolsStore.spatialTarget;
+        const hexSize = this.currentGridSize / 2;
+        const center = hexToPixel(target.q, target.r, hexSize);
+        const corners = getHexCorners(center.x, center.y, hexSize);
+        
+        const pts: number[] = [];
+        for (let i = 0; i < 12; i++) pts.push(corners[i]);
+
+        const animPulse = 1 + Math.sin(Date.now() / 150) * 0.2;
+        this.spatialMarkerGraphics.poly(pts).fill({ color: 0x06B6D4, alpha: 0.3 * animPulse });
+        this.spatialMarkerGraphics.poly(pts).stroke({ color: 0x06B6D4, width: 3 });
+      }
+
+      // Mise à jour de la position d'écoute (oreilles du joueur ou MJ)
+      let listenerPos = { x: 0, y: 0 };
+      if (this.controlledTokenId && this.tokens.has(this.controlledTokenId)) {
+        const token = this.tokens.get(this.controlledTokenId)!;
+        listenerPos = { x: token.x, y: token.y };
+      } else {
+        // Fallback : Centre de l'écran converti en coordonnées monde
+        listenerPos = this.environmentContainer.toLocal({ x: this.app.screen.width / 2, y: this.app.screen.height / 2 });
+      }
+      audioService.updateListenerPosition(listenerPos.x, listenerPos.y);
     });
   }
 
@@ -135,6 +183,18 @@ export class BoardScene extends Container {
         return;
       }
 
+      const toolsStore = useToolsStore.getState();
+      if (toolsStore.isPlacingSound) {
+        const pos = this.environmentContainer.toLocal(e.global);
+        const hexSize = this.currentGridSize / 2;
+        const hex = pixelToHex(pos.x, pos.y, hexSize);
+        const rounded = hexRound(hex.q, hex.r);
+        
+        toolsStore.setSpatialTarget({ x: pos.x, y: pos.y, q: rounded.q, r: rounded.r });
+        this.triggerPing(pos.x, pos.y, 1, 0x06B6D4); // Cyan
+        return;
+      }
+
       if (this.currentTool === 'cursor') {
         this.dragging = true;
         this.dragStart = { x: e.global.x, y: e.global.y };
@@ -156,19 +216,28 @@ export class BoardScene extends Container {
     });
 
     this.app.stage.on('pointermove', (e) => {
-      if (this.currentTool === 'brush') {
+      const toolsStore = useToolsStore.getState();
+      const isPlacing = toolsStore.isPlacingSound;
+
+      if (this.currentTool === 'brush' || isPlacing) {
         const pos = this.environmentContainer.toLocal(e.global);
         const hexSize = this.currentGridSize / 2;
         const hex = pixelToHex(pos.x, pos.y, hexSize);
         const rounded = hexRound(hex.q, hex.r);
         
-        const state = useToolsStore.getState();
-        this.paintLayer.updateHover(rounded.q, rounded.r, state.paintRadius, PAINT_TYPE_COLORS[state.paintType], state.isEraserActive);
-
-        if (this.dragging) {
-          this.paintAtCursor(e.global);
+        if (isPlacing) {
+          this.paintLayer.updateHover(rounded.q, rounded.r, 1, '#06B6D4', false); // Cyan hover for sound
+        } else {
+          this.paintLayer.updateHover(rounded.q, rounded.r, toolsStore.paintRadius, PAINT_TYPE_COLORS[toolsStore.paintType], toolsStore.isEraserActive);
+          if (this.dragging) {
+            this.paintAtCursor(e.global);
+          }
         }
-      } else if (this.currentTool === 'cursor') {
+      } else {
+        this.paintLayer.hideHover();
+      }
+
+      if (this.currentTool === 'cursor') {
         if (!this.dragging) return;
         const dx = e.global.x - this.dragStart.x;
         const dy = e.global.y - this.dragStart.y;
@@ -498,6 +567,7 @@ export class BoardScene extends Container {
   }
 
   setControlledToken(id: string | null) {
+    this.controlledTokenId = id;
     this.tokens.forEach((token, tokenId) => {
       token.zIndex = (tokenId === id) ? 100 : 1;
     });
