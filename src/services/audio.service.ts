@@ -45,13 +45,15 @@ class AudioService {
     const distance = Math.sqrt(dx * dx + dy * dy);
     
     let targetVolume = 1;
-    const refDist = 300;
-    const maxDist = 3000;
+    const refDist = 300; // Distance où le son est à 100%
+    const maxDist = 4000; // Distance limite
     
     if (distance >= maxDist) {
-      targetVolume = 0.01; // Évite 0 absolu
+      targetVolume = 0.01; 
     } else if (distance > refDist) {
-      targetVolume = 1 - ((distance - refDist) / (maxDist - refDist));
+      // Modèle Inverse (plus réaliste acoustiquement)
+      // Le son baisse vite au début, puis s'atténue doucement au loin
+      targetVolume = refDist / (refDist + 1.0 * (distance - refDist));
     }
 
     // Le volume final prend en compte le volume maître
@@ -209,6 +211,7 @@ class AudioService {
 
     try {
       if (spatial) {
+        console.log(`[AudioService] 🔊 Le son se lance depuis la position : X=${Math.round(spatial.x)}, Y=${Math.round(spatial.y)}`);
         this.applySpatialToHowl(sfxHowl, spatial);
       }
 
