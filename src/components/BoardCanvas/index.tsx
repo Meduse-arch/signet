@@ -475,6 +475,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  <ToolboxHUD 
  currentTool={currentTool} 
  onToolChange={setCurrentTool} 
+ isMJ={!!isMJ}
  className="absolute top-8 left-8 z-50" // Remplaçant le PlayerHUD
  />
  )}

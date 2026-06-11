@@ -4,20 +4,24 @@ import { MapLayer } from './MapLayer';
 import { FogOfWar } from './FogOfWar';
 import { TokenSprite, TokenData } from './TokenSprite';
 import { pixelToHex, hexRound, hexToPixel } from '../utils/hexMath';
+import { PaintLayer, PaintCell } from './PaintLayer';
 import { throttle } from '../utils/throttle';
 import { useCombatStore } from '../store/combat';
 import { useSettingsStore } from '../store/settings';
 import { useToolsStore } from '../store/tools';
+import { PAINT_TYPE_COLORS } from '../store/tools';
 
 export class BoardScene extends Container {
   private unsubCombat?: () => void;
   private app: Application;
   public mapLayer: MapLayer;
+  public paintLayer: PaintLayer;
   private fow: FogOfWar;
   private tokenLayer: Container;
   private tokens: Map<string, TokenSprite> = new Map();
   public onTokenMove?: (id: string, x: number, y: number) => void;
   public onTokenRightClick?: (id: string, x: number, y: number) => void;
+  public onPaintUpdate?: (cells: Map<string, PaintCell>) => void;
   private selectedTokenId: string | null = null;
 
   private dragging = false;
@@ -39,7 +43,7 @@ export class BoardScene extends Container {
     this.app = app;
 
     this.mapLayer = new MapLayer();
-
+    this.paintLayer = new PaintLayer();
     this.fow = new FogOfWar();
     this.tokenLayer = new Container();
     this.tokenLayer.sortableChildren = true;
@@ -47,6 +51,7 @@ export class BoardScene extends Container {
     this.environmentContainer = new Container();
     this.environmentContainer.sortableChildren = true;
     this.environmentContainer.addChild(this.mapLayer);
+    this.environmentContainer.addChild(this.paintLayer);
     this.environmentContainer.addChild(this.tokenLayer);
 
     this.rulerGraphics = new Graphics();
@@ -61,6 +66,7 @@ export class BoardScene extends Container {
     this.addChild(this.rulerGraphics);
     this.addChild(this.rulerText);
     this.addChild(this.fow);
+    this.paintLayer.visible = false; // Par défaut invisible
     this.sortableChildren = true;
     this.x = app.screen.width / 2;
     this.y = app.screen.height / 2;
@@ -133,11 +139,26 @@ export class BoardScene extends Container {
         const radius = useToolsStore.getState().pingRadius;
         this.triggerPing(pos.x, pos.y, radius, 0x4FA4B8);
         if (this.onPing) this.onPing(pos.x, pos.y);
+      } else if (this.currentTool === 'brush') {
+        this.dragging = true;
+        this.paintAtCursor(e.global);
       }
     });
 
     this.app.stage.on('pointermove', (e) => {
-      if (this.currentTool === 'cursor') {
+      if (this.currentTool === 'brush') {
+        const pos = this.toLocal(e.global);
+        const hexSize = this.currentGridSize / 2;
+        const hex = pixelToHex(pos.x, pos.y, hexSize);
+        const rounded = hexRound(hex.q, hex.r);
+        
+        const state = useToolsStore.getState();
+        this.paintLayer.updateHover(rounded.q, rounded.r, state.paintRadius, PAINT_TYPE_COLORS[state.paintType], state.isEraserActive);
+
+        if (this.dragging) {
+          this.paintAtCursor(e.global);
+        }
+      } else if (this.currentTool === 'cursor') {
         if (!this.dragging) return;
         const dx = e.global.x - this.dragStart.x;
         const dy = e.global.y - this.dragStart.y;
@@ -272,6 +293,7 @@ export class BoardScene extends Container {
   public setGridSize(size: number) {
     this.currentGridSize = size;
     this.mapLayer.setGridSize(size);
+    this.paintLayer.setGridSize(size);
     this.tokens.forEach(t => t.gridSize = size);
   }
 
@@ -477,6 +499,13 @@ export class BoardScene extends Container {
         this.onRulerUpdate(null, null);
       }
     }
+
+    if (tool === 'brush') {
+      this.paintLayer.visible = true;
+    } else {
+      this.paintLayer.visible = false;
+      this.paintLayer.hideHover();
+    }
   }
 
   public triggerPing(x: number, y: number, targetRadiusCases: number = 1, color: number = 0x4FA4B8) {
@@ -578,6 +607,40 @@ export class BoardScene extends Container {
     ruler.text.x = (start.x + end.x) / 2;
     ruler.text.y = (start.y + end.y) / 2 - 15;
     ruler.text.visible = true;
+  }
+
+  private paintAtCursor(globalPos: { x: number, y: number }) {
+    const pos = this.toLocal(globalPos);
+    const hexSize = this.currentGridSize / 2;
+    const hex = pixelToHex(pos.x, pos.y, hexSize);
+    const rounded = hexRound(hex.q, hex.r);
+
+    const state = useToolsStore.getState();
+    const radius = state.paintRadius;
+    const isEraser = state.isEraserActive;
+    const color = PAINT_TYPE_COLORS[state.paintType];
+
+    const range = radius - 1;
+    for (let dq = -range; dq <= range; dq++) {
+      for (let dr = Math.max(-range, -dq - range); dr <= Math.min(range, -dq + range); dr++) {
+        const hq = rounded.q + dq;
+        const hr = rounded.r + dr;
+        
+        if (isEraser) {
+          this.paintLayer.clearCell(hq, hr);
+        } else {
+          this.paintLayer.setCell(hq, hr, color);
+        }
+      }
+    }
+    
+    if (this.onPaintUpdate) {
+      this.onPaintUpdate(this.paintLayer.getPaintedCells());
+    }
+  }
+
+  public setPaintedCells(cells: Map<string, PaintCell>) {
+    this.paintLayer.setPaintedCells(cells);
   }
 
   zoomToToken(id: string) {

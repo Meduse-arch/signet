@@ -446,8 +446,31 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
           broadcast({ type: 'RULER_UPDATE', payload: { start, end } });
         }
       };
+
+      boardRef.current.onPaintUpdate = (cells) => {
+        if (!currentMapIdRef.current) return;
+        const serialized = Array.from(cells.entries());
+        localStorage.setItem(`signet-paint-${currentMapIdRef.current}`, JSON.stringify(serialized));
+      };
     }
   }, [isReady, isHost, sessionId, broadcast, sendTo]);
+
+  // Handle paint loading
+  useEffect(() => {
+    if (isReady && boardRef.current && currentMapId) {
+      const saved = localStorage.getItem(`signet-paint-${currentMapId}`);
+      if (saved) {
+        try {
+          const parsed = new Map(JSON.parse(saved));
+          boardRef.current.setPaintedCells(parsed);
+        } catch (e) {
+          console.error('Failed to load paint data', e);
+        }
+      } else {
+        boardRef.current.setPaintedCells(new Map());
+      }
+    }
+  }, [currentMapId, isReady]);
 
   // Réagir au toggle des Shaders en direct
   useEffect(() => {
