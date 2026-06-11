@@ -305,7 +305,7 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
  </header>
 
  <div className="flex-1 flex overflow-hidden">
- <aside className="w-48 border-r border-white/5 bg-black/20 p-4 flex flex-col gap-1 shrink-0">
+ <aside className="w-16 md:w-48 border-r border-white/5 bg-black/20 p-2 md:p-4 flex flex-col gap-1 shrink-0">
  {[
  { id: 'profil', label: 'PROFIL', icon: User },
  { id: 'stats', label: 'ATTRIBUTS', icon: Sword },
@@ -321,13 +321,15 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
  onClick={() => { setActiveTab(tab.id as Tab); setShowForge(false); setShowSkillArchive(false); setShowQuestArchive(false); }}
  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-quantico text-xs font-black tracking-widest transition-all ${activeTab === tab.id ? 'bg-glacier-DEFAULT text-black shadow-lg translate-x-1' : 'text-white/60 hover:text-white/60 hover:bg-white/5'}`}
  >
- <tab.icon size={14} />
+ <tab.icon size={14} className="shrink-0" />
+ <span className="hidden md:inline">
  {tab.id === 'profil' ? t('context.profile', "PROFIL") :
  tab.id === 'stats' ? t('context.attributes', "ATTRIBUTS") :
  tab.id === 'ressources' ? t('context.resources', "RESSOURCES") :
  tab.id === 'inventaire' ? t('context.inventory', "INVENTAIRE") :
  tab.id === 'competences' ? t('context.skills', "SKILLS") :
  tab.id === 'quetes' ? t('context.quests', "QUÊTES") : tab.label}
+ </span>
  </button>
  ))}
  </aside>

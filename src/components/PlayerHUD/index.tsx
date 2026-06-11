@@ -73,7 +73,7 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
  const selfChar = characters.find(c => c.user_id === user?.id);
 
  return (
- <div className={className || "absolute top-8 left-8 flex flex-col gap-4 z-10 pointer-events-none"}>
+ <div className={className || "absolute top-4 left-4 md:top-8 md:left-8 flex flex-col gap-4 z-10 pointer-events-none"}>
  {/* Self (Moi) */}
  <div className="flex items-center gap-4 pointer-events-auto group">
  <div className="relative">

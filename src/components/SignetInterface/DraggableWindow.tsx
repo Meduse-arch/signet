@@ -83,12 +83,12 @@ export function DraggableWindow({
  const windowContent = (
  <div 
  ref={isExternal ? null : nodeRef}
- className={`${className} bg-[#0D0D0F]/90 backdrop-blur-2xl rounded-sm border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col group pointer-events-auto overflow-hidden ${isExternal ? 'w-full h-full' : 'resize both min-w-[380px] min-h-[250px]'}`}
+ className={`${className} bg-[#0D0D0F]/90 backdrop-blur-2xl rounded-sm border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col group pointer-events-auto overflow-hidden ${isExternal ? 'w-full h-full' : 'resize both min-w-[min(380px,100vw-16px)] min-h-[min(250px,100vh-16px)]'}`}
  style={{ 
  zIndex: isExternal ? 1 : zIndex, 
  position: isExternal ? 'relative' : 'absolute', 
- width: isExternal ? '100%' : initialWidth,
- height: isExternal ? '100%' : initialHeight
+ width: isExternal ? '100%' : `min(${initialWidth}, 100vw - 16px)`,
+ height: isExternal ? '100%' : `min(${initialHeight}, 100vh - 16px)`
  }}
  onClick={onFocus}
  >

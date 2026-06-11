@@ -179,9 +179,9 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  </header>
 
  {/* Scrollable Body */}
- <div className="flex-1 overflow-y-auto custom-scrollbar p-8 lg:p-12 space-y-12">
+ <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-12">
       {/* Main Form Sections */}
-      <div className="space-y-12 max-w-3xl mx-auto w-full">
+      <div className="space-y-8 sm:space-y-12 max-w-3xl mx-auto w-full">
  
  {/* Colonne Gauche : Identité */}
  <div className="space-y-8">
@@ -394,7 +394,7 @@ export function ItemCreationModal({ sessionId }: ItemCreationModalProps) {
  </div>
  
  {/* Footer Fixed Noble & Visible */}
- <footer className="shrink-0 p-8 lg:p-10 border-t border-silver-DEFAULT/30 bg-black/60 backdrop-blur-3xl z-30 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+ <footer className="shrink-0 p-4 sm:p-8 lg:p-10 border-t border-silver-DEFAULT/30 bg-black/60 backdrop-blur-3xl z-30 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
  {/* Decorative line below content */}
  <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-glacier-bright/20 to-transparent" />
  

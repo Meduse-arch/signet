@@ -79,7 +79,7 @@ if (!myCharacter) {
  if (user?.role && user.role >= SecurityLevel.MJ) {
  if (!controlledCharacterId) return null;
  return (
- <div className="fixed bottom-10 left-10 flex items-center gap-4 animate-in slide-in-from-left duration-700 pointer-events-auto">
+ <div className="fixed bottom-4 left-4 md:bottom-10 md:left-10 flex items-center gap-4 animate-in slide-in-from-left duration-700 pointer-events-auto">
  <div 
  className="relative group/avatar cursor-pointer"
  onClick={(e) => {
@@ -115,7 +115,7 @@ if (!myCharacter) {
  // Si c'est un joueur sans personnage
  return (
  <>
- <div className="absolute bottom-10 left-10 z-[60] pointer-events-auto">
+ <div className="absolute bottom-4 left-4 md:bottom-10 md:left-10 z-[60] pointer-events-auto">
  <button 
  onClick={() => setIsModalOpen(true)}
  className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-[#0D0D0F]/80 backdrop-blur-xl border border-silver-DEFAULT/40 hover:border-silver-DEFAULT/80 hover:bg-[#0D0D0F]/90 transition-all shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
@@ -142,7 +142,7 @@ if (!myCharacter) {
  const { name, image_url } = myCharacter;
 
  return (
- <div className="absolute bottom-10 left-10 z-[60] pointer-events-auto group">
+ <div className="absolute bottom-4 left-4 md:bottom-10 md:left-10 z-[60] pointer-events-auto group">
  {/* Avatar / Profile */}
  <div 
  className="relative group/avatar cursor-pointer" 

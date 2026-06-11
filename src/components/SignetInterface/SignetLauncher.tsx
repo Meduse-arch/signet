@@ -90,7 +90,7 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
  const radius = Math.max(90, requiredArcLength / (angleSpread * Math.PI / 180));
 
  return (
- <div className="fixed bottom-10 right-10 z-[100] flex items-center justify-center">
+ <div className="fixed bottom-4 right-4 md:bottom-10 md:right-10 z-[100] flex items-center justify-center">
  {/* MJ Token Toggle (External to menu) */}
  {isMJ && selfChar && (
  <button

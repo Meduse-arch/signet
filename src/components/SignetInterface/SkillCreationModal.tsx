@@ -170,7 +170,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  </header>
 
  {/* SCROLLABLE CONTENT */}
- <main className="flex-1 overflow-y-auto custom-scrollbar p-8 lg:p-12 space-y-12 max-w-3xl mx-auto w-full">
+ <main className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-12 max-w-3xl mx-auto w-full">
  
  {/* COLONNE GAUCHE : IDENTITÉ */}
  <div className="space-y-10">
@@ -242,7 +242,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  </div>
  </section>
 
- <section className="grid grid-cols-2 gap-6">
+ <section className="grid grid-cols-1 sm:grid-cols-2 gap-6">
  <div className="space-y-2">
  <label className="text-[11px] font-quantico font-black text-white/70 uppercase tracking-widest ml-1">{t('context.skillType', "Type de compétence")}</label>
  <select 
@@ -552,7 +552,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
  </main>
 
  {/* FOOTER FIXED & NOBLE */}
- <footer className="shrink-0 p-8 lg:p-10 border-t border-silver-DEFAULT/30 bg-black/60 backdrop-blur-3xl z-30 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+ <footer className="shrink-0 p-4 sm:p-8 lg:p-10 border-t border-silver-DEFAULT/30 bg-black/60 backdrop-blur-3xl z-30 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
  <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-glacier-bright/20 to-transparent" />
  
  <div className="flex gap-4">
