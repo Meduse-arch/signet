@@ -5,17 +5,21 @@ import { FogOfWar } from './FogOfWar';
 import { TokenSprite, TokenData } from './TokenSprite';
 import { pixelToHex, hexRound, hexToPixel } from '../utils/hexMath';
 import { PaintLayer, PaintCell } from './PaintLayer';
+import { FogOverlayLayer } from './FogOverlayLayer';
+import { RainOverlayLayer } from './RainOverlayLayer';
 import { throttle } from '../utils/throttle';
 import { useCombatStore } from '../store/combat';
 import { useSettingsStore } from '../store/settings';
 import { useToolsStore } from '../store/tools';
-import { PAINT_TYPE_COLORS } from '../store/tools';
+import { PAINT_TYPE_COLORS, PaintType } from '../store/tools';
 
 export class BoardScene extends Container {
   private unsubCombat?: () => void;
   private app: Application;
   public mapLayer: MapLayer;
   public paintLayer: PaintLayer;
+  public fogOverlayLayer: FogOverlayLayer;
+  public rainOverlayLayer: RainOverlayLayer;
   private fow: FogOfWar;
   private tokenLayer: Container;
   private tokens: Map<string, TokenSprite> = new Map();
@@ -37,6 +41,8 @@ export class BoardScene extends Container {
   public onRulerUpdate: ((start: { x: number, y: number } | null, end: { x: number, y: number } | null) => void) | null = null;
   private remoteRulers: Map<string, { graphics: Graphics, text: Text }> = new Map();
   private environmentContainer: Container;
+  /** Cases mur reçues par un joueur depuis le MJ (pas dans paintLayer local) */
+  private clientWallCells: Set<string> = new Set();
 
   constructor(app: Application) {
     super();
@@ -44,6 +50,8 @@ export class BoardScene extends Container {
 
     this.mapLayer = new MapLayer();
     this.paintLayer = new PaintLayer();
+    this.fogOverlayLayer = new FogOverlayLayer();
+    this.rainOverlayLayer = new RainOverlayLayer(app.ticker);
     this.fow = new FogOfWar();
     this.tokenLayer = new Container();
     this.tokenLayer.sortableChildren = true;
@@ -52,6 +60,8 @@ export class BoardScene extends Container {
     this.environmentContainer.sortableChildren = true;
     this.environmentContainer.addChild(this.mapLayer);
     this.environmentContainer.addChild(this.paintLayer);
+    this.environmentContainer.addChild(this.fogOverlayLayer); // Brouillard au-dessus de la map mais sous les tokens
+    this.environmentContainer.addChild(this.rainOverlayLayer); // Pluie au-dessus de tout le terrain
     this.environmentContainer.addChild(this.tokenLayer);
 
     this.rulerGraphics = new Graphics();
@@ -147,7 +157,7 @@ export class BoardScene extends Container {
 
     this.app.stage.on('pointermove', (e) => {
       if (this.currentTool === 'brush') {
-        const pos = this.toLocal(e.global);
+        const pos = this.environmentContainer.toLocal(e.global);
         const hexSize = this.currentGridSize / 2;
         const hex = pixelToHex(pos.x, pos.y, hexSize);
         const rounded = hexRound(hex.q, hex.r);
@@ -250,6 +260,9 @@ export class BoardScene extends Container {
         targetY = center.y;
       }
 
+      // Bloquer si case Mur
+      if (this.isWallHex(targetX, targetY)) return;
+
       token.moveTo(targetX, targetY, true); // Immediate
       if (this.onTokenMove) {
         this.onTokenMove(token.id, targetX, targetY);
@@ -294,6 +307,8 @@ export class BoardScene extends Container {
     this.currentGridSize = size;
     this.mapLayer.setGridSize(size);
     this.paintLayer.setGridSize(size);
+    this.fogOverlayLayer.setGridSize(size);
+    this.rainOverlayLayer.setGridSize(size);
     this.tokens.forEach(t => t.gridSize = size);
   }
 
@@ -422,6 +437,7 @@ export class BoardScene extends Container {
 
     const token = new TokenSprite(data, this.app, throttledMove);
     token.gridSize = this.mapLayer.getGridSize();
+    token.isWallAt = (x, y) => this.isWallHex(x, y);
 
     // Sélection pour clavier
     token.on('pointerdown', () => {
@@ -610,7 +626,8 @@ export class BoardScene extends Container {
   }
 
   private paintAtCursor(globalPos: { x: number, y: number }) {
-    const pos = this.toLocal(globalPos);
+    // Utiliser environmentContainer.toLocal pour avoir les coordonnées en espace monde
+    const pos = this.environmentContainer.toLocal(globalPos);
     const hexSize = this.currentGridSize / 2;
     const hex = pixelToHex(pos.x, pos.y, hexSize);
     const rounded = hexRound(hex.q, hex.r);
@@ -618,18 +635,19 @@ export class BoardScene extends Container {
     const state = useToolsStore.getState();
     const radius = state.paintRadius;
     const isEraser = state.isEraserActive;
-    const color = PAINT_TYPE_COLORS[state.paintType];
+    const paintType = state.paintType;
+    const color = PAINT_TYPE_COLORS[paintType];
 
     const range = radius - 1;
     for (let dq = -range; dq <= range; dq++) {
       for (let dr = Math.max(-range, -dq - range); dr <= Math.min(range, -dq + range); dr++) {
         const hq = rounded.q + dq;
         const hr = rounded.r + dr;
-        
+
         if (isEraser) {
           this.paintLayer.clearCell(hq, hr);
         } else {
-          this.paintLayer.setCell(hq, hr, color);
+          this.paintLayer.setCell(hq, hr, color, paintType);
         }
       }
     }
@@ -641,6 +659,56 @@ export class BoardScene extends Container {
 
   public setPaintedCells(cells: Map<string, PaintCell>) {
     this.paintLayer.setPaintedCells(cells);
+  }
+
+  /** Retourne vrai si les coordonnées pixel (espace monde) sont un mur */
+  public isWallHex(x: number, y: number): boolean {
+    try {
+      const hexSize = this.currentGridSize / 2;
+      if (hexSize <= 0) return false;
+      const hex = pixelToHex(x, y, hexSize);
+      const rounded = hexRound(hex.q, hex.r);
+      const key = `${rounded.q},${rounded.r}`;
+      const cell = this.paintLayer.getPaintedCells().get(key);
+      // Vérifier aussi les murs reçus côté client
+      return cell?.paintType === 'wall' || this.clientWallCells.has(key);
+    } catch {
+      return false;
+    }
+  }
+
+  /** Injecte les cases Mur reçues via P2P (joueurs) ou appelées par le MJ pour affichage constant */
+  public setClientWallCells(cells: Set<string>) {
+    this.clientWallCells = cells;
+    this.fogOverlayLayer.setWallCells(cells);
+  }
+
+  /** Retourne les clés de toutes les cases Mur peintes par le MJ */
+  public getWallKeys(): Set<string> {
+    return this.paintLayer.getWallCells();
+  }
+
+  /** Injecte les cases Brouillard reçues via P2P (joueurs) ou appelées par le MJ */
+  public setFogCells(cells: Set<string>) {
+    this.fogOverlayLayer.setFogCells(cells);
+  }
+
+  public setRainCells(cells: Set<string>) {
+    this.rainOverlayLayer.setRainCells(cells);
+  }
+
+  /** Retourne les clés de toutes les cases Brouillard peintes par le MJ */
+  public getFogKeys(): Set<string> {
+    return this.paintLayer.getFogCells();
+  }
+
+  /** Retourne les clés de toutes les cases Pluie peintes par le MJ */
+  public getRainKeys(): Set<string> {
+    const rain = new Set<string>();
+    this.paintLayer.getPaintedCells().forEach((cell, key) => {
+      if (cell.paintType === 'rain') rain.add(key);
+    });
+    return rain;
   }
 
   zoomToToken(id: string) {

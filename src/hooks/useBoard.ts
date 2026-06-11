@@ -449,13 +449,23 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
 
       boardRef.current.onPaintUpdate = (cells) => {
         if (!currentMapIdRef.current) return;
+        // Sauvegarde locale
         const serialized = Array.from(cells.entries());
         localStorage.setItem(`signet-paint-${currentMapIdRef.current}`, JSON.stringify(serialized));
+        // Le MJ voit aussi son propre brouillard
+        const fogKeys = boardRef.current!.getFogKeys();
+        const wallKeys = boardRef.current!.getWallKeys();
+        const rainKeys = boardRef.current!.getRainKeys();
+        boardRef.current!.setFogCells(fogKeys);
+        boardRef.current!.setClientWallCells(wallKeys); // Le MJ voit aussi le léger contour des murs
+        boardRef.current!.setRainCells(rainKeys); // Activer la pluie pour le MJ
+        // Broadcast fog + wall + rain aux joueurs
+        broadcast({ type: 'PAINT_CELLS_SYNC', payload: { fogKeys: Array.from(fogKeys), wallKeys: Array.from(wallKeys), rainKeys: Array.from(rainKeys) } });
       };
     }
   }, [isReady, isHost, sessionId, broadcast, sendTo]);
 
-  // Handle paint loading
+  // Chargement des cases peintes depuis localStorage (MJ uniquement)
   useEffect(() => {
     if (isReady && boardRef.current && currentMapId) {
       const saved = localStorage.getItem(`signet-paint-${currentMapId}`);
@@ -463,6 +473,13 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         try {
           const parsed = new Map(JSON.parse(saved));
           boardRef.current.setPaintedCells(parsed);
+          // Appliquer le brouillard, murs, pluie pour que le MJ les voie dès le chargement
+          const fogKeys = boardRef.current.getFogKeys();
+          const wallKeys = boardRef.current.getWallKeys();
+          const rainKeys = boardRef.current.getRainKeys();
+          boardRef.current.setFogCells(fogKeys);
+          boardRef.current.setClientWallCells(wallKeys);
+          boardRef.current.setRainCells(rainKeys);
         } catch (e) {
           console.error('Failed to load paint data', e);
         }
@@ -559,6 +576,16 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
             if (peer !== fromPeerId) sendTo(peer, data);
           });
         }
+      } else if (data.type === 'PAINT_CELLS_SYNC' || data.type === 'FOG_CELLS_UPDATE') {
+        // Joueurs : appliquer le brouillard ET les murs ET la pluie reçus du MJ
+        if (!isHost) {
+          const fogSet = new Set<string>((data.payload.fogKeys || []) as string[]);
+          boardRef.current.setFogCells(fogSet);
+          const wallSet = new Set<string>((data.payload.wallKeys || []) as string[]);
+          boardRef.current.setClientWallCells(wallSet);
+          const rainSet = new Set<string>((data.payload.rainKeys || []) as string[]);
+          boardRef.current.setRainCells(rainSet);
+        }
       }
     });
 
@@ -600,5 +627,10 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     return () => window.removeEventListener('ZOOM_TO_TOKEN', handleZoom as EventListener);
   }, []);
 
-  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad: () => paintMapFromCache(currentMapIdRef.current || '', pendingManifest.current?.manifest), setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken, setTool };
+  // Expose fog/wall/rain keys for external sync (ex: BoardCanvas TOKEN_SYNC_REQUEST)
+  const getFogKeys = useCallback((): Set<string> => boardRef.current?.getFogKeys() ?? new Set<string>(), []);
+  const getWallKeys = useCallback((): Set<string> => boardRef.current?.getWallKeys() ?? new Set<string>(), []);
+  const getRainKeys = useCallback((): Set<string> => boardRef.current?.getRainKeys() ?? new Set<string>(), []);
+
+  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad: () => paintMapFromCache(currentMapIdRef.current || '', pendingManifest.current?.manifest), setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken, setTool, getFogKeys, getWallKeys, getRainKeys };
 }

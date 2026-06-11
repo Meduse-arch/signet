@@ -35,6 +35,8 @@ export class TokenSprite extends Container {
   public gridSize = 50;
   private glowRing: Graphics | null = null;
   public onRightClickCallback?: (x: number, y: number) => void;
+  /** Injecté par BoardScene pour bloquer le mouvement sur les murs */
+  public isWallAt?: (x: number, y: number) => boolean;
 
   constructor(data: TokenData, app: Application, onMove?: (x: number, y: number) => void) {
     super();
@@ -256,10 +258,13 @@ export class TokenSprite extends Container {
         const hex = pixelToHex(targetX, targetY, hexSize);
         const rounded = hexRound(hex.q, hex.r);
         const center = hexToPixel(rounded.q, rounded.r, hexSize);
-        
+
         targetX = center.x;
         targetY = center.y;
       }
+
+      // Bloquer si c'est un mur
+      if (this.isWallAt && this.isWallAt(targetX, targetY)) return;
 
       this.x = targetX;
       this.y = targetY;

@@ -34,7 +34,7 @@ interface BoardCanvasProps {
 export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, characters }: BoardCanvasProps) {
  const containerRef = useRef<HTMLDivElement>(null);
  const [currentTool, setCurrentTool] = useState<ToolType>('cursor');
- const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken, setTool } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
+ const { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad, setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken, setTool, getFogKeys, getWallKeys, getRainKeys } = useBoard(containerRef, sessionId, currentMapId, imageUrl);
  const { isHost } = usePeersStore();
  const { onData, broadcast, sendTo } = usePeer();
  const { user } = useAuthStore();
@@ -356,12 +356,19 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  });
  }
  }
+  // Envoyer les cases brouillard, murs et pluie au joueur qui rejoint
+  if (fromPeerId) {
+    const fogKeys = Array.from(getFogKeys());
+    const wallKeys = Array.from(getWallKeys());
+    const rainKeys = Array.from(getRainKeys());
+    sendTo(fromPeerId, { type: 'PAINT_CELLS_SYNC', payload: { fogKeys, wallKeys, rainKeys } });
+  }
  });
  }
  }
  });
  return () => unsub();
- }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, sendTo, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken, currentMapId, sessionId, isExternalMap, currentCharacterId, isMJ]);
+ }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, sendTo, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken, currentMapId, sessionId, isExternalMap, currentCharacterId, isMJ, getFogKeys, getWallKeys, getRainKeys]);
 
  // Exposer handleToggleToken via BroadcastChannel
  useEffect(() => {

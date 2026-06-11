@@ -1,8 +1,10 @@
 import { Container, Graphics } from 'pixi.js';
 import { hexToPixel, getHexCorners } from '../utils/hexMath';
+import type { PaintType } from '../store/tools';
 
 export interface PaintCell {
   color: string;
+  paintType: PaintType;
 }
 
 export class PaintLayer extends Container {
@@ -30,8 +32,8 @@ export class PaintLayer extends Container {
     this.redrawAll();
   }
 
-  public setCell(q: number, r: number, color: string) {
-    this.paintedCells.set(`${q},${r}`, { color });
+  public setCell(q: number, r: number, color: string, paintType: PaintType = 'wall') {
+    this.paintedCells.set(`${q},${r}`, { color, paintType });
     this.redrawAll();
   }
 
@@ -47,6 +49,22 @@ export class PaintLayer extends Container {
 
   public getPaintedCells(): Map<string, PaintCell> {
     return this.paintedCells;
+  }
+
+  public getWallCells(): Set<string> {
+    const walls = new Set<string>();
+    this.paintedCells.forEach((cell, key) => {
+      if (cell.paintType === 'wall') walls.add(key);
+    });
+    return walls;
+  }
+
+  public getFogCells(): Set<string> {
+    const fog = new Set<string>();
+    this.paintedCells.forEach((cell, key) => {
+      if (cell.paintType === 'fog') fog.add(key);
+    });
+    return fog;
   }
 
   private redrawAll() {
