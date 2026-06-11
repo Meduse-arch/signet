@@ -6,7 +6,7 @@ import { TokenSprite, TokenData } from './TokenSprite';
 import { pixelToHex, hexRound, hexToPixel } from '../utils/hexMath';
 import { PaintLayer, PaintCell } from './PaintLayer';
 import { FogOverlayLayer } from './FogOverlayLayer';
-import { RainOverlayLayer } from './RainOverlayLayer';
+import { WeatherOverlayLayer } from './WeatherOverlayLayer';
 import { throttle } from '../utils/throttle';
 import { useCombatStore } from '../store/combat';
 import { useSettingsStore } from '../store/settings';
@@ -19,7 +19,7 @@ export class BoardScene extends Container {
   public mapLayer: MapLayer;
   public paintLayer: PaintLayer;
   public fogOverlayLayer: FogOverlayLayer;
-  public rainOverlayLayer: RainOverlayLayer;
+  public weatherOverlayLayer: WeatherOverlayLayer;
   private fow: FogOfWar;
   private tokenLayer: Container;
   private tokens: Map<string, TokenSprite> = new Map();
@@ -51,7 +51,7 @@ export class BoardScene extends Container {
     this.mapLayer = new MapLayer();
     this.paintLayer = new PaintLayer();
     this.fogOverlayLayer = new FogOverlayLayer();
-    this.rainOverlayLayer = new RainOverlayLayer(app.ticker);
+    this.weatherOverlayLayer = new WeatherOverlayLayer(app.ticker);
     this.fow = new FogOfWar();
     this.tokenLayer = new Container();
     this.tokenLayer.sortableChildren = true;
@@ -61,7 +61,7 @@ export class BoardScene extends Container {
     this.environmentContainer.addChild(this.mapLayer);
     this.environmentContainer.addChild(this.paintLayer);
     this.environmentContainer.addChild(this.fogOverlayLayer); // Brouillard au-dessus de la map mais sous les tokens
-    this.environmentContainer.addChild(this.rainOverlayLayer); // Pluie au-dessus de tout le terrain
+    this.environmentContainer.addChild(this.weatherOverlayLayer); // Météo au-dessus de tout le terrain
     this.environmentContainer.addChild(this.tokenLayer);
 
     this.rulerGraphics = new Graphics();
@@ -308,7 +308,7 @@ export class BoardScene extends Container {
     this.mapLayer.setGridSize(size);
     this.paintLayer.setGridSize(size);
     this.fogOverlayLayer.setGridSize(size);
-    this.rainOverlayLayer.setGridSize(size);
+    this.weatherOverlayLayer.setGridSize(size);
     this.tokens.forEach(t => t.gridSize = size);
   }
 
@@ -693,8 +693,12 @@ export class BoardScene extends Container {
     this.fogOverlayLayer.setFogCells(cells);
   }
 
-  public setRainCells(cells: Set<string>) {
-    this.rainOverlayLayer.setRainCells(cells);
+  public setWeatherCells(weatherMap: Record<string, string[]>) {
+    const convertedMap: Record<string, Set<string>> = {};
+    for (const key in weatherMap) {
+      convertedMap[key] = new Set(weatherMap[key]);
+    }
+    this.weatherOverlayLayer.setWeatherCells(convertedMap);
   }
 
   /** Retourne les clés de toutes les cases Brouillard peintes par le MJ */
@@ -702,13 +706,18 @@ export class BoardScene extends Container {
     return this.paintLayer.getFogCells();
   }
 
-  /** Retourne les clés de toutes les cases Pluie peintes par le MJ */
-  public getRainKeys(): Set<string> {
-    const rain = new Set<string>();
+  /** Retourne les clés de toutes les cases Météo peintes par le MJ */
+  public getWeatherKeys(): Record<string, string[]> {
+    const weatherMap: Record<string, string[]> = {
+      rain: [], snow: [], poison: [], fire: [], sand: [], magic: []
+    };
+    
     this.paintLayer.getPaintedCells().forEach((cell, key) => {
-      if (cell.paintType === 'rain') rain.add(key);
+      if (weatherMap[cell.paintType] !== undefined) {
+        weatherMap[cell.paintType].push(key);
+      }
     });
-    return rain;
+    return weatherMap;
   }
 
   zoomToToken(id: string) {

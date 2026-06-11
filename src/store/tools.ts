@@ -1,12 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type PaintType = 'wall' | 'rain' | 'fog';
+export type PaintType = 'wall' | 'rain' | 'fog' | 'snow' | 'poison' | 'fire' | 'sand' | 'magic';
 
 export const PAINT_TYPE_COLORS: Record<PaintType, string> = {
-  wall: '#F97316',  // Orange vif — mur/blocage
-  rain: '#38BDF8',  // Bleu ciel — pluie
-  fog:  '#A78BFA',  // Violet clair — brouillard
+  wall: '#F97316',   // Orange vif — mur/blocage
+  rain: '#38BDF8',   // Bleu ciel — pluie
+  fog:  '#A78BFA',   // Violet clair — brouillard
+  snow: '#FFFFFF',   // Blanc pur — neige
+  poison: '#84CC16', // Vert acide — gaz toxique
+  fire: '#EF4444',   // Rouge vif — feu/lave
+  sand: '#EAB308',   // Jaune ocre — sable
+  magic: '#2DD4BF',  // Cyan lumineux — magie/lucioles
 };
 
 interface ToolsState {

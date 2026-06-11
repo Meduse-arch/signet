@@ -455,12 +455,11 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         // Le MJ voit aussi son propre brouillard
         const fogKeys = boardRef.current!.getFogKeys();
         const wallKeys = boardRef.current!.getWallKeys();
-        const rainKeys = boardRef.current!.getRainKeys();
+        const weatherKeys = boardRef.current!.getWeatherKeys();
         boardRef.current!.setFogCells(fogKeys);
-        boardRef.current!.setClientWallCells(wallKeys); // Le MJ voit aussi le léger contour des murs
-        boardRef.current!.setRainCells(rainKeys); // Activer la pluie pour le MJ
-        // Broadcast fog + wall + rain aux joueurs
-        broadcast({ type: 'PAINT_CELLS_SYNC', payload: { fogKeys: Array.from(fogKeys), wallKeys: Array.from(wallKeys), rainKeys: Array.from(rainKeys) } });
+        boardRef.current!.setClientWallCells(wallKeys);
+        boardRef.current!.setWeatherCells(weatherKeys);
+        broadcast({ type: 'PAINT_CELLS_SYNC', payload: { fogKeys: Array.from(fogKeys), wallKeys: Array.from(wallKeys), weatherKeys } });
       };
     }
   }, [isReady, isHost, sessionId, broadcast, sendTo]);
@@ -473,13 +472,12 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
         try {
           const parsed = new Map(JSON.parse(saved));
           boardRef.current.setPaintedCells(parsed);
-          // Appliquer le brouillard, murs, pluie pour que le MJ les voie dès le chargement
           const fogKeys = boardRef.current.getFogKeys();
           const wallKeys = boardRef.current.getWallKeys();
-          const rainKeys = boardRef.current.getRainKeys();
+          const weatherKeys = boardRef.current.getWeatherKeys();
           boardRef.current.setFogCells(fogKeys);
           boardRef.current.setClientWallCells(wallKeys);
-          boardRef.current.setRainCells(rainKeys);
+          boardRef.current.setWeatherCells(weatherKeys);
         } catch (e) {
           console.error('Failed to load paint data', e);
         }
@@ -577,14 +575,19 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
           });
         }
       } else if (data.type === 'PAINT_CELLS_SYNC' || data.type === 'FOG_CELLS_UPDATE') {
-        // Joueurs : appliquer le brouillard ET les murs ET la pluie reçus du MJ
+        // Joueurs : appliquer le brouillard ET les murs ET la météo reçus du MJ
         if (!isHost) {
           const fogSet = new Set<string>((data.payload.fogKeys || []) as string[]);
           boardRef.current.setFogCells(fogSet);
           const wallSet = new Set<string>((data.payload.wallKeys || []) as string[]);
           boardRef.current.setClientWallCells(wallSet);
-          const rainSet = new Set<string>((data.payload.rainKeys || []) as string[]);
-          boardRef.current.setRainCells(rainSet);
+          
+          if (data.payload.weatherKeys) {
+            boardRef.current.setWeatherCells(data.payload.weatherKeys as Record<string, string[]>);
+          } else if (data.payload.rainKeys) {
+            // Rétrocompatibilité
+            boardRef.current.setWeatherCells({ rain: data.payload.rainKeys as string[] });
+          }
         }
       }
     });
@@ -627,10 +630,10 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
     return () => window.removeEventListener('ZOOM_TO_TOKEN', handleZoom as EventListener);
   }, []);
 
-  // Expose fog/wall/rain keys for external sync (ex: BoardCanvas TOKEN_SYNC_REQUEST)
+  // Expose keys for external sync (ex: BoardCanvas TOKEN_SYNC_REQUEST)
   const getFogKeys = useCallback((): Set<string> => boardRef.current?.getFogKeys() ?? new Set<string>(), []);
   const getWallKeys = useCallback((): Set<string> => boardRef.current?.getWallKeys() ?? new Set<string>(), []);
-  const getRainKeys = useCallback((): Set<string> => boardRef.current?.getRainKeys() ?? new Set<string>(), []);
+  const getWeatherKeys = useCallback((): Record<string, string[]> => boardRef.current?.getWeatherKeys() ?? { rain: [], snow: [], poison: [], fire: [], sand: [], magic: [] }, []);
 
-  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad: () => paintMapFromCache(currentMapIdRef.current || '', pendingManifest.current?.manifest), setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken, setTool, getFogKeys, getWallKeys, getRainKeys };
+  return { addToken, removeToken, moveToken, loadMap, setGridSize, clearTokens, isReady, getCenterView, loadingProgress, retryLoad: () => paintMapFromCache(currentMapIdRef.current || '', pendingManifest.current?.manifest), setOnTokenRightClick, setTokenVisibility, getTokenVisibility, setControlledToken, setTool, getFogKeys, getWallKeys, getWeatherKeys };
 }

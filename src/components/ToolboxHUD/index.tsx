@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MousePointer2, Ruler, RadioReceiver, Eye, EyeOff, Hash, Paintbrush, Eraser, BrickWall, CloudRain, Wind } from 'lucide-react';
+import { MousePointer2, Ruler, RadioReceiver, Eye, EyeOff, Hash, Paintbrush, Eraser, BrickWall, CloudRain, Wind, Snowflake, Skull, Flame, Tornado, Sparkles } from 'lucide-react';
 import { useToolsStore, PaintType, PAINT_TYPE_COLORS } from '../../store/tools';
 
 export type ToolType = 'cursor' | 'ruler' | 'ping' | 'brush';
@@ -13,9 +13,14 @@ interface ToolboxHUDProps {
 }
 
 const PAINT_TYPES: { id: PaintType; icon: any; label: string }[] = [
-  { id: 'wall',  icon: BrickWall, label: 'Mur'         },
-  { id: 'rain',  icon: CloudRain, label: 'Pluie'       },
-  { id: 'fog',   icon: Wind,      label: 'Brouillard'  },
+  { id: 'wall',   icon: BrickWall, label: 'Mur'         },
+  { id: 'rain',   icon: CloudRain, label: 'Pluie'       },
+  { id: 'fog',    icon: Wind,      label: 'Brouillard'  },
+  { id: 'snow',   icon: Snowflake, label: 'Neige'       },
+  { id: 'poison', icon: Skull,     label: 'Poison'      },
+  { id: 'fire',   icon: Flame,     label: 'Feu'         },
+  { id: 'sand',   icon: Tornado,   label: 'Sable'       },
+  { id: 'magic',  icon: Sparkles,  label: 'Magie'       },
 ];
 
 export function ToolboxHUD({ currentTool, onToolChange, className, isMJ }: ToolboxHUDProps) {
