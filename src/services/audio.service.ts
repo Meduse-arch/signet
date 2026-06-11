@@ -6,6 +6,7 @@ interface AudioTrack {
   howl: Howl;
   blobUrl: string;
   soundId?: number;
+  spatial?: { x: number, y: number };
 }
 
 class AudioService {
@@ -28,7 +29,38 @@ class AudioService {
     if (this.lastListenerPos.x !== x || this.lastListenerPos.y !== y) {
       this.lastListenerPos = { x, y, z: 0 };
       Howler.pos(x, y, 0);
+      
+      // Mettre à jour dynamiquement le son de tous les SFX spatiaux en cours de lecture
+      this.sfxTracks.forEach(track => {
+        if (track.spatial) {
+          this.applySpatialToHowl(track.howl, track.spatial);
+        }
+      });
     }
+  }
+
+  private applySpatialToHowl(howl: Howl, spatial: { x: number, y: number }) {
+    const dx = spatial.x - this.lastListenerPos.x;
+    const dy = spatial.y - this.lastListenerPos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    let targetVolume = 1;
+    const refDist = 300;
+    const maxDist = 3000;
+    
+    if (distance >= maxDist) {
+      targetVolume = 0.01; // Évite 0 absolu
+    } else if (distance > refDist) {
+      targetVolume = 1 - ((distance - refDist) / (maxDist - refDist));
+    }
+
+    // Le volume final prend en compte le volume maître
+    howl.volume(targetVolume * this._masterVolume);
+
+    let pan = dx / 1000; // 1000 pixels = son totalement d'un côté
+    if (pan > 1) pan = 1;
+    if (pan < -1) pan = -1;
+    howl.stereo(pan);
   }
 
   public setMasterVolume(vol: number) {
@@ -177,36 +209,11 @@ class AudioService {
 
     try {
       if (spatial) {
-        // Calcul manuel du volume basé sur la distance pour éviter les bugs Web Audio
-        const dx = spatial.x - this.lastListenerPos.x;
-        const dy = spatial.y - this.lastListenerPos.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        let targetVolume = 1;
-        const refDist = 300;
-        const maxDist = 3000;
-        
-        if (distance >= maxDist) {
-          targetVolume = 0.01; // Évite 0 absolu qui peut buguer Howler
-        } else if (distance > refDist) {
-          targetVolume = 1 - ((distance - refDist) / (maxDist - refDist));
-        }
-
-        sfxHowl.volume(targetVolume);
-
-        // On désactive le PannerNode 3D complet car il peut bugger sur certains navigateurs
-        // On le remplace par un simple panoramique stéréo (gauche/droite)
-        let pan = dx / 1000; // 1000 pixels de décalage = son totalement d'un côté
-        if (pan > 1) pan = 1;
-        if (pan < -1) pan = -1;
-        
-        console.log(`[AudioService] Spatial SFX - Distance: ${Math.round(distance)}px, Volume: ${targetVolume.toFixed(2)}, Pan: ${pan.toFixed(2)}`);
-        
-        sfxHowl.stereo(pan);
+        this.applySpatialToHowl(sfxHowl, spatial);
       }
 
       const soundId = sfxHowl.play();
-      this.sfxTracks.set(hash, { hash, howl: sfxHowl, blobUrl, soundId });
+      this.sfxTracks.set(hash, { hash, howl: sfxHowl, blobUrl, soundId, spatial });
     } catch (e: any) {
       alert("Erreur Howler: " + e.message);
     }
