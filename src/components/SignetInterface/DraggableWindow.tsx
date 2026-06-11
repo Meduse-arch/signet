@@ -41,40 +41,40 @@ export function DraggableWindow({
  let initialHeight = '450px';
 
  if (variant === 'codex') {
- initialWidth = '850px';
- initialHeight = '600px';
+ initialWidth = '750px';
+ initialHeight = '550px';
  } else {
  switch (id) {
  case 'character':
- initialWidth = '720px';
- initialHeight = '560px';
+ initialWidth = '500px';
+ initialHeight = '550px';
  break;
  case 'bestiary':
- initialWidth = '620px';
+ initialWidth = '400px';
  initialHeight = '500px';
  break;
  case 'scenes':
- initialWidth = '520px';
- initialHeight = '420px';
- break;
- case 'inventory':
- initialWidth = '480px';
+ initialWidth = '350px';
  initialHeight = '450px';
  break;
+ case 'inventory':
+ initialWidth = '380px';
+ initialHeight = '480px';
+ break;
  case 'skills':
- initialWidth = '580px';
+ initialWidth = '380px';
  initialHeight = '480px';
  break;
  case 'quests':
- initialWidth = '500px';
- initialHeight = '450px';
+ initialWidth = '380px';
+ initialHeight = '480px';
  break;
  case 'combat':
- initialWidth = '450px';
- initialHeight = '600px';
+ initialWidth = '350px';
+ initialHeight = '550px';
  break;
  default:
- initialWidth = '400px';
+ initialWidth = '350px';
  initialHeight = '450px';
  break;
  }
