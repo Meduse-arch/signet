@@ -30,7 +30,7 @@ export function SignetLauncher({ onOpenWindow, securityLevel = SecurityLevel.PLA
  const [tokenStatus, setTokenStatus] = useState(false);
  
  const isMJ = securityLevel >= SecurityLevel.MJ;
- const selfChar = characters.find(c => c.user_id === user?.id);
+ const selfChar = characters.find(c => !!user?.id && c.user_id === user.id);
 
  // Sync token status
  useEffect(() => {

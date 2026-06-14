@@ -38,7 +38,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
  const { user } = useAuthStore();
  const isMJ = !!user && user.role >= SecurityLevel.MJ;
  const { characters, controlledCharacterId, addOrUpdateCharacter } = useCharactersStore();
- const character = characters.find(c => controlledCharacterId ? c.id === controlledCharacterId : c.user_id === user?.id);
+ const character = characters.find(c => controlledCharacterId ? c.id === controlledCharacterId : (!!user?.id && c.user_id === user.id));
  const { skills, removeSkill } = useSkillsStore();
  const { tags } = useTagsStore();
  const { setShowSkillCreateModal, setSelectedSkill, selectedSkill } = useUIStore();
@@ -258,7 +258,7 @@ export function SkillsWindowContent({ sessionId, variant = 'default' }: SkillsWi
       const isToggleActive = sk.type === 'passive_toggle' && sk.is_active;
       // Pour les passifs conditionnels, simplifions en vérifiant que le skill actif possède les tags requis
       let isActive = isAuto || isToggleActive;
-      if (!isActive && sk.type === 'passive_conditional' && sk.condition_tags && sk.condition_tags.length > 0) {
+      if (!isActive && sk.type === ('passive_conditional' as any) && sk.condition_tags && sk.condition_tags.length > 0) {
         const pool = new Set<string>();
         (character.inventory || []).forEach((i: any) => { if (i.equipped && i.tags) i.tags.forEach((t: string) => pool.add(t)); });
         (character.custom_skills || []).forEach((c: any) => {

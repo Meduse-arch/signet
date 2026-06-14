@@ -95,6 +95,7 @@ export class WeatherOverlayLayer extends Container {
 
       while (unvisited.size > 0) {
         const startKey = unvisited.values().next().value;
+        if (!startKey) break;
         unvisited.delete(startKey);
 
         const cluster = new Set<string>();

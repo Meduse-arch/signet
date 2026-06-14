@@ -501,7 +501,7 @@ export function SkillCreationModal({ sessionId }: SkillCreationModalProps) {
   key={opt.value}
   type="button"
   onClick={() => setConditionType(opt.value as any)}
-  className={`py-2 px-2 rounded-xl text-[10px] font-quantico font-black uppercase tracking-widest border transition-all ${conditionType === opt.value || (opt.value === 'both' && (conditionType === 'none' || conditionType === 'les_deux')) ? 'bg-glacier-DEFAULT/20 border-glacier-bright text-glacier-bright' : 'bg-black/40 border-white/10 text-white/50 hover:border-white/30'}`}
+  className={`py-2 px-2 rounded-xl text-[10px] font-quantico font-black uppercase tracking-widest border transition-all ${conditionType === opt.value || (opt.value === 'both' && (conditionType === 'none' || conditionType === 'both')) ? 'bg-glacier-DEFAULT/20 border-glacier-bright text-glacier-bright' : 'bg-black/40 border-white/10 text-white/50 hover:border-white/30'}`}
   >
   {opt.label}
   </button>

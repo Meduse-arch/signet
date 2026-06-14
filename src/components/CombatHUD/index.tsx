@@ -57,7 +57,7 @@ export const CombatHUD = ({ sessionId }: { sessionId: string }) => {
  };
 
  // Identifier le personnage du joueur local et s'il est dans le combat
- const myChar = characters.find(c => c.user_id === user?.id);
+ const myChar = characters.find(c => !!user?.id && c.user_id === user.id);
  const myCharInCombat = myChar ? actors.some(a => a.character_id === myChar.id) : false;
 
  // MJ : toujours visible. Joueur : visible si combat actif OU si son perso participe

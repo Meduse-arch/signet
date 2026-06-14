@@ -15,7 +15,7 @@ const DIE_TYPES = [4, 6, 8, 10, 12, 20, 100];
 
 export function LancerDes({ sessionId }: { sessionId: string }) {
  const user = useAuthStore(state => state.user);
- const character = useCharactersStore(state => state.characters.find(c => c.user_id === user?.id));
+ const character = useCharactersStore(state => state.characters.find(c => !!user?.id && c.user_id === user.id));
  const { 
  diceResult, 
  setDiceResult, 

@@ -34,7 +34,7 @@ const myCharacter = useMemo(() => {
  return characters.find(c => c.id === controlledCharacterId);
  }
  // Si c'est un MJ, il n'a pas de perso par défaut (sauf s'il s'en crée un explicitement avec son user_id)
- return characters.find(c => c.user_id === user?.id);
+    return characters.find(c => !!user?.id && c.user_id === user.id);
 }, [characters, controlledCharacterId, user?.id]);
 
 

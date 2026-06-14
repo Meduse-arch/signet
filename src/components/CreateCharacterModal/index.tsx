@@ -4,6 +4,7 @@ import { X, Save, Shield, Zap, Heart, Activity, Dices, Upload, Loader2 } from 'l
 import { StatDefinition, SkillDefinition, BarDefinition, DEFAULT_STATS, DEFAULT_SKILLS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { useAuthStore, SecurityLevel } from '../../store/auth';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
+import { parseAndRoll } from '../../services/des.service';
 
 interface CreateCharacterModalProps {
  onClose: () => void;
@@ -165,31 +166,40 @@ export function CreateCharacterModal({
  if (!isMJ) setRerollsLeft(settings?.rollFormula?.rerolls || 0);
  };
 
- // Calcul dynamique des barres basé sur les formules
  const calculateBars = () => {
- const results: Record<string, number> = {};
- const barDefs = settings?.bars || DEFAULT_BARS;
+  const results: Record<string, number> = {};
+  const barDefs = settings?.bars || DEFAULT_BARS;
 
- barDefs.forEach(bar => {
- try {
- // Remplacement basique des IDs par leurs valeurs
- let expr = bar.formula.toLowerCase();
- availableStats.forEach(s => {
- const regex = new RegExp(`\\b${s.id.toLowerCase()}\\b`, 'g');
- expr = expr.replace(regex, stats[s.id].toString());
- });
- 
- // Évaluation sécurisée (limitée aux maths de base)
- 
- const val = eval(expr); 
- results[bar.id] = Math.floor(val);
- results[`max${bar.id.charAt(0).toUpperCase()}${bar.id.slice(1)}`] = Math.floor(val);
- } catch (e) {
- results[bar.id] = 0;
- }
- });
- return results;
- };
+  barDefs.forEach(bar => {
+  try {
+  let expr = bar.formula.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  availableStats.forEach(s => {
+  const statVal = stats[s.id] || 0;
+  // Remplacer par ID
+  if (s.id) {
+    const idRegex = new RegExp(`\\b${s.id.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\\b`, 'g');
+    expr = expr.replace(idRegex, statVal.toString());
+  }
+  // Remplacer par Nom
+  if (s.name) {
+    const nameRegex = new RegExp(`\\b${s.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\\b`, 'g');
+    expr = expr.replace(nameRegex, statVal.toString());
+  }
+  });
+  
+  const res = parseAndRoll(expr);
+  let val = 0;
+  if (res.total > 0) {
+    val = Math.floor(res.total);
+  }
+  results[bar.id] = val;
+  results[`max${bar.id.charAt(0).toUpperCase()}${bar.id.slice(1)}`] = val;
+  } catch (e) {
+  results[bar.id] = 0;
+  }
+  });
+  return results;
+  };
 
  const derivedBars = calculateBars();
 

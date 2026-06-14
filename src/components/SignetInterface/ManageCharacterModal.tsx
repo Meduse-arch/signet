@@ -12,6 +12,7 @@ import { DEFAULT_STATS, DEFAULT_BARS } from '../../systems/seal/constants';
 import { useAssetUrl } from '../../hooks/useAssetUrl';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { useMapStore } from '../../store/map';
+import { parseAndRoll } from '../../services/des.service';
 import { AssetImage } from '../AssetImage';
 import { useTranslation } from 'react-i18next';
 
@@ -153,12 +154,55 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
  };
 
  const updateStat = (id: string, val: number) => {
- setEditedChar((prev: any) => ({
- ...prev,
- stats: { ...prev.stats, [id]: Math.max(0, val) }
- }));
- setHasChanges(true);
- };
+  setEditedChar((prev: any) => {
+    const newStats = { ...prev.stats, [id]: Math.max(0, val) };
+    const newBars = { ...(prev.bars || {}) };
+    
+    const statDefs = session?.settings?.stats || DEFAULT_STATS;
+    const barDefs = session?.settings?.bars || DEFAULT_BARS;
+
+    barDefs.forEach((bar: any) => {
+      if (!bar.formula) return;
+      try {
+        let expr = bar.formula.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        statDefs.forEach((s: any) => {
+          const statVal = newStats[s.id] || 0;
+          if (s.id) {
+            const idRegex = new RegExp(`\\b${s.id.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\\b`, 'g');
+            expr = expr.replace(idRegex, statVal.toString());
+          }
+          if (s.name) {
+            const nameRegex = new RegExp(`\\b${s.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\\b`, 'g');
+            expr = expr.replace(nameRegex, statVal.toString());
+          }
+        });
+        
+        const res = parseAndRoll(expr);
+        if (res.total > 0) {
+          const newMax = Math.floor(res.total);
+          const maxKey = `max${bar.id.charAt(0).toUpperCase()}${bar.id.slice(1)}`;
+          const oldMax = newBars[maxKey] || 100;
+          newBars[maxKey] = newMax;
+          
+          if ((newBars[bar.id] || 0) >= oldMax || (newBars[bar.id] || 0) === 0) {
+             newBars[bar.id] = newMax;
+          } else {
+             newBars[bar.id] = Math.max(0, Math.min(newMax, (newBars[bar.id] || 0)));
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+
+    return {
+      ...prev,
+      stats: newStats,
+      bars: newBars
+    };
+  });
+  setHasChanges(true);
+  };
 
  const updateBar = (id: string, val: number) => {
  setEditedChar((prev: any) => ({
@@ -838,10 +882,10 @@ export function ManageCharacterModal({ sessionId, characterId, onClose }: Manage
 // Composants internes pour gérer la résolution des URLs d'assets
 function InventoryItemImage({ url }: { url: string }) {
  const resolved = useAssetUrl(url);
- return <AssetImage src={resolved} alt="" className="w-full h-full object-contain p-1 opacity-60" />;
+ return <AssetImage src={resolved || undefined} alt="" className="w-full h-full object-contain p-1 opacity-60" />;
 }
 
 function SkillItemImage({ url }: { url: string }) {
  const resolved = useAssetUrl(url);
- return <AssetImage src={resolved} alt="" className="w-full h-full object-cover opacity-60" />;
+ return <AssetImage src={resolved || undefined} alt="" className="w-full h-full object-cover opacity-60" />;
 }

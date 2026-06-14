@@ -471,7 +471,7 @@ export function useBoard(containerRef: RefObject<HTMLDivElement>, sessionId: str
       if (saved) {
         try {
           const parsed = new Map(JSON.parse(saved));
-          boardRef.current.setPaintedCells(parsed);
+          boardRef.current.setPaintedCells(parsed as any);
           const fogKeys = boardRef.current.getFogKeys();
           const wallKeys = boardRef.current.getWallKeys();
           const weatherKeys = boardRef.current.getWeatherKeys();

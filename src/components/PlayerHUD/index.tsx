@@ -70,7 +70,7 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
 
  // On filtre les autres joueurs (ceux qui ne sont pas nous)
  const otherPlayers = players.filter(p => p.peer_id !== peerId);
- const selfChar = characters.find(c => c.user_id === user?.id);
+ const selfChar = characters.find(c => !!user?.id && c.user_id === user.id);
 
  return (
  <div className={className || "absolute top-4 left-4 md:top-8 md:left-8 flex flex-col gap-4 z-10 pointer-events-none"}>

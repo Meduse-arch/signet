@@ -17,7 +17,7 @@ export function ItemDetailModal({ sessionId }: { sessionId: string }) {
 
  if (!itemDetailOpen || !selectedItem) return null;
 
- const character = characters.find(c => controlledCharacterId ? c.id === controlledCharacterId : c.user_id === user?.id);
+ const character = characters.find(c => controlledCharacterId ? c.id === controlledCharacterId : (!!user?.id && c.user_id === user.id));
 
  const handleToggleEquip = async () => {
  if (!character) return;

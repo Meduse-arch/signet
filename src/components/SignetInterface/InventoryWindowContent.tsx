@@ -33,7 +33,7 @@ export function InventoryWindowContent({ sessionId, variant = 'default' }: Inven
  const user = useAuthStore(state => state.user);
  const isMJ = !!user && user.role >= SecurityLevel.MJ;
  const { characters, controlledCharacterId, addOrUpdateCharacter } = useCharactersStore();
- const character = characters.find(c => controlledCharacterId ? c.id === controlledCharacterId : c.user_id === user?.id);
+ const character = characters.find(c => controlledCharacterId ? c.id === controlledCharacterId : (!!user?.id && c.user_id === user.id));
  const { items, removeItem } = useItemsStore();
  const { setShowCreateModal, setSelectedItem, selectedItem } = useUIStore();
  const { broadcast } = usePeer();

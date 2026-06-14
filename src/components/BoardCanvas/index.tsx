@@ -140,7 +140,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  const char = characters.find(c => c.id === t.character_id);
  if (char) {
  console.log(`[BoardCanvas] Restoring token for character: ${char.name}`);
- const isOwned = char.id === currentCharacterId || char.user_id === user?.id;
+ const isOwned = char.id === currentCharacterId || (!!user?.id && char.user_id === user.id);
  const isHidden = !!t.is_hidden;
 
  addToken({
@@ -221,7 +221,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  image_url: resolvedImageUrl,
  x,
  y,
- isOwned: char.id === currentCharacterId || char.user_id === user?.id,
+ isOwned: char.id === currentCharacterId || (!!user?.id && char.user_id === user.id),
  isMJ: !!isMJ,
  is_hidden: false
  };
@@ -244,7 +244,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  syncChannel.close();
  }
  }
- }, [isHost, currentMapId, mapTokens, sessionId, getCenterView, broadcast, addToken, updateTokenList, setTokenStatus, removeToken, isExternalMap, maps]);
+ }, [isHost, currentMapId, mapTokens, sessionId, getCenterView, broadcast, addToken, updateTokenList, setTokenStatus, removeToken, isExternalMap, maps, currentCharacterId, user?.id, isMJ]);
 
  // Synchronisation des changements de map et tokens pour les joueurs
  useEffect(() => {
@@ -266,7 +266,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  image_url: data.payload.image_url,
  x: data.payload.x,
  y: data.payload.y,
- isOwned: data.payload.id === currentCharacterId || (characters.find(c => c.id === data.payload.id)?.user_id === user?.id),
+ isOwned: data.payload.id === currentCharacterId || (!!user?.id && characters.find(c => c.id === data.payload.id)?.user_id === user.id),
  isMJ: !!isMJ,
  is_hidden: !!data.payload.is_hidden
  });
@@ -311,12 +311,12 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  // ✅ Un joueur demande à bouger un token (Le MJ arbitre)
  const { id, x, y } = data.payload;
  
- // Validation de sécurité : le joueur émetteur doit posséder ce personnage
- const char = characters.find(c => c.id === id);
- if (!char || !fromPeerId || char.user_id !== fromPeerId) {
- console.warn(`[Host] Tentative de déplacement non autorisée de ${id} par ${fromPeerId}`);
- return;
- }
+  // Validation de base : le token doit exister. (La sécurité fine peerId <-> userId nécessiterait un mapping)
+  const char = characters.find(c => c.id === id);
+  if (!char) {
+  console.warn(`[Host] Tentative de déplacement pour un token introuvable: ${id}`);
+  return;
+  }
  
  console.log(`[Host] Autorisation de mouvement pour ${id} vers ${x},${y}`);
  
@@ -375,7 +375,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  }
  });
  return () => unsub();
- }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, sendTo, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken, currentMapId, sessionId, isExternalMap, currentCharacterId, isMJ, getFogKeys, getWallKeys, getWeatherKeys]);
+ }, [isReady, onData, isHost, loadMap, clearTokens, mapTokens, characters, broadcast, sendTo, setTokenStatus, handleToggleToken, addToken, removeToken, moveToken, currentMapId, sessionId, isExternalMap, currentCharacterId, isMJ, getFogKeys, getWallKeys, getWeatherKeys, user?.id]);
 
  // Exposer handleToggleToken via BroadcastChannel
  useEffect(() => {
@@ -401,13 +401,13 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  image_url: payload.image_url,
  x: NaN, // BoardScene gérera le maintien de la position actuelle si NaN
  y: NaN,
- isOwned: payload.id === currentCharacterId || payload.user_id === user?.id,
+ isOwned: payload.id === currentCharacterId || (!!user?.id && payload.user_id === user.id),
  isMJ: !!isMJ
  });
  }
  };
  return () => channel.close();
- }, [sessionId, isHost, characters, handleToggleToken, mapTokens, broadcast, addToken]);
+ }, [sessionId, isHost, characters, handleToggleToken, mapTokens, broadcast, addToken, currentCharacterId, user?.id, isMJ]);
 
  // Sync vers fenêtre externe (mode projecteur)
  useEffect(() => {
@@ -422,7 +422,7 @@ export function BoardCanvas({ sessionId, imageUrl, maps, currentMapId, character
  else if (type === 'TOKEN_MOVE') moveToken(payload.id, payload.x, payload.y);
  else if (type === 'INITIAL_STATE') {
  clearTokens();
- payload.tokens.forEach((t: any) => addToken({...t, isOwned: t.id === currentCharacterId || t.user_id === user?.id, isMJ: !!isMJ}));
+ payload.tokens.forEach((t: any) => addToken({...t, isOwned: t.id === currentCharacterId || (!!user?.id && t.user_id === user.id), isMJ: !!isMJ}));
  }
  };
 

@@ -277,7 +277,7 @@ export function SealCharacterSheet({
  if (controlledCharacterId) {
  return characters.find(c => c.id === controlledCharacterId);
  }
- return characters.find(c => c.user_id === user?.id);
+ return characters.find(c => !!user?.id && c.user_id === user.id);
  }, [characters, controlledCharacterId, user?.id, forceCharacterId]);
 
  const isMJ = !!user && user.role >= SecurityLevel.MJ;
@@ -464,6 +464,42 @@ export function SealCharacterSheet({
 
   const calculatedModifiers = useMemo(() => calculateMods([]), [calculateMods]);
 
+  const getBarMax = useCallback((barId: string) => {
+    const b = barDefs.find((bd: any) => bd.id === barId);
+    let baseMaxVal = 100;
+
+    if (b && b.formula) {
+      let expr = b.formula.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      statDefs.forEach((s: any) => {
+        const val = calculatedModifiers.stats[s.id] || 0;
+        
+        // Remplacer par ID
+        if (s.id) {
+          const idRegex = new RegExp(`\\b${s.id.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\\b`, 'g');
+          expr = expr.replace(idRegex, val.toString());
+        }
+        // Remplacer par Nom (pour supporter les formules écrites avec les noms français)
+        if (s.name) {
+          const nameRegex = new RegExp(`\\b${s.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\\b`, 'g');
+          expr = expr.replace(nameRegex, val.toString());
+        }
+      });
+      
+      const res = parseAndRoll(expr);
+      if (res.total > 0) {
+        baseMaxVal = Math.floor(res.total);
+      } else {
+        const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
+        baseMaxVal = (character?.bars as Record<string, number>)?.[maxKey] || (character?.bars as Record<string, number>)?.[barId] || 100;
+      }
+    } else {
+      const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
+      baseMaxVal = (character?.bars as Record<string, number>)?.[maxKey] || (character?.bars as Record<string, number>)?.[barId] || 100;
+    }
+
+    const itemMod = calculatedModifiers.bars[barId] || { value: 0, max: 0 };
+    return baseMaxVal + itemMod.max;
+  }, [barDefs, statDefs, calculatedModifiers, character]);
  if (!character) {
  return (
  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -588,8 +624,7 @@ export function SealCharacterSheet({
  if (!character) return;
  const updatedBars = { ...(character.bars || {}) };
  const currentVal = updatedBars[barId] || 0;
- const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
- const maxVal = updatedBars[maxKey] || currentVal || 100;
+ const maxVal = getBarMax(barId);
  
  updatedBars[barId] = Math.max(0, Math.min(maxVal, currentVal + diff));
  
@@ -680,10 +715,7 @@ export function SealCharacterSheet({
  if (m.target === 'bar' && m.targetProperty === 'current') {
  const barId = m.targetId;
  const currentVal = updatedBars[barId] || 0;
- const maxKey = `max${barId.charAt(0).toUpperCase()}${barId.slice(1)}`;
- const itemMod = calculatedModifiers.bars[barId] || { value: 0, max: 0 };
- const baseMaxVal = (character.bars as Record<string, number>)[maxKey] || (character.bars as Record<string, number>)[barId] || 100;
- const maxVal = baseMaxVal + itemMod.max;
+ const maxVal = getBarMax(barId);
 
  updatedBars[barId] = Math.max(0, Math.min(maxVal, currentVal + valueToApply));
  barsChanged = true;
@@ -940,13 +972,10 @@ export function SealCharacterSheet({
 
  const renderBar = (bar: unknown) => {
  const b = bar as { id: string; name: string; color: string };
- const maxKey = `max${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}`;
  const itemMod = calculatedModifiers.bars[b.id] || { value: 0, max: 0 };
- 
- const baseMaxVal = (bars as Record<string, number>)[maxKey] || (bars as Record<string, number>)[b.id] || 1;
+ const maxVal = getBarMax(b.id);
  const baseCurrentVal = (bars as Record<string, number>)[b.id] || 0;
  
- const maxVal = baseMaxVal + itemMod.max;
  const currentVal = baseCurrentVal + itemMod.value;
  
  const percent = Math.min(100, Math.max(0, (currentVal / maxVal) * 100));

@@ -278,7 +278,7 @@ export function CharacterSheetContent({
  if (controlledCharacterId) {
  return characters.find(c => c.id === controlledCharacterId);
  }
- return characters.find(c => c.user_id === user?.id);
+ return characters.find(c => !!user?.id && c.user_id === user.id);
  }, [characters, controlledCharacterId, user?.id, forceCharacterId]);
 
  const isMJ = !!user && user.role >= SecurityLevel.MJ;
