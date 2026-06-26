@@ -118,9 +118,9 @@ export function HubPage({ onEnterSession }: HubPageProps) {
 
  {/* EXPLORATION PANEL */}
  <aside className={`border-r border-silver-DEFAULT/30 bg-[#0D0D0F]/80 backdrop-blur-xl flex flex-col z-10 relative overflow-hidden transition-all duration-500 ease-in-out ${
- isSearchOpen ? 'w-[350px] opacity-100' : 'w-0 opacity-0 pointer-events-none border-none'
+ isSearchOpen ? 'w-full sm:w-[350px] opacity-100' : 'w-0 opacity-0 pointer-events-none border-none'
  }`}>
- <div className="min-w-[350px] flex-1 flex flex-col h-full">
+ <div className="w-full sm:min-w-[350px] flex-1 flex flex-col h-full">
  <div className="p-8 space-y-8 flex-1 overflow-y-auto custom-scrollbar">
  <SearchBar
  value={searchQuery}

@@ -25,11 +25,11 @@ export function ConsentPage({ onAccept }: ConsentPageProps) {
         <div className="absolute inset-0 bg-vignette pointer-events-none" />
       </div>
 
-      <div className="relative z-10 w-full max-w-2xl bg-[#0D0D0F]/90 backdrop-blur-xl border border-silver-DEFAULT/20 rounded-[2rem] p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-700">
+      <div className="relative z-10 w-full max-w-2xl bg-[#0D0D0F]/90 backdrop-blur-xl border border-silver-DEFAULT/20 rounded-[2rem] p-6 sm:p-10 mx-4 sm:mx-0 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-700">
         
         <div className="flex flex-col items-center text-center mb-10">
           <Icons.ShieldAlert className="w-16 h-16 text-glacier-bright mb-6 animate-pulse" />
-          <h1 className="text-3xl font-black text-white tracking-widest uppercase italic">
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-widest uppercase italic">
             {t('consent.title', 'Bienvenue dans Signet VTT')}
           </h1>
           <div className="h-px w-32 bg-gradient-to-r from-transparent via-silver-DEFAULT/50 to-transparent mt-4" />

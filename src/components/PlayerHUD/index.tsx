@@ -73,14 +73,14 @@ export function PlayerHUD({ players, className, sessionId }: PlayerHUDProps) {
  const selfChar = characters.find(c => !!user?.id && c.user_id === user.id);
 
  return (
- <div className={className || "absolute top-4 left-4 md:top-8 md:left-8 flex flex-col gap-4 z-10 pointer-events-none"}>
+ <div className={className || "absolute top-2 left-2 sm:top-4 sm:left-4 md:top-8 md:left-8 flex flex-col gap-4 z-10 pointer-events-none"}>
  {/* Self (Moi) */}
  <div className="flex items-center gap-4 pointer-events-auto group">
  <div className="relative">
  {/* Anneau rotatif façon Jarvis/HUD */}
  <div className="absolute inset-[-4px] rounded-full border border-silver-DEFAULT/40 group-hover:border-silver-DEFAULT/50 group-hover:rotate-180 transition-all duration-1000 ease-linear" />
  
- <div className="w-12 h-12 rounded-full bg-[#0D0D0F]/80 backdrop-blur-xl border border-silver-DEFAULT/40 flex items-center justify-center text-glacier-bright text-lg font-quantico font-black shadow-[0_0_20px_rgba(79,164,184,0.15)] group-hover:shadow-[0_0_30px_rgba(79,164,184,0.4)] transition-all overflow-hidden">
+ <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#0D0D0F]/80 backdrop-blur-xl border border-silver-DEFAULT/40 flex items-center justify-center text-glacier-bright text-lg font-quantico font-black shadow-[0_0_20px_rgba(79,164,184,0.15)] group-hover:shadow-[0_0_30px_rgba(79,164,184,0.4)] transition-all overflow-hidden">
  {selfChar?.image_url ? (
  <AssetImage src={selfChar.image_url} alt="" className="w-full h-full object-cover" />
  ) : (

@@ -95,12 +95,12 @@ export function AuthPage({ onEnterApp }: AuthPageProps) {
  <SignetLogo mode="loop" imgClassName="w-32 h-32" />
  </div>
 
- <h1 className="text-7xl font-black text-glacier-bright tracking-[0.5em] uppercase mb-4 ml-[0.5em]">
+ <h1 className="text-5xl sm:text-7xl font-black text-glacier-bright tracking-[0.5em] uppercase mb-4 ml-[0.5em]">
  Signet
  </h1>
  <div className="flex items-center gap-6 mb-24">
  <div className="h-px w-24 bg-gradient-to-r from-transparent to-silver-DEFAULT/50" />
- <span className="text-sm font-quantico text-silver-bright tracking-[0.4em] uppercase font-bold">Virtual Tabletop</span>
+ <span className="text-xs sm:text-sm font-quantico text-silver-bright tracking-[0.4em] uppercase font-bold">Virtual Tabletop</span>
  <div className="h-px w-24 bg-gradient-to-l from-transparent to-silver-DEFAULT/50" />
  </div>
 
@@ -113,7 +113,7 @@ export function AuthPage({ onEnterApp }: AuthPageProps) {
  {/* AUTH MODAL */}
  {showAuthModal && (
  <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-700">
- <div className="w-full max-w-md bg-[#0D0D0F] border-2 border-silver-DEFAULT/40 rounded-[2.5rem] p-10 shadow-[0_0_50px_rgba(79,164,184,0.15)] relative overflow-hidden animate-in zoom-in-95 duration-500">
+ <div className="w-full max-w-md bg-[#0D0D0F] border-2 border-silver-DEFAULT/40 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(79,164,184,0.15)] relative overflow-hidden animate-in zoom-in-95 duration-500">
  <div className="absolute inset-0 bg-grimoire-texture opacity-[0.05] pointer-events-none" />
  
  <div className="relative z-10">
