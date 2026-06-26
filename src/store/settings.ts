@@ -104,7 +104,7 @@ export const useSettingsStore = create<SettingsState>()(
       }),
     }),
     {
-      name: 'sigil-settings-storage', // name of item in localStorage
+      name: 'signet-settings-storage', // name of item in localStorage
     }
   )
 );

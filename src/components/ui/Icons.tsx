@@ -18,6 +18,7 @@ import {
   ChevronUp,
  ChevronLeft,
  ChevronRight,
+ Database,
  Dices,
  ExternalLink,
  Eye,
@@ -49,6 +50,7 @@ import {
  MonitorPlay,
  MousePointer2,
  Music,
+ Network,
  Package,
  Palette,
  Pause,
@@ -68,6 +70,7 @@ import {
  Settings2,
  Share2,
  Shield,
+ ShieldAlert,
  Shuffle,
  Skull,
  Sliders,
@@ -107,6 +110,9 @@ import {
  */
 export const Icons = {
   AlertTriangle,
+  Database,
+  Network,
+  ShieldAlert,
  // --- Navigation & Actions générales ---
  Search,
  Plus,

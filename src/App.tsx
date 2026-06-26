@@ -9,12 +9,14 @@ import { useSettingsStore } from './store/settings';
 import { TitleBar } from './components/TitleBar';
 import { ConfirmDialog } from './components/ui/ConfirmDialog';
 import logo from './assets/logo.svg';
+import { ConsentPage } from './pages/ConsentPage';
 
 function MainApp() {
  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
  const [isTransitioning, setIsTransitioning] = useState(false);
  const [showRune, setShowRune] = useState(false);
  const [isAuthorized, setIsAuthorized] = useState(false);
+ const [hasConsented, setHasConsented] = useState(() => localStorage.getItem('signet_consent_accepted') === 'true');
  const { user } = useAuthStore();
 
 
@@ -47,6 +49,10 @@ function MainApp() {
  // On affiche AuthPage tant qu'on n'a pas d'utilisateur OU que le "Start" n'est pas fait
  if (!user || !isAuthorized) {
  return <AuthPage onEnterApp={() => setIsAuthorized(true)} />;
+ }
+
+ if (!hasConsented) {
+ return <ConsentPage onAccept={() => setHasConsented(true)} />;
  }
 
  return (

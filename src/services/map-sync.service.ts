@@ -293,12 +293,15 @@ class MapSyncService {
     const chunks = [];
     const entries: ChunkManifestEntry[] = [];
 
+    // ✅ FIX: Réutiliser un seul canvas pour éviter de saturer la mémoire WebGL du navigateur (limite de contextes)
+    const canvas = new OffscreenCanvas(CHUNK_SIZE, CHUNK_SIZE);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) throw new Error("Failed to get 2d context for OffscreenCanvas");
+
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
-        const canvas = new OffscreenCanvas(CHUNK_SIZE, CHUNK_SIZE);
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error("Failed to get 2d context for OffscreenCanvas");
-
+        ctx.clearRect(0, 0, CHUNK_SIZE, CHUNK_SIZE);
+        
         // Peindre la portion correspondante de l'image (le canvas va rogner automatiquement ce qui dépasse)
         ctx.drawImage(bitmap, -x * CHUNK_SIZE, -y * CHUNK_SIZE);
 
